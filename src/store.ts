@@ -17,6 +17,7 @@ import type {
   SchematicFile,
 } from "./types";
 import { computeAlignment, type AlignOperation } from "./alignUtils";
+import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 
 const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
@@ -677,7 +678,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   saveToLocalStorage: () => {
     const state = get();
     const data: SchematicFile = {
-      version: 1,
+      version: CURRENT_SCHEMA_VERSION,
       name: state.schematicName,
       nodes: state.nodes,
       edges: state.edges,
@@ -693,7 +694,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return false;
-      const data = JSON.parse(raw) as SchematicFile;
+      const data = migrateSchematic(JSON.parse(raw)) as SchematicFile;
       syncCounters(data.nodes, data.edges);
       set({
         nodes: data.nodes,
@@ -709,7 +710,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   exportToJSON: () => {
     const state = get();
     return {
-      version: 1,
+      version: CURRENT_SCHEMA_VERSION,
       name: state.schematicName,
       nodes: state.nodes,
       edges: state.edges,
@@ -717,7 +718,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     };
   },
 
-  importFromJSON: (data) => {
+  importFromJSON: (rawData) => {
+    const data = migrateSchematic(rawData) as SchematicFile;
     const nodes = data.nodes ?? [];
     const edges = data.edges ?? [];
     syncCounters(nodes, edges);

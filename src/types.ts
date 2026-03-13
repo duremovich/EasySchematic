@@ -69,7 +69,7 @@ export interface DeviceTemplate {
 }
 
 export interface SchematicFile {
-  version: 1;
+  version: number;
   name: string;
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
