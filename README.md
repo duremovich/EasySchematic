@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
+# EasySchematic
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A drag-and-drop AV signal flow diagram tool for designing and documenting audio/video system hook-ups. Built for broadcast, live production, and AV integration workflows.
 
-Currently, two official plugins are available:
+<!-- ![EasySchematic screenshot](screenshot.png) -->
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Drag-and-drop device library** — cameras, switchers, converters, routers, monitors, audio mixers, NDI encoders/decoders, and more
+- **Smart connection routing** — edges route around nodes with automatic nesting to minimize crossings
+- **Signal type awareness** — connections are color-coded by signal type (SDI, HDMI, NDI, Dante, Ethernet, USB, etc.)
+- **Rooms** — group devices into resizable room containers
+- **Port management** — drag-and-drop port reordering, rename ports, add/remove ports per device
+- **Custom devices** — save modified devices as reusable templates
+- **Snap alignment** — nodes snap to alignment guides while dragging
+- **Undo/redo** — full history with Ctrl+Z / Ctrl+Y
+- **Copy/paste** — duplicate selected devices
+- **Save/load** — export and import schematics as JSON files
+- **Auto-save** — work is persisted to browser localStorage
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Export Options
 
-## Expanding the ESLint configuration
+- **Print** — configurable paper size, orientation, and scale
+- **PNG** — high-resolution (4x) raster export
+- **SVG** — vector export
+- **DXF** — CAD-compatible export with organized layers for Vectorworks, AutoCAD, etc.
+  - `EasySchematic-Devices` / `Connections` / `Labels` / `Ports` / `Rooms`
+  - Connections sub-categorized by signal type (e.g., `EasySchematic-Connections-SDI`)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Getting Started
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run build
 ```
+
+Output goes to `dist/` — deploy as a static site anywhere.
+
+## Tech Stack
+
+- [React](https://react.dev) + [TypeScript](https://www.typescriptlang.org/)
+- [React Flow](https://reactflow.dev) (@xyflow/react) — node/edge canvas
+- [Zustand](https://zustand.docs.pmnd.rs/) — state management
+- [Tailwind CSS](https://tailwindcss.com) — styling
+- [Vite](https://vite.dev) — build tool
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Space` + drag | Pan canvas |
+| `Delete` / `Backspace` | Delete selected |
+| `Ctrl+C` | Copy selected |
+| `Ctrl+V` | Paste |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Shift+Z` / `Ctrl+Y` | Redo |
+| Double-click device | Open device editor |
+
+## License
+
+MIT
