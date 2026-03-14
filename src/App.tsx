@@ -267,7 +267,7 @@ function SchematicCanvas() {
 
   // Shared helper: start preview line tracking from a handle
   const startPreviewTracking = useCallback(
-    (event: MouseEvent, nodeId: string, handleId: string | null, handleType: string) => {
+    (event: MouseEvent | TouchEvent, nodeId: string, handleId: string | null, handleType: string) => {
       const fromSource = handleType === "source";
 
       // Get exact handle position from React Flow internals (flow space)
@@ -301,7 +301,9 @@ function SchematicCanvas() {
       };
 
       // Show preview immediately
-      const mouseFlow = toFlowCoords(event.clientX, event.clientY);
+      const clientX = "clientX" in event ? event.clientX : event.touches[0].clientX;
+      const clientY = "clientY" in event ? event.clientY : event.touches[0].clientY;
+      const mouseFlow = toFlowCoords(clientX, clientY);
       setConnectPreview({
         fromX: pos.x, fromY: pos.y,
         toX: mouseFlow.x, toY: mouseFlow.y,
@@ -381,7 +383,7 @@ function SchematicCanvas() {
 
   // Click-to-connect: second click completes or cancels
   const onClickConnectEnd = useCallback(
-    (_event?: MouseEvent) => {
+    (_event?: MouseEvent | TouchEvent) => {
       clearClickConnect();
     },
     [clearClickConnect],
@@ -391,7 +393,7 @@ function SchematicCanvas() {
   const onConnectStart = useCallback(
     (event: MouseEvent | TouchEvent, params: { nodeId: string | null; handleId: string | null; handleType: "source" | "target" | null }) => {
       if (!params.nodeId || !params.handleType) return;
-      startPreviewTracking(event as MouseEvent, params.nodeId, params.handleId, params.handleType);
+      startPreviewTracking(event, params.nodeId, params.handleId, params.handleType);
     },
     [startPreviewTracking],
   );
