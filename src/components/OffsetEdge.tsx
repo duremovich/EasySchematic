@@ -1,16 +1,17 @@
-import { memo } from "react";
+import { memo, useRef, useEffect } from "react";
 import {
-  getSmoothStepPath,
+  // getSmoothStepPath,  // OLD: commented out to see pure A* routing
   BaseEdge,
   type EdgeProps,
 } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import type { ConnectionEdge, SchematicNode } from "../types";
+import { buildObstacles, computeEdgePath, type Rect } from "../pathfinding";
 
 const EDGE_GAP = 12;
+const STUB_GAP = 6;
 const CX_THRESHOLD = 15;
 const Y_GAP_THRESHOLD = 50;
-const NODE_PAD = 20;
 
 function getAbsPos(node: SchematicNode, nodes: SchematicNode[]) {
   let x = node.position.x;
@@ -57,6 +58,13 @@ function findComponent(startId: string, edges: EdgeInfo[]): EdgeInfo[] {
   return edges.filter((e) => visited.has(e.id));
 }
 
+/** Compute a stable string digest of obstacle rects for cache invalidation */
+function obstacleDigest(rects: Rect[]): string {
+  if (rects.length === 0) return "";
+  const sorted = [...rects].sort((a, b) => a.left - b.left || a.top - b.top);
+  return sorted.map((r) => `${r.left|0},${r.top|0},${r.right|0},${r.bottom|0}`).join(";");
+}
+
 function OffsetEdgeComponent({
   id,
   source,
@@ -65,13 +73,13 @@ function OffsetEdgeComponent({
   sourceY,
   targetX,
   targetY,
-  sourcePosition,
-  targetPosition,
+  // sourcePosition,  // OLD: only needed for getSmoothStepPath
+  // targetPosition,  // OLD: only needed for getSmoothStepPath
   style,
   markerEnd,
   selected,
 }: EdgeProps<ConnectionEdge>) {
-  // Overlap offset for parallel edges (returns stable number)
+  // Overlap offset for parallel edges in the MIDDLE of the path (cx-based BFS grouping)
   const overlapOffset = useSchematicStore((state) => {
     const edgeInfo: EdgeInfo[] = [];
     for (const e of state.edges) {
@@ -102,9 +110,6 @@ function OffsetEdgeComponent({
     const component = findComponent(id, edgeInfo);
     if (component.length <= 1) return 0;
 
-    // Sort by vertical extent: edges spanning further down get outermost (leftmost) position.
-    // Primary: max Y of vertical (ascending) — deeper verticals go further left.
-    // Tiebreak: min Y of vertical (descending) — shorter verticals are innermost.
     component.sort((a, b) => {
       const maxA = Math.max(a.sourceCenterY, a.targetCenterY);
       const maxB = Math.max(b.sourceCenterY, b.targetCenterY);
@@ -120,66 +125,149 @@ function OffsetEdgeComponent({
     return (mid - index) * EDGE_GAP;
   });
 
-  // Compute a centerX that avoids blocking nodes (returns stable number)
-  const centerX = useSchematicStore((state) => {
-    const defaultCX = (sourceX + targetX) / 2 + overlapOffset;
-    const pathYMin = Math.min(sourceY, targetY);
-    const pathYMax = Math.max(sourceY, targetY);
+  // Stub offset: small spread for edges sharing the same source device.
+  // Prevents overlapping vertical segments at device exits, separate from mid-path offset.
+  const stubOffset = useSchematicStore((state) => {
+    const siblings = state.edges.filter((e) => e.source === source && e.id !== id);
+    if (siblings.length === 0) return 0;
 
-    let result = defaultCX;
-    for (let pass = 0; pass < 5; pass++) {
-      let blocked = false;
-      for (const n of state.nodes) {
-        if (n.id === source || n.id === target) continue;
-        if (n.type === "room") continue;
-        const pos = getAbsPos(n, state.nodes);
-        const w = n.measured?.width ?? 180;
-        const h = n.measured?.height ?? 60;
-
-        // Skip nodes outside the path's Y range
-        if (pos.y + h < pathYMin - NODE_PAD || pos.y > pathYMax + NODE_PAD) continue;
-
-        const left = pos.x - NODE_PAD;
-        const right = pos.x + w + NODE_PAD;
-        if (result > left && result < right) {
-          const goLeft = left;
-          const goRight = right;
-          result =
-            Math.abs(defaultCX - goLeft) <= Math.abs(defaultCX - goRight)
-              ? goLeft
-              : goRight;
-          blocked = true;
-          break;
-        }
-      }
-      if (!blocked) break;
+    // Collect sourceY for this edge and siblings — sort by handle Y to assign stable indices
+    const allFromSource: { edgeId: string; handleY: number }[] = [];
+    for (const e of state.edges) {
+      if (e.source !== source) continue;
+      const src = state.nodes.find((n) => n.id === e.source);
+      const tgt = state.nodes.find((n) => n.id === e.target);
+      if (!src || !tgt) continue;
+      const srcPos = getAbsPos(src, state.nodes);
+      const tgtPos = getAbsPos(tgt, state.nodes);
+      const srcH = src.measured?.height ?? 80;
+      const tgtH = tgt.measured?.height ?? 80;
+      // Use target center Y as differentiator (where the edge is heading)
+      allFromSource.push({ edgeId: e.id, handleY: tgtPos.y + tgtH / 2 });
     }
-    return result;
+
+    if (allFromSource.length <= 1) return 0;
+
+    allFromSource.sort((a, b) => a.handleY - b.handleY || a.edgeId.localeCompare(b.edgeId));
+    const index = allFromSource.findIndex((e) => e.edgeId === id);
+    const mid = (allFromSource.length - 1) / 2;
+    return (index - mid) * STUB_GAP;
   });
 
-  const [path, labelX, labelY] = getSmoothStepPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
-    borderRadius: 8,
-    centerX,
+  // Build obstacles from nodes (returns stable digest string)
+  const digest = useSchematicStore((state) => {
+    const obs = buildObstacles(state.nodes, source, target, (n) =>
+      getAbsPos(n as SchematicNode, state.nodes as SchematicNode[]),
+    );
+    return obstacleDigest(obs.rects);
   });
+
+  const debugEdges = useSchematicStore((s) => s.debugEdges);
+
+  // Cache ref for A* result
+  const cacheRef = useRef<{
+    key: string;
+    result: { path: string; labelX: number; labelY: number; turns: string } | null;
+  } | null>(null);
+
+  const cacheKey = `${sourceX},${sourceY},${targetX},${targetY},${overlapOffset},${stubOffset},${digest}`;
+
+  let astarResult: { path: string; labelX: number; labelY: number; turns: string } | null = null;
+
+  if (cacheRef.current?.key === cacheKey) {
+    astarResult = cacheRef.current.result;
+  } else {
+    const nodes = useSchematicStore.getState().nodes;
+    const obs = buildObstacles(nodes, source, target, (n) =>
+      getAbsPos(n as SchematicNode, nodes as SchematicNode[]),
+    );
+    astarResult = computeEdgePath(
+      sourceX, sourceY, targetX, targetY,
+      obs.rects, overlapOffset, stubOffset,
+    );
+    cacheRef.current = { key: cacheKey, result: astarResult };
+  }
+
+  const edgePath = astarResult?.path ?? `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+  const lx = astarResult?.labelX ?? (sourceX + targetX) / 2;
+  const ly = astarResult?.labelY ?? (sourceY + targetY) / 2;
+  const turns = astarResult?.turns ?? "fallback";
+
+  // Show label at both source and target ends so it's visible even if the path goes behind a device
+  const debugLabel = debugEdges ? (
+    <>
+      <foreignObject
+        x={sourceX + 4}
+        y={sourceY - 7}
+        width={1}
+        height={1}
+        style={{ pointerEvents: "none", overflow: "visible" }}
+      >
+        <div style={{
+          fontSize: 9,
+          fontFamily: "monospace",
+          fontWeight: 700,
+          color: "#e44",
+          background: "rgba(255,255,255,0.9)",
+          padding: "0 3px",
+          borderRadius: 2,
+          whiteSpace: "nowrap",
+          width: "max-content",
+          border: "1px solid #fcc",
+        }}>
+          {id}
+        </div>
+      </foreignObject>
+      <foreignObject
+        x={targetX - 4}
+        y={targetY - 7}
+        width={1}
+        height={1}
+        style={{ pointerEvents: "none", overflow: "visible" }}
+      >
+        <div style={{
+          fontSize: 9,
+          fontFamily: "monospace",
+          fontWeight: 700,
+          color: "#e44",
+          background: "rgba(255,255,255,0.9)",
+          padding: "0 3px",
+          borderRadius: 2,
+          whiteSpace: "nowrap",
+          width: "max-content",
+          direction: "rtl",
+          border: "1px solid #fcc",
+        }}>
+          {id}
+        </div>
+      </foreignObject>
+    </>
+  ) : null;
+
+  // Log routing data when debug mode is active
+  const prevDebugRef = useRef(false);
+  useEffect(() => {
+    if (debugEdges && !prevDebugRef.current) {
+      console.log(`[EDGE_DEBUG] ${id} | src=${Math.round(sourceX)},${Math.round(sourceY)} tgt=${Math.round(targetX)},${Math.round(targetY)} off=${overlapOffset} stub=${stubOffset} | ${turns}`);
+    }
+    prevDebugRef.current = debugEdges;
+  }, [debugEdges, id, sourceX, sourceY, targetX, targetY, overlapOffset, stubOffset, turns]);
 
   return (
-    <BaseEdge
-      id={id}
-      path={path}
-      labelX={labelX}
-      labelY={labelY}
-      style={{
-        ...style,
-        strokeWidth: selected ? 3 : 2,
-      }}
-      markerEnd={markerEnd}
-    />
+    <>
+      <BaseEdge
+        id={id}
+        path={edgePath}
+        labelX={lx}
+        labelY={ly}
+        style={{
+          ...style,
+          strokeWidth: selected ? 3 : 2,
+        }}
+        markerEnd={markerEnd}
+      />
+      {debugLabel}
+    </>
   );
 }
 

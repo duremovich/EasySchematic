@@ -18,6 +18,7 @@ const CATEGORIES: { label: string; types: string[] }[] = [
   { label: "Recording", types: ["recorder"] },
   { label: "Audio", types: ["audio-mixer"] },
   { label: "Networking", types: ["ndi-encoder", "ndi-decoder", "network-switch"] },
+  { label: "KVM / Extenders", types: ["kvm-extender"] },
 ];
 
 function onDragStart(event: DragEvent, template: DeviceTemplate) {

@@ -343,4 +343,22 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("RS-232 Out", "serial", "output"),
     ],
   },
+
+  // KVM Extenders
+  {
+    deviceType: "kvm-extender",
+    label: "Adder XDIP",
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("HDMI Out", "hdmi", "output"),
+      port("USB-B (Computer)", "usb", "input"),
+      port("USB-A 1", "usb", "output"),
+      port("USB-A 2", "usb", "output"),
+      port("USB-A 3", "usb", "output"),
+      port("Audio In", "analog-audio", "input"),
+      port("Audio Out", "analog-audio", "output"),
+      port("Network", "ethernet", "bidirectional"),
+    ],
+    searchTerms: ["Adder", "AdderLink", "XDIP", "KVM", "extender", "IP", "matrix"],
+  },
 ];

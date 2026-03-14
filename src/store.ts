@@ -68,6 +68,10 @@ interface SchematicState {
   addCustomTemplate: (template: DeviceTemplate) => void;
   removeCustomTemplate: (deviceType: string) => void;
 
+  // Debug
+  debugEdges: boolean;
+  toggleDebugEdges: () => void;
+
   // Persistence
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => boolean;
@@ -224,6 +228,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   schematicName: "Untitled Schematic",
   editingNodeId: null,
   customTemplates: loadCustomTemplates(),
+  debugEdges: false,
 
   onNodesChange: (changes) => {
     const updated = applyNodeChanges(changes, get().nodes) as SchematicNode[];
@@ -754,5 +759,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   setSchematicName: (name) => {
     set({ schematicName: name });
     get().saveToLocalStorage();
+  },
+
+  toggleDebugEdges: () => {
+    set((s) => ({ debugEdges: !s.debugEdges }));
   },
 }));

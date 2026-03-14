@@ -104,6 +104,9 @@ function SchematicCanvas() {
       } else if ((e.ctrlKey || e.metaKey) && e.key === "y") {
         e.preventDefault();
         redo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "b") {
+        e.preventDefault();
+        useSchematicStore.getState().toggleDebugEdges();
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
