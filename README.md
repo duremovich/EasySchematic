@@ -10,7 +10,7 @@ A drag-and-drop AV signal flow diagram tool for designing and documenting audio/
 
 - **28 built-in device templates** across 11 categories — Sources, Peripherals, Switching, Processing, Distribution, Monitoring, Projection, Recording, Audio, Networking, KVM/Extenders
 - **Custom device templates** — save modified devices for reuse
-- **Quick-create SDI routers** — generate routers with configurable input/output counts
+- **Quick-create routers** — generate routers with configurable input/output counts and signal type
 - **Notes** — text annotations on the canvas
 - **Rooms** — resizable dashed-border containers for grouping devices
 - **Auto-numbering** — dropped devices auto-increment (Camera → Camera 1, Camera 2, …)
