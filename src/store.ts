@@ -22,6 +22,18 @@ import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
 
+/** Grid size in px — must match snapGrid in App.tsx and Background gap */
+export const GRID_SIZE = 20;
+
+/** Snap all node positions to the grid. Mutates the array in place. */
+function snapNodesToGrid(nodes: SchematicNode[]): SchematicNode[] {
+  for (const n of nodes) {
+    n.position.x = Math.round(n.position.x / GRID_SIZE) * GRID_SIZE;
+    n.position.y = Math.round(n.position.y / GRID_SIZE) * GRID_SIZE;
+  }
+  return nodes;
+}
+
 interface Clipboard {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
@@ -704,6 +716,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return false;
       const data = migrateSchematic(JSON.parse(raw)) as SchematicFile;
+      snapNodesToGrid(data.nodes);
       syncCounters(data.nodes, data.edges);
       set({
         nodes: data.nodes,
@@ -731,6 +744,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const data = migrateSchematic(rawData) as SchematicFile;
     const nodes = data.nodes ?? [];
     const edges = data.edges ?? [];
+    snapNodesToGrid(nodes);
     syncCounters(nodes, edges);
     // Merge imported custom templates with existing ones (avoid duplicates by deviceType)
     if (data.customTemplates?.length) {

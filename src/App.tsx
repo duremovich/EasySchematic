@@ -15,7 +15,7 @@ import {
   type Connection,
   type OnConnectStart,
 } from "@xyflow/react";
-import { useSchematicStore } from "./store";
+import { useSchematicStore, GRID_SIZE } from "./store";
 import DeviceNodeComponent from "./components/DeviceNode";
 import RoomNodeComponent from "./components/RoomNode";
 import OffsetEdgeComponent from "./components/OffsetEdge";
@@ -344,9 +344,11 @@ function SchematicCanvas() {
       reconnectRadius={20}
       defaultEdgeOptions={{ type: "smoothstep" }}
       connectionLineType={ConnectionLineType.SmoothStep}
+      snapToGrid
+      snapGrid={[GRID_SIZE, GRID_SIZE]}
     >
       <SnapGuides guides={snapGuides} />
-      <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#d4d4d4" />
+      <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color="#d4d4d4" />
       <Controls position="bottom-right" />
       <MiniMap
         position="bottom-left"

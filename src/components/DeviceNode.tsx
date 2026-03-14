@@ -57,11 +57,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       `}
     >
       {/* Header */}
-      <div className="px-3 py-1.5 border-b border-[var(--color-border)] rounded-t-lg bg-[var(--color-surface)]">
-        <div className="text-xs font-semibold text-[var(--color-text-heading)] truncate">
+      <div className="px-3 h-10 flex flex-col justify-center border-b border-[var(--color-border)] rounded-t-lg bg-[var(--color-surface)]">
+        <div className="text-xs font-semibold text-[var(--color-text-heading)] truncate leading-tight">
           {data.label}
         </div>
-        <div className="text-[10px] text-[var(--color-text-muted)] capitalize">
+        <div className="text-[10px] text-[var(--color-text-muted)] capitalize leading-tight">
           {data.deviceType.replace(/-/g, " ")}
         </div>
       </div>
@@ -70,27 +70,27 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       {(inputs.length > 0 || outputs.length > 0) && (
         hasSections ? (
           /* Sectioned layout: independent columns */
-          <div className="flex py-1">
+          <div className="flex">
             {/* Input column */}
             <div className="flex-1 min-w-0">
               {inputItems.map((item, i) =>
                 item.type === "section" ? (
-                  <div key={`isec-${i}`} className="h-4 flex items-end pl-2 mb-0.5">
+                  <div key={`isec-${i}`} className="h-5 flex items-end pl-2">
                     <span className="text-[9px] text-[var(--color-text-muted)] truncate border-b border-[var(--color-border)]/30 w-full pb-0.5 mr-1">
                       {item.name}
                     </span>
                   </div>
                 ) : (
-                  <div key={item.port.id} className="flex items-center gap-1 pl-3 h-7 relative">
+                  <div key={item.port.id} className="flex items-center gap-1 pl-3 h-5 relative">
                     <Handle
                       type="target"
                       position={Position.Left}
                       id={item.port.id}
                       className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
-                      style={{ background: SIGNAL_COLORS[item.port.signalType], top: "auto" }}
+                      style={{ background: SIGNAL_COLORS[item.port.signalType], top: "50%" }}
                     />
                     <span
-                      className="text-[10px] truncate"
+                      className="text-[10px] leading-5 truncate"
                       style={{ color: SIGNAL_COLORS[item.port.signalType] }}
                       title={`${item.port.label} (${SIGNAL_LABELS[item.port.signalType]})`}
                     >
@@ -105,15 +105,15 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             <div className="flex-1 min-w-0">
               {outputItems.map((item, i) =>
                 item.type === "section" ? (
-                  <div key={`osec-${i}`} className="h-4 flex items-end pr-2 mb-0.5">
+                  <div key={`osec-${i}`} className="h-5 flex items-end pr-2">
                     <span className="text-[9px] text-[var(--color-text-muted)] truncate text-right border-b border-[var(--color-border)]/30 w-full pb-0.5 ml-1">
                       {item.name}
                     </span>
                   </div>
                 ) : (
-                  <div key={item.port.id} className="flex items-center gap-1 pr-3 h-7 relative justify-end">
+                  <div key={item.port.id} className="flex items-center gap-1 pr-3 h-5 relative justify-end">
                     <span
-                      className="text-[10px] truncate"
+                      className="text-[10px] leading-5 truncate"
                       style={{ color: SIGNAL_COLORS[item.port.signalType] }}
                       title={`${item.port.label} (${SIGNAL_LABELS[item.port.signalType]})`}
                     >
@@ -124,7 +124,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                       position={Position.Right}
                       id={item.port.id}
                       className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
-                      style={{ background: SIGNAL_COLORS[item.port.signalType], top: "auto" }}
+                      style={{ background: SIGNAL_COLORS[item.port.signalType], top: "50%" }}
                     />
                   </div>
                 ),
@@ -133,12 +133,12 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           </div>
         ) : (
           /* Non-sectioned layout: paired rows (original behavior) */
-          <div className="py-1">
+          <div>
             {Array.from({ length: Math.max(inputs.length, outputs.length, 1) }, (_, i) => {
               const input = inputs[i];
               const output = outputs[i];
               return (
-                <div key={i} className="flex justify-between items-center relative h-7">
+                <div key={i} className="flex justify-between items-center relative h-5">
                   <div className="flex items-center gap-1 pl-3 min-w-0 flex-1">
                     {input && (
                       <>
@@ -147,10 +147,10 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           position={Position.Left}
                           id={input.id}
                           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
-                          style={{ background: SIGNAL_COLORS[input.signalType], top: "auto" }}
+                          style={{ background: SIGNAL_COLORS[input.signalType], top: "50%" }}
                         />
                         <span
-                          className="text-[10px] truncate"
+                          className="text-[10px] leading-5 truncate"
                           style={{ color: SIGNAL_COLORS[input.signalType] }}
                           title={`${input.label} (${SIGNAL_LABELS[input.signalType]})`}
                         >
@@ -163,7 +163,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                     {output && (
                       <>
                         <span
-                          className="text-[10px] truncate"
+                          className="text-[10px] leading-5 truncate"
                           style={{ color: SIGNAL_COLORS[output.signalType] }}
                           title={`${output.label} (${SIGNAL_LABELS[output.signalType]})`}
                         >
@@ -174,7 +174,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           position={Position.Right}
                           id={output.id}
                           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
-                          style={{ background: SIGNAL_COLORS[output.signalType], top: "auto" }}
+                          style={{ background: SIGNAL_COLORS[output.signalType], top: "50%" }}
                         />
                       </>
                     )}
@@ -188,11 +188,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
 
       {/* Bidirectional Ports */}
       {bidirectional.length > 0 && (
-        <div className="py-1">
+        <div>
           {bidirItems.map((item, i) => {
             if (item.type === "section") {
               return (
-                <div key={`bsec-${i}`} className="flex justify-center items-end h-4 mx-1 mb-0.5">
+                <div key={`bsec-${i}`} className="flex justify-center items-end h-5 mx-1">
                   <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center">
                     {item.name}
                   </span>
@@ -209,7 +209,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             const outDisabled = inConnected;
 
             return (
-              <div key={port.id} className="flex justify-center items-center relative h-7">
+              <div key={port.id} className="flex justify-center items-center relative h-5">
                 <Handle
                   type="target"
                   position={Position.Left}
@@ -218,11 +218,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   style={{
                     background: inDisabled ? "#d1d5db" : SIGNAL_COLORS[port.signalType],
                     opacity: inDisabled ? 0.4 : 1,
-                    top: "auto",
+                    top: "50%",
                   }}
                 />
                 <span
-                  className="text-[10px] truncate"
+                  className="text-[10px] leading-5 truncate"
                   style={{ color: SIGNAL_COLORS[port.signalType] }}
                   title={`${port.label} (${SIGNAL_LABELS[port.signalType]}) — bidirectional`}
                 >
@@ -236,7 +236,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   style={{
                     background: outDisabled ? "#d1d5db" : SIGNAL_COLORS[port.signalType],
                     opacity: outDisabled ? 0.4 : 1,
-                    top: "auto",
+                    top: "50%",
                   }}
                 />
               </div>
