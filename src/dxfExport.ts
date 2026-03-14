@@ -5,24 +5,24 @@ import type { SchematicNode, SignalType } from "./types";
 // ACI color mapping (closest match for each signal type)
 const SIGNAL_ACI: Record<SignalType, number> = {
   sdi: 5,          // blue
-  hdmi: 178,        // purple
-  ndi: 3,           // green
-  dante: 1,         // red
-  "analog-audio": 46, // brown/orange
-  aes: 4,           // cyan
-  usb: 6,           // magenta
-  ethernet: 174,    // indigo
-  fiber: 30,        // orange
-  displayport: 4,   // cyan/teal
-  hdbaset: 178,     // purple
-  srt: 3,           // green
-  genlock: 8,       // dark gray
-  gpio: 8,          // dark gray
-  rs422: 8,         // dark gray
-  serial: 8,        // dark gray
-  thunderbolt: 5,   // blue
-  power: 46,        // brown
-  custom: 9,        // light gray
+  hdmi: 1,         // red
+  ndi: 3,          // green
+  dante: 30,       // orange
+  "analog-audio": 46, // brown
+  aes: 178,        // purple
+  usb: 6,          // magenta
+  ethernet: 4,     // teal/cyan
+  fiber: 40,       // amber
+  displayport: 4,  // dark teal
+  hdbaset: 170,    // violet
+  srt: 3,          // forest green
+  genlock: 8,      // slate
+  gpio: 9,         // warm gray
+  rs422: 174,      // deep violet
+  serial: 8,       // gray
+  thunderbolt: 174, // indigo
+  power: 46,       // dark amber
+  custom: 9,       // cool gray
 };
 
 /** Format a number as a clean decimal (no scientific notation). */

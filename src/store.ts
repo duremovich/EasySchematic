@@ -17,9 +17,11 @@ import type {
   SchematicFile,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
+import type { SignalType } from "./types";
 import { computeAlignment, type AlignOperation } from "./alignUtils";
 import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 import { routeAllEdges, type RoutedEdge } from "./edgeRouter";
+import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
 
 const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
@@ -94,6 +96,10 @@ interface SchematicState {
 
   // Drag state — edges freeze during drag and recalculate on drop
   isDragging: boolean;
+
+  // Signal colors
+  signalColors: Partial<Record<SignalType, string>> | undefined;
+  setSignalColors: (colors: Record<SignalType, string>) => void;
 
   // Persistence
   saveToLocalStorage: () => void;
@@ -267,6 +273,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   routedEdges: {},
   debugEdges: false,
   isDragging: false,
+  signalColors: undefined,
 
   onNodesChange: (changes) => {
     const updated = applyNodeChanges(changes, get().nodes) as SchematicNode[];
@@ -744,6 +751,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     saveCustomTemplates(updated);
   },
 
+  setSignalColors: (colors) => {
+    const overrides = getSignalColorOverrides(colors);
+    set({ signalColors: overrides });
+    applySignalColors(colors);
+    saveSignalColors(colors);
+    get().saveToLocalStorage();
+  },
+
   saveToLocalStorage: () => {
     const state = get();
     const data: SchematicFile = {
@@ -751,6 +766,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       name: state.schematicName,
       nodes: state.nodes,
       edges: state.edges,
+      signalColors: state.signalColors,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -771,10 +787,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           const data = migrateSchematic(mod.default) as SchematicFile;
           snapNodesToGrid(data.nodes);
           syncCounters(data.nodes, data.edges);
+          const colors = data.signalColors ?? {};
+          applySignalColors(colors);
+          saveSignalColors({ ...loadSignalColors(), ...colors });
           set({
             nodes: data.nodes,
             edges: data.edges,
             schematicName: data.name ?? "Demo Schematic",
+            signalColors: data.signalColors,
           });
         });
         return false;
@@ -782,10 +802,15 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       const data = migrateSchematic(JSON.parse(raw)) as SchematicFile;
       snapNodesToGrid(data.nodes);
       syncCounters(data.nodes, data.edges);
+      // Always apply colors — if file has none, reset to defaults
+      const colors = data.signalColors ?? {};
+      applySignalColors(colors);
+      saveSignalColors({ ...loadSignalColors(), ...colors });
       set({
         nodes: data.nodes,
         edges: data.edges,
         schematicName: data.name ?? "Untitled Schematic",
+        signalColors: data.signalColors,
       });
       return true;
     } catch {
@@ -801,6 +826,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       nodes: state.nodes,
       edges: state.edges,
       customTemplates: state.customTemplates.length > 0 ? state.customTemplates : undefined,
+      signalColors: state.signalColors,
     };
   },
 
@@ -821,10 +847,15 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         saveCustomTemplates(merged);
       }
     }
+    // Always apply colors — if file has none, reset to defaults
+    const colors = data.signalColors ?? {};
+    applySignalColors(colors);
+    saveSignalColors({ ...loadSignalColors(), ...colors });
     set({
       nodes,
       edges,
       schematicName: data.name ?? "Imported Schematic",
+      signalColors: data.signalColors,
     });
     get().saveToLocalStorage();
   },

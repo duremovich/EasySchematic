@@ -10,26 +10,26 @@
   --color-text-heading: #111827;
   --color-text-muted: #6b7280;
 
-  /* Signal type colors — print-friendly, high contrast on white */
-  --color-sdi: #2563eb;
-  --color-hdmi: #7c3aed;
-  --color-ndi: #16a34a;
-  --color-dante: #dc2626;
-  --color-analog-audio: #b45309;
-  --color-aes: #0891b2;
-  --color-usb: #db2777;
-  --color-ethernet: #4f46e5;
-  --color-fiber: #ea580c;
-  --color-displayport: #0d9488;
-  --color-hdbaset: #7c3aed;
-  --color-srt: #059669;
-  --color-genlock: #475569;
-  --color-gpio: #57534e;
-  --color-rs422: #525252;
-  --color-serial: #525252;
-  --color-thunderbolt: #1d4ed8;
-  --color-power: #a16207;
-  --color-custom: #64748b;
+  /* Signal type colors — max distinction at a glance, print-friendly on white */
+  --color-sdi: #2563eb;       /* blue — broadcast standard */
+  --color-hdmi: #dc2626;      /* red — instantly distinct from SDI blue */
+  --color-ndi: #16a34a;       /* green — network video */
+  --color-dante: #ea580c;     /* orange — network audio */
+  --color-analog-audio: #854d0e; /* brown — old-school warmth */
+  --color-aes: #7c3aed;       /* purple — digital audio */
+  --color-usb: #db2777;       /* pink — ubiquitous connector */
+  --color-ethernet: #0891b2;  /* teal — networking */
+  --color-fiber: #d97706;     /* amber — industry standard for fiber */
+  --color-displayport: #0d9488; /* dark teal — video alt */
+  --color-hdbaset: #9333ea;   /* violet — HDMI-over-cat, distinct from HDMI red */
+  --color-srt: #15803d;       /* forest green — streaming */
+  --color-genlock: #475569;   /* slate — sync/timing */
+  --color-gpio: #78716c;      /* warm gray — control */
+  --color-rs422: #6d28d9;     /* deep violet — machine control */
+  --color-serial: #525252;    /* gray — generic serial */
+  --color-thunderbolt: #4f46e5; /* indigo — high-speed */
+  --color-power: #a16207;     /* dark amber — electrical */
+  --color-custom: #64748b;    /* cool gray */
 }
 
 html, body, #root {

@@ -10,23 +10,17 @@
  *   3. Update package.json version to 0.<new schema version>.0
  */
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
 
 const migrations: Record<number, Migration> = {
-  // Example for future use:
-  // 1: (data) => {
-  //   // Migrate from schema v1 → v2
-  //   for (const node of data.nodes ?? []) {
-  //     if (node.type === "device") {
-  //       // ... transform data ...
-  //     }
-  //   }
-  //   data.version = 2;
-  //   return data;
-  // },
+  1: (data) => {
+    // v1 → v2: add optional signalColors field (no data transform needed)
+    data.version = 2;
+    return data;
+  },
 };
 
 /**

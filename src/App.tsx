@@ -24,6 +24,7 @@ import OffsetEdgeComponent from "./components/OffsetEdge";
 import SnapGuides from "./components/SnapGuides";
 import DeviceLibrary from "./components/DeviceLibrary";
 import DeviceEditor from "./components/DeviceEditor";
+import SignalColorPanel from "./components/SignalColorPanel";
 import Toolbar from "./components/Toolbar";
 import { computeSnap, enforceMinSpacing, type GuideLine } from "./snapUtils";
 import type { DeviceTemplate, SchematicNode } from "./types";
@@ -672,6 +673,9 @@ export default function App() {
         </div>
         <div className="flex-1">
           <SchematicCanvas />
+        </div>
+        <div data-print-hide>
+          <SignalColorPanel />
         </div>
       </div>
       <DeviceEditor />

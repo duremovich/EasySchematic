@@ -82,6 +82,7 @@ export interface SchematicFile {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
   customTemplates?: DeviceTemplate[];
+  signalColors?: Partial<Record<SignalType, string>>;
 }
 
 export const SIGNAL_COLORS: Record<SignalType, string> = {
