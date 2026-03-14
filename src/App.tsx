@@ -18,6 +18,7 @@ import {
 import { useSchematicStore, GRID_SIZE } from "./store";
 import DeviceNodeComponent from "./components/DeviceNode";
 import RoomNodeComponent from "./components/RoomNode";
+import NoteNodeComponent from "./components/NoteNode";
 import OffsetEdgeComponent from "./components/OffsetEdge";
 import SnapGuides from "./components/SnapGuides";
 import DeviceLibrary from "./components/DeviceLibrary";
@@ -29,6 +30,7 @@ import type { ConnectionEdge, DeviceTemplate, SchematicNode } from "./types";
 const nodeTypes: NodeTypes = {
   device: DeviceNodeComponent,
   room: RoomNodeComponent,
+  note: NoteNodeComponent,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -45,6 +47,7 @@ function SchematicCanvas() {
     isValidConnection,
     addDevice,
     addRoom,
+    addNote,
     removeSelected,
     copySelected,
     pasteClipboard,
@@ -129,6 +132,17 @@ function SchematicCanvas() {
     (event: DragEvent) => {
       event.preventDefault();
 
+      // Handle note drops
+      const noteData = event.dataTransfer.getData("application/easyschematic-note");
+      if (noteData) {
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+        addNote(position);
+        return;
+      }
+
       // Handle room drops
       const roomData = event.dataTransfer.getData("application/easyschematic-room");
       if (roomData) {
@@ -163,7 +177,7 @@ function SchematicCanvas() {
         }
       }, 0);
     },
-    [screenToFlowPosition, addDevice, addRoom, reparentNode],
+    [screenToFlowPosition, addDevice, addRoom, addNote, reparentNode],
   );
 
   const onReconnectStart = useCallback(() => {

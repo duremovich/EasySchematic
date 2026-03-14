@@ -56,7 +56,7 @@ export function buildObstacles(
 ): { rects: Rect[] } {
   const rects: Rect[] = [];
   for (const n of nodes) {
-    if (n.type === "room") continue;
+    if (n.type === "room" || n.type === "note") continue;
     const pos = getAbsPos(n);
     const w = n.measured?.width ?? 180;
     const h = n.measured?.height ?? 60;

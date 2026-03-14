@@ -236,25 +236,30 @@ export default function DeviceLibrary() {
         )}
       </div>
 
-      {/* Quick Create */}
-      <div className="px-2 py-1.5 border-b border-[var(--color-border)]">
-        <button
-          onClick={() => setShowRouterCreator(true)}
-          className="w-full flex items-center gap-2 px-2 py-1.5 rounded border border-dashed border-blue-400/50 bg-blue-50/50 hover:bg-blue-50 text-xs text-blue-600 hover:text-blue-700 cursor-pointer transition-colors"
-        >
-          <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-            <rect x="1" y="3" width="14" height="10" rx="1.5" />
-            <line x1="1" y1="8" x2="15" y2="8" />
-            <line x1="5.5" y1="3" x2="5.5" y2="13" />
-          </svg>
-          Quick Create Router
-        </button>
-      </div>
-
       {showRouterCreator && <RouterCreator onClose={() => setShowRouterCreator(false)} />}
 
       {/* Device list */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
+        {/* Note draggable */}
+        {(!query || "note".includes(query.toLowerCase())) && (
+          <div
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("application/easyschematic-note", "1");
+              e.dataTransfer.effectAllowed = "move";
+            }}
+            className="flex items-center gap-2 px-2 py-1.5 rounded border border-amber-300/60 bg-amber-50 hover:bg-amber-100/60 cursor-grab active:cursor-grabbing transition-colors"
+          >
+            <svg viewBox="0 0 16 16" className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M3 2h7l4 4v8a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" />
+              <path d="M10 2v4h4" />
+              <line x1="5" y1="8" x2="11" y2="8" />
+              <line x1="5" y1="11" x2="9" y2="11" />
+            </svg>
+            <span className="text-xs text-[var(--color-text)]">Note</span>
+          </div>
+        )}
+
         {/* Room draggable */}
         {(!query || "room".includes(query.toLowerCase())) && (
           <div
@@ -273,6 +278,21 @@ export default function DeviceLibrary() {
             </svg>
             <span className="text-xs text-[var(--color-text)]">Room</span>
           </div>
+        )}
+
+        {/* Quick Create Router */}
+        {(!query || "router".includes(query.toLowerCase())) && (
+          <button
+            onClick={() => setShowRouterCreator(true)}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded border border-dashed border-blue-400/50 bg-blue-50/50 hover:bg-blue-50 text-xs text-blue-600 hover:text-blue-700 cursor-pointer transition-colors"
+          >
+            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <rect x="1" y="3" width="14" height="10" rx="1.5" />
+              <line x1="1" y1="8" x2="15" y2="8" />
+              <line x1="5.5" y1="3" x2="5.5" y2="13" />
+            </svg>
+            Quick Create Router
+          </button>
         )}
 
         {(query ? filteredCustom.length > 0 : customTemplates.length > 0) && (

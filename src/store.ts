@@ -65,6 +65,8 @@ interface SchematicState {
   setEditingNodeId: (id: string | null) => void;
   addRoom: (label: string, position: { x: number; y: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
+  addNote: (position: { x: number; y: number }) => void;
+  updateNoteHtml: (nodeId: string, html: string) => void;
   reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }) => void;
 
   // Undo/Redo
@@ -111,6 +113,11 @@ function nextRoomId(): string {
   return `room-${++roomIdCounter}`;
 }
 
+let noteIdCounter = 0;
+function nextNoteId(): string {
+  return `note-${++noteIdCounter}`;
+}
+
 /** Sync counters so new IDs never collide with existing ones. */
 function syncCounters(nodes: SchematicNode[], edges: ConnectionEdge[]) {
   for (const n of nodes) {
@@ -118,6 +125,8 @@ function syncCounters(nodes: SchematicNode[], edges: ConnectionEdge[]) {
     if (dm) nodeIdCounter = Math.max(nodeIdCounter, Number(dm[1]));
     const rm = n.id.match(/^room-(\d+)$/);
     if (rm) roomIdCounter = Math.max(roomIdCounter, Number(rm[1]));
+    const nm = n.id.match(/^note-(\d+)$/);
+    if (nm) noteIdCounter = Math.max(noteIdCounter, Number(nm[1]));
   }
   for (const e of edges) {
     const m = e.id.match(/^edge-(\d+)$/);
@@ -584,6 +593,31 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         if (n.id !== nodeId) return n;
         return { ...n, data: { ...n.data, label } } as SchematicNode;
       }),
+    });
+    get().saveToLocalStorage();
+  },
+
+  addNote: (position) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const newNote: SchematicNode = {
+      id: nextNoteId(),
+      type: "note",
+      position,
+      data: { html: "" },
+      style: { width: 200, height: 100 },
+    };
+    set({ nodes: [...state.nodes, newNote] });
+    get().saveToLocalStorage();
+  },
+
+  updateNoteHtml: (nodeId, html) => {
+    set({
+      nodes: get().nodes.map((n) =>
+        n.id === nodeId && n.type === "note"
+          ? { ...n, data: { ...n.data, html } } as SchematicNode
+          : n,
+      ),
     });
     get().saveToLocalStorage();
   },

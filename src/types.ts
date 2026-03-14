@@ -51,7 +51,15 @@ export interface RoomData {
 
 export type RoomNode = Node<RoomData, "room">;
 
-export type SchematicNode = DeviceNode | RoomNode;
+export interface NoteData {
+  [key: string]: unknown;
+  /** HTML content from contentEditable */
+  html: string;
+}
+
+export type NoteNode = Node<NoteData, "note">;
+
+export type SchematicNode = DeviceNode | RoomNode | NoteNode;
 
 export interface ConnectionData {
   [key: string]: unknown;
