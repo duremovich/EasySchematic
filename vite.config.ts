@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import os from 'os'
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync } from 'fs'
 import { execSync } from 'child_process'
 
 // Put Vite's cache in temp dir to avoid Dropbox file-locking conflicts
