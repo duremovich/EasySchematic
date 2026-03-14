@@ -9,17 +9,19 @@ const APP_VERSION = __APP_VERSION__;
 const BUILD_HASH = __BUILD_HASH__;
 
 const CATEGORIES: { label: string; types: string[] }[] = [
-  { label: "Sources", types: ["camera", "ptz-camera", "graphics", "computer"] },
+  { label: "Sources", types: ["camera", "ptz-camera", "graphics", "computer", "media-player"] },
   { label: "Peripherals", types: ["mouse", "keyboard"] },
   { label: "Switching", types: ["switcher", "router"] },
-  { label: "Processing", types: ["converter", "adapter", "frame-sync", "multiviewer"] },
+  { label: "Processing", types: ["converter", "scaler", "adapter", "frame-sync", "multiviewer"] },
   { label: "Distribution", types: ["da", "video-wall-controller"] },
   { label: "Monitoring", types: ["monitor", "tv"] },
   { label: "Projection", types: ["projector"] },
   { label: "Recording", types: ["recorder"] },
-  { label: "Audio", types: ["audio-mixer"] },
-  { label: "Networking", types: ["ndi-encoder", "ndi-decoder", "network-switch"] },
-  { label: "KVM / Extenders", types: ["kvm-extender"] },
+  { label: "Audio", types: ["audio-mixer", "audio-embedder", "audio-interface", "wireless-mic-receiver"] },
+  { label: "Networking", types: ["ndi-encoder", "ndi-decoder", "network-switch", "streaming-encoder", "av-over-ip"] },
+  { label: "KVM / Extenders", types: ["kvm-extender", "hdbaset-extender"] },
+  { label: "Wireless", types: ["wireless-video", "intercom"] },
+  { label: "Control", types: ["control-processor", "tally-system"] },
 ];
 
 function onDragStart(event: DragEvent, template: DeviceTemplate) {

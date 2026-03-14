@@ -186,6 +186,35 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Loop", "sdi", "output"),
     ],
   },
+  // Decimator MD-HX — Scaler / Cross Converter
+  {
+    deviceType: "scaler",
+    label: "Decimator MD-HX",
+    searchTerms: ["decimator", "cross converter", "scaler", "upconverter", "downconverter"],
+    ports: [
+      port("SDI In", "sdi", "input"),
+      port("HDMI In", "hdmi", "input"),
+      port("SDI Out 1", "sdi", "output"),
+      port("SDI Out 2", "sdi", "output"),
+      port("HDMI Out", "hdmi", "output"),
+    ],
+  },
+  // Extron DSC 301 HD — Presentation Scaler
+  {
+    deviceType: "scaler",
+    label: "Extron DSC 301 HD",
+    searchTerms: ["extron", "presentation scaler", "vga", "scan converter"],
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("VGA In", "custom", "input"),
+      port("Composite In", "custom", "input"),
+      port("Audio In 1", "analog-audio", "input"),
+      port("Audio In 2", "analog-audio", "input"),
+      port("Audio In 3", "analog-audio", "input"),
+      port("HDMI Out", "hdmi", "output"),
+      port("RS-232", "serial", "bidirectional"),
+    ],
+  },
   // Converter
   {
     deviceType: "converter",
@@ -609,5 +638,241 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Network", "ethernet", "bidirectional"),
     ],
     searchTerms: ["Adder", "AdderLink", "XDIP", "KVM", "extender", "IP", "matrix"],
+  },
+
+  // HDBaseT Extenders
+  // Extron DTP T HD2 4K 230 — HDBaseT Transmitter
+  {
+    deviceType: "hdbaset-extender",
+    label: "Extron DTP T HD2 4K",
+    searchTerms: ["extron", "dtp", "hdbaset", "transmitter", "extender"],
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("HDMI Loop", "hdmi", "output"),
+      port("HDBaseT Out", "hdbaset", "output"),
+      port("RS-232", "serial", "bidirectional"),
+    ],
+  },
+  // Extron DTP R HD2 4K 230 — HDBaseT Receiver
+  {
+    deviceType: "hdbaset-extender",
+    label: "Extron DTP R HD2 4K",
+    searchTerms: ["extron", "dtp", "hdbaset", "receiver", "extender"],
+    ports: [
+      port("HDBaseT In", "hdbaset", "input"),
+      port("HDMI Out", "hdmi", "output"),
+      port("RS-232", "serial", "bidirectional"),
+    ],
+  },
+
+  // Wireless Video
+  // Teradek Bolt 4K 750 TX — Wireless Video Transmitter
+  {
+    deviceType: "wireless-video",
+    label: "Teradek Bolt 4K TX",
+    searchTerms: ["teradek", "bolt", "wireless", "transmitter", "zero delay"],
+    ports: [
+      port("SDI In", "sdi", "input"),
+      port("HDMI In", "hdmi", "input"),
+      port("SDI Loop", "sdi", "output"),
+    ],
+  },
+  // Teradek Bolt 4K 750 RX — Wireless Video Receiver
+  {
+    deviceType: "wireless-video",
+    label: "Teradek Bolt 4K RX",
+    searchTerms: ["teradek", "bolt", "wireless", "receiver", "zero delay"],
+    ports: [
+      port("SDI Out 1", "sdi", "output"),
+      port("SDI Out 2", "sdi", "output"),
+      port("HDMI Out", "hdmi", "output"),
+    ],
+  },
+
+  // Intercom
+  // ClearCom FreeSpeak II Base Station
+  {
+    deviceType: "intercom",
+    label: "ClearCom FreeSpeak II",
+    searchTerms: ["clearcom", "clear-com", "freespeak", "wireless intercom", "base station"],
+    ports: [
+      port("Partyline 1", "analog-audio", "bidirectional"),
+      port("Partyline 2", "analog-audio", "bidirectional"),
+      port("Partyline 3", "analog-audio", "bidirectional"),
+      port("Partyline 4", "analog-audio", "bidirectional"),
+      port("4-Wire 1", "analog-audio", "bidirectional"),
+      port("4-Wire 2", "analog-audio", "bidirectional"),
+      port("Program In", "analog-audio", "input"),
+      port("Stage Announce", "analog-audio", "output"),
+      port("GPIO", "gpio", "bidirectional"),
+      port("LAN 1", "ethernet", "bidirectional"),
+      port("LAN 2", "ethernet", "bidirectional"),
+    ],
+  },
+
+  // Audio Embedders / De-Embedders
+  // BMD Teranex Mini SDI to Audio 12G — Audio De-Embedder
+  {
+    deviceType: "audio-embedder",
+    label: "BMD SDI→Audio 12G",
+    searchTerms: ["blackmagic", "teranex", "de-embedder", "deembed", "audio extract"],
+    ports: [
+      port("SDI In", "sdi", "input"),
+      port("SDI Out", "sdi", "output"),
+      port("Analog Out L", "analog-audio", "output"),
+      port("Analog Out R", "analog-audio", "output"),
+      port("AES Out 1-2", "aes", "output"),
+      port("AES Out 3-4", "aes", "output"),
+    ],
+  },
+  // BMD Teranex Mini Audio to SDI 12G — Audio Embedder
+  {
+    deviceType: "audio-embedder",
+    label: "BMD Audio→SDI 12G",
+    searchTerms: ["blackmagic", "teranex", "embedder", "audio embed"],
+    ports: [
+      port("SDI In", "sdi", "input"),
+      port("Analog In L", "analog-audio", "input"),
+      port("Analog In R", "analog-audio", "input"),
+      port("AES In 1-2", "aes", "input"),
+      port("AES In 3-4", "aes", "input"),
+      port("SDI Out", "sdi", "output"),
+    ],
+  },
+
+  // Streaming Encoder
+  // Teradek Prism Flex — Streaming Encoder/Decoder
+  {
+    deviceType: "streaming-encoder",
+    label: "Teradek Prism Flex",
+    searchTerms: ["teradek", "prism", "streaming", "encoder", "rtmp", "srt", "hevc"],
+    ports: [
+      port("SDI In", "sdi", "input"),
+      port("HDMI In", "hdmi", "input"),
+      port("SDI Loop", "sdi", "output"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("USB 1", "usb", "bidirectional"),
+      port("USB 2", "usb", "bidirectional"),
+    ],
+  },
+
+  // Media Players
+  // BrightSign XD1035 — Digital Signage Media Player
+  {
+    deviceType: "media-player",
+    label: "BrightSign XD1035",
+    searchTerms: ["brightsign", "digital signage", "media player", "signage"],
+    ports: [
+      port("HDMI Out", "hdmi", "output"),
+      port("Audio Out", "analog-audio", "output"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("USB-A", "usb", "bidirectional"),
+      port("USB-C", "usb", "bidirectional"),
+      port("RS-232", "serial", "bidirectional"),
+      port("GPIO", "gpio", "bidirectional"),
+    ],
+  },
+
+  // Wireless Microphone Receivers
+  // Shure ULXD4Q — Quad Wireless Mic Receiver
+  {
+    deviceType: "wireless-mic-receiver",
+    label: "Shure ULXD4Q",
+    searchTerms: ["shure", "ulx-d", "wireless", "microphone", "receiver", "quad"],
+    ports: [
+      port("Analog Out 1", "analog-audio", "output"),
+      port("Analog Out 2", "analog-audio", "output"),
+      port("Analog Out 3", "analog-audio", "output"),
+      port("Analog Out 4", "analog-audio", "output"),
+      port("Dante 1", "dante", "bidirectional"),
+      port("Dante 2", "dante", "bidirectional"),
+    ],
+  },
+  // Sennheiser EW-DX EM 4 Dante — Quad Wireless Mic Receiver
+  {
+    deviceType: "wireless-mic-receiver",
+    label: "Sennheiser EW-DX EM 4",
+    searchTerms: ["sennheiser", "ew-dx", "wireless", "microphone", "receiver", "dante"],
+    ports: [
+      port("Analog Out 1", "analog-audio", "output"),
+      port("Analog Out 2", "analog-audio", "output"),
+      port("Analog Out 3", "analog-audio", "output"),
+      port("Analog Out 4", "analog-audio", "output"),
+      port("Dante 1", "dante", "bidirectional"),
+      port("Dante 2", "dante", "bidirectional"),
+      port("Ethernet", "ethernet", "bidirectional"),
+    ],
+  },
+
+  // Audio Interfaces
+  // Focusrite RedNet A16R MkII — Dante Audio Interface
+  {
+    deviceType: "audio-interface",
+    label: "Focusrite RedNet A16R",
+    searchTerms: ["focusrite", "rednet", "dante", "audio interface", "a16r"],
+    ports: [
+      port("Analog In 1-8", "analog-audio", "input"),
+      port("Analog In 9-16", "analog-audio", "input"),
+      port("AES In", "aes", "input"),
+      port("Analog Out 1-8", "analog-audio", "output"),
+      port("Analog Out 9-16", "analog-audio", "output"),
+      port("AES Out", "aes", "output"),
+      port("Dante Primary", "dante", "bidirectional"),
+      port("Dante Secondary", "dante", "bidirectional"),
+      port("Word Clock In", "genlock", "input"),
+      port("Word Clock Out", "genlock", "output"),
+    ],
+  },
+
+  // Control Processors
+  // Crestron CP4N — Control Processor
+  {
+    deviceType: "control-processor",
+    label: "Crestron CP4N",
+    searchTerms: ["crestron", "control", "processor", "automation", "cp4"],
+    ports: [
+      port("LAN", "ethernet", "bidirectional"),
+      port("Control Subnet", "ethernet", "bidirectional"),
+      port("COM (RS-232)", "serial", "bidirectional"),
+      port("IR/Serial", "serial", "output"),
+      port("Relay", "gpio", "output"),
+      port("Versiport I/O", "gpio", "bidirectional"),
+      port("Cresnet", "custom", "bidirectional"),
+      port("USB", "usb", "bidirectional"),
+    ],
+  },
+
+  // Tally Systems
+  // BMD GPI and Tally Interface
+  {
+    deviceType: "tally-system",
+    label: "BMD GPI & Tally",
+    searchTerms: ["blackmagic", "tally", "gpi", "gpio", "indicator"],
+    ports: [
+      port("Ethernet In", "ethernet", "bidirectional"),
+      port("Ethernet Loop", "ethernet", "bidirectional"),
+      port("GPI In (8ch)", "gpio", "input"),
+      port("GPI Out (8ch)", "gpio", "output"),
+    ],
+  },
+
+  // AV-over-IP
+  // Crestron DM-NVX-351 — AV-over-IP Encoder/Decoder
+  {
+    deviceType: "av-over-ip",
+    label: "Crestron DM-NVX-351",
+    searchTerms: ["crestron", "nvx", "av-over-ip", "networked av", "encoder", "decoder"],
+    ports: [
+      port("HDMI In 1", "hdmi", "input"),
+      port("HDMI In 2", "hdmi", "input"),
+      port("HDMI Out", "hdmi", "output"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("SFP", "fiber", "bidirectional"),
+      port("Analog Audio", "analog-audio", "bidirectional"),
+      port("USB Host", "usb", "bidirectional"),
+      port("USB Device", "usb", "bidirectional"),
+    ],
   },
 ];
