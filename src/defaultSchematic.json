@@ -1,0 +1,2257 @@
+{
+  "version": 1,
+  "name": "Untitled Schematic",
+  "nodes": [
+    {
+      "id": "room-5",
+      "type": "room",
+      "position": {
+        "x": -820,
+        "y": 1080
+      },
+      "data": {
+        "label": "TECH TABLE"
+      },
+      "style": {
+        "width": 400,
+        "height": 300
+      },
+      "zIndex": -1,
+      "measured": {
+        "width": 1214,
+        "height": 674
+      },
+      "selected": false,
+      "dragging": false,
+      "width": 1214,
+      "height": 674,
+      "resizing": false
+    },
+    {
+      "id": "room-4",
+      "type": "room",
+      "position": {
+        "x": 720,
+        "y": -380
+      },
+      "data": {
+        "label": "Stage"
+      },
+      "style": {
+        "width": 400,
+        "height": 300
+      },
+      "zIndex": -1,
+      "measured": {
+        "width": 798,
+        "height": 2132
+      },
+      "selected": false,
+      "dragging": false,
+      "width": 798,
+      "height": 2132,
+      "resizing": false
+    },
+    {
+      "id": "room-3",
+      "type": "room",
+      "position": {
+        "x": -1180,
+        "y": -380
+      },
+      "data": {
+        "label": "Booth"
+      },
+      "style": {
+        "width": 400,
+        "height": 300
+      },
+      "zIndex": -1,
+      "measured": {
+        "width": 1665,
+        "height": 1247
+      },
+      "selected": false,
+      "dragging": false,
+      "width": 1665,
+      "height": 1247,
+      "resizing": false
+    },
+    {
+      "id": "device-33",
+      "type": "device",
+      "position": {
+        "x": 580,
+        "y": 120
+      },
+      "data": {
+        "label": "Mac Studio (M4)",
+        "deviceType": "computer",
+        "ports": [
+          {
+            "id": "p1773360118182-0",
+            "label": "TB5 1",
+            "signalType": "thunderbolt",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360118182-1",
+            "label": "TB5 2",
+            "signalType": "thunderbolt",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360118182-2",
+            "label": "TB5 3",
+            "signalType": "thunderbolt",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360118182-3",
+            "label": "TB5 4",
+            "signalType": "thunderbolt",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360118182-4",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360118182-7",
+            "label": "USB-C Front 1",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773360118182-8",
+            "label": "USB-C Front 2",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773360118182-9",
+            "label": "Ethernet",
+            "signalType": "ethernet",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360118182-5",
+            "label": "USB-A 1",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773360118182-6",
+            "label": "USB-A 2",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 242
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-36",
+      "type": "device",
+      "position": {
+        "x": 1020,
+        "y": 120
+      },
+      "data": {
+        "label": "TB → HDMI Adapter 1",
+        "deviceType": "adapter",
+        "ports": [
+          {
+            "id": "p1773360222505-0",
+            "label": "TB In",
+            "signalType": "thunderbolt",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360222505-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "TB → HDMI Adapter"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-37",
+      "type": "device",
+      "position": {
+        "x": 1020,
+        "y": 220
+      },
+      "data": {
+        "label": "TB → HDMI Adapter 2",
+        "deviceType": "adapter",
+        "ports": [
+          {
+            "id": "p1773360225872-0",
+            "label": "TB In",
+            "signalType": "thunderbolt",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360225872-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "TB → HDMI Adapter"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-38",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 1320
+      },
+      "data": {
+        "label": "Panasonic DZ13K",
+        "deviceType": "projector",
+        "ports": [
+          {
+            "id": "p1773360337151-0",
+            "label": "RGBHV In (BNC)",
+            "signalType": "custom",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-1",
+            "label": "RGB In (VGA)",
+            "signalType": "custom",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-2",
+            "label": "DVI-D In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-3",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-4",
+            "label": "SDI In 1",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-5",
+            "label": "SDI In 2 (3G)",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-6",
+            "label": "Composite In",
+            "signalType": "custom",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-7",
+            "label": "RS-232 In",
+            "signalType": "serial",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-8",
+            "label": "LAN",
+            "signalType": "ethernet",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360337151-9",
+            "label": "RS-232 Out",
+            "signalType": "serial",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "Panasonic DZ13K"
+      },
+      "parentId": "room-4",
+      "measured": {
+        "width": 180,
+        "height": 222
+      },
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-39",
+      "type": "device",
+      "position": {
+        "x": 440,
+        "y": 140
+      },
+      "data": {
+        "label": "TV 1",
+        "deviceType": "tv",
+        "ports": [
+          {
+            "id": "p1773360347184-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          }
+        ],
+        "baseLabel": "TV"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-40",
+      "type": "device",
+      "position": {
+        "x": 440,
+        "y": 280
+      },
+      "data": {
+        "label": "TV 2",
+        "deviceType": "tv",
+        "ports": [
+          {
+            "id": "p1773360349704-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          }
+        ],
+        "baseLabel": "TV"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-41",
+      "type": "device",
+      "position": {
+        "x": 440,
+        "y": 420
+      },
+      "data": {
+        "label": "TV 3",
+        "deviceType": "tv",
+        "ports": [
+          {
+            "id": "p1773360350057-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          }
+        ],
+        "baseLabel": "TV"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-42",
+      "type": "device",
+      "position": {
+        "x": 440,
+        "y": 540
+      },
+      "data": {
+        "label": "TV 4",
+        "deviceType": "tv",
+        "ports": [
+          {
+            "id": "p1773360350281-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          }
+        ],
+        "baseLabel": "TV"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-43",
+      "type": "device",
+      "position": {
+        "x": 440,
+        "y": 680
+      },
+      "data": {
+        "label": "TV 5",
+        "deviceType": "tv",
+        "ports": [
+          {
+            "id": "p1773360350504-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          }
+        ],
+        "baseLabel": "TV"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-44",
+      "type": "device",
+      "position": {
+        "x": 440,
+        "y": 800
+      },
+      "data": {
+        "label": "TV 6",
+        "deviceType": "tv",
+        "ports": [
+          {
+            "id": "p1773360350730-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          }
+        ],
+        "baseLabel": "TV"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-45",
+      "type": "device",
+      "position": {
+        "x": 440,
+        "y": 920
+      },
+      "data": {
+        "label": "TV 7",
+        "deviceType": "tv",
+        "ports": [
+          {
+            "id": "p1773360351145-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          }
+        ],
+        "baseLabel": "TV"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-46",
+      "type": "device",
+      "position": {
+        "x": 440,
+        "y": 1120
+      },
+      "data": {
+        "label": "TV 8",
+        "deviceType": "tv",
+        "ports": [
+          {
+            "id": "p1773360351528-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          }
+        ],
+        "baseLabel": "TV"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-47",
+      "type": "device",
+      "position": {
+        "x": 1380,
+        "y": 240
+      },
+      "data": {
+        "label": "Datapath FX4 SDI 1",
+        "deviceType": "video-wall-controller",
+        "ports": [
+          {
+            "id": "p1773360761700-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360761700-1",
+            "label": "DP In",
+            "signalType": "displayport",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360761700-2",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360761700-3",
+            "label": "Genlock In",
+            "signalType": "genlock",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360761700-4",
+            "label": "SDI Out 1",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360761700-5",
+            "label": "SDI Out 2",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360761700-6",
+            "label": "SDI Out 3",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360761700-7",
+            "label": "SDI Out 4",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360761700-8",
+            "label": "DP Loop",
+            "signalType": "displayport",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "Datapath FX4 SDI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 142
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-48",
+      "type": "device",
+      "position": {
+        "x": 1380,
+        "y": 500
+      },
+      "data": {
+        "label": "Datapath FX4 SDI 2",
+        "deviceType": "video-wall-controller",
+        "ports": [
+          {
+            "id": "p1773360771090-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360771090-1",
+            "label": "DP In",
+            "signalType": "displayport",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360771090-2",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360771090-3",
+            "label": "Genlock In",
+            "signalType": "genlock",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360771090-4",
+            "label": "SDI Out 1",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360771090-5",
+            "label": "SDI Out 2",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360771090-6",
+            "label": "SDI Out 3",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360771090-7",
+            "label": "SDI Out 4",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360771090-8",
+            "label": "DP Loop",
+            "signalType": "displayport",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "Datapath FX4 SDI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 142
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-49",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 140
+      },
+      "data": {
+        "label": "BMD SDI→HDMI 1",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773360933938-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360933938-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360933938-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD SDI→HDMI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-4"
+    },
+    {
+      "id": "device-50",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 280
+      },
+      "data": {
+        "label": "BMD SDI→HDMI 2",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773360956827-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360956827-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360956827-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD SDI→HDMI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-4"
+    },
+    {
+      "id": "device-51",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 420
+      },
+      "data": {
+        "label": "BMD SDI→HDMI 3",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773360957146-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360957146-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360957146-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD SDI→HDMI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-4"
+    },
+    {
+      "id": "device-52",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 540
+      },
+      "data": {
+        "label": "BMD SDI→HDMI 4",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773360957595-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360957595-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360957595-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD SDI→HDMI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-4"
+    },
+    {
+      "id": "device-53",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 680
+      },
+      "data": {
+        "label": "BMD SDI→HDMI 5",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773360957946-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360957946-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360957946-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD SDI→HDMI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-4"
+    },
+    {
+      "id": "device-54",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 800
+      },
+      "data": {
+        "label": "BMD SDI→HDMI 6",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773360958363-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360958363-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360958363-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD SDI→HDMI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-4"
+    },
+    {
+      "id": "device-55",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 920
+      },
+      "data": {
+        "label": "BMD SDI→HDMI 7",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773360959547-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360959547-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360959547-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD SDI→HDMI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-4"
+    },
+    {
+      "id": "device-56",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 1120
+      },
+      "data": {
+        "label": "BMD SDI→HDMI 8",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773360960220-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773360960220-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773360960220-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD SDI→HDMI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-4"
+    },
+    {
+      "id": "device-60",
+      "type": "device",
+      "position": {
+        "x": 940,
+        "y": 820
+      },
+      "data": {
+        "label": "Ethernet Switch (8-port)",
+        "deviceType": "network-switch",
+        "ports": [
+          {
+            "id": "p1773415859541-0",
+            "label": "Port 1",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773415859541-1",
+            "label": "Port 2",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773415859541-2",
+            "label": "Port 3",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773415859541-3",
+            "label": "Port 4",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773415859541-4",
+            "label": "Port 5",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773415859541-5",
+            "label": "Port 6",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773415859541-6",
+            "label": "Port 7",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773415859541-7",
+            "label": "Port 8",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          }
+        ],
+        "baseLabel": "Ethernet Switch (8-port)"
+      },
+      "measured": {
+        "width": 180,
+        "height": 202
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-61",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 1700
+      },
+      "data": {
+        "label": "PTZOptics Move SE 1",
+        "deviceType": "ptz-camera",
+        "ports": [
+          {
+            "id": "p1773416243486-0",
+            "label": "3.5mm Audio In",
+            "signalType": "analog-audio",
+            "direction": "input"
+          },
+          {
+            "id": "p1773416243486-1",
+            "label": "Ethernet",
+            "signalType": "ethernet",
+            "direction": "input"
+          },
+          {
+            "id": "p1773416243486-2",
+            "label": "RS-232 In",
+            "signalType": "serial",
+            "direction": "input"
+          },
+          {
+            "id": "p1773416243486-3",
+            "label": "SDI Out",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773416243486-4",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773416243486-5",
+            "label": "USB-C Out",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773416243486-6",
+            "label": "RS-232 Out",
+            "signalType": "serial",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "PTZOptics Move SE"
+      },
+      "measured": {
+        "width": 180,
+        "height": 122
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-62",
+      "type": "device",
+      "position": {
+        "x": 180,
+        "y": 1900
+      },
+      "data": {
+        "label": "PTZOptics Move SE 2",
+        "deviceType": "ptz-camera",
+        "ports": [
+          {
+            "id": "p1773416246636-0",
+            "label": "3.5mm Audio In",
+            "signalType": "analog-audio",
+            "direction": "input"
+          },
+          {
+            "id": "p1773416246636-1",
+            "label": "Ethernet",
+            "signalType": "ethernet",
+            "direction": "input"
+          },
+          {
+            "id": "p1773416246636-2",
+            "label": "RS-232 In",
+            "signalType": "serial",
+            "direction": "input"
+          },
+          {
+            "id": "p1773416246636-3",
+            "label": "SDI Out",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773416246636-4",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773416246636-5",
+            "label": "USB-C Out",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773416246636-6",
+            "label": "RS-232 Out",
+            "signalType": "serial",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "PTZOptics Move SE"
+      },
+      "measured": {
+        "width": 180,
+        "height": 122
+      },
+      "parentId": "room-4",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-63",
+      "type": "device",
+      "position": {
+        "x": 900,
+        "y": 100
+      },
+      "data": {
+        "label": "Ethernet Switch (4-port)",
+        "deviceType": "network-switch",
+        "ports": [
+          {
+            "id": "p1773416490870-0",
+            "label": "Port 1",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773416490870-1",
+            "label": "Port 2",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773416490870-2",
+            "label": "Port 3",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773416490870-3",
+            "label": "Port 4",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          }
+        ],
+        "baseLabel": "Ethernet Switch (4-port)"
+      },
+      "measured": {
+        "width": 180,
+        "height": 122
+      },
+      "parentId": "room-5",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-64",
+      "type": "device",
+      "position": {
+        "x": 140,
+        "y": 100
+      },
+      "data": {
+        "label": "Designer Computer",
+        "deviceType": "computer",
+        "ports": [
+          {
+            "id": "p1773416651073-0",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773416651073-1",
+            "label": "USB-C",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773416651073-2",
+            "label": "Ethernet",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 102
+      },
+      "parentId": "room-5",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-65",
+      "type": "device",
+      "position": {
+        "x": 140,
+        "y": 400
+      },
+      "data": {
+        "label": "Associate Computer",
+        "deviceType": "computer",
+        "ports": [
+          {
+            "id": "p1773416567045-0",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773416567045-1",
+            "label": "USB-C",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773416567045-2",
+            "label": "Ethernet",
+            "signalType": "ethernet",
+            "direction": "bidirectional"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 102
+      },
+      "parentId": "room-5",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-69",
+      "type": "device",
+      "position": {
+        "x": 1020,
+        "y": 340
+      },
+      "data": {
+        "label": "TB → HDMI Adapter 3",
+        "deviceType": "adapter",
+        "ports": [
+          {
+            "id": "p1773418162658-0",
+            "label": "TB In",
+            "signalType": "thunderbolt",
+            "direction": "input"
+          },
+          {
+            "id": "p1773418162658-1",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "TB → HDMI Adapter"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-70",
+      "type": "device",
+      "position": {
+        "x": 240,
+        "y": 660
+      },
+      "data": {
+        "label": "1920x1080 Monitor",
+        "deviceType": "monitor",
+        "ports": [
+          {
+            "id": "p1773418206517-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773418206517-1",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773418206517-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-3"
+    },
+    {
+      "id": "device-71",
+      "type": "device",
+      "position": {
+        "x": 240,
+        "y": 100
+      },
+      "data": {
+        "label": "Mouse",
+        "deviceType": "mouse",
+        "ports": [
+          {
+            "id": "p1773418394243-0",
+            "label": "USB-A",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          }
+        ],
+        "baseLabel": "Mouse"
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-72",
+      "type": "device",
+      "position": {
+        "x": 240,
+        "y": 220
+      },
+      "data": {
+        "label": "Keyboard",
+        "deviceType": "keyboard",
+        "ports": [
+          {
+            "id": "p1773420485646-0",
+            "label": "USB-A",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 62
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-73",
+      "type": "device",
+      "position": {
+        "x": 1380,
+        "y": 740
+      },
+      "data": {
+        "label": "BMD HDMI→SDI",
+        "deviceType": "converter",
+        "ports": [
+          {
+            "id": "p1773420713933-0",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773420713933-1",
+            "label": "SDI Out",
+            "signalType": "sdi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773420713933-2",
+            "label": "SDI Out 2",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ],
+        "baseLabel": "BMD HDMI→SDI"
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    },
+    {
+      "id": "device-74",
+      "type": "device",
+      "position": {
+        "x": 400,
+        "y": 60
+      },
+      "data": {
+        "label": "1920x1080 Monitor",
+        "deviceType": "monitor",
+        "ports": [
+          {
+            "id": "p1773421719892-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773421719892-1",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773421719892-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-5"
+    },
+    {
+      "id": "device-75",
+      "type": "device",
+      "position": {
+        "x": 400,
+        "y": 300
+      },
+      "data": {
+        "label": "1920x1080 Monitor",
+        "deviceType": "monitor",
+        "ports": [
+          {
+            "id": "p1773421731964-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773421731964-1",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773421731964-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-5"
+    },
+    {
+      "id": "note-1",
+      "type": "note",
+      "position": {
+        "x": -700,
+        "y": 580
+      },
+      "data": {
+        "html": "<font size=\"5\">WELCOME TO EASY SCHEMATIC!</font>"
+      },
+      "style": {
+        "width": 200,
+        "height": 100
+      },
+      "measured": {
+        "width": 380,
+        "height": 60
+      },
+      "selected": false,
+      "width": 380,
+      "height": 60,
+      "resizing": false
+    },
+    {
+      "id": "device-76",
+      "type": "device",
+      "position": {
+        "x": 240,
+        "y": 780
+      },
+      "data": {
+        "label": "1920x1080 Monitor",
+        "deviceType": "monitor",
+        "ports": [
+          {
+            "id": "p1773507931939-0",
+            "label": "SDI In",
+            "signalType": "sdi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773507931939-1",
+            "label": "HDMI In",
+            "signalType": "hdmi",
+            "direction": "input"
+          },
+          {
+            "id": "p1773507931939-2",
+            "label": "SDI Loop",
+            "signalType": "sdi",
+            "direction": "output"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 82
+      },
+      "selected": false,
+      "dragging": false,
+      "parentId": "room-3"
+    },
+    {
+      "id": "device-77",
+      "type": "device",
+      "position": {
+        "x": 580,
+        "y": 400
+      },
+      "data": {
+        "label": "Mac Studio (M4)",
+        "deviceType": "computer",
+        "ports": [
+          {
+            "id": "p1773508594582-0",
+            "label": "TB5 1",
+            "signalType": "thunderbolt",
+            "direction": "output"
+          },
+          {
+            "id": "p1773508594582-1",
+            "label": "TB5 2",
+            "signalType": "thunderbolt",
+            "direction": "output"
+          },
+          {
+            "id": "p1773508594582-2",
+            "label": "TB5 3",
+            "signalType": "thunderbolt",
+            "direction": "output"
+          },
+          {
+            "id": "p1773508594582-3",
+            "label": "TB5 4",
+            "signalType": "thunderbolt",
+            "direction": "output"
+          },
+          {
+            "id": "p1773508594582-4",
+            "label": "HDMI Out",
+            "signalType": "hdmi",
+            "direction": "output"
+          },
+          {
+            "id": "p1773508594582-5",
+            "label": "USB-C Front 1",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773508594582-6",
+            "label": "USB-C Front 2",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773508594582-7",
+            "label": "Ethernet",
+            "signalType": "ethernet",
+            "direction": "output"
+          },
+          {
+            "id": "p1773508594582-8",
+            "label": "USB-A 1",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          },
+          {
+            "id": "p1773508594582-9",
+            "label": "USB-A 2",
+            "signalType": "usb",
+            "direction": "bidirectional"
+          }
+        ]
+      },
+      "measured": {
+        "width": 180,
+        "height": 242
+      },
+      "parentId": "room-3",
+      "selected": false,
+      "dragging": false
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-14",
+      "source": "device-33",
+      "target": "device-36",
+      "sourceHandle": "p1773360118182-0",
+      "targetHandle": "p1773360222505-0",
+      "data": {
+        "signalType": "thunderbolt"
+      },
+      "style": {
+        "stroke": "var(--color-thunderbolt)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-16",
+      "source": "device-36",
+      "target": "device-47",
+      "sourceHandle": "p1773360222505-1",
+      "targetHandle": "p1773360761700-2",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-17",
+      "source": "device-37",
+      "target": "device-48",
+      "sourceHandle": "p1773360225872-1",
+      "targetHandle": "p1773360771090-2",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-18",
+      "source": "device-47",
+      "target": "device-49",
+      "sourceHandle": "p1773360761700-4",
+      "targetHandle": "p1773360933938-0",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-19",
+      "source": "device-47",
+      "target": "device-50",
+      "sourceHandle": "p1773360761700-5",
+      "targetHandle": "p1773360956827-0",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-20",
+      "source": "device-47",
+      "target": "device-51",
+      "sourceHandle": "p1773360761700-6",
+      "targetHandle": "p1773360957146-0",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-21",
+      "source": "device-47",
+      "target": "device-52",
+      "sourceHandle": "p1773360761700-7",
+      "targetHandle": "p1773360957595-0",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-22",
+      "source": "device-48",
+      "target": "device-53",
+      "sourceHandle": "p1773360771090-4",
+      "targetHandle": "p1773360957946-0",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-26",
+      "source": "device-49",
+      "target": "device-39",
+      "sourceHandle": "p1773360933938-1",
+      "targetHandle": "p1773360347184-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-27",
+      "source": "device-50",
+      "target": "device-40",
+      "sourceHandle": "p1773360956827-1",
+      "targetHandle": "p1773360349704-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-28",
+      "source": "device-51",
+      "target": "device-41",
+      "sourceHandle": "p1773360957146-1",
+      "targetHandle": "p1773360350057-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-29",
+      "source": "device-52",
+      "target": "device-42",
+      "sourceHandle": "p1773360957595-1",
+      "targetHandle": "p1773360350281-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-30",
+      "source": "device-53",
+      "target": "device-43",
+      "sourceHandle": "p1773360957946-1",
+      "targetHandle": "p1773360350504-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-31",
+      "source": "device-54",
+      "target": "device-44",
+      "sourceHandle": "p1773360958363-1",
+      "targetHandle": "p1773360350730-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-32",
+      "source": "device-55",
+      "target": "device-45",
+      "sourceHandle": "p1773360959547-1",
+      "targetHandle": "p1773360351145-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-33",
+      "source": "device-56",
+      "target": "device-46",
+      "sourceHandle": "p1773360960220-1",
+      "targetHandle": "p1773360351528-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-34",
+      "source": "device-33",
+      "target": "device-37",
+      "sourceHandle": "p1773360118182-1",
+      "targetHandle": "p1773360225872-0",
+      "data": {
+        "signalType": "thunderbolt"
+      },
+      "style": {
+        "stroke": "var(--color-thunderbolt)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-39",
+      "source": "device-33",
+      "target": "device-60",
+      "sourceHandle": "p1773360118182-9",
+      "targetHandle": "p1773415859541-0-in",
+      "data": {
+        "signalType": "ethernet"
+      },
+      "style": {
+        "stroke": "var(--color-ethernet)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-41",
+      "source": "device-60",
+      "target": "device-62",
+      "sourceHandle": "p1773415859541-6-out",
+      "targetHandle": "p1773416246636-1",
+      "data": {
+        "signalType": "ethernet"
+      },
+      "style": {
+        "stroke": "var(--color-ethernet)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-43",
+      "source": "device-60",
+      "target": "device-38",
+      "sourceHandle": "p1773415859541-4-out",
+      "targetHandle": "p1773360337151-8",
+      "data": {
+        "signalType": "ethernet"
+      },
+      "style": {
+        "stroke": "var(--color-ethernet)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-56",
+      "source": "device-60",
+      "target": "device-63",
+      "sourceHandle": "p1773415859541-7-out",
+      "targetHandle": "p1773416490870-0-in",
+      "data": {
+        "signalType": "ethernet"
+      },
+      "style": {
+        "stroke": "var(--color-ethernet)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-59",
+      "source": "device-65",
+      "target": "device-63",
+      "sourceHandle": "p1773416567045-2-out",
+      "targetHandle": "p1773416490870-3-in",
+      "data": {
+        "signalType": "ethernet"
+      },
+      "style": {
+        "stroke": "var(--color-ethernet)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-60",
+      "source": "device-71",
+      "target": "device-33",
+      "sourceHandle": "p1773418394243-0-out",
+      "targetHandle": "p1773360118182-5-in",
+      "data": {
+        "signalType": "usb"
+      },
+      "style": {
+        "stroke": "var(--color-usb)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-62",
+      "source": "device-48",
+      "target": "device-54",
+      "sourceHandle": "p1773360771090-5",
+      "targetHandle": "p1773360958363-0",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-63",
+      "source": "device-48",
+      "target": "device-55",
+      "sourceHandle": "p1773360771090-6",
+      "targetHandle": "p1773360959547-0",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-64",
+      "source": "device-48",
+      "target": "device-56",
+      "sourceHandle": "p1773360771090-7",
+      "targetHandle": "p1773360960220-0",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-65",
+      "source": "device-69",
+      "target": "device-73",
+      "sourceHandle": "p1773418162658-1",
+      "targetHandle": "p1773420713933-0",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-66",
+      "source": "device-73",
+      "target": "device-38",
+      "sourceHandle": "p1773420713933-1",
+      "targetHandle": "p1773360337151-4",
+      "data": {
+        "signalType": "sdi"
+      },
+      "style": {
+        "stroke": "var(--color-sdi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-67",
+      "source": "device-64",
+      "target": "device-74",
+      "sourceHandle": "p1773416651073-0",
+      "targetHandle": "p1773421719892-1",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-68",
+      "source": "device-65",
+      "target": "device-75",
+      "sourceHandle": "p1773416567045-0",
+      "targetHandle": "p1773421731964-1",
+      "data": {
+        "signalType": "hdmi"
+      },
+      "style": {
+        "stroke": "var(--color-hdmi)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-69",
+      "source": "device-72",
+      "target": "device-33",
+      "sourceHandle": "p1773420485646-0-out",
+      "targetHandle": "p1773360118182-6-in",
+      "data": {
+        "signalType": "usb"
+      },
+      "style": {
+        "stroke": "var(--color-usb)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-70",
+      "source": "device-60",
+      "target": "device-61",
+      "sourceHandle": "p1773415859541-5-out",
+      "targetHandle": "p1773416243486-1",
+      "data": {
+        "signalType": "ethernet"
+      },
+      "style": {
+        "stroke": "var(--color-ethernet)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-71",
+      "source": "device-64",
+      "target": "device-63",
+      "sourceHandle": "p1773416651073-2-out",
+      "targetHandle": "p1773416490870-1-in",
+      "data": {
+        "signalType": "ethernet"
+      },
+      "style": {
+        "stroke": "var(--color-ethernet)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    },
+    {
+      "id": "edge-57",
+      "source": "device-33",
+      "target": "device-69",
+      "sourceHandle": "p1773360118182-2",
+      "targetHandle": "p1773418162658-0",
+      "data": {
+        "signalType": "thunderbolt"
+      },
+      "style": {
+        "stroke": "var(--color-thunderbolt)",
+        "strokeWidth": 2
+      },
+      "selected": false
+    }
+  ],
+  "customTemplates": [
+    {
+      "deviceType": "custom-1773418326697",
+      "label": "1920x1080 Monitor",
+      "ports": [
+        {
+          "id": "tpl-0",
+          "label": "SDI In",
+          "signalType": "sdi",
+          "direction": "input"
+        },
+        {
+          "id": "tpl-1",
+          "label": "HDMI In",
+          "signalType": "hdmi",
+          "direction": "input"
+        },
+        {
+          "id": "tpl-2",
+          "label": "SDI Loop",
+          "signalType": "sdi",
+          "direction": "output"
+        }
+      ]
+    }
+  ]
+}

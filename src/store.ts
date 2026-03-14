@@ -761,8 +761,24 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   loadFromLocalStorage: () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return false;
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        // Load default demo schematic for first-time visitors
+        // Dynamically import to avoid bundling in the critical path
+        import("./defaultSchematic.json").then((mod) => {
+          // Only load if still empty (no race with user actions)
+          if (get().nodes.length > 0) return;
+          const data = migrateSchematic(mod.default) as SchematicFile;
+          snapNodesToGrid(data.nodes);
+          syncCounters(data.nodes, data.edges);
+          set({
+            nodes: data.nodes,
+            edges: data.edges,
+            schematicName: data.name ?? "Demo Schematic",
+          });
+        });
+        return false;
+      }
       const data = migrateSchematic(JSON.parse(raw)) as SchematicFile;
       snapNodesToGrid(data.nodes);
       syncCounters(data.nodes, data.edges);
