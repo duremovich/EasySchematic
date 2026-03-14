@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import {
   ReactFlow,
   Background,
@@ -312,6 +312,27 @@ function SchematicCanvas() {
     [reparentNode],
   );
 
+  // Dynamic minZoom: allow zooming out just enough to see all nodes, with padding
+  const minZoom = useMemo(() => {
+    if (nodes.length === 0) return 0.1;
+    let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
+    for (const n of nodes) {
+      const w = n.measured?.width ?? 180;
+      const h = n.measured?.height ?? 60;
+      left = Math.min(left, n.position.x);
+      top = Math.min(top, n.position.y);
+      right = Math.max(right, n.position.x + w);
+      bottom = Math.max(bottom, n.position.y + h);
+    }
+    const pad = 100;
+    const contentW = right - left + pad * 2;
+    const contentH = bottom - top + pad * 2;
+    // Use window size as viewport approximation
+    const zoomX = window.innerWidth / contentW;
+    const zoomY = window.innerHeight / contentH;
+    return Math.max(0.05, Math.min(zoomX, zoomY) * 0.9);
+  }, [nodes]);
+
   return (
     <ReactFlow
       nodes={nodes}
@@ -335,6 +356,7 @@ function SchematicCanvas() {
       selectionOnDrag={!spaceHeld}
       panOnDrag={spaceHeld ? [0] : [1]}
       fitView
+      minZoom={minZoom}
       elevateNodesOnSelect={false}
       deleteKeyCode={null}
       selectionKeyCode={null}
