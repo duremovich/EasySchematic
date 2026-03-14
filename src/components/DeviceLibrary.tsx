@@ -186,7 +186,8 @@ export default function DeviceLibrary() {
         const filtered = query
           ? all.filter((t) => templateMatchesSearch(t, query))
           : all;
-        return { ...cat, templates: filtered };
+        const sorted = filtered.toSorted((a, b) => a.label.localeCompare(b.label));
+        return { ...cat, templates: sorted };
       }),
     [query],
   );
