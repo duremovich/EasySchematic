@@ -479,18 +479,16 @@ export function computeEdgePath(
     stubTX = mid + 1;
   }
 
-  // Route A* at the actual offset position — no post-hoc shifting.
-  // This ensures the path is validated against obstacles at its real position.
-  const astarSY = sourceY + offset;
-  const astarTY = targetY + offset;
+  // Route A* at handle Y positions — the actual source/target coordinates.
+  // Offset is applied as an X-shift on interior waypoints AFTER routing,
+  // which separates parallel edges' vertical segments without adding turns.
+  const forceOpen = [
+    { x: stubSX, y: sourceY },
+    { x: stubTX, y: targetY },
+  ];
+  const grid = buildSparseGrid(stubSX, sourceY, stubTX, targetY, obstacles, forceOpen);
 
-  // Build grid between the stub points at offset Y positions
-  const grid = buildSparseGrid(stubSX, astarSY, stubTX, astarTY, obstacles, [
-    { x: stubSX, y: astarSY },
-    { x: stubTX, y: astarTY },
-  ]);
-
-  const rawPath = astarOrthogonal(grid, stubSX, astarSY, stubTX, astarTY, obstacles);
+  const rawPath = astarOrthogonal(grid, stubSX, sourceY, stubTX, targetY, obstacles);
   if (!rawPath) {
     return null;
   }
@@ -498,35 +496,21 @@ export function computeEdgePath(
   // Simplify the A* interior path
   const interior = simplifyWaypoints(rawPath);
 
-  // Build the full waypoint list with pinned endpoints and stub transitions.
-  // Endpoints (handle positions) are NEVER offset — they must land exactly on the handle.
+  // Build the full waypoint list.
+  // Endpoints (handle positions) are pinned — they must land exactly on the handle.
+  // Interior waypoints get X-shifted by offset to separate parallel edges.
+  // This moves vertical segments left/right without adding turns.
   const waypoints: Point[] = [];
 
-  // 1. Source handle (pinned)
+  // 1. Source handle (pinned, no offset)
   waypoints.push({ x: sourceX, y: sourceY });
 
-  if (offset !== 0) {
-    // 2. Horizontal stub at handle Y
-    waypoints.push({ x: stubSX, y: sourceY });
-    // 3. Vertical jog to offset lane (stub → A* start)
-    waypoints.push({ x: stubSX, y: astarSY });
-    // 4. Interior A* path (already at offset position, no shifting needed)
-    for (const p of interior) {
-      if (p.x === stubSX && p.y === astarSY) continue; // skip duplicate at start
-      if (p.x === stubTX && p.y === astarTY) continue; // skip duplicate at end
-      waypoints.push(p);
-    }
-    // 5. Vertical jog back from offset lane to handle Y
-    waypoints.push({ x: stubTX, y: astarTY });
-    waypoints.push({ x: stubTX, y: targetY });
-  } else {
-    // No offset — just use interior directly
-    for (const p of interior) {
-      waypoints.push(p);
-    }
+  // 2. Interior A* path with X-offset applied
+  for (const p of interior) {
+    waypoints.push({ x: p.x + offset, y: p.y });
   }
 
-  // 6. Target handle (pinned)
+  // 3. Target handle (pinned, no offset)
   waypoints.push({ x: targetX, y: targetY });
 
   // Simplify again to remove any collinear points from the assembly

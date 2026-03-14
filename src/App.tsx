@@ -23,7 +23,7 @@ import SnapGuides from "./components/SnapGuides";
 import DeviceLibrary from "./components/DeviceLibrary";
 import DeviceEditor from "./components/DeviceEditor";
 import Toolbar from "./components/Toolbar";
-import { computeSnap, type GuideLine } from "./snapUtils";
+import { computeSnap, enforceMinSpacing, type GuideLine } from "./snapUtils";
 import type { ConnectionEdge, DeviceTemplate, SchematicNode } from "./types";
 
 const nodeTypes: NodeTypes = {
@@ -249,6 +249,7 @@ function SchematicCanvas() {
 
   const onNodeDragStart = useCallback(() => {
     pushSnapshot();
+    useSchematicStore.setState({ isDragging: true });
   }, [pushSnapshot]);
 
   const onNodeDrag = useCallback(
@@ -275,17 +276,30 @@ function SchematicCanvas() {
       // Apply final snap so the node lands on the aligned position
       const state = useSchematicStore.getState();
       const snap = computeSnap(draggedNode as SchematicNode, state.nodes);
-      if (snap.x !== draggedNode.position.x || snap.y !== draggedNode.position.y) {
+      let finalX = snap.x;
+      let finalY = snap.y;
+
+      // Enforce minimum spacing so stubs don't land inside neighbor obstacle rects
+      const snappedNode = { ...draggedNode, position: { x: finalX, y: finalY } } as SchematicNode;
+      const spacing = enforceMinSpacing(snappedNode, state.nodes);
+      if (spacing) {
+        finalX = spacing.x;
+        finalY = spacing.y;
+      }
+
+      if (finalX !== draggedNode.position.x || finalY !== draggedNode.position.y) {
         const updated = state.nodes.map((n) =>
-          n.id === draggedNode.id ? { ...n, position: { x: snap.x, y: snap.y } } : n,
+          n.id === draggedNode.id ? { ...n, position: { x: finalX, y: finalY } } : n,
         );
-        useSchematicStore.setState({ nodes: updated as SchematicNode[] });
+        useSchematicStore.setState({ nodes: updated as SchematicNode[], isDragging: false });
+      } else {
+        useSchematicStore.setState({ isDragging: false });
       }
 
       if (draggedNode.type === "room") return;
       // Compute absolute position for reparenting check
-      let absX = snap.x;
-      let absY = snap.y;
+      let absX = finalX;
+      let absY = finalY;
       if (draggedNode.parentId) {
         const parent = state.nodes.find((n) => n.id === draggedNode.parentId);
         if (parent) {

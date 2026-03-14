@@ -1,4 +1,4 @@
-import type { SchematicNode } from "./types";
+import type { DeviceData, SchematicNode } from "./types";
 
 const SNAP_THRESHOLD = 5;
 
@@ -179,4 +179,104 @@ export function computeSnap(
   }
 
   return { x: snappedX, y: snappedY, guides };
+}
+
+// ---------- Minimum spacing enforcement ----------
+
+// Must match pathfinding.ts constants
+const STUB = 30;
+const PAD = 20;
+const ROUTING_GAP = 8; // Buffer so stubs land in the routing channel, not on obstacle boundary
+const STUB_GAP = 6; // Must match OffsetEdge STUB_GAP
+
+/** Count ports on the right side (outputs + bidirectional) */
+function rightPortCount(node: SchematicNode): number {
+  if (node.type === "room") return 0;
+  const ports = (node.data as DeviceData).ports ?? [];
+  return ports.filter((p) => p.direction === "output" || p.direction === "bidirectional").length;
+}
+
+/** Count ports on the left side (inputs + bidirectional) */
+function leftPortCount(node: SchematicNode): number {
+  if (node.type === "room") return 0;
+  const ports = (node.data as DeviceData).ports ?? [];
+  return ports.filter((p) => p.direction === "input" || p.direction === "bidirectional").length;
+}
+
+/** Max stub spread for N ports on a side: (N-1)/2 * STUB_GAP */
+function maxSpread(portCount: number): number {
+  return portCount <= 1 ? 0 : ((portCount - 1) / 2) * STUB_GAP;
+}
+
+/**
+ * After a node is dropped, check if it's too close to any neighbor
+ * for stubs to clear obstacle rects. If so, return a corrected position
+ * that scoots the node to the minimum safe distance.
+ *
+ * Returns null if no correction is needed.
+ */
+export function enforceMinSpacing(
+  draggedNode: SchematicNode,
+  allNodes: SchematicNode[],
+): { x: number; y: number } | null {
+  if (draggedNode.type === "room") return null;
+
+  const dragged = nodeRect(draggedNode);
+  let newX = draggedNode.position.x;
+  let newY = draggedNode.position.y;
+  let changed = false;
+
+  for (const other of allNodes) {
+    if (other.id === draggedNode.id) continue;
+    if (other.type === "room") continue;
+    if (other.parentId !== draggedNode.parentId) continue;
+
+    const or = nodeRect(other);
+
+    // Only enforce horizontal spacing when the devices' Y ranges overlap
+    // (otherwise they're stacked vertically and stubs don't conflict)
+    const yOverlap = dragged.top < or.bottom + PAD && dragged.bottom > or.top - PAD;
+    if (!yOverlap) continue;
+
+    // Determine which side faces which based on center positions
+    const draggedRight = newX + (dragged.right - dragged.left);
+
+    if (newX < or.left) {
+      // Dragged is to the LEFT of other
+      const spreadA = maxSpread(rightPortCount(draggedNode));
+      const spreadB = maxSpread(leftPortCount(other));
+      const minGap = STUB + PAD + ROUTING_GAP + Math.max(spreadA, spreadB);
+      const currentGap = or.left - draggedRight;
+      if (currentGap < minGap) {
+        newX -= (minGap - currentGap);
+        changed = true;
+      }
+    } else if (newX >= or.right) {
+      // Dragged is to the RIGHT of other
+      const spreadA = maxSpread(leftPortCount(draggedNode));
+      const spreadB = maxSpread(rightPortCount(other));
+      const minGap = STUB + PAD + ROUTING_GAP + Math.max(spreadA, spreadB);
+      const currentGap = newX - or.right;
+      if (currentGap < minGap) {
+        newX += (minGap - currentGap);
+        changed = true;
+      }
+    } else {
+      // Horizontally overlapping — push to whichever side is closer
+      const pushLeft = newX - (or.left - (dragged.right - dragged.left));
+      const pushRight = or.right - newX;
+      const spreadOut = maxSpread(rightPortCount(draggedNode));
+      const spreadIn = maxSpread(leftPortCount(draggedNode));
+      const minGap = STUB + PAD + ROUTING_GAP + Math.max(spreadOut, spreadIn);
+
+      if (pushLeft <= pushRight) {
+        newX = or.left - (dragged.right - dragged.left) - minGap;
+      } else {
+        newX = or.right + minGap;
+      }
+      changed = true;
+    }
+  }
+
+  return changed ? { x: newX, y: newY } : null;
 }

@@ -72,6 +72,9 @@ interface SchematicState {
   debugEdges: boolean;
   toggleDebugEdges: () => void;
 
+  // Drag state — edges freeze during drag and recalculate on drop
+  isDragging: boolean;
+
   // Persistence
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => boolean;
@@ -229,6 +232,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   editingNodeId: null,
   customTemplates: loadCustomTemplates(),
   debugEdges: false,
+  isDragging: false,
 
   onNodesChange: (changes) => {
     const updated = applyNodeChanges(changes, get().nodes) as SchematicNode[];

@@ -163,6 +163,7 @@ function OffsetEdgeComponent({
   });
 
   const debugEdges = useSchematicStore((s) => s.debugEdges);
+  const isDragging = useSchematicStore((s) => s.isDragging);
 
   // Cache ref for A* result
   const cacheRef = useRef<{
@@ -174,7 +175,10 @@ function OffsetEdgeComponent({
 
   let astarResult: { path: string; labelX: number; labelY: number; turns: string } | null = null;
 
-  if (cacheRef.current?.key === cacheKey) {
+  if (isDragging && cacheRef.current) {
+    // Freeze edges during drag — use last cached result
+    astarResult = cacheRef.current.result;
+  } else if (cacheRef.current?.key === cacheKey) {
     astarResult = cacheRef.current.result;
   } else {
     const nodes = useSchematicStore.getState().nodes;
