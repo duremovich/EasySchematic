@@ -374,7 +374,8 @@ function SchematicCanvas() {
 
   // Click-to-connect: first click on a handle
   const onClickConnectStart = useCallback(
-    (event: MouseEvent | TouchEvent, params: { nodeId: string; handleId: string | null; handleType: string }) => {
+    (event: MouseEvent | TouchEvent, params: { nodeId: string | null; handleId: string | null; handleType: string | null }) => {
+      if (!params.nodeId || !params.handleType) return;
       isClickConnectMode.current = true;
       startPreviewTracking(event, params.nodeId, params.handleId, params.handleType);
     },
