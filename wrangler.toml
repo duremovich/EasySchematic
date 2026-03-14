@@ -1,0 +1,7 @@
+# EasySchematic — deployed as a static assets Worker on Cloudflare
+name = "easyschematic"
+compatibility_date = "2025-04-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
