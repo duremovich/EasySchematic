@@ -155,6 +155,12 @@ const redoStack: Snapshot[] = [];
 /** If set, the next pushUndo call uses this instead of the passed snapshot. */
 let pendingUndoSnapshot: Snapshot | null = null;
 
+/** Edge ID being reconnected — excluded from isValidConnection duplicate checks. */
+let _reconnectingEdgeId: string | null = null;
+export function setReconnectingEdgeId(id: string | null) {
+  _reconnectingEdgeId = id;
+}
+
 function pushUndo(snapshot: Snapshot) {
   undoStack.push(pendingUndoSnapshot ?? snapshot);
   pendingUndoSnapshot = null;
@@ -514,6 +520,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     // Don't allow duplicate connections to same target handle
     const duplicate = state.edges.some(
       (e) =>
+        e.id !== _reconnectingEdgeId &&
         e.target === connection.target &&
         e.targetHandle === connection.targetHandle,
     );

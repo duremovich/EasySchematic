@@ -5,7 +5,7 @@
   --color-bg: #ffffff;
   --color-surface: #f8f8f8;
   --color-surface-hover: #f0f0f0;
-  --color-border: #d4d4d4;
+  --color-border: #a3a3a3;
   --color-text: #374151;
   --color-text-heading: #111827;
   --color-text-muted: #6b7280;
@@ -79,18 +79,43 @@ html, body, #root {
   padding-left: 1.25em;
 }
 
+/* Handles: raise above node content and enlarge hit area */
+.react-flow__handle {
+  z-index: 10;
+}
+.react-flow__handle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  transform: translate(-50%, -50%);
+}
+
+/* During a connection drag, make node bodies transparent to pointer events
+   so only handles receive hover/drop — prevents the node from stealing focus. */
+.react-flow.connecting .react-flow__node *:not(.react-flow__handle) {
+  pointer-events: none;
+}
+
 .react-flow__edge-path {
   stroke-width: 2;
 }
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3;
+  filter: drop-shadow(0 0 3px currentColor);
+}
 
-/* Edge reconnection anchors — visible on edge hover, shifted onto the port */
+/* Edge updater anchors — enlarged to overlap handle area.
+   Transparent by default, blue glow on hover for reconnect affordance. */
+/* Edge updater anchors — large invisible grab area, no visual indicator. */
 .react-flow__edgeupdater {
-  fill: #3b82f6;
-  fill-opacity: 0;
-  stroke: #3b82f6;
-  stroke-opacity: 0;
+  fill: transparent;
+  stroke: none;
   cursor: move;
   pointer-events: all;
+  r: 30;
 }
 .react-flow__edgeupdater-source {
   transform: translateX(-20px);
@@ -98,9 +123,17 @@ html, body, #root {
 .react-flow__edgeupdater-target {
   transform: translateX(20px);
 }
-.react-flow__edge:hover .react-flow__edgeupdater {
-  fill-opacity: 0.3;
-  stroke-opacity: 0.6;
+
+/* Connected LEFT handles (targets/inputs): let clicks fall through to
+   edge updater in SVG layer below for reconnect/disconnect. */
+.react-flow__handle-left[data-connected] {
+  pointer-events: none;
+}
+
+/* Connected handle hover ring (visible on source handles which keep pointer-events) */
+.react-flow__handle[data-connected]:hover {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
+  cursor: move;
 }
 
 .react-flow__connection-line {

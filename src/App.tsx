@@ -13,9 +13,8 @@ import {
   type Node,
   type Edge,
   type Connection,
-  type OnConnectStart,
 } from "@xyflow/react";
-import { useSchematicStore, GRID_SIZE } from "./store";
+import { useSchematicStore, GRID_SIZE, setReconnectingEdgeId } from "./store";
 import DeviceNodeComponent from "./components/DeviceNode";
 import RoomNodeComponent from "./components/RoomNode";
 import NoteNodeComponent from "./components/NoteNode";
@@ -52,8 +51,6 @@ function SchematicCanvas() {
     copySelected,
     pasteClipboard,
     pushSnapshot,
-    setPendingUndoSnapshot,
-    clearPendingUndoSnapshot,
     reparentNode,
     undo,
     redo,
@@ -66,11 +63,8 @@ function SchematicCanvas() {
   // Space-held state for pan-on-drag (Vectorworks-style)
   const [spaceHeld, setSpaceHeld] = useState(false);
 
-  // Edge reconnection state (edge-anchor based)
+  // Edge reconnection state (React Flow's reconnection path)
   const reconnectingRef = useRef(false);
-
-  // Handle-based reconnection: tracks edge removed when dragging from a connected handle
-  const disconnectedEdgeRef = useRef<ConnectionEdge | null>(null);
 
   // Snap guide lines shown during drag
   const [snapGuides, setSnapGuides] = useState<GuideLine[]>([]);
@@ -205,8 +199,10 @@ function SchematicCanvas() {
     [screenToFlowPosition, addDevice, addRoom, addNote, reparentNode],
   );
 
-  const onReconnectStart = useCallback(() => {
+  // Reconnection via React Flow's reconnection path (connected handle drags)
+  const onReconnectStart = useCallback((_event: React.MouseEvent, edge: Edge) => {
     reconnectingRef.current = true;
+    setReconnectingEdgeId(edge.id);
     pushSnapshot();
   }, [pushSnapshot]);
 
@@ -223,7 +219,8 @@ function SchematicCanvas() {
 
   const onReconnectEnd = useCallback(
     (_event: MouseEvent | TouchEvent, edge: Edge) => {
-      // If the edge wasn't reconnected, delete it
+      setReconnectingEdgeId(null);
+      // If the edge wasn't reconnected, delete it (disconnect)
       if (reconnectingRef.current) {
         reconnectingRef.current = false;
         const state = useSchematicStore.getState();
@@ -235,56 +232,6 @@ function SchematicCanvas() {
     },
     [],
   );
-
-  // When dragging from a connected handle, remove the old edge first
-  const handleConnectStart: OnConnectStart = useCallback(
-    (_event, params) => {
-      if (!params.nodeId || !params.handleId) return;
-      const state = useSchematicStore.getState();
-
-      const existingEdge = state.edges.find((e) => {
-        if (params.handleType === "source") {
-          return e.source === params.nodeId && e.sourceHandle === params.handleId;
-        }
-        return e.target === params.nodeId && e.targetHandle === params.handleId;
-      });
-
-      if (existingEdge) {
-        // Save pre-disconnect state so the next onConnect undo captures it
-        setPendingUndoSnapshot();
-        disconnectedEdgeRef.current = existingEdge;
-        useSchematicStore.setState({
-          edges: state.edges.filter((e) => e.id !== existingEdge.id),
-        });
-      } else {
-        disconnectedEdgeRef.current = null;
-      }
-    },
-    [setPendingUndoSnapshot],
-  );
-
-  const handleConnectEnd = useCallback(() => {
-    if (!disconnectedEdgeRef.current) return;
-    const state = useSchematicStore.getState();
-    const old = disconnectedEdgeRef.current;
-
-    // Check if onConnect created a new edge on the same handle
-    const reconnected = state.edges.some(
-      (e) =>
-        (e.source === old.source && e.sourceHandle === old.sourceHandle && e.id !== old.id) ||
-        (e.target === old.target && e.targetHandle === old.targetHandle && e.id !== old.id),
-    );
-
-    if (!reconnected) {
-      // No new connection — restore the old edge
-      useSchematicStore.setState({
-        edges: [...state.edges, disconnectedEdgeRef.current],
-      });
-      clearPendingUndoSnapshot();
-    }
-
-    disconnectedEdgeRef.current = null;
-  }, [clearPendingUndoSnapshot]);
 
   const onNodeDragStart = useCallback(() => {
     pushSnapshot();
@@ -382,8 +329,6 @@ function SchematicCanvas() {
       onNodeDragStop={onNodeDragStop}
       onEdgesChange={onEdgesChange}
       onConnect={onConnect}
-      onConnectStart={handleConnectStart}
-      onConnectEnd={handleConnectEnd}
       onReconnectStart={onReconnectStart}
       onReconnect={onReconnect}
       onReconnectEnd={onReconnectEnd}
@@ -402,7 +347,7 @@ function SchematicCanvas() {
       multiSelectionKeyCode="Shift"
       proOptions={{ hideAttribution: true }}
       edgesReconnectable
-      reconnectRadius={20}
+      reconnectRadius={25}
       defaultEdgeOptions={{ type: "smoothstep" }}
       connectionLineType={ConnectionLineType.SmoothStep}
       snapToGrid
