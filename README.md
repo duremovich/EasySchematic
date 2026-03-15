@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/favicon.svg" width="128" alt="EasySchematic logo"/>
+</p>
+
 # EasySchematic
 
 A drag-and-drop AV signal flow diagram tool for designing and documenting audio/video system hook-ups. Built for broadcast, live production, and AV integration workflows.
