@@ -2,7 +2,7 @@
 
 A drag-and-drop AV signal flow diagram tool for designing and documenting audio/video system hook-ups. Built for broadcast, live production, and AV integration workflows.
 
-**[Try it live →](https://easyschematic.dylan-uremovich.workers.dev/)**
+**[Try it live →](https://easyschematic.live)** · **[Documentation →](https://docs.easyschematic.live)**
 
 ## Features
 
