@@ -15,9 +15,11 @@ import type {
   DeviceTemplate,
   Port,
   SchematicFile,
+  TitleBlock,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType } from "./types";
+import type { Orientation } from "./printConfig";
 import { computeAlignment, type AlignOperation } from "./alignUtils";
 import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 import { routeAllEdges, type RoutedEdge } from "./edgeRouter";
@@ -96,6 +98,20 @@ interface SchematicState {
 
   // Drag state — edges freeze during drag and recalculate on drop
   isDragging: boolean;
+
+  // Print view (printView toggle is ephemeral; paper/orientation/scale are persisted)
+  printView: boolean;
+  printPaperId: string;
+  printOrientation: Orientation;
+  printScale: number;
+  setPrintView: (v: boolean) => void;
+  setPrintPaperId: (id: string) => void;
+  setPrintOrientation: (o: Orientation) => void;
+  setPrintScale: (s: number) => void;
+
+  // Title block
+  titleBlock: TitleBlock;
+  setTitleBlock: (tb: TitleBlock) => void;
 
   // Signal colors
   signalColors: Partial<Record<SignalType, string>> | undefined;
@@ -273,6 +289,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   routedEdges: {},
   debugEdges: false,
   isDragging: false,
+  printView: false,
+  printPaperId: "arch-d",
+  printOrientation: "landscape" as Orientation,
+  printScale: 1.0,
+  titleBlock: { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "" },
   signalColors: undefined,
 
   onNodesChange: (changes) => {
@@ -751,6 +772,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     saveCustomTemplates(updated);
   },
 
+  setPrintView: (v) => { set({ printView: v }); },
+  setPrintPaperId: (id) => { set({ printPaperId: id }); get().saveToLocalStorage(); },
+  setPrintOrientation: (o) => { set({ printOrientation: o }); get().saveToLocalStorage(); },
+  setPrintScale: (s) => { set({ printScale: Math.max(0.25, Math.min(2, s)) }); get().saveToLocalStorage(); },
+  setTitleBlock: (tb) => { set({ titleBlock: tb }); get().saveToLocalStorage(); },
+
   setSignalColors: (colors) => {
     const overrides = getSignalColorOverrides(colors);
     set({ signalColors: overrides });
@@ -767,6 +794,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       nodes: state.nodes,
       edges: state.edges,
       signalColors: state.signalColors,
+      printPaperId: state.printPaperId,
+      printOrientation: state.printOrientation,
+      printScale: state.printScale,
+      titleBlock: state.titleBlock,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -795,6 +826,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             edges: data.edges,
             schematicName: data.name ?? "Demo Schematic",
             signalColors: data.signalColors,
+            printPaperId: data.printPaperId ?? "arch-d",
+            printOrientation: data.printOrientation ?? "landscape",
+            printScale: data.printScale ?? 1.0,
+            titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "" },
           });
         });
         return false;
@@ -811,6 +846,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         edges: data.edges,
         schematicName: data.name ?? "Untitled Schematic",
         signalColors: data.signalColors,
+        printPaperId: data.printPaperId ?? "arch-d",
+        printOrientation: data.printOrientation ?? "landscape",
+        printScale: data.printScale ?? 1.0,
+        titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "" },
       });
       return true;
     } catch {
@@ -827,6 +866,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       edges: state.edges,
       customTemplates: state.customTemplates.length > 0 ? state.customTemplates : undefined,
       signalColors: state.signalColors,
+      printPaperId: state.printPaperId,
+      printOrientation: state.printOrientation,
+      printScale: state.printScale,
+      titleBlock: state.titleBlock,
     };
   },
 
@@ -856,6 +899,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       edges,
       schematicName: data.name ?? "Imported Schematic",
       signalColors: data.signalColors,
+      printPaperId: data.printPaperId ?? "arch-d",
+      printOrientation: data.printOrientation ?? "landscape",
+      printScale: data.printScale ?? 1.0,
+      titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "" },
     });
     get().saveToLocalStorage();
   },

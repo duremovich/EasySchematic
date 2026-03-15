@@ -1,13 +1,13 @@
 {
-  "version": 1,
+  "version": 3,
   "name": "Untitled Schematic",
   "nodes": [
     {
       "id": "room-5",
       "type": "room",
       "position": {
-        "x": -820,
-        "y": 1080
+        "x": 580,
+        "y": 1480
       },
       "data": {
         "label": "TECH TABLE"
@@ -31,8 +31,8 @@
       "id": "room-4",
       "type": "room",
       "position": {
-        "x": 720,
-        "y": -380
+        "x": 2580,
+        "y": 60
       },
       "data": {
         "label": "Stage"
@@ -43,21 +43,21 @@
       },
       "zIndex": -1,
       "measured": {
-        "width": 798,
-        "height": 2132
+        "width": 738,
+        "height": 1992
       },
-      "selected": false,
+      "selected": true,
       "dragging": false,
-      "width": 798,
-      "height": 2132,
+      "width": 738,
+      "height": 1992,
       "resizing": false
     },
     {
       "id": "room-3",
       "type": "room",
       "position": {
-        "x": -1180,
-        "y": -380
+        "x": 160,
+        "y": 180
       },
       "data": {
         "label": "Booth"
@@ -68,12 +68,12 @@
       },
       "zIndex": -1,
       "measured": {
-        "width": 1665,
+        "width": 1625,
         "height": 1247
       },
       "selected": false,
       "dragging": false,
-      "width": 1665,
+      "width": 1625,
       "height": 1247,
       "resizing": false
     },
@@ -81,7 +81,7 @@
       "id": "device-33",
       "type": "device",
       "position": {
-        "x": 580,
+        "x": 540,
         "y": 120
       },
       "data": {
@@ -162,7 +162,7 @@
       "id": "device-36",
       "type": "device",
       "position": {
-        "x": 1020,
+        "x": 980,
         "y": 120
       },
       "data": {
@@ -196,7 +196,7 @@
       "id": "device-37",
       "type": "device",
       "position": {
-        "x": 1020,
+        "x": 980,
         "y": 220
       },
       "data": {
@@ -230,8 +230,8 @@
       "id": "device-38",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 1320
+        "x": 160,
+        "y": 1240
       },
       "data": {
         "label": "Panasonic DZ13K",
@@ -312,8 +312,8 @@
       "id": "device-39",
       "type": "device",
       "position": {
-        "x": 440,
-        "y": 140
+        "x": 420,
+        "y": 60
       },
       "data": {
         "label": "TV 1",
@@ -340,8 +340,8 @@
       "id": "device-40",
       "type": "device",
       "position": {
-        "x": 440,
-        "y": 280
+        "x": 420,
+        "y": 200
       },
       "data": {
         "label": "TV 2",
@@ -368,8 +368,8 @@
       "id": "device-41",
       "type": "device",
       "position": {
-        "x": 440,
-        "y": 420
+        "x": 420,
+        "y": 340
       },
       "data": {
         "label": "TV 3",
@@ -396,8 +396,8 @@
       "id": "device-42",
       "type": "device",
       "position": {
-        "x": 440,
-        "y": 540
+        "x": 420,
+        "y": 460
       },
       "data": {
         "label": "TV 4",
@@ -424,8 +424,8 @@
       "id": "device-43",
       "type": "device",
       "position": {
-        "x": 440,
-        "y": 680
+        "x": 420,
+        "y": 600
       },
       "data": {
         "label": "TV 5",
@@ -452,8 +452,8 @@
       "id": "device-44",
       "type": "device",
       "position": {
-        "x": 440,
-        "y": 800
+        "x": 420,
+        "y": 720
       },
       "data": {
         "label": "TV 6",
@@ -480,8 +480,8 @@
       "id": "device-45",
       "type": "device",
       "position": {
-        "x": 440,
-        "y": 920
+        "x": 420,
+        "y": 840
       },
       "data": {
         "label": "TV 7",
@@ -508,8 +508,8 @@
       "id": "device-46",
       "type": "device",
       "position": {
-        "x": 440,
-        "y": 1120
+        "x": 420,
+        "y": 1040
       },
       "data": {
         "label": "TV 8",
@@ -536,7 +536,7 @@
       "id": "device-47",
       "type": "device",
       "position": {
-        "x": 1380,
+        "x": 1340,
         "y": 240
       },
       "data": {
@@ -612,7 +612,7 @@
       "id": "device-48",
       "type": "device",
       "position": {
-        "x": 1380,
+        "x": 1340,
         "y": 500
       },
       "data": {
@@ -688,8 +688,8 @@
       "id": "device-49",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 140
+        "x": 160,
+        "y": 60
       },
       "data": {
         "label": "BMD SDI→HDMI 1",
@@ -728,8 +728,8 @@
       "id": "device-50",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 280
+        "x": 160,
+        "y": 200
       },
       "data": {
         "label": "BMD SDI→HDMI 2",
@@ -768,8 +768,8 @@
       "id": "device-51",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 420
+        "x": 160,
+        "y": 340
       },
       "data": {
         "label": "BMD SDI→HDMI 3",
@@ -808,8 +808,8 @@
       "id": "device-52",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 540
+        "x": 160,
+        "y": 460
       },
       "data": {
         "label": "BMD SDI→HDMI 4",
@@ -848,8 +848,8 @@
       "id": "device-53",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 680
+        "x": 160,
+        "y": 600
       },
       "data": {
         "label": "BMD SDI→HDMI 5",
@@ -888,8 +888,8 @@
       "id": "device-54",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 800
+        "x": 160,
+        "y": 720
       },
       "data": {
         "label": "BMD SDI→HDMI 6",
@@ -928,8 +928,8 @@
       "id": "device-55",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 920
+        "x": 160,
+        "y": 840
       },
       "data": {
         "label": "BMD SDI→HDMI 7",
@@ -968,8 +968,8 @@
       "id": "device-56",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 1120
+        "x": 160,
+        "y": 1040
       },
       "data": {
         "label": "BMD SDI→HDMI 8",
@@ -1008,7 +1008,7 @@
       "id": "device-60",
       "type": "device",
       "position": {
-        "x": 940,
+        "x": 900,
         "y": 820
       },
       "data": {
@@ -1078,8 +1078,8 @@
       "id": "device-61",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 1700
+        "x": 160,
+        "y": 1620
       },
       "data": {
         "label": "PTZOptics Move SE 1",
@@ -1142,8 +1142,8 @@
       "id": "device-62",
       "type": "device",
       "position": {
-        "x": 180,
-        "y": 1900
+        "x": 160,
+        "y": 1820
       },
       "data": {
         "label": "PTZOptics Move SE 2",
@@ -1330,7 +1330,7 @@
       "id": "device-69",
       "type": "device",
       "position": {
-        "x": 1020,
+        "x": 980,
         "y": 340
       },
       "data": {
@@ -1364,7 +1364,7 @@
       "id": "device-70",
       "type": "device",
       "position": {
-        "x": 240,
+        "x": 200,
         "y": 660
       },
       "data": {
@@ -1403,7 +1403,7 @@
       "id": "device-71",
       "type": "device",
       "position": {
-        "x": 240,
+        "x": 200,
         "y": 100
       },
       "data": {
@@ -1431,7 +1431,7 @@
       "id": "device-72",
       "type": "device",
       "position": {
-        "x": 240,
+        "x": 200,
         "y": 220
       },
       "data": {
@@ -1458,7 +1458,7 @@
       "id": "device-73",
       "type": "device",
       "position": {
-        "x": 1380,
+        "x": 1340,
         "y": 740
       },
       "data": {
@@ -1576,8 +1576,8 @@
       "id": "note-1",
       "type": "note",
       "position": {
-        "x": -700,
-        "y": 580
+        "x": 600,
+        "y": 1240
       },
       "data": {
         "html": "<font size=\"5\">WELCOME TO EASY SCHEMATIC!</font>"
@@ -1593,13 +1593,14 @@
       "selected": false,
       "width": 380,
       "height": 60,
-      "resizing": false
+      "resizing": false,
+      "dragging": false
     },
     {
       "id": "device-76",
       "type": "device",
       "position": {
-        "x": 240,
+        "x": 200,
         "y": 780
       },
       "data": {
@@ -1638,7 +1639,7 @@
       "id": "device-77",
       "type": "device",
       "position": {
-        "x": 580,
+        "x": 540,
         "y": 400
       },
       "data": {
@@ -2228,30 +2229,15 @@
       "selected": false
     }
   ],
-  "customTemplates": [
-    {
-      "deviceType": "custom-1773418326697",
-      "label": "1920x1080 Monitor",
-      "ports": [
-        {
-          "id": "tpl-0",
-          "label": "SDI In",
-          "signalType": "sdi",
-          "direction": "input"
-        },
-        {
-          "id": "tpl-1",
-          "label": "HDMI In",
-          "signalType": "hdmi",
-          "direction": "input"
-        },
-        {
-          "id": "tpl-2",
-          "label": "SDI Loop",
-          "signalType": "sdi",
-          "direction": "output"
-        }
-      ]
-    }
-  ]
+  "printPaperId": "arch-d",
+  "printOrientation": "landscape",
+  "printScale": 1,
+  "titleBlock": {
+    "showName": "The Best Show Ever",
+    "venue": "The Worst Venue Ever",
+    "designer": "Some Guy",
+    "engineer": "Some Underpaid Guy",
+    "drawingTitle": "Signal Flow Schematic",
+    "date": "3/15/2026"
+  }
 }

@@ -107,8 +107,11 @@ export default function Toolbar() {
       <div className="w-px h-5 bg-[var(--color-border)]" />
       <AlignmentMenu />
       <div className="w-px h-5 bg-[var(--color-border)]" />
-      <ToolbarButton onClick={() => setShowPrintDialog(true)} title="Print schematic (Ctrl+P)">
-        Print
+      <ToolbarButton onClick={() => useSchematicStore.getState().setPrintView(true)} title="Toggle print view with page boundaries">
+        Print View
+      </ToolbarButton>
+      <ToolbarButton onClick={() => setShowPrintDialog(true)} title="Export PNG/SVG/DXF">
+        Export
       </ToolbarButton>
 
       <input

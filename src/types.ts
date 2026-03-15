@@ -76,6 +76,15 @@ export interface DeviceTemplate {
   searchTerms?: string[];
 }
 
+export interface TitleBlock {
+  showName: string;
+  venue: string;
+  designer: string;
+  engineer: string;
+  date: string;
+  drawingTitle: string;
+}
+
 export interface SchematicFile {
   version: number;
   name: string;
@@ -83,6 +92,10 @@ export interface SchematicFile {
   edges: ConnectionEdge[];
   customTemplates?: DeviceTemplate[];
   signalColors?: Partial<Record<SignalType, string>>;
+  printPaperId?: string;
+  printOrientation?: "landscape" | "portrait";
+  printScale?: number;
+  titleBlock?: TitleBlock;
 }
 
 export const SIGNAL_COLORS: Record<SignalType, string> = {

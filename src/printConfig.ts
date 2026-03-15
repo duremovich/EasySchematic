@@ -9,7 +9,7 @@ export interface PaperSize {
 export type Orientation = "landscape" | "portrait";
 
 export const PAGE_MARGIN_IN = 0.4;
-export const TITLE_BLOCK_HEIGHT_IN = 0.5;
+export const TITLE_BLOCK_HEIGHT_IN = 1.0;
 
 export const PAPER_SIZES: PaperSize[] = [
   // Standard

@@ -1,36 +1,6 @@
 @import "tailwindcss";
 @import "@xyflow/react/dist/style.css";
-
-:root {
-  --color-bg: #ffffff;
-  --color-surface: #f8f8f8;
-  --color-surface-hover: #f0f0f0;
-  --color-border: #a3a3a3;
-  --color-text: #374151;
-  --color-text-heading: #111827;
-  --color-text-muted: #6b7280;
-
-  /* Signal type colors — max distinction at a glance, print-friendly on white */
-  --color-sdi: #2563eb;       /* blue — broadcast standard */
-  --color-hdmi: #dc2626;      /* red — instantly distinct from SDI blue */
-  --color-ndi: #16a34a;       /* green — network video */
-  --color-dante: #ea580c;     /* orange — network audio */
-  --color-analog-audio: #854d0e; /* brown — old-school warmth */
-  --color-aes: #7c3aed;       /* purple — digital audio */
-  --color-usb: #db2777;       /* pink — ubiquitous connector */
-  --color-ethernet: #0891b2;  /* teal — networking */
-  --color-fiber: #d97706;     /* amber — industry standard for fiber */
-  --color-displayport: #0d9488; /* dark teal — video alt */
-  --color-hdbaset: #9333ea;   /* violet — HDMI-over-cat, distinct from HDMI red */
-  --color-srt: #15803d;       /* forest green — streaming */
-  --color-genlock: #475569;   /* slate — sync/timing */
-  --color-gpio: #78716c;      /* warm gray — control */
-  --color-rs422: #6d28d9;     /* deep violet — machine control */
-  --color-serial: #525252;    /* gray — generic serial */
-  --color-thunderbolt: #4f46e5; /* indigo — high-speed */
-  --color-power: #a16207;     /* dark amber — electrical */
-  --color-custom: #64748b;    /* cool gray */
-}
+@import "./theme.css";
 
 html, body, #root {
   height: 100%;
@@ -138,6 +108,15 @@ html, body, #root {
 
 .react-flow__connection-line {
   stroke-width: 2;
+}
+
+/* ===== PDF capture: hide overlays during export ===== */
+[data-pdf-capturing] .react-flow__minimap,
+[data-pdf-capturing] .react-flow__controls,
+[data-pdf-capturing] .react-flow__background,
+[data-pdf-capturing] [data-print-hide],
+[data-pdf-capturing] .page-boundary-overlay {
+  display: none !important;
 }
 
 /* ===== Print ===== */

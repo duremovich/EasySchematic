@@ -4,8 +4,6 @@ import {
   Background,
   Controls,
   MiniMap,
-  type NodeTypes,
-  type EdgeTypes,
   BackgroundVariant,
   ConnectionLineType,
   useReactFlow,
@@ -17,27 +15,50 @@ import {
   type Connection,
 } from "@xyflow/react";
 import { useSchematicStore, GRID_SIZE, setReconnectingEdgeId } from "./store";
-import DeviceNodeComponent from "./components/DeviceNode";
-import RoomNodeComponent from "./components/RoomNode";
-import NoteNodeComponent from "./components/NoteNode";
-import OffsetEdgeComponent from "./components/OffsetEdge";
+import { nodeTypes, edgeTypes } from "./nodeTypes";
 import SnapGuides from "./components/SnapGuides";
+import PageBoundaryOverlay from "./components/PageBoundaryOverlay";
+import PrintViewBar from "./components/PrintViewBar";
 import DeviceLibrary from "./components/DeviceLibrary";
 import DeviceEditor from "./components/DeviceEditor";
 import SignalColorPanel from "./components/SignalColorPanel";
+import ShowInfoPanel from "./components/ShowInfoPanel";
 import Toolbar from "./components/Toolbar";
 import { computeSnap, enforceMinSpacing, type GuideLine } from "./snapUtils";
 import type { DeviceTemplate, SchematicNode } from "./types";
 
-const nodeTypes: NodeTypes = {
-  device: DeviceNodeComponent,
-  room: RoomNodeComponent,
-  note: NoteNodeComponent,
-};
-
-const edgeTypes: EdgeTypes = {
-  smoothstep: OffsetEdgeComponent,
-};
+/** Darkens the canvas area left of x=0 and above y=0, marking the printable origin. */
+function CanvasOriginOverlay() {
+  const { x: vx, y: vy, zoom } = useViewport();
+  const FAR = 1e6;
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        pointerEvents: "none",
+        zIndex: 0,
+        overflow: "hidden",
+      }}
+    >
+      <svg
+        style={{
+          position: "absolute",
+          overflow: "visible",
+          width: 1,
+          height: 1,
+          transform: `translate(${vx}px, ${vy}px) scale(${zoom})`,
+          transformOrigin: "0 0",
+        }}
+      >
+        {/* Everything left of x=0 */}
+        <rect x={-FAR} y={-FAR} width={FAR} height={2 * FAR} fill="#e5e5e5" />
+        {/* Everything above y=0 (only the positive-x portion, avoid double-fill) */}
+        <rect x={0} y={-FAR} width={FAR} height={FAR} fill="#e5e5e5" />
+      </svg>
+    </div>
+  );
+}
 
 function SchematicCanvas() {
   const {
@@ -96,6 +117,7 @@ function SchematicCanvas() {
   // Recompute edge routes when nodes/edges change (but not during drag)
   const isDragging = useSchematicStore((s) => s.isDragging);
   const debugEdges = useSchematicStore((s) => s.debugEdges);
+  const printView = useSchematicStore((s) => s.printView);
   const nodeCount = useSchematicStore((s) => s.nodes.length);
   const edgeCount = useSchematicStore((s) => s.edges.length);
   // Digest of node positions + sizes to detect moves
@@ -582,8 +604,10 @@ function SchematicCanvas() {
       connectionLineStyle={{ opacity: 0 }}
       snapToGrid
       snapGrid={[GRID_SIZE, GRID_SIZE]}
+      nodeExtent={printView ? [[0, 0], [Infinity, Infinity]] : undefined}
     >
       <SnapGuides guides={snapGuides} />
+      {printView && <PageBoundaryOverlay />}
       {connectPreview && (() => {
         const { fromX, fromY, toX, toY, fromSource, snapped, valid } = connectPreview;
         const dx = Math.abs(toX - fromX);
@@ -626,6 +650,7 @@ function SchematicCanvas() {
           </button>
         </div>
       )}
+      {!printView && <CanvasOriginOverlay />}
       <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color="#d4d4d4" />
       <Controls position="bottom-right" />
       <MiniMap
@@ -661,11 +686,14 @@ function PrintTitleBlock() {
 }
 
 export default function App() {
+  const printView = useSchematicStore((s) => s.printView);
+
   return (
     <div className="flex flex-col h-full">
       <div data-print-hide>
         <Toolbar />
       </div>
+      {printView && <PrintViewBar />}
       <PrintTitleBlock />
       <div className="flex flex-1 overflow-hidden">
         <div data-print-hide>
@@ -674,7 +702,8 @@ export default function App() {
         <div className="flex-1">
           <SchematicCanvas />
         </div>
-        <div data-print-hide>
+        <div data-print-hide className="flex">
+          <ShowInfoPanel />
           <SignalColorPanel />
         </div>
       </div>

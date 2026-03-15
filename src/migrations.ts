@@ -10,7 +10,7 @@
  *   3. Update package.json version to 0.<new schema version>.0
  */
 
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -19,6 +19,15 @@ const migrations: Record<number, Migration> = {
   1: (data) => {
     // v1 → v2: add optional signalColors field (no data transform needed)
     data.version = 2;
+    return data;
+  },
+  2: (data) => {
+    // v2 → v3: add date and drawingTitle to titleBlock
+    if (data.titleBlock) {
+      data.titleBlock.date ??= "";
+      data.titleBlock.drawingTitle ??= "";
+    }
+    data.version = 3;
     return data;
   },
 };
