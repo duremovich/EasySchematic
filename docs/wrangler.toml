@@ -1,6 +1,7 @@
 # EasySchematic Docs — deployed as a static assets Worker on Cloudflare
 name = "easyschematic-docs"
 compatibility_date = "2025-04-01"
+workers_dev = true
 
 [assets]
 directory = "./dist"
