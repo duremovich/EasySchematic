@@ -1,4 +1,35 @@
-import type { TitleBlockCell, TitleBlockLayout } from "./types";
+import type { TitleBlock, TitleBlockCell, TitleBlockLayout } from "./types";
+
+/** Built-in field keys (excludes logo and customFields). */
+export const BUILTIN_FIELD_KEYS = [
+  "company", "showName", "venue", "drawingTitle",
+  "designer", "engineer", "date", "revision",
+] as const;
+
+const BUILTIN_LABELS: Record<string, string> = {
+  company: "Company",
+  showName: "Show Name",
+  venue: "Venue",
+  drawingTitle: "Drawing Title",
+  designer: "Designer",
+  engineer: "Engineer",
+  date: "Date",
+  revision: "Revision",
+};
+
+/** Look up the value of a field (built-in or custom) by its ID. */
+export function getFieldValue(tb: TitleBlock, fieldId: string): string {
+  if (BUILTIN_LABELS[fieldId] !== undefined) {
+    return (tb as unknown as Record<string, string>)[fieldId] ?? "";
+  }
+  return tb.customFields?.find((f) => f.id === fieldId)?.value ?? "";
+}
+
+/** Look up the display label for a field (built-in or custom) by its ID. */
+export function getFieldLabel(tb: TitleBlock, fieldId: string): string {
+  if (BUILTIN_LABELS[fieldId]) return BUILTIN_LABELS[fieldId];
+  return tb.customFields?.find((f) => f.id === fieldId)?.label ?? fieldId;
+}
 
 export interface CellRect {
   x: number;  // fraction of total width (0..1)
@@ -16,19 +47,30 @@ export function nextCellId(): string {
  * Compute fractional rects for each cell based on the layout grid.
  * Shared by SVG overlay, PDF export, and editor preview.
  */
+/** Normalize an array so it sums to 1 (matches CSS fr-unit behavior). */
+export function normalizeSizes(arr: number[]): number[] {
+  const sum = arr.reduce((a, b) => a + b, 0);
+  if (sum === 0) return arr.map(() => 1 / arr.length);
+  if (Math.abs(sum - 1) < 1e-9) return arr;
+  return arr.map((v) => v / sum);
+}
+
 export function computeCellRects(layout: TitleBlockLayout): Map<string, CellRect> {
   const result = new Map<string, CellRect>();
 
+  const cols = normalizeSizes(layout.columns);
+  const rows = normalizeSizes(layout.rows);
+
   // Cumulative column positions
   const colStarts: number[] = [0];
-  for (let i = 0; i < layout.columns.length; i++) {
-    colStarts.push(colStarts[i] + layout.columns[i]);
+  for (let i = 0; i < cols.length; i++) {
+    colStarts.push(colStarts[i] + cols[i]);
   }
 
   // Cumulative row positions
   const rowStarts: number[] = [0];
-  for (let i = 0; i < layout.rows.length; i++) {
-    rowStarts.push(rowStarts[i] + layout.rows[i]);
+  for (let i = 0; i < rows.length; i++) {
+    rowStarts.push(rowStarts[i] + rows[i]);
   }
 
   for (const cell of layout.cells) {
@@ -36,13 +78,13 @@ export function computeCellRects(layout: TitleBlockLayout): Map<string, CellRect
     const y = rowStarts[cell.row] ?? 0;
 
     let w = 0;
-    for (let c = cell.col; c < cell.col + cell.colSpan && c < layout.columns.length; c++) {
-      w += layout.columns[c];
+    for (let c = cell.col; c < cell.col + cell.colSpan && c < cols.length; c++) {
+      w += cols[c];
     }
 
     let h = 0;
-    for (let r = cell.row; r < cell.row + cell.rowSpan && r < layout.rows.length; r++) {
-      h += layout.rows[r];
+    for (let r = cell.row; r < cell.row + cell.rowSpan && r < rows.length; r++) {
+      h += rows[r];
     }
 
     result.set(cell.id, { x, y, w, h });

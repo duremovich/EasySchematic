@@ -8,7 +8,7 @@ import {
 } from "./printConfig";
 import { computePageGrid } from "./printPageGrid";
 import type { TitleBlock, TitleBlockLayout } from "./types";
-import { computeCellRects } from "./titleBlockLayout";
+import { computeCellRects, normalizeSizes, getFieldValue } from "./titleBlockLayout";
 
 const DPI = 96;
 const PIXEL_RATIO = 2;
@@ -91,14 +91,16 @@ function drawTitleBlock(
   doc.setLineWidth(0.005);
   doc.rect(tbLeft, tbTop, tbWidth, tbHeight);
 
-  // Cumulative positions
+  // Cumulative positions (normalized to 0..1)
+  const normCols = normalizeSizes(layout.columns);
+  const normRows = normalizeSizes(layout.rows);
   const colStarts: number[] = [0];
-  for (let i = 0; i < layout.columns.length; i++) {
-    colStarts.push(colStarts[i] + layout.columns[i]);
+  for (let i = 0; i < normCols.length; i++) {
+    colStarts.push(colStarts[i] + normCols[i]);
   }
   const rowStarts: number[] = [0];
-  for (let i = 0; i < layout.rows.length; i++) {
-    rowStarts.push(rowStarts[i] + layout.rows[i]);
+  for (let i = 0; i < normRows.length; i++) {
+    rowStarts.push(rowStarts[i] + normRows[i]);
   }
 
   // Build skip sets for merged cells
@@ -191,7 +193,7 @@ function drawTitleBlock(
     let color = cell.color;
     switch (cell.content.type) {
       case "field": {
-        const value = tb[cell.content.field];
+        const value = getFieldValue(tb, cell.content.field);
         text = value || "";
         if (!value) continue; // Don't render empty fields in PDF
         break;

@@ -4,7 +4,7 @@ import { useSchematicStore } from "../store";
 import { computePageGrid, type PageRect } from "../printPageGrid";
 import { PAPER_SIZES } from "../printConfig";
 import type { TitleBlock, TitleBlockLayout } from "../types";
-import { computeCellRects } from "../titleBlockLayout";
+import { computeCellRects, normalizeSizes, getFieldValue, getFieldLabel } from "../titleBlockLayout";
 
 function PageBoundaryOverlay() {
   const { x: vx, y: vy, zoom } = useViewport();
@@ -114,14 +114,16 @@ function PageOverlay({
     }
   }
 
-  // Cumulative column/row positions (fractional)
+  // Cumulative column/row positions (normalized to 0..1)
+  const normCols = normalizeSizes(layout.columns);
+  const normRows = normalizeSizes(layout.rows);
   const colStarts: number[] = [0];
-  for (let i = 0; i < layout.columns.length; i++) {
-    colStarts.push(colStarts[i] + layout.columns[i]);
+  for (let i = 0; i < normCols.length; i++) {
+    colStarts.push(colStarts[i] + normCols[i]);
   }
   const rowStarts: number[] = [0];
-  for (let i = 0; i < layout.rows.length; i++) {
-    rowStarts.push(rowStarts[i] + layout.rows[i]);
+  for (let i = 0; i < normRows.length; i++) {
+    rowStarts.push(rowStarts[i] + normRows[i]);
   }
 
   return (
@@ -241,11 +243,11 @@ function PageOverlay({
 
             switch (cell.content.type) {
               case "field": {
-                const value = tb[cell.content.field];
+                const value = getFieldValue(tb, cell.content.field);
                 if (value) {
                   textContent = value;
                 } else {
-                  textContent = cell.content.field;
+                  textContent = getFieldLabel(tb, cell.content.field);
                   fillColor = "#9ca3af";
                   isPlaceholder = true;
                 }

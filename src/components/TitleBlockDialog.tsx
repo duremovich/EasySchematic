@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useSchematicStore } from "../store";
 import type { TitleBlock, TitleBlockLayout, TitleBlockCell } from "../types";
-import { getCoveredPositions, nextCellId, createDefaultLayout } from "../titleBlockLayout";
+import { getCoveredPositions, nextCellId, createDefaultLayout, getFieldValue, getFieldLabel } from "../titleBlockLayout";
 
 interface TitleBlockDialogProps {
   onClose: () => void;
@@ -10,12 +10,14 @@ interface TitleBlockDialogProps {
 const MAX_LOGO_W = 400;
 const MAX_LOGO_H = 200;
 
-function resizeImage(dataUrl: string): Promise<string> {
+function resizeImage(dataUrl: string, isSvg = false): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
-      let w = img.width;
-      let h = img.height;
+      // SVGs may report 0×0 — use a sensible default rasterization size
+      let w = img.width || (isSvg ? MAX_LOGO_W : 0);
+      let h = img.height || (isSvg ? MAX_LOGO_H : 0);
+      if (w === 0 || h === 0) { resolve(dataUrl); return; }
       const scale = Math.min(1, MAX_LOGO_W / w, MAX_LOGO_H / h);
       w = Math.round(w * scale);
       h = Math.round(h * scale);
@@ -31,7 +33,7 @@ function resizeImage(dataUrl: string): Promise<string> {
   });
 }
 
-const TB_FIELDS: { key: keyof TitleBlock; label: string; placeholder: string }[] = [
+const TB_FIELDS: { key: string; label: string; placeholder: string }[] = [
   { key: "company", label: "Company", placeholder: "e.g. Acme Broadcasting" },
   { key: "showName", label: "Show / Project", placeholder: "e.g. Morning News Live" },
   { key: "venue", label: "Venue / Location", placeholder: "e.g. Studio A, Building 2" },
@@ -42,7 +44,7 @@ const TB_FIELDS: { key: keyof TitleBlock; label: string; placeholder: string }[]
   { key: "revision", label: "Revision", placeholder: "e.g. Rev A" },
 ];
 
-const FIELD_OPTIONS: { value: keyof TitleBlock; label: string }[] = [
+const BUILTIN_FIELD_OPTIONS: { value: string; label: string }[] = [
   { value: "company", label: "Company" },
   { value: "showName", label: "Show Name" },
   { value: "venue", label: "Venue" },
@@ -75,14 +77,33 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
   const titleBlockLayout = useSchematicStore((s) => s.titleBlockLayout);
   const setTitleBlockLayout = useSchematicStore((s) => s.setTitleBlockLayout);
 
+  // Snapshot originals for cancel/restore
+  const [originalTb] = useState<TitleBlock>(() => ({ ...titleBlock }));
+  const [originalLayout] = useState<TitleBlockLayout>(() => structuredClone(titleBlockLayout));
+
   const [tbDraft, setTbDraft] = useState<TitleBlock>({ ...titleBlock });
   const [draft, setDraft] = useState<TitleBlockLayout>(structuredClone(titleBlockLayout));
   const [activeTab, setActiveTab] = useState<"data" | "layout">("data");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSave = () => {
+  // Live-preview: push draft changes to the store so the page view updates in real-time
+  useEffect(() => {
     setTitleBlock(tbDraft);
+  }, [tbDraft, setTitleBlock]);
+
+  useEffect(() => {
     setTitleBlockLayout(draft);
+  }, [draft, setTitleBlockLayout]);
+
+  const handleSave = () => {
+    // Already synced via effects — just close
+    onClose();
+  };
+
+  const handleCancel = () => {
+    // Restore originals
+    setTitleBlock(originalTb);
+    setTitleBlockLayout(originalLayout);
     onClose();
   };
 
@@ -96,12 +117,8 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
     const reader = new FileReader();
     reader.onload = async () => {
       const dataUrl = reader.result as string;
-      if (file.type === "image/svg+xml") {
-        setTbDraft((prev) => ({ ...prev, logo: dataUrl }));
-      } else {
-        const resized = await resizeImage(dataUrl);
-        setTbDraft((prev) => ({ ...prev, logo: resized }));
-      }
+      const resized = await resizeImage(dataUrl, file.type === "image/svg+xml");
+      setTbDraft((prev) => ({ ...prev, logo: resized }));
     };
     reader.readAsDataURL(file);
     e.target.value = "";
@@ -111,9 +128,44 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
     setTbDraft((prev) => ({ ...prev, logo: "" }));
   }, []);
 
-  const updateTbField = (field: keyof TitleBlock, value: string) => {
+  const updateTbField = (field: string, value: string) => {
     setTbDraft((prev) => ({ ...prev, [field]: value }));
   };
+
+  const addCustomField = useCallback(() => {
+    setTbDraft((prev) => ({
+      ...prev,
+      customFields: [
+        ...prev.customFields,
+        { id: `custom-${Date.now()}`, label: "New Field", value: "" },
+      ],
+    }));
+  }, []);
+
+  const updateCustomField = useCallback((id: string, value: string) => {
+    setTbDraft((prev) => ({
+      ...prev,
+      customFields: prev.customFields.map((f) =>
+        f.id === id ? { ...f, value } : f,
+      ),
+    }));
+  }, []);
+
+  const updateCustomFieldLabel = useCallback((id: string, label: string) => {
+    setTbDraft((prev) => ({
+      ...prev,
+      customFields: prev.customFields.map((f) =>
+        f.id === id ? { ...f, label } : f,
+      ),
+    }));
+  }, []);
+
+  const removeCustomField = useCallback((id: string) => {
+    setTbDraft((prev) => ({
+      ...prev,
+      customFields: prev.customFields.filter((f) => f.id !== id),
+    }));
+  }, []);
 
   const inputClass =
     "w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500";
@@ -121,7 +173,7 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-      onClick={onClose}
+      onClick={handleCancel}
     >
       <div
         className="bg-white border border-[var(--color-border)] rounded-lg shadow-2xl w-[620px] max-h-[85vh] flex flex-col"
@@ -133,7 +185,7 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
             Title Block Editor
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="text-[var(--color-text-muted)] hover:text-[var(--color-text-heading)] text-lg leading-none cursor-pointer"
           >
             &times;
@@ -162,6 +214,10 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
             <DataTab
               draft={tbDraft}
               updateField={updateTbField}
+              addCustomField={addCustomField}
+              updateCustomField={updateCustomField}
+              updateCustomFieldLabel={updateCustomFieldLabel}
+              removeCustomField={removeCustomField}
               handleUpload={handleUpload}
               handleRemoveLogo={handleRemoveLogo}
               fileInputRef={fileInputRef}
@@ -180,7 +236,7 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
         {/* Footer */}
         <div className="px-4 py-3 border-t border-[var(--color-border)] flex justify-end gap-2 shrink-0">
           <button
-            onClick={onClose}
+            onClick={handleCancel}
             className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
           >
             Cancel
@@ -192,15 +248,15 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
             Save
           </button>
         </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/jpeg,image/svg+xml"
+          className="hidden"
+          onChange={handleFileChange}
+        />
       </div>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/svg+xml"
-        className="hidden"
-        onChange={handleFileChange}
-      />
     </div>
   );
 }
@@ -210,6 +266,10 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
 function DataTab({
   draft,
   updateField,
+  addCustomField,
+  updateCustomField,
+  updateCustomFieldLabel,
+  removeCustomField,
   handleUpload,
   handleRemoveLogo,
   fileInputRef: _fileInputRef,
@@ -217,7 +277,11 @@ function DataTab({
   inputClass,
 }: {
   draft: TitleBlock;
-  updateField: (key: keyof TitleBlock, value: string) => void;
+  updateField: (key: string, value: string) => void;
+  addCustomField: () => void;
+  updateCustomField: (id: string, value: string) => void;
+  updateCustomFieldLabel: (id: string, label: string) => void;
+  removeCustomField: (id: string) => void;
   handleUpload: () => void;
   handleRemoveLogo: () => void;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -262,12 +326,46 @@ function DataTab({
             </label>
             <input
               className={inputClass}
-              value={draft[key]}
+              value={(draft as unknown as Record<string, string>)[key] ?? ""}
               onChange={(e) => updateField(key, e.target.value)}
               placeholder={placeholder}
             />
           </div>
         ))}
+
+        {/* Custom fields */}
+        {draft.customFields?.map((cf) => (
+          <div key={cf.id}>
+            <div className="flex items-center gap-1 mb-0.5">
+              <input
+                className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] bg-transparent border-b border-transparent focus:border-blue-400 outline-none flex-1"
+                value={cf.label}
+                onChange={(e) => updateCustomFieldLabel(cf.id, e.target.value)}
+                placeholder="Field name"
+              />
+              <button
+                onClick={() => removeCustomField(cf.id)}
+                className="text-[10px] text-red-400 hover:text-red-600 cursor-pointer px-1"
+                title="Remove field"
+              >
+                &times;
+              </button>
+            </div>
+            <input
+              className={inputClass}
+              value={cf.value}
+              onChange={(e) => updateCustomField(cf.id, e.target.value)}
+              placeholder="Value"
+            />
+          </div>
+        ))}
+
+        <button
+          onClick={addCustomField}
+          className="w-full mt-1 px-2 py-1 text-[10px] rounded border border-dashed border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-heading)] hover:border-[var(--color-text-muted)] transition-colors cursor-pointer"
+        >
+          + Add Custom Field
+        </button>
       </div>
     </div>
   );
@@ -302,6 +400,10 @@ function LayoutTab({
     index: number;
     startPos: number;
     startSizes: number[];
+  } | null>(null);
+  const [dragSelect, setDragSelect] = useState<{
+    startCellId: string;
+    currentCellId: string;
   } | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -574,9 +676,41 @@ function LayoutTab({
     setResizing(null);
   }, [resizing, setDraft]);
 
-  // --- Cell click ---
+  // --- Drag-to-select helpers ---
 
-  const handleCellClick = useCallback((cellId: string, e: React.MouseEvent) => {
+  const getCellsInRect = useCallback((idA: string, idB: string): Set<string> => {
+    const a = draft.cells.find((c) => c.id === idA);
+    const b = draft.cells.find((c) => c.id === idB);
+    if (!a || !b) return new Set([idA, idB].filter(Boolean));
+    // Bounding rectangle of both anchor cells (including their spans)
+    const minR = Math.min(a.row, b.row);
+    const maxR = Math.max(a.row + a.rowSpan - 1, b.row + b.rowSpan - 1);
+    const minC = Math.min(a.col, b.col);
+    const maxC = Math.max(a.col + a.colSpan - 1, b.col + b.colSpan - 1);
+    const ids = new Set<string>();
+    for (const c of draft.cells) {
+      // Cell overlaps the rectangle if any part of it is inside
+      const cellMaxR = c.row + c.rowSpan - 1;
+      const cellMaxC = c.col + c.colSpan - 1;
+      if (c.row <= maxR && cellMaxR >= minR && c.col <= maxC && cellMaxC >= minC) {
+        ids.add(c.id);
+      }
+    }
+    return ids;
+  }, [draft.cells]);
+
+  // Update selection live during drag
+  useEffect(() => {
+    if (!dragSelect) return;
+    const ids = getCellsInRect(dragSelect.startCellId, dragSelect.currentCellId);
+    setSelectedCells(ids);
+  }, [dragSelect, getCellsInRect]);
+
+  // --- Cell pointer events (drag-to-select) ---
+
+  const handleCellPointerDown = useCallback((cellId: string, e: React.PointerEvent) => {
+    if (e.button !== 0) return; // left-click only
+    e.preventDefault();
     if (e.shiftKey) {
       setSelectedCells((prev) => {
         const next = new Set(prev);
@@ -585,12 +719,22 @@ function LayoutTab({
         return next;
       });
     } else {
-      setSelectedCells((prev) =>
-        prev.size === 1 && prev.has(cellId) ? new Set() : new Set([cellId]),
-      );
+      setDragSelect({ startCellId: cellId, currentCellId: cellId });
+      setSelectedCells(new Set([cellId]));
     }
     setContextMenu(null);
   }, []);
+
+  const handleCellPointerEnter = useCallback((cellId: string) => {
+    if (!dragSelect) return;
+    setDragSelect((prev) => prev ? { ...prev, currentCellId: cellId } : null);
+  }, [dragSelect]);
+
+  const handleGridPointerUp = useCallback(() => {
+    if (dragSelect) {
+      setDragSelect(null);
+    }
+  }, [dragSelect]);
 
   // --- Context menu ---
 
@@ -602,6 +746,14 @@ function LayoutTab({
     }
     setContextMenu({ x: e.clientX, y: e.clientY, cellId });
   }, [selectedCells]);
+
+  // End drag-select if pointer released anywhere
+  useEffect(() => {
+    if (!dragSelect) return;
+    const handleUp = () => setDragSelect(null);
+    document.addEventListener("pointerup", handleUp);
+    return () => document.removeEventListener("pointerup", handleUp);
+  }, [dragSelect]);
 
   // Close context menu on outside click / Escape
   useEffect(() => {
@@ -627,6 +779,9 @@ function LayoutTab({
   const gridW = 540;
   const aspect = draft.heightIn / draft.widthIn;
   const gridH = Math.max(80, Math.min(300, gridW * aspect));
+
+  // Match page view font scaling: gridW pixels = widthIn inches, 72 points/inch
+  const editorPxPerPt = gridW / draft.widthIn / 72;
 
   // Cumulative offsets for resize handles
   const colOffsets = useMemo(() => {
@@ -724,7 +879,7 @@ function LayoutTab({
         className="relative border border-gray-800 bg-white select-none"
         style={{ width: gridW, height: gridH }}
         onPointerMove={resizing ? handleResizePointerMove : undefined}
-        onPointerUp={resizing ? handleResizePointerUp : undefined}
+        onPointerUp={resizing ? handleResizePointerUp : handleGridPointerUp}
       >
         {/* CSS Grid of cells */}
         <div
@@ -747,8 +902,8 @@ function LayoutTab({
             let isPlaceholder = false;
             switch (cell.content.type) {
               case "field": {
-                const val = tbDraft[cell.content.field];
-                displayText = val || cell.content.field;
+                const val = getFieldValue(tbDraft, cell.content.field);
+                displayText = val || getFieldLabel(tbDraft, cell.content.field);
                 if (!val) { textColor = "#9ca3af"; isPlaceholder = true; }
                 break;
               }
@@ -778,7 +933,8 @@ function LayoutTab({
                     cell.align === "center" ? "center" : cell.align === "right" ? "flex-end" : "flex-start",
                   padding: "2px 4px",
                 }}
-                onClick={(e) => handleCellClick(cell.id, e)}
+                onPointerDown={(e) => handleCellPointerDown(cell.id, e)}
+                onPointerEnter={() => handleCellPointerEnter(cell.id)}
                 onContextMenu={(e) => handleContextMenu(e, cell.id)}
               >
                 {cell.content.type === "logo" ? (
@@ -796,7 +952,7 @@ function LayoutTab({
                   <span
                     className="leading-tight truncate"
                     style={{
-                      fontSize: Math.min(cell.fontSize * 1.4, 18),
+                      fontSize: cell.fontSize * editorPxPerPt,
                       fontFamily: FONT_MAP[cell.fontFamily] ?? "system-ui, sans-serif",
                       fontWeight: cell.fontWeight === "bold" ? 600 : 400,
                       color: textColor,
@@ -848,7 +1004,7 @@ function LayoutTab({
       </div>
 
       <div className="text-[10px] text-[var(--color-text-muted)]">
-        Click to select. Shift+click to multi-select. Drag borders to resize. Right-click for more options.
+        Click and drag to select cells. Shift+click to toggle. Drag borders to resize. Right-click for more options.
       </div>
 
       {/* Context Menu */}
@@ -890,6 +1046,12 @@ function LayoutTab({
 
           <div className="h-px bg-gray-200 my-1" />
 
+          {canMerge && (
+            <ContextMenuItem
+              label={`Merge ${selectedCells.size} Cells`}
+              onClick={() => { mergeCells(); setContextMenu(null); }}
+            />
+          )}
           {(ctxCell.colSpan > 1 || ctxCell.rowSpan > 1) ? (
             <ContextMenuItem
               label="Unmerge"
@@ -984,7 +1146,7 @@ function LayoutTab({
 
       {/* Cell Properties Panel */}
       {selectedCell && (
-        <CellPropertiesPanel cell={selectedCell} updateCell={updateCell} />
+        <CellPropertiesPanel cell={selectedCell} updateCell={updateCell} tbDraft={tbDraft} />
       )}
     </div>
   );
@@ -1042,9 +1204,11 @@ function ContextMenuSub({ label, children }: { label: string; children: React.Re
 function CellPropertiesPanel({
   cell,
   updateCell,
+  tbDraft,
 }: {
   cell: TitleBlockCell;
   updateCell: (cellId: string, updates: Partial<TitleBlockCell>) => void;
+  tbDraft: TitleBlock;
 }) {
   return (
     <div className="border border-[var(--color-border)] rounded p-2 bg-gray-50 space-y-2">
@@ -1085,10 +1249,13 @@ function CellPropertiesPanel({
             <select
               className={smallSelect}
               value={cell.content.field}
-              onChange={(e) => updateCell(cell.id, { content: { type: "field", field: e.target.value as keyof TitleBlock } })}
+              onChange={(e) => updateCell(cell.id, { content: { type: "field", field: e.target.value } })}
             >
-              {FIELD_OPTIONS.map((f) => (
+              {BUILTIN_FIELD_OPTIONS.map((f) => (
                 <option key={f.value} value={f.value}>{f.label}</option>
+              ))}
+              {tbDraft.customFields?.map((f) => (
+                <option key={f.id} value={f.id}>{f.label}</option>
               ))}
             </select>
           </label>
