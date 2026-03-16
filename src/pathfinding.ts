@@ -31,6 +31,7 @@ export interface PenaltyZone {
   coordinate: number;  // the X (for vertical seg) or Y (for horizontal seg)
   rangeMin: number;     // start of segment
   rangeMax: number;     // end of segment
+  signalType?: string;  // signal type of the edge that created this zone
 }
 
 interface GridNode {
@@ -51,6 +52,7 @@ const TURN_PENALTY = 100; // Penalty for changing direction (strongly prefer few
 const CORNER_RADIUS = 8;
 const ESCAPE_MARGIN = 40; // Grid lines beyond the overall bounding box
 const SEPARATION_PX = 10; // Offset distance for penalty zone grid lines
+const CROSS_TYPE_SEPARATION = 20; // Wider separation between edges of different signal types
 const PROXIMITY_PENALTY = 50; // Extra A* cost when near a penalty zone (parallel)
 const CROSSING_PENALTY = 120; // Extra A* cost when crossing a penalty zone (perpendicular)
 const EARLY_TURN_BIAS = 30; // Extra cost for turning far from target (spreads vertical segments)
@@ -96,6 +98,7 @@ export function buildSparseGrid(
   obstacles: Rect[],
   forceOpen?: { x: number; y: number }[],
   penalties?: PenaltyZone[],
+  currentSignalType?: string,
 ): SparseGrid {
   const xSet = new Set<number>();
   const ySet = new Set<number>();
@@ -124,16 +127,25 @@ export function buildSparseGrid(
   // Inject penalty zone coordinates as additional grid lines so A* can route around them
   if (penalties) {
     for (const pz of penalties) {
+      const crossType = currentSignalType && pz.signalType && pz.signalType !== currentSignalType;
       if (pz.axis === "v") {
         // Vertical penalty: add offset X lines on both sides
         xSet.add(pz.coordinate - SEPARATION_PX);
         xSet.add(pz.coordinate + SEPARATION_PX);
+        if (crossType) {
+          xSet.add(pz.coordinate - CROSS_TYPE_SEPARATION);
+          xSet.add(pz.coordinate + CROSS_TYPE_SEPARATION);
+        }
         ySet.add(pz.rangeMin);
         ySet.add(pz.rangeMax);
       } else {
         // Horizontal penalty: add offset Y lines on both sides
         ySet.add(pz.coordinate - SEPARATION_PX);
         ySet.add(pz.coordinate + SEPARATION_PX);
+        if (crossType) {
+          ySet.add(pz.coordinate - CROSS_TYPE_SEPARATION);
+          ySet.add(pz.coordinate + CROSS_TYPE_SEPARATION);
+        }
         xSet.add(pz.rangeMin);
         xSet.add(pz.rangeMax);
       }
@@ -252,7 +264,16 @@ export function astarOrthogonal(
   endY: number,
   obstacles: Rect[],
   penalties?: PenaltyZone[],
-): Point[] | null {
+  currentSignalType?: string,
+  /** Allow starting in any direction (for handle-to-handle legs). */
+  freeStartDir?: boolean,
+  /** Allow arriving from any direction (for legs ending at a handle). */
+  freeEndDir?: boolean,
+  /** Direction to exclude from starting (prevents U-turn at handle junctions). */
+  excludeStartDir?: number,
+  /** Direction to exclude from arriving (reserves exit side at target handle). */
+  excludeEndDir?: number,
+): { path: Point[]; arrivalDir: number } | null {
   const { xs, ys, blocked } = grid;
 
   const sxi = xs.indexOf(startX);
@@ -292,9 +313,8 @@ export function astarOrthogonal(
     if (dy > 0 && dx === 0 && dir !== 1 && dir !== 3 && dir >= 0) {
       h += TURN_PENALTY;
     }
-    // Must arrive at goal horizontally — if aligned on both axes but moving
-    // vertically, we'll need a turn to approach horizontally
-    if (dx === 0 && dy === 0 && (dir === 1 || dir === 3)) {
+    // Must arrive at goal horizontally (unless freeEndDir allows any direction)
+    if (!freeEndDir && dx === 0 && dy === 0 && (dir === 1 || dir === 3)) {
       h += TURN_PENALTY;
     }
     return h;
@@ -303,30 +323,37 @@ export function astarOrthogonal(
   const closed = new Set<number>();
   const bestG = new Map<number, number>();
 
-  // Start direction is RIGHT (0) — source handles exit rightward
-  const startDir = 0;
-  const startSK = stateKey(sxi, syi, startDir);
-
-  const startNode: GridNode = {
-    xi: sxi,
-    yi: syi,
-    g: 0,
-    f: heuristic(sxi, syi, startDir),
-    dir: startDir,
-    parent: null,
-  };
-
   const open = new MinHeap();
-  open.push(startNode);
-  bestG.set(startSK, 0);
+
+  if (freeStartDir) {
+    // Seed all 4 directions — heavily penalize the excluded direction (the reverse
+    // of the previous leg's arrival) to prevent doubling back, but don't hard-block
+    // it since some handle placements may require it as a last resort.
+    const UTURN_START_PENALTY = TURN_PENALTY * 10;
+    for (let d = 0; d < NUM_DIRS; d++) {
+      const g = d === excludeStartDir ? UTURN_START_PENALTY : 0;
+      const sk = stateKey(sxi, syi, d);
+      bestG.set(sk, g);
+      open.push({ xi: sxi, yi: syi, g, f: g + heuristic(sxi, syi, d), dir: d, parent: null });
+    }
+  } else {
+    // Start direction is RIGHT (0) — source handles exit rightward
+    const startDir = 0;
+    const startSK = stateKey(sxi, syi, startDir);
+    bestG.set(startSK, 0);
+    open.push({ xi: sxi, yi: syi, g: 0, f: heuristic(sxi, syi, startDir), dir: startDir, parent: null });
+  }
 
   while (open.length > 0) {
     const current = open.pop()!;
     const ck = stateKey(current.xi, current.yi, current.dir);
 
-    // Only accept arrival at goal when moving horizontally (dir 0=RIGHT or 2=LEFT)
-    // This ensures edges always connect to handles from the side, never vertically
-    if (current.xi === exi && current.yi === eyi && (current.dir === 0 || current.dir === 2)) {
+    // Accept arrival at goal: horizontally for device ports, any direction for handles
+    // (but exclude the reserved exit direction so the next leg can depart freely)
+    const atGoal = current.xi === exi && current.yi === eyi;
+    const dirOk = (freeEndDir || current.dir === 0 || current.dir === 2)
+      && current.dir !== excludeEndDir;
+    if (atGoal && dirOk) {
       const path: Point[] = [];
       let node: GridNode | null = current;
       while (node) {
@@ -334,7 +361,7 @@ export function astarOrthogonal(
         node = node.parent;
       }
       path.reverse();
-      return path;
+      return { path, arrivalDir: current.dir };
     }
 
     if (closed.has(ck)) continue;
@@ -360,7 +387,9 @@ export function astarOrthogonal(
       let g = current.g + dist;
 
       if (d !== current.dir && current.dir >= 0) {
-        g += TURN_PENALTY;
+        // U-turn (180° reversal) is much worse than a 90° turn
+        const isUturn = d === ((current.dir + 2) % 4);
+        g += isUturn ? TURN_PENALTY * 5 : TURN_PENALTY;
 
         // Bias: prefer turns closer to target — penalize early turns.
         // This spreads vertical segments across X corridors instead of
@@ -373,12 +402,16 @@ export function astarOrthogonal(
       }
 
       // Penalty zone proximity cost: penalize segments that run parallel
-      // and close to an existing good edge's segment
+      // and close to an existing good edge's segment.
+      // Use wider threshold for edges of different signal types to visually
+      // separate signal groups (e.g., ethernet columns vs SDI columns).
       if (penalties) {
         for (const pz of penalties) {
+          const crossType = currentSignalType && pz.signalType && pz.signalType !== currentSignalType;
+          const proxThreshold = crossType ? CROSS_TYPE_SEPARATION : SEPARATION_PX;
           if (pz.axis === "v" && (d === 1 || d === 3)) {
             // Moving vertically — check if X is close to a vertical penalty
-            if (Math.abs(nx - pz.coordinate) < SEPARATION_PX) {
+            if (Math.abs(nx - pz.coordinate) < proxThreshold) {
               const segMinY = Math.min(cy, ny);
               const segMaxY = Math.max(cy, ny);
               if (segMaxY > pz.rangeMin && segMinY < pz.rangeMax) {
@@ -387,7 +420,7 @@ export function astarOrthogonal(
             }
           } else if (pz.axis === "h" && (d === 0 || d === 2)) {
             // Moving horizontally — check if Y is close to a horizontal penalty
-            if (Math.abs(ny - pz.coordinate) < SEPARATION_PX) {
+            if (Math.abs(ny - pz.coordinate) < proxThreshold) {
               const segMinX = Math.min(cx, nx);
               const segMaxX = Math.max(cx, nx);
               if (segMaxX > pz.rangeMin && segMinX < pz.rangeMax) {
@@ -535,16 +568,23 @@ export function computeEdgePath(
   offset: number,
   stubSpread: number = 0,
   penalties?: PenaltyZone[],
-): { path: string; labelX: number; labelY: number; turns: string; waypoints: Point[] } | null {
+  currentSignalType?: string,
+  /** Skip the source-side horizontal stub (for legs starting at a manual handle). */
+  noSourceStub?: boolean,
+  /** Skip the target-side horizontal stub (for legs ending at a manual handle). */
+  noTargetStub?: boolean,
+  /** Direction to exclude from starting (prevents U-turn at handle junctions). */
+  excludeStartDir?: number,
+  /** Direction to exclude from arriving (reserves exit side at target handle). */
+  excludeEndDir?: number,
+): { path: string; labelX: number; labelY: number; turns: string; waypoints: Point[]; arrivalDir: number } | null {
   // Short-circuit: if source and target are at (nearly) the same Y and the direct
   // horizontal path is unobstructed, just draw a straight line — no stubs, no offset.
   // Skip obstacles that contain the source or target handle (the endpoint devices).
   const ALIGN_TOLERANCE = 2;
   if (Math.abs(sourceY - targetY) <= ALIGN_TOLERANCE && sourceX < targetX) {
-    // Snap both endpoints to the same Y to prevent slightly diagonal lines
     const alignedY = Math.round((sourceY + targetY) / 2);
     const blocked = obstacles.some((r) => {
-      // Skip obstacles containing the source or target point (endpoint devices)
       const containsSource = sourceX >= r.left && sourceX <= r.right && sourceY >= r.top && sourceY <= r.bottom;
       const containsTarget = targetX >= r.left && targetX <= r.right && targetY >= r.top && targetY <= r.bottom;
       if (containsSource || containsTarget) return false;
@@ -554,20 +594,40 @@ export function computeEdgePath(
       const path = `M ${sourceX} ${alignedY} L ${targetX} ${alignedY}`;
       const labelX = (sourceX + targetX) / 2;
       const waypoints: Point[] = [{ x: sourceX, y: alignedY }, { x: targetX, y: alignedY }];
-      return { path, labelX, labelY: alignedY, turns: "straight", waypoints };
+      // Horizontal line: arrival direction is RIGHT (0)
+      return { path, labelX, labelY: alignedY, turns: "straight", waypoints, arrivalDir: 0 };
+    }
+  }
+
+  // Short-circuit: same X (vertical straight line) — common for handle-to-handle legs
+  if (Math.abs(sourceX - targetX) <= ALIGN_TOLERANCE) {
+    const alignedX = Math.round((sourceX + targetX) / 2);
+    const minY = Math.min(sourceY, targetY);
+    const maxY = Math.max(sourceY, targetY);
+    const blocked = obstacles.some((r) => {
+      const containsSource = sourceX >= r.left && sourceX <= r.right && sourceY >= r.top && sourceY <= r.bottom;
+      const containsTarget = targetX >= r.left && targetX <= r.right && targetY >= r.top && targetY <= r.bottom;
+      if (containsSource || containsTarget) return false;
+      return alignedX >= r.left && alignedX <= r.right && maxY >= r.top && minY <= r.bottom;
+    });
+    if (!blocked) {
+      const path = `M ${alignedX} ${sourceY} L ${alignedX} ${targetY}`;
+      const labelY = (sourceY + targetY) / 2;
+      const waypoints: Point[] = [{ x: alignedX, y: sourceY }, { x: alignedX, y: targetY }];
+      // Vertical line: arrival is DOWN (1) or UP (3)
+      const arrivalDir = targetY > sourceY ? 1 : 3;
+      return { path, labelX: alignedX, labelY, turns: "straight", waypoints, arrivalDir };
     }
   }
 
   // Stub lengths:
   // - stubSpread: small per-port spread from same-device sibling counting (prevents stub overlaps)
-  // - Signed value: positive pushes stubs further out, negative pulls them closer.
-  //   Each edge from the same device gets a unique spread so their vertical stubs don't overlap.
-  let stubSX = sourceX + STUB + stubSpread;
-  let stubTX = targetX - STUB - stubSpread;
+  // - noStubs: skip stubs entirely (for handle-to-handle legs in manual routing)
+  let stubSX = noSourceStub ? sourceX : sourceX + STUB + stubSpread;
+  let stubTX = noTargetStub ? targetX : targetX - STUB - stubSpread;
 
   // If stubs cross (source/target close in X with large spread), clamp to midpoint.
-  // Only applies when target is to the right of source (normal flow).
-  if (sourceX < targetX && stubSX >= stubTX) {
+  if (!noSourceStub && !noTargetStub && sourceX < targetX && stubSX >= stubTX) {
     const mid = (sourceX + targetX) / 2;
     stubSX = mid - 1;
     stubTX = mid + 1;
@@ -580,15 +640,15 @@ export function computeEdgePath(
     { x: stubSX, y: sourceY },
     { x: stubTX, y: targetY },
   ];
-  const grid = buildSparseGrid(stubSX, sourceY, stubTX, targetY, obstacles, forceOpen, penalties);
+  const grid = buildSparseGrid(stubSX, sourceY, stubTX, targetY, obstacles, forceOpen, penalties, currentSignalType);
 
-  const rawPath = astarOrthogonal(grid, stubSX, sourceY, stubTX, targetY, obstacles, penalties);
-  if (!rawPath) {
+  const astarResult = astarOrthogonal(grid, stubSX, sourceY, stubTX, targetY, obstacles, penalties, currentSignalType, noSourceStub, noTargetStub, excludeStartDir, excludeEndDir);
+  if (!astarResult) {
     return null;
   }
 
   // Simplify the A* interior path
-  const interior = simplifyWaypoints(rawPath);
+  const interior = simplifyWaypoints(astarResult.path);
 
   // Build the full waypoint list.
   // Endpoints (handle positions) are pinned — they must land exactly on the handle.
@@ -645,5 +705,5 @@ export function computeEdgePath(
     ? simplified.slice(1, -1).map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" → ")
     : "straight";
 
-  return { path, labelX, labelY, turns, waypoints: simplified };
+  return { path, labelX, labelY, turns, waypoints: simplified, arrivalDir: astarResult.arrivalDir };
 }

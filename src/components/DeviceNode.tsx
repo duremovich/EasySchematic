@@ -80,6 +80,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
         )}
       </div>
 
+      {/* Port area — 9px top padding aligns all handle centers to the 20px grid.
+           Math: 1px (node border) + 40px (header) + 9px (pad) + 10px (half row) = 60px ≡ 0 mod 20 */}
+      <div className="pt-[9px]">
       {/* Input/Output Ports — two independent columns */}
       {(inputs.length > 0 || outputs.length > 0) && (
         hasSections ? (
@@ -264,6 +267,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

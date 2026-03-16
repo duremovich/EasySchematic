@@ -52,6 +52,64 @@ export default function EdgeRoutingPage() {
         <li>Consistent horizontal flow (left-to-right preference)</li>
       </ol>
 
+      <h2>Manual routing</h2>
+      <p>
+        Sometimes the auto-router doesn't produce the exact path you want. You can override
+        routing on any connection by adding <strong>manual handles</strong> — waypoints that the
+        connection must pass through.
+      </p>
+
+      <h3>Adding a handle</h3>
+      <ol>
+        <li><strong>Right-click</strong> on any connection to open the context menu</li>
+        <li>Select <strong>Add Handle</strong></li>
+        <li>A handle appears on the connection at the click position</li>
+      </ol>
+      <p>
+        The connection is re-routed using A* pathfinding between each pair of handles,
+        so it still avoids devices and maintains smooth orthogonal turns — it just passes
+        through your chosen points along the way.
+      </p>
+
+      <h3>Moving handles</h3>
+      <p>
+        Click the connection to select it, then <strong>drag any handle</strong> to reposition it.
+        Handles snap to the 20px grid (the same grid devices snap to), so connections align
+        cleanly with ports.
+      </p>
+
+      <h3>Removing handles</h3>
+      <p>
+        Right-click near an existing handle and select <strong>Remove Handle</strong> to delete it.
+        The connection re-routes automatically around the remaining handles (or fully
+        auto-routes if no handles remain).
+      </p>
+
+      <h3>Resetting to auto-routing</h3>
+      <p>
+        Right-click a manually-routed connection and select <strong>Reset Route</strong> to remove
+        all handles and return the connection to fully automatic routing.
+      </p>
+
+      <h3>How manual routing interacts with auto-routing</h3>
+      <ul>
+        <li>
+          <strong>Manual connections route first</strong> — they get priority over auto-routed
+          connections when claiming corridors
+        </li>
+        <li>
+          <strong>Other connections yield</strong> — auto-routed connections see the manual
+          connection's path and route around it
+        </li>
+        <li>
+          <strong>A* still works</strong> — each leg between handles uses full A* pathfinding
+          with obstacle avoidance, just constrained to pass through your handles
+        </li>
+        <li>
+          <strong>Undo/redo</strong> — all handle operations are undoable with Ctrl+Z
+        </li>
+      </ul>
+
       <h2>Performance</h2>
       <p>
         Routes are recomputed when devices move or connections change, but <strong>frozen during drag</strong> for

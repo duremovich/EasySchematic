@@ -10,6 +10,8 @@ import type { SchematicNode, ConnectionEdge } from "./types";
 import {
   buildObstacles,
   computeEdgePath,
+  simplifyWaypoints,
+  waypointsToSvgPath,
   type PenaltyZone,
 } from "./pathfinding";
 
@@ -42,6 +44,29 @@ interface HandlePos {
   id: string;
   absX: number;
   absY: number;
+}
+
+// ---------- Orthogonalize ----------
+
+/**
+ * Insert intermediate waypoints between consecutive non-aligned points
+ * so the path stays strictly orthogonal (horizontal/vertical segments only).
+ * For each pair where both X and Y differ, inserts a bend point going
+ * horizontal-first from the source side then vertical into the next point.
+ */
+export function orthogonalize(points: Point[]): Point[] {
+  if (points.length < 2) return points;
+  const result: Point[] = [points[0]];
+  for (let i = 1; i < points.length; i++) {
+    const prev = result[result.length - 1];
+    const cur = points[i];
+    if (prev.x !== cur.x && prev.y !== cur.y) {
+      // Insert a bend: go horizontal first, then vertical
+      result.push({ x: cur.x, y: prev.y });
+    }
+    result.push(cur);
+  }
+  return result;
 }
 
 // ---------- Constants ----------
@@ -239,7 +264,7 @@ export function findViolations(
 // ---------- Penalty zone construction ----------
 
 export function buildPenaltyZones(
-  goodEdges: { segments: Segment[] }[],
+  goodEdges: { segments: Segment[]; signalType?: string }[],
 ): PenaltyZone[] {
   const zones: PenaltyZone[] = [];
   for (const edge of goodEdges) {
@@ -250,6 +275,7 @@ export function buildPenaltyZones(
           coordinate: seg.x1,
           rangeMin: Math.min(seg.y1, seg.y2),
           rangeMax: Math.max(seg.y1, seg.y2),
+          signalType: edge.signalType,
         });
       } else {
         zones.push({
@@ -257,6 +283,7 @@ export function buildPenaltyZones(
           coordinate: seg.y1,
           rangeMin: Math.min(seg.x1, seg.x2),
           rangeMax: Math.max(seg.x1, seg.x2),
+          signalType: edge.signalType,
         });
       }
     }
@@ -284,6 +311,7 @@ interface RouteState {
   labelY: number;
   turns: string;
   status: "good" | "bad";
+  signalType?: string;
 }
 
 function logRoutingReport(
@@ -588,7 +616,12 @@ export function routeAllEdges(
   // Edges routed first claim corridors; later edges route around them.
   // For same Y, go left to right. Use min(sourceY, targetY) as primary key
   // so edges near the top of the canvas get priority.
+  // Manual edges route first (clean slate — they claim corridors with priority),
+  // then auto edges route around them. Within each group, sort top-to-bottom.
   edgeEndpoints.sort((a, b) => {
+    const aManual = a.edge.data?.manualWaypoints?.length ? 1 : 0;
+    const bManual = b.edge.data?.manualWaypoints?.length ? 1 : 0;
+    if (aManual !== bManual) return bManual - aManual; // manual first
     const aY = Math.min(a.sourceY, a.targetY);
     const bY = Math.min(b.sourceY, b.targetY);
     if (aY !== bY) return aY - bY;
@@ -605,8 +638,158 @@ export function routeAllEdges(
   const routeStates: RouteState[] = [];
 
   for (const ep of edgeEndpoints) {
+    const sigType = ep.edge.data?.signalType;
+
     // Build penalties from all edges routed so far
     const penalties = buildPenaltyZones(routeStates);
+
+    // Manual waypoints — A* route each leg between user-placed handles
+    const manualWps = ep.edge.data?.manualWaypoints;
+    if (manualWps && manualWps.length >= 1) {
+      // Build legs: source→h1, h1→h2, ..., hN→target
+      const allPoints = [
+        { x: ep.sourceX, y: ep.sourceY },
+        ...manualWps,
+        { x: ep.targetX, y: ep.targetY },
+      ];
+
+      let allWaypoints: Point[] = [];
+      let allFailed = false;
+      let prevArrivalDir: number | undefined;
+
+      // Pre-compute the ideal exit direction at each handle by looking ahead
+      // to the next point. This direction is "reserved" for the outgoing leg,
+      // so the incoming leg must arrive from a different side.
+      // Index i corresponds to allPoints[i] (handles are indices 1..N-1).
+      const reservedExitDir: (number | undefined)[] = new Array(allPoints.length).fill(undefined);
+      for (let i = 1; i < allPoints.length - 1; i++) {
+        const handle = allPoints[i];
+        const next = allPoints[i + 1];
+        const dx = next.x - handle.x;
+        const dy = next.y - handle.y;
+        // Pick the dominant axis direction toward the next point
+        if (Math.abs(dx) >= Math.abs(dy)) {
+          reservedExitDir[i] = dx >= 0 ? 0 : 2; // RIGHT or LEFT
+        } else {
+          reservedExitDir[i] = dy >= 0 ? 1 : 3; // DOWN or UP
+        }
+      }
+
+      const lastLeg = allPoints.length - 2;
+      for (let leg = 0; leg < allPoints.length - 1; leg++) {
+        const from = allPoints[leg];
+        const to = allPoints[leg + 1];
+
+        const isFirstLeg = leg === 0;
+        const isLastLeg = leg === lastLeg;
+
+        const spread = isFirstLeg ? ep.stubSpread : 0;
+        const noSourceStub = !isFirstLeg;
+        const noTargetStub = !isLastLeg;
+
+        // Two constraints prevent doubling back at handles:
+        // 1. Don't START in the reverse of the previous leg's arrival direction
+        const excludeDir = prevArrivalDir !== undefined
+          ? (prevArrivalDir + 2) % 4
+          : undefined;
+        // 2. Don't ARRIVE from the opposite of the reserved exit direction.
+        //    If the reserved exit is RIGHT(0), arriving LEFT(2) would cause
+        //    the next leg's U-turn prevention to block RIGHT — the exact
+        //    direction it needs. So exclude arriving in (reservedExit+2)%4.
+        const reserved = reservedExitDir[leg + 1];
+        const reservedAtTarget = reserved !== undefined
+          ? (reserved + 2) % 4
+          : undefined;
+
+        // Manual edges route first in the sort order, so penalties here
+        // are empty or only from other manual edges — giving them a clean slate.
+        // Auto edges route later and see the manual edge penalty zones.
+        let legResult = computeEdgePath(
+          from.x, from.y, to.x, to.y,
+          obs.rects, 0, spread,
+          penalties.length > 0 ? penalties : undefined,
+          sigType,
+          noSourceStub,
+          noTargetStub,
+          excludeDir,
+          reservedAtTarget,
+        );
+
+        // Retry with relaxed obstacles if A* fails
+        if (!legResult) {
+          const relaxedObs = buildObstacles(
+            nodes,
+            [ep.edge.source, ep.edge.target],
+            getAbsPosAdapter,
+          );
+          legResult = computeEdgePath(
+            from.x, from.y, to.x, to.y,
+            relaxedObs.rects, 0, spread,
+            penalties.length > 0 ? penalties : undefined,
+            sigType,
+            noSourceStub,
+            noTargetStub,
+            excludeDir,
+            reservedAtTarget,
+          );
+        }
+
+        if (legResult) {
+          prevArrivalDir = legResult.arrivalDir;
+          // Concatenate waypoints, skip first point of subsequent legs (it's the
+          // same as the last point of the previous leg)
+          if (allWaypoints.length > 0) {
+            allWaypoints.push(...legResult.waypoints.slice(1));
+          } else {
+            allWaypoints.push(...legResult.waypoints);
+          }
+        } else {
+          allFailed = true;
+          break;
+        }
+      }
+
+      if (!allFailed && allWaypoints.length >= 2) {
+        // Don't simplify the concatenated path — simplifyWaypoints removes collinear
+        // points, which can eliminate the manual handle positions when they happen
+        // to be collinear with adjacent A* waypoints. Each leg is already simplified
+        // internally by computeEdgePath.
+        const svgPath = waypointsToSvgPath(allWaypoints);
+        const segments = extractSegments(allWaypoints);
+        const midIdx = Math.floor(allWaypoints.length / 2);
+
+        routeStates.push({
+          edgeId: ep.edge.id,
+          waypoints: allWaypoints,
+          segments,
+          svgPath,
+          labelX: allWaypoints[midIdx]?.x ?? ep.sourceX,
+          labelY: allWaypoints[midIdx]?.y ?? ep.sourceY,
+          turns: "manual",
+          status: "good",
+          signalType: sigType,
+        });
+        continue;
+      }
+
+      // Fallback: orthogonalize if A* failed on any leg
+      const fallbackWp = simplifyWaypoints(orthogonalize(allPoints));
+      const fbSvg = waypointsToSvgPath(fallbackWp);
+      const fbSegs = extractSegments(fallbackWp);
+      const fbMid = Math.floor(fallbackWp.length / 2);
+      routeStates.push({
+        edgeId: ep.edge.id,
+        waypoints: fallbackWp,
+        segments: fbSegs,
+        svgPath: fbSvg,
+        labelX: fallbackWp[fbMid]?.x ?? ep.sourceX,
+        labelY: fallbackWp[fbMid]?.y ?? ep.sourceY,
+        turns: "manual-fallback",
+        status: "good",
+        signalType: sigType,
+      });
+      continue;
+    }
 
     let result = computeEdgePath(
       ep.sourceX,
@@ -617,6 +800,7 @@ export function routeAllEdges(
       0,
       ep.stubSpread,
       penalties.length > 0 ? penalties : undefined,
+      sigType,
     );
 
     // If A* fails (often because endpoint devices' padded rects block the corridor),
@@ -637,6 +821,7 @@ export function routeAllEdges(
         0,
         ep.stubSpread,
         penalties.length > 0 ? penalties : undefined,
+        sigType,
       );
     }
 
@@ -651,6 +836,7 @@ export function routeAllEdges(
         labelY: result.labelY,
         turns: result.turns,
         status: "good",
+        signalType: sigType,
       });
     } else {
       // Fallback: orthogonal L-shape (never draw a diagonal)
@@ -675,6 +861,7 @@ export function routeAllEdges(
         labelY: (ep.sourceY + ep.targetY) / 2,
         turns: "fallback",
         status: "good",
+        signalType: sigType,
       });
     }
   }
@@ -684,7 +871,7 @@ export function routeAllEdges(
     routeStates.map((rs) => ({ edgeId: rs.edgeId, segments: rs.segments })),
   );
   for (const rs of routeStates) {
-    if (badIds.has(rs.edgeId)) {
+    if (badIds.has(rs.edgeId) && !rs.turns.startsWith("manual")) {
       rs.status = "bad";
     }
   }
@@ -712,6 +899,7 @@ export function routeAllEdges(
         (rs) => rs.status === "good" && rs.edgeId !== bad.edgeId,
       );
       const penalties = buildPenaltyZones(goodEdges);
+      const sigType = ep.edge.data?.signalType;
 
       let result = computeEdgePath(
         ep.sourceX,
@@ -722,6 +910,7 @@ export function routeAllEdges(
         0,
         ep.stubSpread,
         penalties,
+        sigType,
       );
 
       if (!result) {
@@ -739,6 +928,7 @@ export function routeAllEdges(
           0,
           ep.stubSpread,
           penalties,
+          sigType,
         );
       }
 

@@ -90,6 +90,11 @@ interface SchematicState {
   addCustomTemplate: (template: DeviceTemplate) => void;
   removeCustomTemplate: (deviceType: string) => void;
 
+  // Manual edge routing
+  setManualWaypoints: (edgeId: string, waypoints: { x: number; y: number }[]) => void;
+  clearManualWaypoints: (edgeId: string) => void;
+  edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number } | null;
+
   // Centralized edge routing
   routedEdges: Record<string, RoutedEdge>;
   recomputeRoutes: (rfInstance: ReactFlowInstance) => void;
@@ -298,6 +303,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   editingNodeId: null,
   customTemplates: loadCustomTemplates(),
   routedEdges: {},
+  edgeContextMenu: null,
   debugEdges: false,
   isDragging: false,
   printView: false,
@@ -980,6 +986,35 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   setSchematicName: (name) => {
     set({ schematicName: name });
+    get().saveToLocalStorage();
+  },
+
+  setManualWaypoints: (edgeId, waypoints) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      edges: state.edges.map((e) =>
+        e.id === edgeId
+          ? { ...e, data: { ...e.data!, manualWaypoints: waypoints } }
+          : e,
+      ),
+    });
+    get().saveToLocalStorage();
+  },
+
+  clearManualWaypoints: (edgeId) => {
+    const state = get();
+    const edge = state.edges.find((e) => e.id === edgeId);
+    if (!edge?.data?.manualWaypoints) return;
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const { manualWaypoints: _, ...restData } = edge.data;
+    set({
+      edges: state.edges.map((e) =>
+        e.id === edgeId
+          ? { ...e, data: restData as ConnectionEdge["data"] }
+          : e,
+      ),
+    });
     get().saveToLocalStorage();
   },
 

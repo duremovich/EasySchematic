@@ -66,6 +66,7 @@ export type SchematicNode = DeviceNode | RoomNode | NoteNode;
 export interface ConnectionData {
   [key: string]: unknown;
   signalType: SignalType;
+  manualWaypoints?: { x: number; y: number }[];
 }
 
 export type ConnectionEdge = Edge<ConnectionData>;

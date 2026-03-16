@@ -25,6 +25,7 @@ import SignalColorPanel from "./components/SignalColorPanel";
 import ShowInfoPanel from "./components/ShowInfoPanel";
 import ViewOptionsPanel from "./components/ViewOptionsPanel";
 import Toolbar from "./components/Toolbar";
+import EdgeContextMenu from "./components/EdgeContextMenu";
 import { computeSnap, enforceMinSpacing, type GuideLine } from "./snapUtils";
 import type { DeviceTemplate, SchematicNode } from "./types";
 
@@ -128,7 +129,7 @@ function SchematicCanvas() {
   );
   // Digest of edge connectivity
   const edgeDigest = useSchematicStore((s) =>
-    s.edges.map((e) => `${e.id}:${e.source}:${e.sourceHandle}:${e.target}:${e.targetHandle}`).join("|"),
+    s.edges.map((e) => `${e.id}:${e.source}:${e.sourceHandle}:${e.target}:${e.targetHandle}:${e.data?.manualWaypoints?.length ?? 0}`).join("|"),
   );
 
   // Filter out edges whose signal type is hidden (presentation-only — store edges stay complete)
@@ -614,6 +615,19 @@ function SchematicCanvas() {
       snapToGrid
       snapGrid={[GRID_SIZE, GRID_SIZE]}
       nodeExtent={printView ? [[0, 0], [Infinity, Infinity]] : undefined}
+      onEdgeContextMenu={(event, edge) => {
+        event.preventDefault();
+        const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        useSchematicStore.setState({
+          edgeContextMenu: {
+            edgeId: edge.id,
+            screenX: event.clientX,
+            screenY: event.clientY,
+            flowX: flowPos.x,
+            flowY: flowPos.y,
+          },
+        });
+      }}
     >
       <SnapGuides guides={snapGuides} />
       {printView && <PageBoundaryOverlay />}
@@ -721,6 +735,7 @@ export default function App() {
         </div>
       </div>
       <DeviceEditor />
+      <EdgeContextMenu />
     </div>
   );
 }
