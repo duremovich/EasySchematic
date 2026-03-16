@@ -1,5 +1,35 @@
 import type { Node, Edge } from "@xyflow/react";
 
+export type ConnectorType =
+  | "bnc" | "hdmi" | "displayport" | "vga"
+  | "xlr-3" | "xlr-5" | "trs-quarter" | "trs-eighth"
+  | "rj45" | "ethercon" | "sfp" | "lc"
+  | "usb-a" | "usb-b" | "usb-c"
+  | "db9" | "phoenix" | "powercon" | "edison" | "iec"
+  | "speakon" | "none" | "other";
+
+export interface PortNetworkConfig {
+  ip?: string;
+  subnetMask?: string;
+  gateway?: string;
+  vlan?: number;
+  dhcp?: boolean;
+}
+
+export interface PortCapabilities {
+  maxResolution?: string;
+  maxFrameRate?: number;
+  maxBitDepth?: number;
+  colorSpaces?: string[];
+}
+
+export interface PortActiveConfig {
+  resolution?: string;
+  frameRate?: number;
+  bitDepth?: number;
+  colorSpace?: string;
+}
+
 export type SignalType =
   | "sdi"
   | "hdmi"
@@ -31,6 +61,10 @@ export interface Port {
   signalType: SignalType;
   direction: PortDirection;
   section?: string;
+  connectorType?: ConnectorType;
+  capabilities?: PortCapabilities;
+  networkConfig?: PortNetworkConfig;
+  activeConfig?: PortActiveConfig;
 }
 
 export interface DeviceData {
@@ -45,6 +79,10 @@ export interface DeviceData {
   /** Permanent template identity — what the device *is* (e.g. "BMD SDI→HDMI").
    *  Never cleared on rename. Used for pack list grouping. */
   model?: string;
+  templateId?: string;
+  templateVersion?: number;
+  manufacturer?: string;
+  modelNumber?: string;
 }
 
 export type DeviceNode = Node<DeviceData, "device">;
@@ -70,16 +108,22 @@ export interface ConnectionData {
   [key: string]: unknown;
   signalType: SignalType;
   manualWaypoints?: { x: number; y: number }[];
+  connectorMismatch?: boolean;
 }
 
 export type ConnectionEdge = Edge<ConnectionData>;
 
 export interface DeviceTemplate {
+  id?: string;
+  version?: number;
   deviceType: string;
   label: string;
   ports: Port[];
   color?: string;
   searchTerms?: string[];
+  manufacturer?: string;
+  modelNumber?: string;
+  imageUrl?: string;
 }
 
 export interface CustomField {
@@ -169,6 +213,32 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   vga: "var(--color-vga)",
   power: "var(--color-power)",
   custom: "var(--color-custom)",
+};
+
+export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
+  bnc: "BNC",
+  hdmi: "HDMI",
+  displayport: "DisplayPort",
+  vga: "VGA (DB15)",
+  "xlr-3": "XLR-3",
+  "xlr-5": "XLR-5",
+  "trs-quarter": '1/4" TRS',
+  "trs-eighth": '3.5mm TRS',
+  rj45: "RJ45",
+  ethercon: "EtherCon",
+  sfp: "SFP/SFP+",
+  lc: "LC Fiber",
+  "usb-a": "USB-A",
+  "usb-b": "USB-B",
+  "usb-c": "USB-C",
+  db9: "DB9",
+  phoenix: "Phoenix",
+  powercon: "powerCON",
+  edison: "Edison",
+  iec: "IEC C13",
+  speakon: "speakON",
+  none: "None",
+  other: "Other",
 };
 
 export const SIGNAL_LABELS: Record<SignalType, string> = {

@@ -3,14 +3,20 @@ import { useSchematicStore } from "../store";
 import {
   SIGNAL_LABELS,
   SIGNAL_COLORS,
+  CONNECTOR_LABELS,
   type SignalType,
+  type ConnectorType,
   type Port,
   type PortDirection,
+  type PortNetworkConfig,
+  type PortCapabilities,
   type DeviceData,
   type DeviceNode,
 } from "../types";
+import { DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES } from "../connectorTypes";
 
 const ALL_SIGNAL_TYPES = Object.keys(SIGNAL_LABELS) as SignalType[];
+const ALL_CONNECTOR_TYPES = Object.keys(CONNECTOR_LABELS) as ConnectorType[];
 
 interface PortDraft {
   id: string;
@@ -18,6 +24,9 @@ interface PortDraft {
   signalType: SignalType;
   direction: PortDirection;
   section?: string;
+  connectorType?: ConnectorType;
+  networkConfig?: PortNetworkConfig;
+  capabilities?: PortCapabilities;
 }
 
 function newPortDraft(direction: PortDirection): PortDraft {
@@ -26,6 +35,7 @@ function newPortDraft(direction: PortDirection): PortDraft {
     label: "",
     signalType: "sdi",
     direction,
+    connectorType: DEFAULT_CONNECTOR["sdi"],
   };
 }
 
@@ -59,6 +69,9 @@ export default function DeviceEditor() {
         signalType: p.signalType,
         direction: p.direction,
         section: p.section,
+        connectorType: p.connectorType,
+        networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
+        capabilities: p.capabilities ? { ...p.capabilities } : undefined,
       })),
     );
   }, [node]);
@@ -75,14 +88,20 @@ export default function DeviceEditor() {
         label: p.label.trim(),
       }));
 
+    // Preserve existing metadata fields from the node
+    const existing = node?.data;
     const data: DeviceData = {
       label: label.trim() || "Untitled",
       deviceType: deviceType.trim() || "custom",
       ports: finalPorts,
+      ...(existing?.manufacturer ? { manufacturer: existing.manufacturer } : {}),
+      ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
+      ...(existing?.templateId ? { templateId: existing.templateId } : {}),
+      ...(existing?.templateVersion ? { templateVersion: existing.templateVersion } : {}),
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, deviceType, updateDevice, close]);
+  }, [editingNodeId, ports, label, deviceType, node, updateDevice, close]);
 
   const handleSaveAsTemplate = useCallback(() => {
     const finalPorts: Port[] = ports
@@ -93,12 +112,15 @@ export default function DeviceEditor() {
         label: p.label.trim(),
       }));
 
+    const existing = node?.data;
     addCustomTemplate({
       deviceType: `custom-${Date.now()}`,
       label: label.trim() || "Custom Device",
       ports: finalPorts,
+      ...(existing?.manufacturer ? { manufacturer: existing.manufacturer } : {}),
+      ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
     });
-  }, [ports, label, addCustomTemplate]);
+  }, [ports, label, node, addCustomTemplate]);
 
   const addPort = (direction: PortDirection) => {
     setPorts([...ports, newPortDraft(direction)]);
@@ -207,6 +229,12 @@ export default function DeviceEditor() {
               />
             </Field>
           </div>
+
+          {(node.data.manufacturer || node.data.modelNumber) && (
+            <div className="text-[10px] text-[var(--color-text-muted)] -mt-2">
+              {[node.data.manufacturer, node.data.modelNumber].filter(Boolean).join(" ")}
+            </div>
+          )}
 
           <PortSection
             title="Inputs"
@@ -633,11 +661,30 @@ function PortRow({
         <select
           className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-1 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer"
           value={port.signalType}
-          onChange={(e) => onUpdate({ signalType: e.target.value as SignalType })}
+          onChange={(e) => {
+            const newSignal = e.target.value as SignalType;
+            onUpdate({
+              signalType: newSignal,
+              connectorType: DEFAULT_CONNECTOR[newSignal],
+            });
+          }}
         >
           {ALL_SIGNAL_TYPES.map((t) => (
             <option key={t} value={t}>
               {SIGNAL_LABELS[t]}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-1 text-[10px] text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer max-w-[80px]"
+          value={port.connectorType ?? DEFAULT_CONNECTOR[port.signalType]}
+          onChange={(e) => onUpdate({ connectorType: e.target.value as ConnectorType })}
+          title="Connector type"
+        >
+          {ALL_CONNECTOR_TYPES.map((c) => (
+            <option key={c} value={c}>
+              {CONNECTOR_LABELS[c]}
             </option>
           ))}
         </select>
@@ -687,9 +734,154 @@ function PortRow({
         </div>
       )}
 
+      {/* Network Config (collapsible, only for network signal types) */}
+      {NETWORK_SIGNAL_TYPES.has(port.signalType) && (
+        <PortNetworkSection
+          config={port.networkConfig}
+          onChange={(nc) => onUpdate({ networkConfig: nc })}
+        />
+      )}
+
+      {/* Capabilities (collapsible, only for video signal types) */}
+      {VIDEO_SIGNAL_TYPES.has(port.signalType) && (
+        <PortCapabilitiesSection
+          capabilities={port.capabilities}
+          onChange={(caps) => onUpdate({ capabilities: caps })}
+        />
+      )}
+
       {showIndicatorAfter && (
         <div className="h-0.5 bg-blue-500 rounded-full my-0.5" />
       )}
     </>
+  );
+}
+
+function PortNetworkSection({
+  config,
+  onChange,
+}: {
+  config?: PortNetworkConfig;
+  onChange: (config: PortNetworkConfig) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const c = config ?? {};
+  const hasData = c.ip || c.subnetMask || c.gateway || c.vlan || c.dhcp;
+
+  return (
+    <div className="pl-6 mb-0.5">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`text-[9px] cursor-pointer transition-colors ${
+          hasData ? "text-blue-600" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+        }`}
+      >
+        {open ? "▾" : "▸"} Network{hasData ? " (configured)" : ""}
+      </button>
+      {open && (
+        <div className="grid grid-cols-2 gap-1 mt-1">
+          <label className="flex items-center gap-1 col-span-2 text-[9px] text-[var(--color-text-muted)]">
+            <input
+              type="checkbox"
+              checked={c.dhcp ?? false}
+              onChange={(e) => onChange({ ...c, dhcp: e.target.checked })}
+              className="cursor-pointer"
+            />
+            DHCP
+          </label>
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            value={c.ip ?? ""}
+            onChange={(e) => onChange({ ...c, ip: e.target.value || undefined })}
+            placeholder="IP Address"
+            disabled={c.dhcp}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            value={c.subnetMask ?? ""}
+            onChange={(e) => onChange({ ...c, subnetMask: e.target.value || undefined })}
+            placeholder="Subnet Mask"
+            disabled={c.dhcp}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            value={c.gateway ?? ""}
+            onChange={(e) => onChange({ ...c, gateway: e.target.value || undefined })}
+            placeholder="Gateway"
+            disabled={c.dhcp}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            type="number"
+            value={c.vlan ?? ""}
+            onChange={(e) => onChange({ ...c, vlan: e.target.value ? Number(e.target.value) : undefined })}
+            placeholder="VLAN"
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PortCapabilitiesSection({
+  capabilities,
+  onChange,
+}: {
+  capabilities?: PortCapabilities;
+  onChange: (caps: PortCapabilities) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const c = capabilities ?? {};
+  const hasData = c.maxResolution || c.maxFrameRate || c.maxBitDepth;
+
+  return (
+    <div className="pl-6 mb-0.5">
+      <button
+        onClick={() => setOpen(!open)}
+        className={`text-[9px] cursor-pointer transition-colors ${
+          hasData ? "text-blue-600" : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+        }`}
+      >
+        {open ? "▾" : "▸"} Capabilities{hasData ? " (set)" : ""}
+      </button>
+      {open && (
+        <div className="grid grid-cols-2 gap-1 mt-1">
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            value={c.maxResolution ?? ""}
+            onChange={(e) => onChange({ ...c, maxResolution: e.target.value || undefined })}
+            placeholder="Max Resolution (e.g. 3840x2160)"
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            type="number"
+            value={c.maxFrameRate ?? ""}
+            onChange={(e) => onChange({ ...c, maxFrameRate: e.target.value ? Number(e.target.value) : undefined })}
+            placeholder="Max FPS"
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            type="number"
+            value={c.maxBitDepth ?? ""}
+            onChange={(e) => onChange({ ...c, maxBitDepth: e.target.value ? Number(e.target.value) : undefined })}
+            placeholder="Bit Depth"
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            value={c.colorSpaces?.join(", ") ?? ""}
+            onChange={(e) => onChange({ ...c, colorSpaces: e.target.value ? e.target.value.split(",").map((s) => s.trim()) : undefined })}
+            placeholder="Color Spaces (comma sep)"
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </div>
   );
 }

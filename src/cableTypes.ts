@@ -1,6 +1,7 @@
-import type { SignalType } from "./types";
+import type { Port, SignalType } from "./types";
+import { CONNECTOR_TO_CABLE } from "./connectorTypes";
 
-/** Maps each signal type to a physical cable type label for pack lists */
+/** Maps each signal type to a physical cable type label for pack lists (legacy fallback) */
 export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   sdi: "SDI",
   genlock: "SDI",
@@ -24,3 +25,21 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   gpio: "GPIO",
   custom: "Other",
 };
+
+/**
+ * Derive cable type from ports and signal type.
+ * Prefers connector-based lookup; falls back to signal-based for legacy data.
+ */
+export function getCableType(
+  sourcePort: Port | undefined,
+  targetPort: Port | undefined,
+  signalType: SignalType,
+): string {
+  // Use source port connector if available
+  const connector = sourcePort?.connectorType ?? targetPort?.connectorType;
+  if (connector) {
+    const cable = CONNECTOR_TO_CABLE[connector];
+    if (cable) return cable;
+  }
+  return SIGNAL_TO_CABLE[signalType];
+}

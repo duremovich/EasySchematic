@@ -41,6 +41,8 @@ function templateMatchesSearch(template: DeviceTemplate, query: string): boolean
   const q = query.toLowerCase();
   if (template.label.toLowerCase().includes(q)) return true;
   if (template.deviceType.toLowerCase().includes(q)) return true;
+  if (template.manufacturer?.toLowerCase().includes(q)) return true;
+  if (template.modelNumber?.toLowerCase().includes(q)) return true;
   if (template.searchTerms?.some((t) => t.toLowerCase().includes(q))) return true;
   for (const port of template.ports) {
     if (port.signalType.toLowerCase().includes(q)) return true;
@@ -88,6 +90,11 @@ function TemplateItem({
         <span className="text-xs text-[var(--color-text-heading)] font-medium truncate">
           <HighlightedText text={template.label} query={query} />
         </span>
+        {template.manufacturer && (
+          <span className="text-[9px] text-[var(--color-text-muted)] opacity-70 truncate">
+            <HighlightedText text={template.manufacturer} query={query} />
+          </span>
+        )}
         <span className="text-[10px] text-[var(--color-text-muted)]">
           <HighlightedText text={signalText} query={query} />
         </span>

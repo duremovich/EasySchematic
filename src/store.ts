@@ -24,6 +24,7 @@ import type { Orientation } from "./printConfig";
 import { computeAlignment, type AlignOperation } from "./alignUtils";
 import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 import { routeAllEdges, type RoutedEdge } from "./edgeRouter";
+import { areConnectorsCompatible } from "./connectorTypes";
 import { createDefaultLayout } from "./titleBlockLayout";
 import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
 
@@ -212,7 +213,14 @@ function pushUndo(snapshot: Snapshot) {
 
 function clonePorts(ports: Port[]): Port[] {
   const prefix = `p${Date.now()}`;
-  return ports.map((p, i) => ({ ...p, id: `${prefix}-${i}` }));
+  return ports.map((p, i) => {
+    const clone: Port = { ...p, id: `${prefix}-${i}` };
+    // Deep clone nested objects
+    if (p.capabilities) clone.capabilities = { ...p.capabilities };
+    if (p.networkConfig) clone.networkConfig = { ...p.networkConfig };
+    if (p.activeConfig) clone.activeConfig = { ...p.activeConfig };
+    return clone;
+  });
 }
 
 /** Auto-number devices that share a baseLabel. Returns a new array if anything changed. */
@@ -351,6 +359,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       connection.source,
       connection.sourceHandle,
     );
+    const targetPort = getPortFromHandle(
+      state.nodes,
+      connection.target,
+      connection.targetHandle,
+    );
+
+    const connectorMismatch = !areConnectorsCompatible(
+      sourcePort?.connectorType,
+      targetPort?.connectorType,
+    );
 
     const newEdge: ConnectionEdge = {
       id: nextEdgeId(),
@@ -358,7 +376,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       target: connection.target,
       sourceHandle: connection.sourceHandle,
       targetHandle: connection.targetHandle,
-      data: { signalType: sourcePort?.signalType ?? "custom" },
+      data: {
+        signalType: sourcePort?.signalType ?? "custom",
+        ...(connectorMismatch ? { connectorMismatch: true } : {}),
+      },
       style: {
         stroke: `var(--color-${sourcePort?.signalType ?? "custom"})`,
         strokeWidth: 2,
@@ -383,6 +404,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         color: template.color,
         baseLabel: template.label,
         model: template.label,
+        ...(template.id ? { templateId: template.id } : {}),
+        ...(template.version ? { templateVersion: template.version } : {}),
+        ...(template.manufacturer ? { manufacturer: template.manufacturer } : {}),
+        ...(template.modelNumber ? { modelNumber: template.modelNumber } : {}),
       },
     };
     set({ nodes: renumberNodes([...get().nodes, newNode]) });

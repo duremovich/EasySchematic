@@ -35,6 +35,12 @@ function OffsetEdgeComponent({
     return `${r.svgPath}\0${r.labelX}\0${r.labelY}\0${r.turns}`;
   });
 
+  // Read connector mismatch flag (stable primitive selector)
+  const connectorMismatch = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.connectorMismatch === true;
+  });
+
   // Read manual waypoints directly (serialized for stable selector)
   const manualWpStr = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
@@ -63,7 +69,11 @@ function OffsetEdgeComponent({
   }
 
   const edgeStyle = routeStr
-    ? { ...style, strokeWidth: selected ? 3 : 2 }
+    ? {
+        ...style,
+        strokeWidth: selected ? 3 : 2,
+        ...(connectorMismatch ? { strokeDasharray: "6 3" } : {}),
+      }
     : { ...style, strokeWidth: 0, opacity: 0 };
 
   // --- Waypoint dragging ---

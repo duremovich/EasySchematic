@@ -11,8 +11,9 @@
  */
 
 import { createDefaultLayout } from "./titleBlockLayout";
+import { DEFAULT_CONNECTOR } from "./connectorTypes";
 
-export const CURRENT_SCHEMA_VERSION = 10;
+export const CURRENT_SCHEMA_VERSION = 11;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -89,6 +90,34 @@ const migrations: Record<number, Migration> = {
     // v9 → v10: add reportLayouts for persisting report print preview settings
     data.reportLayouts ??= {};
     data.version = 10;
+    return data;
+  },
+  10: (data) => {
+    // v10 → v11: add connectorType to all ports using DEFAULT_CONNECTOR[signalType]
+    if (data.nodes) {
+      for (const node of data.nodes) {
+        if (node.type === "device" && node.data?.ports) {
+          for (const port of node.data.ports) {
+            if (!port.connectorType && port.signalType) {
+              port.connectorType = DEFAULT_CONNECTOR[port.signalType as keyof typeof DEFAULT_CONNECTOR] ?? "other";
+            }
+          }
+        }
+      }
+    }
+    // Also migrate custom templates stored in the file
+    if (data.customTemplates) {
+      for (const tmpl of data.customTemplates) {
+        if (tmpl.ports) {
+          for (const port of tmpl.ports) {
+            if (!port.connectorType && port.signalType) {
+              port.connectorType = DEFAULT_CONNECTOR[port.signalType as keyof typeof DEFAULT_CONNECTOR] ?? "other";
+            }
+          }
+        }
+      }
+    }
+    data.version = 11;
     return data;
   },
 };

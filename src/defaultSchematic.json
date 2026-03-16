@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 11,
   "name": "Untitled Schematic",
   "nodes": [
     {
@@ -92,67 +92,78 @@
             "id": "p1773360118182-0",
             "label": "TB5 1",
             "signalType": "thunderbolt",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773360118182-1",
             "label": "TB5 2",
             "signalType": "thunderbolt",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773360118182-2",
             "label": "TB5 3",
             "signalType": "thunderbolt",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773360118182-3",
             "label": "TB5 4",
             "signalType": "thunderbolt",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773360118182-4",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360118182-7",
             "label": "USB-C Front 1",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773360118182-8",
             "label": "USB-C Front 2",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773360118182-9",
             "label": "Ethernet",
             "signalType": "ethernet",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773360118182-5",
             "label": "USB-A 1",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773360118182-6",
             "label": "USB-A 2",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "pw-device-33",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "model": "Mac Studio (M4)"
@@ -180,13 +191,15 @@
             "id": "p1773360222505-0",
             "label": "TB In",
             "signalType": "thunderbolt",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773360222505-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           }
         ],
         "baseLabel": "TB → HDMI Adapter",
@@ -215,13 +228,15 @@
             "id": "p1773360225872-0",
             "label": "TB In",
             "signalType": "thunderbolt",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773360225872-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           }
         ],
         "baseLabel": "TB → HDMI Adapter",
@@ -250,67 +265,78 @@
             "id": "p1773360337151-0",
             "label": "RGBHV In (BNC)",
             "signalType": "vga",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "vga"
           },
           {
             "id": "p1773360337151-1",
             "label": "RGB In (VGA)",
             "signalType": "vga",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "vga"
           },
           {
             "id": "p1773360337151-2",
             "label": "DVI-D In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360337151-3",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360337151-4",
             "label": "SDI In 1",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360337151-5",
             "label": "SDI In 2 (3G)",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360337151-6",
             "label": "Composite In",
             "signalType": "composite",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360337151-7",
             "label": "RS-232 In",
             "signalType": "serial",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "db9"
           },
           {
             "id": "p1773360337151-8",
             "label": "LAN",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773360337151-9",
             "label": "RS-232 Out",
             "signalType": "serial",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "db9"
           },
           {
             "id": "pw-device-38",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "Panasonic DZ13K",
@@ -339,13 +365,15 @@
             "id": "p1773360347184-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "pw-device-39",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "TV",
@@ -374,13 +402,15 @@
             "id": "p1773360349704-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "pw-device-40",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "TV",
@@ -409,13 +439,15 @@
             "id": "p1773360350057-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "pw-device-41",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "TV",
@@ -444,13 +476,15 @@
             "id": "p1773360350281-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "pw-device-42",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "TV",
@@ -479,13 +513,15 @@
             "id": "p1773360350504-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "pw-device-43",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "TV",
@@ -514,13 +550,15 @@
             "id": "p1773360350730-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "pw-device-44",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "TV",
@@ -549,13 +587,15 @@
             "id": "p1773360351145-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "pw-device-45",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "TV",
@@ -584,13 +624,15 @@
             "id": "p1773360351528-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "pw-device-46",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "TV",
@@ -619,61 +661,71 @@
             "id": "p1773360761700-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360761700-1",
             "label": "DP In",
             "signalType": "displayport",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "displayport"
           },
           {
             "id": "p1773360761700-2",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360761700-3",
             "label": "Genlock In",
             "signalType": "genlock",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360761700-4",
             "label": "SDI Out 1",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360761700-5",
             "label": "SDI Out 2",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360761700-6",
             "label": "SDI Out 3",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360761700-7",
             "label": "SDI Out 4",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360761700-8",
             "label": "DP Loop",
             "signalType": "displayport",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "displayport"
           },
           {
             "id": "pw-device-47",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "Datapath FX4 SDI",
@@ -702,61 +754,71 @@
             "id": "p1773360771090-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360771090-1",
             "label": "DP In",
             "signalType": "displayport",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "displayport"
           },
           {
             "id": "p1773360771090-2",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360771090-3",
             "label": "Genlock In",
             "signalType": "genlock",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360771090-4",
             "label": "SDI Out 1",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360771090-5",
             "label": "SDI Out 2",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360771090-6",
             "label": "SDI Out 3",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360771090-7",
             "label": "SDI Out 4",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360771090-8",
             "label": "DP Loop",
             "signalType": "displayport",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "displayport"
           },
           {
             "id": "pw-device-48",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "Datapath FX4 SDI",
@@ -785,19 +847,22 @@
             "id": "p1773360933938-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360933938-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360933938-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD SDI→HDMI",
@@ -826,19 +891,22 @@
             "id": "p1773360956827-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360956827-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360956827-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD SDI→HDMI",
@@ -867,19 +935,22 @@
             "id": "p1773360957146-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360957146-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360957146-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD SDI→HDMI",
@@ -908,19 +979,22 @@
             "id": "p1773360957595-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360957595-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360957595-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD SDI→HDMI",
@@ -949,19 +1023,22 @@
             "id": "p1773360957946-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360957946-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360957946-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD SDI→HDMI",
@@ -990,19 +1067,22 @@
             "id": "p1773360958363-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360958363-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360958363-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD SDI→HDMI",
@@ -1031,19 +1111,22 @@
             "id": "p1773360959547-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360959547-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360959547-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD SDI→HDMI",
@@ -1072,19 +1155,22 @@
             "id": "p1773360960220-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773360960220-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773360960220-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD SDI→HDMI",
@@ -1113,55 +1199,64 @@
             "id": "p1773415859541-0",
             "label": "Port 1",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773415859541-1",
             "label": "Port 2",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773415859541-2",
             "label": "Port 3",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773415859541-3",
             "label": "Port 4",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773415859541-4",
             "label": "Port 5",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773415859541-5",
             "label": "Port 6",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773415859541-6",
             "label": "Port 7",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773415859541-7",
             "label": "Port 8",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "pw-device-60",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "Ethernet Switch (8-port)",
@@ -1190,49 +1285,57 @@
             "id": "p1773416243486-0",
             "label": "3.5mm Audio In",
             "signalType": "analog-audio",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "xlr-3"
           },
           {
             "id": "p1773416243486-1",
             "label": "Ethernet",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773416243486-2",
             "label": "RS-232 In",
             "signalType": "serial",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "db9"
           },
           {
             "id": "p1773416243486-3",
             "label": "SDI Out",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773416243486-4",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773416243486-5",
             "label": "USB-C Out",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773416243486-6",
             "label": "RS-232 Out",
             "signalType": "serial",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "db9"
           },
           {
             "id": "pw-device-61",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "PTZOptics Move SE",
@@ -1261,49 +1364,57 @@
             "id": "p1773416246636-0",
             "label": "3.5mm Audio In",
             "signalType": "analog-audio",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "xlr-3"
           },
           {
             "id": "p1773416246636-1",
             "label": "Ethernet",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773416246636-2",
             "label": "RS-232 In",
             "signalType": "serial",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "db9"
           },
           {
             "id": "p1773416246636-3",
             "label": "SDI Out",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773416246636-4",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773416246636-5",
             "label": "USB-C Out",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773416246636-6",
             "label": "RS-232 Out",
             "signalType": "serial",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "db9"
           },
           {
             "id": "pw-device-62",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "PTZOptics Move SE",
@@ -1332,31 +1443,36 @@
             "id": "p1773416490870-0",
             "label": "Port 1",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773416490870-1",
             "label": "Port 2",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773416490870-2",
             "label": "Port 3",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773416490870-3",
             "label": "Port 4",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "pw-device-63",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "baseLabel": "Ethernet Switch (4-port)",
@@ -1385,25 +1501,29 @@
             "id": "p1773416651073-0",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773416651073-1",
             "label": "USB-C",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773416651073-2",
             "label": "Ethernet",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "pw-device-64",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "model": "Designer Computer"
@@ -1431,25 +1551,29 @@
             "id": "p1773416567045-0",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773416567045-1",
             "label": "USB-C",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773416567045-2",
             "label": "Ethernet",
             "signalType": "ethernet",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "rj45"
           },
           {
             "id": "pw-device-65",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "model": "Associate Computer"
@@ -1477,13 +1601,15 @@
             "id": "p1773418162658-0",
             "label": "TB In",
             "signalType": "thunderbolt",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773418162658-1",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           }
         ],
         "baseLabel": "TB → HDMI Adapter",
@@ -1512,25 +1638,29 @@
             "id": "p1773418206517-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773418206517-1",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773418206517-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "pw-device-70",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "model": "1920x1080 Monitor"
@@ -1558,7 +1688,8 @@
             "id": "p1773418394243-0",
             "label": "USB-A",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           }
         ],
         "baseLabel": "Mouse",
@@ -1587,7 +1718,8 @@
             "id": "p1773420485646-0",
             "label": "USB-A",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           }
         ],
         "model": "Keyboard"
@@ -1615,19 +1747,22 @@
             "id": "p1773420713933-0",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773420713933-1",
             "label": "SDI Out",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773420713933-2",
             "label": "SDI Out 2",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           }
         ],
         "baseLabel": "BMD HDMI→SDI",
@@ -1656,25 +1791,29 @@
             "id": "p1773421719892-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773421719892-1",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773421719892-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "pw-device-74",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "model": "1920x1080 Monitor"
@@ -1702,25 +1841,29 @@
             "id": "p1773421731964-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773421731964-1",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773421731964-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "pw-device-75",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "model": "1920x1080 Monitor"
@@ -1773,25 +1916,29 @@
             "id": "p1773507931939-0",
             "label": "SDI In",
             "signalType": "sdi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "bnc"
           },
           {
             "id": "p1773507931939-1",
             "label": "HDMI In",
             "signalType": "hdmi",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773507931939-2",
             "label": "SDI Loop",
             "signalType": "sdi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "bnc"
           },
           {
             "id": "pw-device-76",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "model": "1920x1080 Monitor"
@@ -1819,67 +1966,78 @@
             "id": "p1773508594582-0",
             "label": "TB5 1",
             "signalType": "thunderbolt",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773508594582-1",
             "label": "TB5 2",
             "signalType": "thunderbolt",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773508594582-2",
             "label": "TB5 3",
             "signalType": "thunderbolt",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773508594582-3",
             "label": "TB5 4",
             "signalType": "thunderbolt",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-c"
           },
           {
             "id": "p1773508594582-4",
             "label": "HDMI Out",
             "signalType": "hdmi",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "hdmi"
           },
           {
             "id": "p1773508594582-5",
             "label": "USB-C Front 1",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773508594582-6",
             "label": "USB-C Front 2",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773508594582-7",
             "label": "Ethernet",
             "signalType": "ethernet",
-            "direction": "output"
+            "direction": "output",
+            "connectorType": "rj45"
           },
           {
             "id": "p1773508594582-8",
             "label": "USB-A 1",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "p1773508594582-9",
             "label": "USB-A 2",
             "signalType": "usb",
-            "direction": "bidirectional"
+            "direction": "bidirectional",
+            "connectorType": "usb-a"
           },
           {
             "id": "pw-device-77",
             "label": "AC Power",
             "signalType": "power",
-            "direction": "input"
+            "direction": "input",
+            "connectorType": "edison"
           }
         ],
         "model": "Mac Studio (M4)"

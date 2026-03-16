@@ -6,7 +6,7 @@ import type {
   SignalType,
 } from "./types";
 import { SIGNAL_LABELS } from "./types";
-import { SIGNAL_TO_CABLE } from "./cableTypes";
+import { getCableType } from "./cableTypes";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
 
@@ -96,6 +96,16 @@ function resolvePortLabel(
   return port?.label ?? handleId;
 }
 
+function resolvePort(
+  node: SchematicNode | undefined,
+  handleId: string | null | undefined,
+) {
+  if (!handleId || !node || node.type !== "device") return undefined;
+  const data = node.data as DeviceData;
+  const portId = handleId.replace(/-(in|out)$/, "");
+  return data.ports.find((p) => p.id === portId);
+}
+
 export function computePackList(
   nodes: SchematicNode[],
   edges: ConnectionEdge[],
@@ -131,6 +141,8 @@ export function computePackList(
       const srcNode = nodes.find((n) => n.id === e.source);
       const tgtNode = nodes.find((n) => n.id === e.target);
       const signalType = e.data!.signalType as SignalType;
+      const srcPort = resolvePort(srcNode, e.sourceHandle);
+      const tgtPort = resolvePort(tgtNode, e.targetHandle);
       const srcRoom = srcNode
         ? getRoomLabel(nodes, srcNode.parentId)
         : "Unknown";
@@ -138,7 +150,7 @@ export function computePackList(
         ? getRoomLabel(nodes, tgtNode.parentId)
         : "Unknown";
       return {
-        cableType: SIGNAL_TO_CABLE[signalType],
+        cableType: getCableType(srcPort, tgtPort, signalType),
         signalType: SIGNAL_LABELS[signalType],
         sourceDevice: srcNode?.type === "device"
           ? (srcNode.data as DeviceData).label
