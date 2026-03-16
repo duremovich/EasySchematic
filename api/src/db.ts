@@ -12,7 +12,7 @@ interface TemplateOutput {
   ports: unknown[];
 }
 
-interface TemplateRow {
+export interface TemplateRow {
   id: string;
   version: number;
   device_type: string;
@@ -24,6 +24,34 @@ interface TemplateRow {
   search_terms: string | null;
   ports: string;
   sort_order: number;
+}
+
+interface TemplateInput {
+  id?: string;
+  label: string;
+  deviceType: string;
+  manufacturer?: string;
+  modelNumber?: string;
+  color?: string;
+  imageUrl?: string;
+  searchTerms?: string[];
+  ports: unknown[];
+  sortOrder?: number;
+}
+
+export function templateToRow(input: TemplateInput): Omit<TemplateRow, "version"> {
+  return {
+    id: input.id ?? "",
+    device_type: input.deviceType,
+    label: input.label,
+    manufacturer: input.manufacturer ?? null,
+    model_number: input.modelNumber ?? null,
+    color: input.color ?? null,
+    image_url: input.imageUrl ?? null,
+    search_terms: input.searchTerms ? JSON.stringify(input.searchTerms) : null,
+    ports: JSON.stringify(input.ports),
+    sort_order: input.sortOrder ?? 0,
+  };
 }
 
 export function rowToTemplate(row: TemplateRow): TemplateOutput {
