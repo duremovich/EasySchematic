@@ -52,6 +52,7 @@ export default function DevicesAndPortsPage() {
           <tr><td><strong>Serial</strong></td><td>Gray</td><td>Generic serial</td></tr>
           <tr><td><strong>Thunderbolt</strong></td><td>Indigo</td><td>High-speed I/O</td></tr>
           <tr><td><strong>Power</strong></td><td>Dark Amber</td><td>Power connections</td></tr>
+          <tr><td><strong>Custom</strong></td><td>User-defined</td><td>Custom signal types for anything not covered above</td></tr>
         </tbody>
       </table>
 

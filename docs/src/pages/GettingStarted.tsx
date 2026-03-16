@@ -9,7 +9,7 @@ export default function GettingStartedPage() {
       <ol>
         <li>
           <strong>Open</strong>{" "}
-          <a href="https://easyschematic.dylan-uremovich.workers.dev/">EasySchematic</a> in your browser
+          <a href="https://easyschematic.live/">EasySchematic</a> in your browser
         </li>
         <li>
           <strong>Drag a device</strong> from the library sidebar on the left onto the canvas
@@ -48,6 +48,7 @@ export default function GettingStartedPage() {
           <tr><td><strong>Disconnect</strong></td><td>Drag from a connected port and release on empty space</td></tr>
           <tr><td><strong>Copy/Paste</strong></td><td>Ctrl+C / Ctrl+V</td></tr>
           <tr><td><strong>Undo/Redo</strong></td><td>Ctrl+Z / Ctrl+Shift+Z (or Ctrl+Y)</td></tr>
+          <tr><td><strong>Align</strong></td><td>Select multiple items, then use the Align menu in the toolbar</td></tr>
         </tbody>
       </table>
 
@@ -64,6 +65,9 @@ export default function GettingStartedPage() {
         </li>
         <li>
           <strong>File → Export DXF</strong> — CAD-compatible export for Vectorworks and other tools
+        </li>
+        <li>
+          <strong>File → Export PDF</strong> — multi-page document matching your Print View settings
         </li>
       </ul>
     </>

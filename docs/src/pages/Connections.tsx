@@ -58,7 +58,17 @@ export default function ConnectionsPage() {
         Connections inherit the <strong>signal type color</strong> from the source port. This makes it easy to
         visually trace signal flow across a complex schematic — all SDI paths are blue, all HDMI paths are red, etc.
       </p>
-      <p>You can customize signal colors via the color panel on the right side of the app.</p>
+
+      <h3>Customizing colors</h3>
+      <p>
+        Open the <strong>Signal Colors</strong> panel from the right sidebar to customize connection colors:
+      </p>
+      <ul>
+        <li>Each signal type has its own <strong>color picker</strong> — click to choose a new color</li>
+        <li>Changes apply immediately to all connections of that signal type on the canvas</li>
+        <li>Click <strong>Reset to Defaults</strong> to restore the original color scheme</li>
+        <li>Custom colors are saved with your schematic and persist across sessions</li>
+      </ul>
     </>
   );
 }

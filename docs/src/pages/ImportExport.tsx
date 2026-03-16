@@ -20,6 +20,8 @@ export default function ImportExportPage() {
         <li>All connections (with signal type metadata)</li>
         <li>Custom templates (if any)</li>
         <li>Signal color customizations (if any)</li>
+        <li>Print settings (paper size, orientation, scale)</li>
+        <li>Title block data and layout</li>
       </ul>
 
       <h3>Import</h3>
@@ -70,15 +72,18 @@ export default function ImportExportPage() {
         Each signal type maps to an AutoCAD Color Index (ACI) color that approximates the on-screen signal color.
       </p>
 
+      <h2>PDF</h2>
+      <p>
+        <strong>Export PDF</strong> generates a multi-page document matching your Print View settings. Each page includes
+        the title block. See <a href="#/printing">Printing &amp; Title Block</a> for page setup details.
+      </p>
+
       <h2>Print</h2>
       <p>
-        <strong>File → Print</strong> opens the browser's print dialog with a clean layout:
+        <strong>File → Print</strong> opens the browser's print dialog with a clean layout optimized for your Print View
+        settings. For full details on page setup, title block configuration, and PDF export,
+        see <a href="#/printing">Printing &amp; Title Block</a>.
       </p>
-      <ul>
-        <li>UI chrome (toolbar, sidebar, minimap) is hidden</li>
-        <li>Title block with schematic name and date</li>
-        <li>Connections and devices render with <code>print-color-adjust: exact</code> for accurate colors</li>
-      </ul>
       <p>For best results, enable "Background graphics" in your browser's print settings.</p>
     </>
   );

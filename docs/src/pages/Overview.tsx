@@ -16,7 +16,7 @@ export default function OverviewPage() {
       </p>
       <p>
         <strong>
-          <a href="https://easyschematic.dylan-uremovich.workers.dev/">Open EasySchematic &rarr;</a>
+          <a href="https://easyschematic.live/">Open EasySchematic &rarr;</a>
         </strong>
       </p>
 
@@ -27,10 +27,10 @@ export default function OverviewPage() {
       <h2>Key features</h2>
       <ul>
         <li>
-          <strong>Devices</strong> with typed input/output ports (SDI, HDMI, NDI, Dante, and 15+ signal types)
+          <strong>Devices</strong> with typed input/output ports (SDI, HDMI, NDI, Dante, and 19 signal types)
         </li>
         <li>
-          <strong>Signal-type coloring</strong> — connections are color-coded by signal type for instant visual parsing
+          <strong>Signal-type coloring</strong> — connections are color-coded by signal type, with customizable colors
         </li>
         <li>
           <strong>Smart connection routing</strong> — A* pathfinding routes connections around devices with parallel-connection nesting
@@ -39,17 +39,26 @@ export default function OverviewPage() {
           <strong>Room grouping</strong> — drag devices into room containers to organize by physical location
         </li>
         <li>
-          <strong>Device library</strong> — 50+ real-world device templates across cameras, switchers, audio gear, and
+          <strong>Notes</strong> — rich text annotations with formatting (bold, italic, bullets, font sizes)
+        </li>
+        <li>
+          <strong>Device library</strong> — 65+ real-world device templates across cameras, switchers, audio gear, and
           more
         </li>
         <li>
           <strong>Custom templates</strong> — save your own device configurations for reuse
         </li>
         <li>
-          <strong>Export</strong> — PNG, SVG, DXF (for CAD/Vectorworks), and JSON for sharing
+          <strong>Alignment tools</strong> — align and distribute selected devices horizontally or vertically
         </li>
         <li>
-          <strong>Print-ready</strong> — clean print layout with title block
+          <strong>Export</strong> — PNG, SVG, PDF, DXF (for CAD/Vectorworks), and JSON for sharing
+        </li>
+        <li>
+          <strong>Print View</strong> — page boundary overlay with configurable paper size, orientation, and scale
+        </li>
+        <li>
+          <strong>Title block editor</strong> — customizable grid layout with logo upload for professional print output
         </li>
       </ul>
 

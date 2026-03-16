@@ -8,6 +8,8 @@ import EdgeRoutingPage from "./pages/EdgeRouting";
 import RoomsAndGroupingPage from "./pages/RoomsAndGrouping";
 import DeviceLibraryPage from "./pages/DeviceLibrary";
 import ImportExportPage from "./pages/ImportExport";
+import NotesPage from "./pages/Notes";
+import PrintingPage from "./pages/Printing";
 
 const routes: Record<string, { title: string; component: React.FC }> = {
   "": { title: "Overview", component: OverviewPage },
@@ -17,7 +19,9 @@ const routes: Record<string, { title: string; component: React.FC }> = {
   connections: { title: "Connections", component: ConnectionsPage },
   "connection-routing": { title: "Connection Routing", component: EdgeRoutingPage },
   "rooms-and-grouping": { title: "Rooms & Grouping", component: RoomsAndGroupingPage },
+  notes: { title: "Notes", component: NotesPage },
   "device-library": { title: "Device Library", component: DeviceLibraryPage },
+  printing: { title: "Printing & Title Block", component: PrintingPage },
   "import-export": { title: "Import / Export", component: ImportExportPage },
 };
 

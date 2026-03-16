@@ -5,7 +5,7 @@ export default function DeviceLibraryPage() {
 
       <h2>Built-in templates</h2>
       <p>
-        The device library sidebar contains <strong>50+ real-world device templates</strong> organized by category:
+        The device library sidebar contains <strong>65+ real-world device templates</strong> organized by category:
       </p>
       <ul>
         <li><strong>Cameras</strong> — PTZ cameras, cinema cameras, camcorders</li>
@@ -18,7 +18,10 @@ export default function DeviceLibraryPage() {
         <li><strong>Networking</strong> — switches, media converters</li>
         <li><strong>Graphics</strong> — CG systems, character generators</li>
         <li><strong>Displays</strong> — projectors, LED walls</li>
-        <li>And more...</li>
+        <li><strong>KVM / Extenders</strong> — KVM switches, HDMI/SDI extenders</li>
+        <li><strong>Wireless</strong> — wireless video transmitters/receivers</li>
+        <li><strong>Control</strong> — control surfaces, tally systems</li>
+        <li><strong>Peripherals</strong> — peripherals and accessories</li>
       </ul>
 
       <h2>Using templates</h2>

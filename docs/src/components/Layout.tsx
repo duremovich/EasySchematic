@@ -8,8 +8,10 @@ const navItems = [
     { hash: "connections", label: "Connections" },
     { hash: "connection-routing", label: "Connection Routing" },
     { hash: "rooms-and-grouping", label: "Rooms & Grouping" },
+    { hash: "notes", label: "Notes" },
     { hash: "device-library", label: "Device Library" },
   ]},
+  { hash: "printing", label: "Printing & Title Block" },
   { hash: "import-export", label: "Import / Export" },
 ];
 
@@ -56,7 +58,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
         <div className="mt-8 px-3">
           <a
-            href="https://easyschematic.dylan-uremovich.workers.dev/"
+            href="https://easyschematic.live/"
             target="_blank"
             rel="noopener noreferrer"
             className="block text-sm text-blue-600 hover:text-blue-800"
