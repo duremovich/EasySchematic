@@ -111,4 +111,4 @@ Output goes to `dist/` — deploy as a static site anywhere.
 
 ## License
 
-MIT
+AGPL-3.0
