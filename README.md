@@ -13,7 +13,10 @@
 ### Canvas & Devices
 
 - **210+ built-in device templates** across 17 categories — Sources, Peripherals, Switching, Processing, Distribution, Monitoring, Projection, Recording, Audio, Speakers & Amps, Networking, KVM/Extenders, Wireless, LED Video, Media Servers, Lighting, Control
-- **Custom device templates** — save modified devices for reuse
+- **User templates** — save modified devices as reusable templates
+- **Favorite devices** — star templates in the library for quick access; favorites pin to the top and sort first in search
+- **Template presets** — save a device configuration as the project default for that template; new placements auto-apply the preset
+- **Quick-add** — double-click empty canvas to open a search dialog; type to find any device, note, or room and place it instantly
 - **Quick-create routers** — generate routers with configurable input/output counts and signal type
 - **Notes** — text annotations on the canvas
 - **Rooms** — resizable dashed-border containers for grouping devices
@@ -43,6 +46,8 @@
 - **Distribution** — horizontal/vertical even spacing
 - **MiniMap** and zoom controls
 - **Grid snapping** (20px)
+- **Room snap guides** — rooms and resize handles snap to other rooms' edges/centers with visible alignment guides
+- **Room styling** — right-click a room to set background color, border color, border style, and label size
 - **Space + drag** to pan (Vectorworks-style)
 
 ### Signal Types
@@ -94,7 +99,9 @@ Responses are JSON, cached for 5 minutes. See the [full API reference](https://d
 
 - **Undo/redo** — full history
 - **Copy/paste** with offset positioning
-- **Double-click** to open device editor (label, type, ports, sections)
+- **Double-click device** to open device editor (label, type, ports, presets)
+- **Double-click canvas** to quick-add a device via search dialog
+- **Right-click room** to open room properties (label, colors, border style)
 
 ## Getting Started
 
@@ -138,6 +145,9 @@ Output goes to `dist/` — deploy as a static site anywhere.
 | `Ctrl+Shift+Z` / `Ctrl+Y` | Redo |
 | `F9` | Toggle Print View |
 | Double-click device | Open device editor |
+| Double-click canvas | Quick-add device search dialog |
+| Double-click room background | Quick-add device inside room |
+| Right-click room | Open room properties editor |
 | Right-click connection | Add/remove routing handles, reset route |
 | `Ctrl+B` | Toggle routing debug overlay |
 

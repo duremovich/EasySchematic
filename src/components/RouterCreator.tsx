@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useReactFlow } from "@xyflow/react";
 import { SIGNAL_LABELS, type SignalType, type Port, type DeviceTemplate } from "../types";
-import { useSchematicStore } from "../store";
+import { useSchematicStore, GRID_SIZE } from "../store";
 
 const ALL_SIGNAL_TYPES = Object.keys(SIGNAL_LABELS) as SignalType[];
 
@@ -39,9 +40,10 @@ function buildPorts(sections: SectionDef[], direction: "input" | "output"): Port
   return ports;
 }
 
-export default function RouterCreator({ onClose }: { onClose: () => void }) {
+export default function RouterCreator({ onClose, position }: { onClose: () => void; position?: { x: number; y: number } }) {
   const addDevice = useSchematicStore((s) => s.addDevice);
   const addCustomTemplate = useSchematicStore((s) => s.addCustomTemplate);
+  const rfInstance = useReactFlow();
 
   const [deviceName, setDeviceName] = useState("Router");
   const [deviceType, setDeviceType] = useState("router");
@@ -74,8 +76,28 @@ export default function RouterCreator({ onClose }: { onClose: () => void }) {
 
   const handleCreateOnCanvas = () => {
     const template = buildTemplate();
-    // Place at a reasonable default; user can drag to reposition
-    addDevice(template, { x: 200, y: 100 });
+    let pos: { x: number; y: number };
+    if (position) {
+      // Center on the provided position (from quick-add double-click)
+      const w = 180;
+      const portRows = Math.max(totalInputs, totalOutputs);
+      const h = Math.max(60, 32 + portRows * 20);
+      pos = {
+        x: Math.round((position.x - w / 2) / GRID_SIZE) * GRID_SIZE,
+        y: Math.round((position.y - h / 2) / GRID_SIZE) * GRID_SIZE,
+      };
+    } else {
+      // Center of current viewport
+      const vp = rfInstance.getViewport();
+      const container = document.querySelector(".react-flow");
+      const cw = container?.clientWidth ?? window.innerWidth;
+      const ch = container?.clientHeight ?? window.innerHeight;
+      pos = {
+        x: Math.round((-vp.x + cw / 2) / vp.zoom / GRID_SIZE) * GRID_SIZE,
+        y: Math.round((-vp.y + ch / 2) / vp.zoom / GRID_SIZE) * GRID_SIZE,
+      };
+    }
+    addDevice(template, pos);
     onClose();
   };
 
@@ -86,10 +108,9 @@ export default function RouterCreator({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div
         className="bg-white border border-[var(--color-border)] rounded-lg shadow-2xl w-[600px] max-h-[85vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">

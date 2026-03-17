@@ -85,6 +85,8 @@ export interface DeviceData {
   templateVersion?: number;
   manufacturer?: string;
   modelNumber?: string;
+  showAllPorts?: boolean;
+  hiddenPorts?: string[];
 }
 
 export type DeviceNode = Node<DeviceData, "device">;
@@ -92,6 +94,10 @@ export type DeviceNode = Node<DeviceData, "device">;
 export interface RoomData {
   [key: string]: unknown;
   label: string;
+  color?: string;
+  borderColor?: string;
+  borderStyle?: "dashed" | "solid" | "dotted";
+  labelSize?: number;
 }
 
 export type RoomNode = Node<RoomData, "room">;
@@ -127,6 +133,12 @@ export interface DeviceTemplate {
   modelNumber?: string;
   imageUrl?: string;
   referenceUrl?: string;
+}
+
+export interface TemplatePreset {
+  ports: Port[];
+  hiddenPorts?: string[];
+  color?: string;
 }
 
 export interface CustomField {
@@ -190,6 +202,10 @@ export interface SchematicFile {
   titleBlockLayout?: TitleBlockLayout;
   hiddenSignalTypes?: SignalType[];
   hideDeviceTypes?: boolean;
+  hideUnconnectedPorts?: boolean;
+  templateHiddenSignals?: Record<string, SignalType[]>;
+  templatePresets?: Record<string, TemplatePreset>;
+  favoriteTemplates?: string[];
   // Report layout preferences (pack list PDF, etc.) keyed by report ID
   reportLayouts?: Record<string, unknown>;
 }

@@ -8,8 +8,10 @@ export default function ViewOptionsPanel() {
   const [collapsed, setCollapsed] = useState(true);
   const hiddenSignalTypesStr = useSchematicStore((s) => s.hiddenSignalTypes);
   const hideDeviceTypes = useSchematicStore((s) => s.hideDeviceTypes);
+  const hideUnconnectedPorts = useSchematicStore((s) => s.hideUnconnectedPorts);
   const toggleSignalTypeVisibility = useSchematicStore((s) => s.toggleSignalTypeVisibility);
   const setHideDeviceTypes = useSchematicStore((s) => s.setHideDeviceTypes);
+  const setHideUnconnectedPorts = useSchematicStore((s) => s.setHideUnconnectedPorts);
   const showAllSignalTypes = useSchematicStore((s) => s.showAllSignalTypes);
 
   const hiddenSet = useMemo(
@@ -59,8 +61,24 @@ export default function ViewOptionsPanel() {
         </button>
       </div>
 
-      {/* Signal Types */}
+      {/* Ports + Signal Types */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+          Ports
+        </div>
+        <label className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-[var(--color-surface-hover)] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={hideUnconnectedPorts}
+            onChange={(e) => setHideUnconnectedPorts(e.target.checked)}
+            className="w-3 h-3 accent-blue-500 cursor-pointer"
+          />
+          <span className="text-xs text-[var(--color-text)]">Hide unconnected ports</span>
+        </label>
+
+        {/* Divider */}
+        <div className="border-t border-[var(--color-border)] my-2" />
+
         <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
           Signal Types
         </div>

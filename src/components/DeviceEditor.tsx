@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, type DragEvent } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, type DragEvent } from "react";
 import { useSchematicStore } from "../store";
 import {
   SIGNAL_LABELS,
@@ -14,6 +14,7 @@ import {
   type DeviceNode,
 } from "../types";
 import { DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES } from "../connectorTypes";
+import { getBundledTemplates } from "../templateApi";
 
 const ALL_SIGNAL_TYPES = Object.keys(SIGNAL_LABELS) as SignalType[];
 const ALL_CONNECTOR_TYPES = Object.keys(CONNECTOR_LABELS) as ConnectorType[];
@@ -47,12 +48,23 @@ export default function DeviceEditor() {
   const updateDevice = useSchematicStore((s) => s.updateDevice);
   const setEditingNodeId = useSchematicStore((s) => s.setEditingNodeId);
   const addCustomTemplate = useSchematicStore((s) => s.addCustomTemplate);
+  const customTemplates = useSchematicStore((s) => s.customTemplates);
+  const templateHiddenSignals = useSchematicStore((s) => s.templateHiddenSignals);
+  const setTemplateHiddenSignals = useSchematicStore((s) => s.setTemplateHiddenSignals);
+  const templatePresets = useSchematicStore((s) => s.templatePresets);
+  const setTemplatePreset = useSchematicStore((s) => s.setTemplatePreset);
 
   const node = nodes.find((n) => n.id === editingNodeId && n.type === "device") as DeviceNode | undefined;
 
   const [label, setLabel] = useState("");
   const [deviceType, setDeviceType] = useState("");
+  const [color, setColor] = useState<string | undefined>(undefined);
   const [ports, setPorts] = useState<PortDraft[]>([]);
+
+  // Port visibility local state
+  const [showAllPorts, setShowAllPorts] = useState(false);
+  const [hiddenPorts, setHiddenPorts] = useState<string[]>([]);
+  const [portVisOpen, setPortVisOpen] = useState(false);
 
   // Drag state — which port is being dragged and where it would drop
   const [draggedPortId, setDraggedPortId] = useState<string | null>(null);
@@ -62,6 +74,7 @@ export default function DeviceEditor() {
     if (!node) return;
     setLabel(node.data.label);
     setDeviceType(node.data.deviceType);
+    setColor(node.data.color);
     setPorts(
       node.data.ports.map((p) => ({
         id: p.id,
@@ -74,19 +87,31 @@ export default function DeviceEditor() {
         capabilities: p.capabilities ? { ...p.capabilities } : undefined,
       })),
     );
+    setShowAllPorts(node.data.showAllPorts ?? false);
+    setHiddenPorts(node.data.hiddenPorts ?? []);
+    setPortVisOpen(false);
   }, [node]);
 
   const close = useCallback(() => setEditingNodeId(null), [setEditingNodeId]);
 
   const handleSave = useCallback(() => {
     if (!editingNodeId) return;
+
+    // Build old→new ID map for draft ports
+    const idMap = new Map<string, string>();
     const finalPorts: Port[] = ports
       .filter((p) => p.label.trim())
-      .map((p, i) => ({
-        ...p,
-        id: p.id.startsWith("draft-") ? `p${Date.now()}-${i}` : p.id,
-        label: p.label.trim(),
-      }));
+      .map((p, i) => {
+        const newId = p.id.startsWith("draft-") ? `p${Date.now()}-${i}` : p.id;
+        if (newId !== p.id) idMap.set(p.id, newId);
+        return { ...p, id: newId, label: p.label.trim() };
+      });
+
+    // Remap and prune stale IDs from hiddenPorts
+    const finalPortIds = new Set(finalPorts.map((p) => p.id));
+    const finalHiddenPorts = hiddenPorts
+      .map((id) => idMap.get(id) ?? id)
+      .filter((id) => finalPortIds.has(id));
 
     // Preserve existing metadata fields from the node
     const existing = node?.data;
@@ -98,10 +123,14 @@ export default function DeviceEditor() {
       ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
       ...(existing?.templateId ? { templateId: existing.templateId } : {}),
       ...(existing?.templateVersion ? { templateVersion: existing.templateVersion } : {}),
+      ...(color ? { color } : {}),
+      ...(existing?.model ? { model: existing.model } : {}),
+      ...(showAllPorts ? { showAllPorts: true } : {}),
+      ...(finalHiddenPorts.length > 0 ? { hiddenPorts: finalHiddenPorts } : {}),
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, deviceType, node, updateDevice, close]);
+  }, [editingNodeId, ports, label, deviceType, color, node, updateDevice, close, showAllPorts, hiddenPorts]);
 
   const handleSaveAsTemplate = useCallback(() => {
     const finalPorts: Port[] = ports
@@ -121,6 +150,74 @@ export default function DeviceEditor() {
       ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
     });
   }, [ports, label, node, addCustomTemplate]);
+
+  const handleSaveAsPreset = useCallback(() => {
+    if (!editingNodeId || !node?.data.templateId) return;
+    const templateId = node.data.templateId;
+
+    // Normalize ports to stable preset IDs
+    const presetPorts: Port[] = ports
+      .filter((p) => p.label.trim())
+      .map((p, i) => ({ ...p, id: `preset-${i}`, label: p.label.trim() }));
+
+    // Remap hiddenPorts through old→new mapping
+    const idMap = new Map<string, string>();
+    ports.filter((p) => p.label.trim()).forEach((p, i) => { idMap.set(p.id, `preset-${i}`); });
+    const presetHidden = hiddenPorts
+      .map((id) => idMap.get(id) ?? id)
+      .filter((id) => presetPorts.some((p) => p.id === id));
+
+    setTemplatePreset(templateId, {
+      ports: presetPorts,
+      ...(presetHidden.length > 0 ? { hiddenPorts: presetHidden } : {}),
+      ...(color ? { color } : {}),
+    });
+
+    // Also apply changes to current device
+    handleSave();
+  }, [editingNodeId, node, ports, hiddenPorts, color, setTemplatePreset, handleSave]);
+
+  const handleRevertToTemplate = useCallback(() => {
+    if (!node) return;
+    const templateId = node.data.templateId;
+    const tpl = templateId
+      ? getBundledTemplates().find((t) => t.id === templateId) ??
+        customTemplates.find((t) => t.id === templateId)
+      : undefined;
+    if (!tpl) return;
+
+    setPorts(tpl.ports.map((p) => ({
+      id: p.id,
+      label: p.label,
+      signalType: p.signalType,
+      direction: p.direction,
+      section: p.section,
+      connectorType: p.connectorType,
+      networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
+      capabilities: p.capabilities ? { ...p.capabilities } : undefined,
+    })));
+    setHiddenPorts([]);
+    setColor(tpl.color);
+  }, [node, customTemplates]);
+
+  const handleRevertToPreset = useCallback(() => {
+    if (!node?.data.templateId) return;
+    const preset = templatePresets[node.data.templateId];
+    if (!preset) return;
+
+    setPorts(preset.ports.map((p) => ({
+      id: p.id,
+      label: p.label,
+      signalType: p.signalType,
+      direction: p.direction,
+      section: p.section,
+      connectorType: p.connectorType,
+      networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
+      capabilities: p.capabilities ? { ...p.capabilities } : undefined,
+    })));
+    setHiddenPorts(preset.hiddenPorts ?? []);
+    setColor(preset.color);
+  }, [node, templatePresets]);
 
   const addPort = (direction: PortDirection) => {
     setPorts([...ports, newPortDraft(direction)]);
@@ -186,17 +283,55 @@ export default function DeviceEditor() {
     setDropTarget(null);
   }, [draggedPortId, dropTarget, movePortTo]);
 
+  // Dirty detection: compare current editor state against the effective default
+  // (preset if one exists, otherwise raw template)
+  // Must be above the early return to satisfy rules of hooks.
+  const templateId = node?.data.templateId;
+  const { dirtyVsPreset, dirtyVsTemplate } = useMemo(() => {
+    if (!templateId) return { dirtyVsPreset: false, dirtyVsTemplate: false };
+
+    const tpl = getBundledTemplates().find((t) => t.id === templateId) ??
+      customTemplates.find((t) => t.id === templateId);
+    const preset = templatePresets[templateId];
+
+    const portsMatch = (a: PortDraft[], b: Port[]) => {
+      if (a.length !== b.length) return false;
+      return a.every((ap, i) => {
+        const bp = b[i];
+        return ap.label === bp.label &&
+          ap.signalType === bp.signalType &&
+          ap.direction === bp.direction &&
+          (ap.connectorType ?? undefined) === (bp.connectorType ?? undefined) &&
+          (ap.section ?? undefined) === (bp.section ?? undefined);
+      });
+    };
+
+    const dirtyVsTemplate = !!tpl && (
+      !portsMatch(ports, tpl.ports) ||
+      hiddenPorts.length > 0 ||
+      (color ?? undefined) !== (tpl.color ?? undefined)
+    );
+
+    const dirtyVsPreset = !!preset && (
+      !portsMatch(ports, preset.ports) ||
+      JSON.stringify([...hiddenPorts].sort()) !== JSON.stringify([...(preset.hiddenPorts ?? [])].sort()) ||
+      (color ?? undefined) !== (preset.color ?? undefined)
+    );
+
+    return { dirtyVsPreset, dirtyVsTemplate };
+  }, [templateId, ports, hiddenPorts, color, templatePresets, customTemplates]);
+
   if (!editingNodeId || !node) return null;
 
+  const hasPreset = !!(templateId && templatePresets[templateId]);
   const inputs = ports.filter((p) => p.direction === "input");
   const outputs = ports.filter((p) => p.direction === "output");
   const bidir = ports.filter((p) => p.direction === "bidirectional");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onClick={close}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
       <div
         className="bg-white border border-[var(--color-border)] rounded-lg shadow-2xl w-[560px] max-h-[85vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
@@ -219,6 +354,11 @@ export default function DeviceEditor() {
                 onChange={(e) => setLabel(e.target.value)}
                 placeholder="e.g. Camera 1"
               />
+              {node.data.model && label.trim() !== node.data.model && (
+                <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                  Template: {node.data.model}
+                </div>
+              )}
             </Field>
             <Field label="Device Type">
               <input
@@ -230,11 +370,61 @@ export default function DeviceEditor() {
             </Field>
           </div>
 
-          {(node.data.manufacturer || node.data.modelNumber) && (
-            <div className="text-[10px] text-[var(--color-text-muted)] -mt-2">
-              {[node.data.manufacturer, node.data.modelNumber].filter(Boolean).join(" ")}
+          {(node.data.manufacturer || node.data.modelNumber) && (() => {
+            const tpl = node.data.templateId
+              ? getBundledTemplates().find((t) => t.id === node.data.templateId)
+              : undefined;
+            const url = tpl?.referenceUrl;
+            return (
+              <div className="text-[10px] text-[var(--color-text-muted)] -mt-2 flex items-center gap-1">
+                <span>{[node.data.manufacturer, node.data.modelNumber].filter(Boolean).join(" ")}</span>
+                {url && (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:text-blue-600 transition-colors"
+                    title="View manufacturer spec page"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <svg viewBox="0 0 16 16" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                      <path d="M6 3H3.5A1.5 1.5 0 0 0 2 4.5v8A1.5 1.5 0 0 0 3.5 14h8a1.5 1.5 0 0 0 1.5-1.5V10" />
+                      <path d="M9 2h5v5" />
+                      <path d="M14 2L7 9" />
+                    </svg>
+                  </a>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Preset indicator */}
+          {hasPreset && templateId && (
+            <div className="text-[10px] text-[var(--color-text-muted)] bg-blue-50 border border-blue-200/60 rounded px-2 py-1 flex items-center justify-between -mt-1">
+              <span>Preset active for all &ldquo;{node.data.model || "this template"}&rdquo; devices</span>
+              <button
+                onClick={() => setTemplatePreset(templateId, null)}
+                className="text-blue-500 hover:text-blue-600 cursor-pointer ml-2"
+              >
+                Clear
+              </button>
             </div>
           )}
+
+          {/* Port Visibility */}
+          <PortVisibilitySection
+            showAllPorts={showAllPorts}
+            setShowAllPorts={setShowAllPorts}
+            hiddenPorts={hiddenPorts}
+            setHiddenPorts={setHiddenPorts}
+            ports={ports}
+            node={node}
+            nodes={nodes}
+            templateHiddenSignals={templateHiddenSignals}
+            setTemplateHiddenSignals={setTemplateHiddenSignals}
+            open={portVisOpen}
+            setOpen={setPortVisOpen}
+          />
 
           <PortSection
             title="Inputs"
@@ -249,6 +439,8 @@ export default function DeviceEditor() {
             dropTarget={dropTarget}
             setDropTarget={setDropTarget}
             onDragEnd={handleDragEnd}
+            hiddenPorts={hiddenPorts}
+            setHiddenPorts={setHiddenPorts}
           />
 
           <PortSection
@@ -264,6 +456,8 @@ export default function DeviceEditor() {
             dropTarget={dropTarget}
             setDropTarget={setDropTarget}
             onDragEnd={handleDragEnd}
+            hiddenPorts={hiddenPorts}
+            setHiddenPorts={setHiddenPorts}
           />
 
           <PortSection
@@ -279,6 +473,8 @@ export default function DeviceEditor() {
             dropTarget={dropTarget}
             setDropTarget={setDropTarget}
             onDragEnd={handleDragEnd}
+            hiddenPorts={hiddenPorts}
+            setHiddenPorts={setHiddenPorts}
           />
         </div>
 
@@ -287,10 +483,37 @@ export default function DeviceEditor() {
           <button
             onClick={handleSaveAsTemplate}
             className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
-            title="Save this device configuration as a reusable template"
+            title="Save this device configuration as a reusable user template"
           >
-            Save as Template
+            Save as User Template
           </button>
+          {templateId && (
+            <button
+              onClick={handleSaveAsPreset}
+              className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
+              title="Set this configuration as the project default for this template"
+            >
+              Save as Preset
+            </button>
+          )}
+          {hasPreset && dirtyVsPreset && (
+            <button
+              onClick={handleRevertToPreset}
+              className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
+              title="Reset ports and visibility to the project preset"
+            >
+              Revert to Preset
+            </button>
+          )}
+          {dirtyVsTemplate && (
+            <button
+              onClick={handleRevertToTemplate}
+              className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
+              title="Reset ports and visibility to the original template defaults"
+            >
+              Revert to Template
+            </button>
+          )}
           <div className="flex-1" />
           <button
             onClick={close}
@@ -414,6 +637,129 @@ function BulkAddForm({
   );
 }
 
+function PortVisibilitySection({
+  showAllPorts,
+  setShowAllPorts,
+  hiddenPorts,
+  setHiddenPorts,
+  ports,
+  node,
+  nodes,
+  templateHiddenSignals,
+  setTemplateHiddenSignals,
+  open,
+  setOpen,
+}: {
+  showAllPorts: boolean;
+  setShowAllPorts: (v: boolean) => void;
+  hiddenPorts: string[];
+  setHiddenPorts: React.Dispatch<React.SetStateAction<string[]>>;
+  ports: PortDraft[];
+  node: DeviceNode | undefined;
+  nodes: import("../types").SchematicNode[];
+  templateHiddenSignals: Record<string, SignalType[]>;
+  setTemplateHiddenSignals: (templateId: string, hidden: SignalType[]) => void;
+  open: boolean;
+  setOpen: (v: boolean) => void;
+}) {
+  const templateId = node?.data.templateId;
+  const modelLabel = node?.data.model;
+
+  // Signal types present across all devices with this templateId
+  const templateSignalTypes = useMemo(() => {
+    if (!templateId) return [];
+    const types = new Set<SignalType>();
+    for (const n of nodes) {
+      if (n.type !== "device") continue;
+      if ((n.data as DeviceData).templateId !== templateId) continue;
+      for (const p of (n.data as DeviceData).ports) types.add(p.signalType);
+    }
+    return [...types].sort() as SignalType[];
+  }, [nodes, templateId]);
+
+  const tplHidden = templateId ? (templateHiddenSignals[templateId] ?? []) : [];
+
+  const hiddenSet = new Set(hiddenPorts);
+  const namedPorts = ports.filter((p) => p.label.trim());
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer transition-colors"
+      >
+        <span>{open ? "▾" : "▸"}</span>
+        <span>Port Visibility</span>
+      </button>
+      {open && (
+        <div className="mt-2 space-y-3 pl-3">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showAllPorts}
+              onChange={(e) => setShowAllPorts(e.target.checked)}
+              className="w-3 h-3 accent-blue-500 cursor-pointer"
+            />
+            <span className="text-xs text-[var(--color-text)]">Show all ports (override filters)</span>
+          </label>
+
+          {namedPorts.length > 0 && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] text-[var(--color-text-muted)]">Quick:</span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setHiddenPorts([])}
+                    className="text-[9px] text-blue-600 hover:text-blue-500 cursor-pointer"
+                  >
+                    Show All
+                  </button>
+                  <button
+                    onClick={() => setHiddenPorts(namedPorts.map((p) => p.id))}
+                    className="text-[9px] text-blue-600 hover:text-blue-500 cursor-pointer"
+                  >
+                    Hide All
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {templateId && templateSignalTypes.length > 0 && (
+            <div>
+              <div className="text-[9px] text-[var(--color-text-muted)] mb-1">
+                Hide on all &ldquo;{modelLabel || "this template"}&rdquo; devices:
+              </div>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {templateSignalTypes.map((st) => (
+                  <label key={st} className="flex items-center gap-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={!tplHidden.includes(st)}
+                      onChange={() => {
+                        const next = tplHidden.includes(st)
+                          ? tplHidden.filter((s) => s !== st)
+                          : [...tplHidden, st];
+                        setTemplateHiddenSignals(templateId, next);
+                      }}
+                      className="w-3 h-3 accent-blue-500 cursor-pointer"
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ background: SIGNAL_COLORS[st] }}
+                    />
+                    <span className="text-[10px] text-[var(--color-text)]">{SIGNAL_LABELS[st]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PortSection({
   title,
   direction,
@@ -427,6 +773,8 @@ function PortSection({
   dropTarget,
   setDropTarget,
   onDragEnd,
+  hiddenPorts,
+  setHiddenPorts,
 }: {
   title: string;
   direction: PortDirection;
@@ -440,6 +788,8 @@ function PortSection({
   dropTarget: { direction: PortDirection; index: number } | null;
   setDropTarget: (target: { direction: PortDirection; index: number } | null) => void;
   onDragEnd: () => void;
+  hiddenPorts: string[];
+  setHiddenPorts: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const [showBulkAdd, setShowBulkAdd] = useState(false);
@@ -551,6 +901,14 @@ function PortSection({
                   setDropTarget={setDropTarget}
                   onDragEnd={onDragEnd}
                   isLast={startIndex + i === ports.length - 1}
+                  isHidden={hiddenPorts.includes(port.id)}
+                  onToggleVisibility={() => {
+                    setHiddenPorts((prev) =>
+                      prev.includes(port.id)
+                        ? prev.filter((id) => id !== port.id)
+                        : [...prev, port.id]
+                    );
+                  }}
                 />
               ))}
             </div>
@@ -573,6 +931,8 @@ function PortRow({
   setDropTarget,
   onDragEnd,
   isLast,
+  isHidden,
+  onToggleVisibility,
 }: {
   port: PortDraft;
   index: number;
@@ -585,6 +945,8 @@ function PortRow({
   setDropTarget: (target: { direction: PortDirection; index: number } | null) => void;
   onDragEnd: () => void;
   isLast: boolean;
+  isHidden: boolean;
+  onToggleVisibility: () => void;
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showSection, setShowSection] = useState(false);
@@ -625,25 +987,45 @@ function PortRow({
       )}
       <div
         ref={rowRef}
-        draggable
-        onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        onDragEnd={() => {
-          setDraggedPortId(null);
-          setDropTarget(null);
-        }}
         className={`flex items-center gap-1.5 group py-0.5 ${
           isDragging ? "opacity-30" : ""
-        }`}
+        } ${isHidden ? "opacity-50" : ""}`}
       >
         {/* Drag handle */}
         <span
+          draggable
+          onDragStart={handleDragStart}
+          onDragEnd={() => {
+            setDraggedPortId(null);
+            setDropTarget(null);
+          }}
           className="text-[var(--color-text-muted)] cursor-grab active:cursor-grabbing text-[10px] select-none shrink-0"
           title="Drag to reorder"
         >
           ⠿
         </span>
+
+        {/* Eye toggle for port visibility */}
+        <button
+          onClick={onToggleVisibility}
+          className="shrink-0 cursor-pointer transition-colors"
+          title={isHidden ? "Show port on schematic" : "Hide port on schematic"}
+        >
+          {isHidden ? (
+            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 2l12 12" />
+              <path d="M6.5 6.5a2 2 0 0 0 2.8 2.8" />
+              <path d="M4.2 4.2C3 5.1 2 6.4 2 8c1.3 3 3.5 5 6 5 1.2 0 2.3-.4 3.3-1.2M13.4 11.4C14.6 10.4 15.3 9.2 16 8c-1.3-3-3.5-5-6-5-.7 0-1.4.1-2 .4" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-[var(--color-text)]" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 8c1.3-3 3.5-5 6-5s4.7 2 6 5c-1.3 3-3.5 5-6 5S3.3 11 2 8z" />
+              <circle cx="8" cy="8" r="2" />
+            </svg>
+          )}
+        </button>
 
         <div
           className="w-2.5 h-2.5 rounded-full shrink-0"

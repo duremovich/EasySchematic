@@ -17,6 +17,7 @@ import type {
   SchematicFile,
   TitleBlock,
   TitleBlockLayout,
+  TemplatePreset,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType } from "./types";
@@ -74,6 +75,7 @@ interface SchematicState {
   setEditingNodeId: (id: string | null) => void;
   addRoom: (label: string, position: { x: number; y: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
+  updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
   addNote: (position: { x: number; y: number }) => void;
   updateNoteHtml: (nodeId: string, html: string) => void;
   reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }) => void;
@@ -109,6 +111,10 @@ interface SchematicState {
   debugEdges: boolean;
   toggleDebugEdges: () => void;
 
+  // Resize snap guides (shown while resizing rooms)
+  resizeGuides: import("./snapUtils").GuideLine[];
+  setResizeGuides: (guides: import("./snapUtils").GuideLine[]) => void;
+
   // Drag state — edges freeze during drag and recalculate on drop
   isDragging: boolean;
 
@@ -139,9 +145,21 @@ interface SchematicState {
   // View options
   hiddenSignalTypes: string;
   hideDeviceTypes: boolean;
+  hideUnconnectedPorts: boolean;
+  templateHiddenSignals: Record<string, SignalType[]>;
   toggleSignalTypeVisibility: (type: SignalType) => void;
   setHideDeviceTypes: (hide: boolean) => void;
+  setHideUnconnectedPorts: (hide: boolean) => void;
+  setTemplateHiddenSignals: (templateId: string, hidden: SignalType[]) => void;
   showAllSignalTypes: () => void;
+
+  // Template presets
+  templatePresets: Record<string, TemplatePreset>;
+  setTemplatePreset: (templateId: string, preset: TemplatePreset | null) => void;
+
+  // Favorite templates
+  favoriteTemplates: string[];
+  toggleFavoriteTemplate: (templateKey: string) => void;
 
   // Persistence
   saveToLocalStorage: () => void;
@@ -322,6 +340,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   routedEdges: {},
   edgeContextMenu: null,
   debugEdges: false,
+  resizeGuides: [],
   isDragging: false,
   undoSize: 0,
   redoSize: 0,
@@ -335,6 +354,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   reportLayouts: {},
   hiddenSignalTypes: "",
   hideDeviceTypes: false,
+  hideUnconnectedPorts: false,
+  templateHiddenSignals: {},
+  templatePresets: {},
+  favoriteTemplates: [],
 
   onNodesChange: (changes) => {
     const updated = applyNodeChanges(changes, get().nodes) as SchematicNode[];
@@ -400,6 +423,26 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   addDevice: (template, position) => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
+
+    // Check for a project preset for this template
+    const preset = template.id ? state.templatePresets[template.id] : undefined;
+
+    let ports: Port[];
+    let hiddenPorts: string[] | undefined;
+    let color = template.color;
+
+    if (preset) {
+      // Clone preset ports, then map preset hiddenPorts through old→new ID mapping
+      const cloned = clonePorts(preset.ports);
+      const idMap = new Map<string, string>();
+      preset.ports.forEach((p, i) => { idMap.set(p.id, cloned[i].id); });
+      ports = cloned;
+      hiddenPorts = preset.hiddenPorts?.map((id) => idMap.get(id) ?? id).filter((id) => cloned.some((p) => p.id === id));
+      color = preset.color ?? template.color;
+    } else {
+      ports = clonePorts(template.ports);
+    }
+
     const newNode: DeviceNode = {
       id: nextNodeId(),
       type: "device",
@@ -407,14 +450,15 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       data: {
         label: template.label,
         deviceType: template.deviceType,
-        ports: clonePorts(template.ports),
-        color: template.color,
+        ports,
+        color,
         baseLabel: template.label,
         model: template.label,
         ...(template.id ? { templateId: template.id } : {}),
         ...(template.version ? { templateVersion: template.version } : {}),
         ...(template.manufacturer ? { manufacturer: template.manufacturer } : {}),
         ...(template.modelNumber ? { modelNumber: template.modelNumber } : {}),
+        ...(hiddenPorts && hiddenPorts.length > 0 ? { hiddenPorts } : {}),
       },
     };
     set({ nodes: renumberNodes([...get().nodes, newNode]) });
@@ -705,6 +749,18 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  updateRoom: (nodeId, data) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId || n.type !== "room") return n;
+        return { ...n, data } as SchematicNode;
+      }),
+    });
+    get().saveToLocalStorage();
+  },
+
   addNote: (position) => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
@@ -877,6 +933,22 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  setHideUnconnectedPorts: (hide) => {
+    set({ hideUnconnectedPorts: hide });
+    get().saveToLocalStorage();
+  },
+
+  setTemplateHiddenSignals: (templateId, hidden) => {
+    const current = get().templateHiddenSignals;
+    if (hidden.length === 0) {
+      const { [templateId]: _, ...rest } = current;
+      set({ templateHiddenSignals: rest });
+    } else {
+      set({ templateHiddenSignals: { ...current, [templateId]: hidden } });
+    }
+    get().saveToLocalStorage();
+  },
+
   setReportLayout: (key, layout) => {
     set({ reportLayouts: { ...get().reportLayouts, [key]: layout } });
     get().saveToLocalStorage();
@@ -884,6 +956,26 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   showAllSignalTypes: () => {
     set({ hiddenSignalTypes: "" });
+    get().saveToLocalStorage();
+  },
+
+  setTemplatePreset: (templateId, preset) => {
+    const current = get().templatePresets;
+    if (preset === null) {
+      const { [templateId]: _, ...rest } = current;
+      set({ templatePresets: rest });
+    } else {
+      set({ templatePresets: { ...current, [templateId]: preset } });
+    }
+    get().saveToLocalStorage();
+  },
+
+  toggleFavoriteTemplate: (templateKey) => {
+    const current = get().favoriteTemplates;
+    const next = current.includes(templateKey)
+      ? current.filter((k) => k !== templateKey)
+      : [...current, templateKey];
+    set({ favoriteTemplates: next });
     get().saveToLocalStorage();
   },
 
@@ -902,6 +994,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       titleBlockLayout: state.titleBlockLayout,
       hiddenSignalTypes: state.hiddenSignalTypes ? state.hiddenSignalTypes.split(",") as SignalType[] : undefined,
       hideDeviceTypes: state.hideDeviceTypes || undefined,
+      hideUnconnectedPorts: state.hideUnconnectedPorts || undefined,
+      templateHiddenSignals: Object.keys(state.templateHiddenSignals).length > 0 ? state.templateHiddenSignals : undefined,
+      templatePresets: Object.keys(state.templatePresets).length > 0 ? state.templatePresets : undefined,
+      favoriteTemplates: state.favoriteTemplates.length > 0 ? state.favoriteTemplates : undefined,
       reportLayouts: Object.keys(state.reportLayouts).length > 0 ? state.reportLayouts : undefined,
     };
     try {
@@ -938,6 +1034,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
             hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
             hideDeviceTypes: data.hideDeviceTypes ?? false,
+            hideUnconnectedPorts: data.hideUnconnectedPorts ?? false,
+            templateHiddenSignals: data.templateHiddenSignals ?? {},
+            templatePresets: data.templatePresets ?? {},
+            favoriteTemplates: data.favoriteTemplates ?? [],
             reportLayouts: data.reportLayouts ?? {},
           });
         });
@@ -962,6 +1062,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
         hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
         hideDeviceTypes: data.hideDeviceTypes ?? false,
+        hideUnconnectedPorts: data.hideUnconnectedPorts ?? false,
+        templateHiddenSignals: data.templateHiddenSignals ?? {},
+        templatePresets: data.templatePresets ?? {},
+        favoriteTemplates: data.favoriteTemplates ?? [],
         reportLayouts: data.reportLayouts ?? {},
       });
       return true;
@@ -986,6 +1090,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       titleBlockLayout: state.titleBlockLayout,
       hiddenSignalTypes: state.hiddenSignalTypes ? state.hiddenSignalTypes.split(",") as SignalType[] : undefined,
       hideDeviceTypes: state.hideDeviceTypes || undefined,
+      hideUnconnectedPorts: state.hideUnconnectedPorts || undefined,
+      templateHiddenSignals: Object.keys(state.templateHiddenSignals).length > 0 ? state.templateHiddenSignals : undefined,
+      templatePresets: Object.keys(state.templatePresets).length > 0 ? state.templatePresets : undefined,
+      favoriteTemplates: state.favoriteTemplates.length > 0 ? state.favoriteTemplates : undefined,
       reportLayouts: Object.keys(state.reportLayouts).length > 0 ? state.reportLayouts : undefined,
     };
   },
@@ -1023,6 +1131,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
       hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
       hideDeviceTypes: data.hideDeviceTypes ?? false,
+      hideUnconnectedPorts: data.hideUnconnectedPorts ?? false,
+      templateHiddenSignals: data.templateHiddenSignals ?? {},
+      templatePresets: data.templatePresets ?? {},
+      favoriteTemplates: data.favoriteTemplates ?? [],
       reportLayouts: data.reportLayouts ?? {},
     });
     get().saveToLocalStorage();
@@ -1039,6 +1151,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       titleBlockLayout: createDefaultLayout(),
       hiddenSignalTypes: "",
       hideDeviceTypes: false,
+      hideUnconnectedPorts: false,
+      templateHiddenSignals: {},
+      templatePresets: {},
+      favoriteTemplates: [],
       reportLayouts: {},
       undoSize: 0,
       redoSize: 0,
@@ -1092,5 +1208,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   toggleDebugEdges: () => {
     set((s) => ({ debugEdges: !s.debugEdges }));
+  },
+
+  setResizeGuides: (guides) => {
+    set({ resizeGuides: guides });
   },
 }));

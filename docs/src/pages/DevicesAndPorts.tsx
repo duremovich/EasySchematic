@@ -75,7 +75,8 @@ export default function DevicesAndPortsPage() {
         <li>Add, remove, or reorder ports</li>
         <li>Change port signal types and directions</li>
         <li>Set a custom color</li>
-        <li>Save the device as a reusable template</li>
+        <li>Save as a reusable user template, or set it as a project preset</li>
+        <li>Revert to the original template defaults or the active preset</li>
       </ul>
     </>
   );

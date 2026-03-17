@@ -26,6 +26,9 @@ import ShowInfoPanel from "./components/ShowInfoPanel";
 import ViewOptionsPanel from "./components/ViewOptionsPanel";
 import MenuBar from "./components/MenuBar";
 import EdgeContextMenu from "./components/EdgeContextMenu";
+import RoomEditor from "./components/RoomEditor";
+import QuickAddDevice from "./components/QuickAddDevice";
+import RouterCreator from "./components/RouterCreator";
 import { computeSnap, enforceMinSpacing, type GuideLine } from "./snapUtils";
 import type { DeviceTemplate, SchematicNode } from "./types";
 
@@ -60,6 +63,15 @@ function CanvasOriginOverlay() {
       </svg>
     </div>
   );
+}
+
+/** Combines drag snap guides (local state) with resize snap guides (store state). */
+function ResizeSnapGuides({ dragGuides }: { dragGuides: GuideLine[] }) {
+  const resizeGuides = useSchematicStore((s) => s.resizeGuides);
+  const combined = dragGuides.length > 0 || resizeGuides.length > 0
+    ? [...dragGuides, ...resizeGuides]
+    : [];
+  return <SnapGuides guides={combined} />;
 }
 
 function SchematicCanvas() {
@@ -104,6 +116,12 @@ function SchematicCanvas() {
     fromX: number; fromY: number; toX: number; toY: number; fromSource: boolean;
     snapped: boolean; valid: boolean;
   } | null>(null);
+
+  // Quick-add device dialog state
+  const [quickAddPos, setQuickAddPos] = useState<{ x: number; y: number } | null>(null);
+  const [showRouterCreator, setShowRouterCreator] = useState(false);
+  const routerCreatorPosRef = useRef<{ x: number; y: number } | undefined>(undefined);
+  const lastPaneClickRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
 
   // Viewport transform for rendering flow-space overlays
   const { x: vx, y: vy, zoom } = useViewport();
@@ -157,6 +175,7 @@ function SchematicCanvas() {
 
       if (e.key === "Escape") {
         clearClickConnect();
+        setQuickAddPos(null);
         return;
       }
 
@@ -452,14 +471,32 @@ function SchematicCanvas() {
     }
   }, [clearClickConnect]);
 
-  // Clicking empty space cancels click-to-connect
-  const onPaneClick = useCallback(() => {
-    if (isClickConnectMode.current) {
-      clearClickConnect();
-      // Also clear React Flow's internal click-connect state
-      rfStore.setState({ connectionClickStartHandle: null });
-    }
-  }, [clearClickConnect, rfStore]);
+  // Clicking empty space cancels click-to-connect; double-click opens quick-add
+  const onPaneClick = useCallback(
+    (event: React.MouseEvent) => {
+      if (isClickConnectMode.current) {
+        clearClickConnect();
+        rfStore.setState({ connectionClickStartHandle: null });
+        return;
+      }
+
+      // Double-click detection
+      const now = Date.now();
+      const last = lastPaneClickRef.current;
+      if (
+        now - last.time < 400 &&
+        Math.abs(event.clientX - last.x) < 10 &&
+        Math.abs(event.clientY - last.y) < 10
+      ) {
+        const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        setQuickAddPos(pos);
+        lastPaneClickRef.current = { time: 0, x: 0, y: 0 };
+        return;
+      }
+      lastPaneClickRef.current = { time: now, x: event.clientX, y: event.clientY };
+    },
+    [clearClickConnect, rfStore, screenToFlowPosition],
+  );
 
   const onNodeDragStart = useCallback(() => {
     pushSnapshot();
@@ -548,6 +585,7 @@ function SchematicCanvas() {
   }, [nodes]);
 
   return (
+    <>
     <ReactFlow
       nodes={nodes}
       edges={visibleEdges}
@@ -602,6 +640,19 @@ function SchematicCanvas() {
           // No valid handle found — just cancel silently
         }
       }}
+      onNodeDoubleClick={(event, node) => {
+        if (node.type !== "room") return;
+        // If double-click landed on the label, let the label's own handler deal with it
+        const target = event.target as HTMLElement;
+        if (target.closest("span, input")) return;
+        const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        setQuickAddPos(pos);
+      }}
+      onNodeContextMenu={(event, node) => {
+        if (node.type !== "room") return;
+        event.preventDefault();
+        useSchematicStore.getState().setEditingNodeId(node.id);
+      }}
       onReconnectStart={onReconnectStart}
       onReconnect={onReconnect}
       onReconnectEnd={onReconnectEnd}
@@ -619,6 +670,7 @@ function SchematicCanvas() {
       selectionKeyCode={null}
       multiSelectionKeyCode="Shift"
       proOptions={{ hideAttribution: true }}
+      zoomOnDoubleClick={false}
       connectOnClick
       edgesReconnectable
       reconnectRadius={25}
@@ -642,7 +694,7 @@ function SchematicCanvas() {
         });
       }}
     >
-      <SnapGuides guides={snapGuides} />
+      <ResizeSnapGuides dragGuides={snapGuides} />
       {printView && <PageBoundaryOverlay />}
       {connectPreview && (() => {
         const { fromX, fromY, toX, toY, fromSource, snapped, valid } = connectPreview;
@@ -696,6 +748,15 @@ function SchematicCanvas() {
         nodeColor={(node) => node.type === "room" ? "#e5e7eb" : "#3b82f6"}
       />
     </ReactFlow>
+    {quickAddPos && (
+      <QuickAddDevice
+        position={quickAddPos}
+        onClose={() => setQuickAddPos(null)}
+        onOpenRouterCreator={() => { routerCreatorPosRef.current = quickAddPos ?? undefined; setShowRouterCreator(true); }}
+      />
+    )}
+    {showRouterCreator && <RouterCreator position={routerCreatorPosRef.current} onClose={() => { setShowRouterCreator(false); routerCreatorPosRef.current = undefined; }} />}
+    </>
   );
 }
 
@@ -748,6 +809,7 @@ export default function App() {
         </div>
       </div>
       <DeviceEditor />
+      <RoomEditor />
       <EdgeContextMenu />
     </div>
   );

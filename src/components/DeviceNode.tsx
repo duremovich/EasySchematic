@@ -32,10 +32,12 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     [hiddenSignalTypesStr],
   );
 
-  const visiblePorts = useMemo(
-    () => hiddenSignalTypes ? data.ports.filter((p) => !hiddenSignalTypes.has(p.signalType)) : data.ports,
-    [data.ports, hiddenSignalTypes],
-  );
+  const hideUnconnectedPorts = useSchematicStore((s) => s.hideUnconnectedPorts);
+  const templateHiddenStr = useSchematicStore((s) => {
+    if (!data.templateId) return "";
+    const arr = s.templateHiddenSignals[data.templateId];
+    return arr ? arr.sort().join(",") : "";
+  });
 
   const connectedHandleStr = useSchematicStore((s) => {
     const ids: string[] = [];
@@ -46,6 +48,31 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     return ids.sort().join(",");
   });
   const connectedHandles = new Set(connectedHandleStr ? connectedHandleStr.split(",") : []);
+
+  const visiblePorts = useMemo(() => {
+    if (data.showAllPorts) {
+      return hiddenSignalTypes
+        ? data.ports.filter((p) => !hiddenSignalTypes.has(p.signalType))
+        : data.ports;
+    }
+
+    const tplHidden = templateHiddenStr ? new Set(templateHiddenStr.split(",")) : null;
+    const devHiddenPorts = data.hiddenPorts?.length ? new Set(data.hiddenPorts) : null;
+
+    return data.ports.filter((p) => {
+      if (hiddenSignalTypes?.has(p.signalType)) return false;
+      if (tplHidden?.has(p.signalType)) return false;
+      if (devHiddenPorts?.has(p.id)) return false;
+      if (hideUnconnectedPorts) {
+        const connected = p.direction === "bidirectional"
+          ? connectedHandles.has(`${p.id}-in`) || connectedHandles.has(`${p.id}-out`)
+          : connectedHandles.has(p.id);
+        if (!connected) return false;
+      }
+      return true;
+    });
+  }, [data.ports, data.showAllPorts, data.hiddenPorts,
+      hiddenSignalTypes, templateHiddenStr, hideUnconnectedPorts, connectedHandleStr]);
 
   const inputs = visiblePorts.filter((p) => p.direction === "input");
   const outputs = visiblePorts.filter((p) => p.direction === "output");

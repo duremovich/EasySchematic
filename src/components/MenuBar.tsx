@@ -243,6 +243,15 @@ export default function MenuBar() {
         checked: printView,
         onClick: () => useSchematicStore.getState().setPrintView(!printView),
       },
+      {
+        type: "item",
+        label: "Hide Unconnected Ports",
+        checked: useSchematicStore.getState().hideUnconnectedPorts,
+        onClick: () => {
+          const s = useSchematicStore.getState();
+          s.setHideUnconnectedPorts(!s.hideUnconnectedPorts);
+        },
+      },
       { type: "separator" },
       {
         type: "item",

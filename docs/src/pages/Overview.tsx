@@ -46,7 +46,16 @@ export default function OverviewPage() {
           LED video, and more
         </li>
         <li>
-          <strong>Custom templates</strong> — save your own device configurations for reuse
+          <strong>User templates &amp; presets</strong> — save device configurations or set project-wide defaults for any template
+        </li>
+        <li>
+          <strong>Favorites</strong> — star frequently-used devices for instant access
+        </li>
+        <li>
+          <strong>Quick-add</strong> — double-click the canvas to search and place a device in one step
+        </li>
+        <li>
+          <strong>Room styling</strong> — customize background color, border style, and label size via right-click
         </li>
         <li>
           <strong>Alignment tools</strong> — align and distribute selected devices horizontally or vertically

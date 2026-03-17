@@ -16,6 +16,7 @@ export default function RoomsAndGroupingPage() {
       <ol>
         <li>Find "Room" in the device library sidebar</li>
         <li>Drag it onto the canvas</li>
+        <li>Or <strong>double-click</strong> the canvas, type "room", and press Enter</li>
         <li>Double-click the room label to rename it</li>
       </ol>
 
@@ -35,6 +36,26 @@ export default function RoomsAndGroupingPage() {
       <h2>Resizing rooms</h2>
       <p>
         Select a room to see resize handles on its corners and edges. Drag them to make the room larger or smaller.
+        Resize handles snap to other rooms' edges with blue guide lines for precise alignment.
+      </p>
+
+      <h2>Room styling</h2>
+      <p>
+        <strong>Right-click</strong> a room to open the Room Properties editor. You can customize:
+      </p>
+      <ul>
+        <li><strong>Label</strong> — the room's display name</li>
+        <li><strong>Label size</strong> — adjustable from 9px to 24px</li>
+        <li><strong>Background color</strong> — fill color for the room area</li>
+        <li><strong>Border style</strong> — solid, dashed, or dotted</li>
+        <li><strong>Border color</strong> — outline color for the room boundary</li>
+      </ul>
+
+      <h2>Snap guides</h2>
+      <p>
+        When dragging rooms near other rooms, <strong>blue dashed guide lines</strong> appear to help
+        you align edges and centers. The same guides appear during room resizing. Devices also snap
+        to room edges when dragged near them.
       </p>
 
       <h2>Deleting rooms</h2>

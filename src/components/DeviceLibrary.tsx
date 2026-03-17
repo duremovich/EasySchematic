@@ -3,6 +3,7 @@ import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate } from "../types";
 import { useSchematicStore } from "../store";
+import { scoreTemplate } from "../templateSearch";
 import RouterCreator from "./RouterCreator";
 
 const APP_VERSION = __APP_VERSION__;
@@ -41,21 +42,6 @@ function getUniqueSignalTypes(template: DeviceTemplate): string[] {
   return [...types];
 }
 
-function templateMatchesSearch(template: DeviceTemplate, query: string): boolean {
-  const q = query.toLowerCase();
-  if (template.label.toLowerCase().includes(q)) return true;
-  if (template.deviceType.toLowerCase().includes(q)) return true;
-  if (template.manufacturer?.toLowerCase().includes(q)) return true;
-  if (template.modelNumber?.toLowerCase().includes(q)) return true;
-  if (template.searchTerms?.some((t) => t.toLowerCase().includes(q))) return true;
-  for (const port of template.ports) {
-    if (port.signalType.toLowerCase().includes(q)) return true;
-    if (SIGNAL_LABELS[port.signalType].toLowerCase().includes(q)) return true;
-    if (port.label.toLowerCase().includes(q)) return true;
-  }
-  return false;
-}
-
 function HighlightedText({ text, query }: { text: string; query: string }) {
   if (!query) return <>{text}</>;
   const idx = text.toLowerCase().indexOf(query.toLowerCase());
@@ -75,10 +61,16 @@ function TemplateItem({
   template,
   query,
   onDelete,
+  hasPreset,
+  isFavorite,
+  onToggleFavorite,
 }: {
   template: DeviceTemplate;
   query: string;
   onDelete?: () => void;
+  hasPreset?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 }) {
   const signalText = getUniqueSignalTypes(template)
     .map((t) => SIGNAL_LABELS[t as keyof typeof SIGNAL_LABELS])
@@ -90,9 +82,25 @@ function TemplateItem({
       draggable
       onDragStart={(e) => onDragStart(e, template)}
     >
+      {onToggleFavorite && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+          className={`shrink-0 text-xs cursor-pointer transition-colors ${
+            isFavorite
+              ? "text-amber-400"
+              : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
+          }`}
+          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+        >
+          {isFavorite ? "★" : "☆"}
+        </button>
+      )}
       <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-        <span className="text-xs text-[var(--color-text-heading)] font-medium truncate">
+        <span className="text-xs text-[var(--color-text-heading)] font-medium truncate flex items-center gap-1">
           <HighlightedText text={template.label} query={query} />
+          {hasPreset && (
+            <span className="text-[8px] text-blue-500 bg-blue-50 rounded px-1 py-px font-normal shrink-0">preset</span>
+          )}
         </span>
         {template.manufacturer && (
           <span className="text-[9px] text-[var(--color-text-muted)] opacity-70 truncate">
@@ -125,12 +133,18 @@ function CategorySection({
   query,
   defaultOpen,
   onDelete,
+  presetIds,
+  favoriteSet,
+  onToggleFavorite,
 }: {
   label: string;
   templates: DeviceTemplate[];
   query: string;
   defaultOpen: boolean;
   onDelete?: (deviceType: string) => void;
+  presetIds?: Set<string>;
+  favoriteSet?: Set<string>;
+  onToggleFavorite?: (key: string) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const isOpen = query ? true : open;
@@ -157,14 +171,20 @@ function CategorySection({
       </button>
       {isOpen && (
         <div>
-          {templates.map((template) => (
-            <TemplateItem
-              key={template.deviceType}
-              template={template}
-              query={query}
-              onDelete={onDelete ? () => onDelete(template.deviceType) : undefined}
-            />
-          ))}
+          {templates.map((template) => {
+            const key = template.id ?? template.deviceType;
+            return (
+              <TemplateItem
+                key={template.deviceType}
+                template={template}
+                query={query}
+                onDelete={onDelete ? () => onDelete(template.deviceType) : undefined}
+                hasPreset={!!(template.id && presetIds?.has(template.id))}
+                isFavorite={favoriteSet?.has(key)}
+                onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(key) : undefined}
+              />
+            );
+          })}
         </div>
       )}
     </div>
@@ -174,10 +194,16 @@ function CategorySection({
 export default function DeviceLibrary() {
   const customTemplates = useSchematicStore((s) => s.customTemplates);
   const removeCustomTemplate = useSchematicStore((s) => s.removeCustomTemplate);
+  const templatePresets = useSchematicStore((s) => s.templatePresets);
+  const favoriteTemplates = useSchematicStore((s) => s.favoriteTemplates);
+  const toggleFavoriteTemplate = useSchematicStore((s) => s.toggleFavoriteTemplate);
   const [search, setSearch] = useState("");
   const [showRouterCreator, setShowRouterCreator] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [templates, setTemplates] = useState(getBundledTemplates);
+
+  const presetIds = useMemo(() => new Set(Object.keys(templatePresets)), [templatePresets]);
+  const favoriteSet = useMemo(() => new Set(favoriteTemplates), [favoriteTemplates]);
 
   useEffect(() => {
     fetchTemplates().then(setTemplates).catch(() => {});
@@ -188,10 +214,35 @@ export default function DeviceLibrary() {
   const filteredCustom = useMemo(
     () =>
       query
-        ? customTemplates.filter((t) => templateMatchesSearch(t, query))
+        ? customTemplates.filter((t) => scoreTemplate(t, query) > 0)
         : customTemplates,
     [customTemplates, query],
   );
+
+  // When searching, produce a flat ranked list; when browsing, keep categories
+  const rankedResults = useMemo(() => {
+    if (!query) return null;
+    const all = [...templates, ...customTemplates];
+    const scored = all
+      .map((t) => {
+        let score = scoreTemplate(t, query);
+        // Boost favorites to the top of results
+        if (score > 0 && favoriteSet.has(t.id ?? t.deviceType)) score += 200;
+        return { template: t, score };
+      })
+      .filter((r) => r.score > 0)
+      .sort((a, b) => b.score - a.score || a.template.label.localeCompare(b.template.label));
+    return scored.map((r) => r.template);
+  }, [templates, customTemplates, query, favoriteSet]);
+
+  // Favorites section: resolve template keys to actual template objects
+  const favoritesList = useMemo(() => {
+    if (favoriteTemplates.length === 0) return [];
+    const all = [...templates, ...customTemplates];
+    const byKey = new Map<string, DeviceTemplate>();
+    for (const t of all) byKey.set(t.id ?? t.deviceType, t);
+    return favoriteTemplates.map((k) => byKey.get(k)).filter((t): t is DeviceTemplate => !!t);
+  }, [templates, customTemplates, favoriteTemplates]);
 
   const filteredCategories = useMemo(
     () =>
@@ -199,17 +250,14 @@ export default function DeviceLibrary() {
         const all = templates.filter((t) =>
           cat.types.includes(t.deviceType),
         );
-        const filtered = query
-          ? all.filter((t) => templateMatchesSearch(t, query))
-          : all;
-        const sorted = filtered.toSorted((a, b) => a.label.localeCompare(b.label));
+        const sorted = all.toSorted((a, b) => a.label.localeCompare(b.label));
         return { ...cat, templates: sorted };
       }),
-    [templates, query],
+    [templates],
   );
 
-  const totalResults = filteredCustom.length +
-    filteredCategories.reduce((sum, c) => sum + c.templates.length, 0);
+  const totalResults = rankedResults?.length ??
+    (filteredCustom.length + filteredCategories.reduce((sum, c) => sum + c.templates.length, 0));
 
   if (collapsed) {
     return (
@@ -345,30 +393,70 @@ export default function DeviceLibrary() {
           </button>
         )}
 
-        {(query ? filteredCustom.length > 0 : customTemplates.length > 0) && (
-          <CategorySection
-            label="Custom"
-            templates={filteredCustom}
-            query={query}
-            defaultOpen={false}
-            onDelete={removeCustomTemplate}
-          />
-        )}
+        {query && rankedResults ? (
+          <>
+            {rankedResults.length > 0 ? (
+              <div>
+                {rankedResults.map((template) => {
+                  const key = template.id ?? template.deviceType;
+                  return (
+                    <TemplateItem
+                      key={key}
+                      template={template}
+                      query={query}
+                      onDelete={customTemplates.includes(template) ? () => removeCustomTemplate(template.deviceType) : undefined}
+                      hasPreset={!!(template.id && presetIds.has(template.id))}
+                      isFavorite={favoriteSet.has(key)}
+                      onToggleFavorite={() => toggleFavoriteTemplate(key)}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-xs text-[var(--color-text-muted)] text-center py-4">
+                No devices match &ldquo;{query}&rdquo;
+              </div>
+            )}
+          </>
+        ) : (
+          <>
+            {favoritesList.length > 0 && (
+              <CategorySection
+                label="Favorites"
+                templates={favoritesList}
+                query={query}
+                defaultOpen={true}
+                presetIds={presetIds}
+                favoriteSet={favoriteSet}
+                onToggleFavorite={toggleFavoriteTemplate}
+              />
+            )}
 
-        {filteredCategories.map((cat) => (
-          <CategorySection
-            key={cat.label}
-            label={cat.label}
-            templates={cat.templates}
-            query={query}
-            defaultOpen={false}
-          />
-        ))}
+            {customTemplates.length > 0 && (
+              <CategorySection
+                label="User Templates"
+                templates={filteredCustom}
+                query={query}
+                defaultOpen={false}
+                onDelete={removeCustomTemplate}
+                favoriteSet={favoriteSet}
+                onToggleFavorite={toggleFavoriteTemplate}
+              />
+            )}
 
-        {query && totalResults === 0 && (
-          <div className="text-xs text-[var(--color-text-muted)] text-center py-4">
-            No devices match "{query}"
-          </div>
+            {filteredCategories.map((cat) => (
+              <CategorySection
+                key={cat.label}
+                label={cat.label}
+                templates={cat.templates}
+                query={query}
+                defaultOpen={false}
+                presetIds={presetIds}
+                favoriteSet={favoriteSet}
+                onToggleFavorite={toggleFavoriteTemplate}
+              />
+            ))}
+          </>
         )}
       </div>
 

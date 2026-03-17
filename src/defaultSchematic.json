@@ -1,29 +1,29 @@
 {
-  "version": 11,
+  "version": 12,
   "name": "Untitled Schematic",
   "nodes": [
     {
       "id": "room-5",
       "type": "room",
       "position": {
-        "x": 580,
-        "y": 1480
+        "x": 1040,
+        "y": 1498
       },
       "data": {
         "label": "TECH TABLE"
       },
       "style": {
-        "width": 400,
-        "height": 300
+        "width": 1314,
+        "height": 674
       },
       "zIndex": -1,
       "measured": {
-        "width": 1214,
+        "width": 1314,
         "height": 674
       },
       "selected": false,
       "dragging": false,
-      "width": 1214,
+      "width": 1314,
       "height": 674,
       "resizing": false
     },
@@ -31,33 +31,33 @@
       "id": "room-4",
       "type": "room",
       "position": {
-        "x": 2400,
-        "y": 140
+        "x": 4100,
+        "y": 180
       },
       "data": {
         "label": "Stage"
       },
       "style": {
-        "width": 400,
-        "height": 300
+        "width": 738,
+        "height": 1994
       },
       "zIndex": -1,
       "measured": {
         "width": 738,
-        "height": 2012
+        "height": 1992
       },
       "selected": false,
       "dragging": false,
       "width": 738,
-      "height": 2012,
+      "height": 1992,
       "resizing": false
     },
     {
       "id": "room-3",
       "type": "room",
       "position": {
-        "x": 100,
-        "y": 180
+        "x": 809,
+        "y": 182
       },
       "data": {
         "label": "Booth"
@@ -68,12 +68,12 @@
       },
       "zIndex": -1,
       "measured": {
-        "width": 1625,
+        "width": 1545,
         "height": 1247
       },
       "selected": false,
       "dragging": false,
-      "width": 1625,
+      "width": 1545,
       "height": 1247,
       "resizing": false
     },
@@ -81,7 +81,7 @@
       "id": "device-33",
       "type": "device",
       "position": {
-        "x": 680,
+        "x": 600,
         "y": 120
       },
       "data": {
@@ -180,7 +180,7 @@
       "id": "device-36",
       "type": "device",
       "position": {
-        "x": 960,
+        "x": 880,
         "y": 120
       },
       "data": {
@@ -217,7 +217,7 @@
       "id": "device-37",
       "type": "device",
       "position": {
-        "x": 960,
+        "x": 880,
         "y": 220
       },
       "data": {
@@ -255,7 +255,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 1240
+        "y": 1180
       },
       "data": {
         "label": "Panasonic DZ13K",
@@ -355,7 +355,7 @@
       "type": "device",
       "position": {
         "x": 420,
-        "y": 60
+        "y": 0
       },
       "data": {
         "label": "TV 1",
@@ -392,7 +392,7 @@
       "type": "device",
       "position": {
         "x": 420,
-        "y": 200
+        "y": 140
       },
       "data": {
         "label": "TV 2",
@@ -429,7 +429,7 @@
       "type": "device",
       "position": {
         "x": 420,
-        "y": 340
+        "y": 280
       },
       "data": {
         "label": "TV 3",
@@ -466,7 +466,7 @@
       "type": "device",
       "position": {
         "x": 420,
-        "y": 460
+        "y": 400
       },
       "data": {
         "label": "TV 4",
@@ -503,7 +503,7 @@
       "type": "device",
       "position": {
         "x": 420,
-        "y": 600
+        "y": 540
       },
       "data": {
         "label": "TV 5",
@@ -540,7 +540,7 @@
       "type": "device",
       "position": {
         "x": 420,
-        "y": 720
+        "y": 660
       },
       "data": {
         "label": "TV 6",
@@ -577,7 +577,7 @@
       "type": "device",
       "position": {
         "x": 420,
-        "y": 860
+        "y": 800
       },
       "data": {
         "label": "TV 7",
@@ -614,7 +614,7 @@
       "type": "device",
       "position": {
         "x": 420,
-        "y": 1040
+        "y": 980
       },
       "data": {
         "label": "TV 8",
@@ -650,7 +650,7 @@
       "id": "device-47",
       "type": "device",
       "position": {
-        "x": 1220,
+        "x": 1140,
         "y": 60
       },
       "data": {
@@ -743,7 +743,7 @@
       "id": "device-48",
       "type": "device",
       "position": {
-        "x": 1220,
+        "x": 1140,
         "y": 240
       },
       "data": {
@@ -837,7 +837,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 60
+        "y": 0
       },
       "data": {
         "label": "BMD SDI→HDMI 1",
@@ -881,7 +881,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 200
+        "y": 140
       },
       "data": {
         "label": "BMD SDI→HDMI 2",
@@ -925,7 +925,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 340
+        "y": 280
       },
       "data": {
         "label": "BMD SDI→HDMI 3",
@@ -969,7 +969,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 460
+        "y": 400
       },
       "data": {
         "label": "BMD SDI→HDMI 4",
@@ -1013,7 +1013,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 600
+        "y": 540
       },
       "data": {
         "label": "BMD SDI→HDMI 5",
@@ -1057,7 +1057,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 720
+        "y": 660
       },
       "data": {
         "label": "BMD SDI→HDMI 6",
@@ -1101,7 +1101,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 860
+        "y": 800
       },
       "data": {
         "label": "BMD SDI→HDMI 7",
@@ -1145,7 +1145,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 1040
+        "y": 980
       },
       "data": {
         "label": "BMD SDI→HDMI 8",
@@ -1188,7 +1188,7 @@
       "id": "device-60",
       "type": "device",
       "position": {
-        "x": 960,
+        "x": 880,
         "y": 440
       },
       "data": {
@@ -1275,7 +1275,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 1620
+        "y": 1560
       },
       "data": {
         "label": "PTZOptics Move SE 1",
@@ -1354,7 +1354,7 @@
       "type": "device",
       "position": {
         "x": 160,
-        "y": 1840
+        "y": 1780
       },
       "data": {
         "label": "PTZOptics Move SE 2",
@@ -1432,7 +1432,7 @@
       "id": "device-63",
       "type": "device",
       "position": {
-        "x": 900,
+        "x": 1040,
         "y": 100
       },
       "data": {
@@ -1490,7 +1490,7 @@
       "id": "device-64",
       "type": "device",
       "position": {
-        "x": 140,
+        "x": 280,
         "y": 100
       },
       "data": {
@@ -1540,7 +1540,7 @@
       "id": "device-65",
       "type": "device",
       "position": {
-        "x": 140,
+        "x": 280,
         "y": 400
       },
       "data": {
@@ -1590,7 +1590,7 @@
       "id": "device-69",
       "type": "device",
       "position": {
-        "x": 960,
+        "x": 880,
         "y": 340
       },
       "data": {
@@ -1627,7 +1627,7 @@
       "id": "device-70",
       "type": "device",
       "position": {
-        "x": 960,
+        "x": 880,
         "y": 1080
       },
       "data": {
@@ -1677,7 +1677,7 @@
       "id": "device-71",
       "type": "device",
       "position": {
-        "x": 400,
+        "x": 320,
         "y": 100
       },
       "data": {
@@ -1707,7 +1707,7 @@
       "id": "device-72",
       "type": "device",
       "position": {
-        "x": 400,
+        "x": 320,
         "y": 220
       },
       "data": {
@@ -1736,7 +1736,7 @@
       "id": "device-73",
       "type": "device",
       "position": {
-        "x": 1220,
+        "x": 1140,
         "y": 420
       },
       "data": {
@@ -1780,7 +1780,7 @@
       "id": "device-74",
       "type": "device",
       "position": {
-        "x": 400,
+        "x": 540,
         "y": 60
       },
       "data": {
@@ -1830,7 +1830,7 @@
       "id": "device-75",
       "type": "device",
       "position": {
-        "x": 400,
+        "x": 540,
         "y": 300
       },
       "data": {
@@ -1880,11 +1880,11 @@
       "id": "note-1",
       "type": "note",
       "position": {
-        "x": 100,
-        "y": 460
+        "x": 20,
+        "y": 520
       },
       "data": {
-        "html": "<div><font size=\"4\"><b>Welcome to EasySchematic!</b></font></div><div><br></div><div><b>Getting started:</b></div><div>• Drag devices from the library on the left</div><div>• Click an output port, then click an input to connect</div><div>• Right-click a connection to add routing handles</div><div>• Double-click a device to edit its ports</div><div><br></div><div><b>Useful shortcuts:</b></div><div>• Space + drag to pan</div><div>• Ctrl+Z / Ctrl+Shift+Z to undo/redo</div><div>• Delete key to remove selected items</div><div><br></div><div>Your work auto-saves to your browser. Use <b>Save</b> to export a file and <b>Load</b> to import one.</div><div><br></div><div>Full docs at <b>docs.easyschematic.live</b></div>"
+        "html": "<div><font size=\"4\"><b>Welcome to EasySchematic!</b></font></div><div><br></div><div><b>Getting started:</b></div><div>• Drag devices from the library, or <b>double-click</b> the canvas to quick-add</div><div>• Click an output port, then click an input to connect</div><div>• Right-click a connection to add routing handles</div><div>• Right-click a room to change its style</div><div><br></div><div><b>Tips:</b></div><div>• ★ Star your favorite devices in the library for faster access</div><div>• Use the search bar — multi-word queries like \"ethernet switch\" work great</div><div>• <b>F9</b> toggles Print View for page layout and PDF export</div><div>• Space + drag to pan, Ctrl+Z to undo</div><div><br></div><div>Your work auto-saves to your browser. Use <b>Save</b> to export a file and <b>Load</b> to import one.</div><div><br></div><div>Full docs at <b>docs.easyschematic.live</b></div>"
       },
       "style": {
         "width": 380,
@@ -1894,7 +1894,7 @@
         "width": 480,
         "height": 300
       },
-      "selected": true,
+      "selected": false,
       "width": 480,
       "height": 300,
       "resizing": false,
@@ -1905,7 +1905,7 @@
       "id": "device-76",
       "type": "device",
       "position": {
-        "x": 960,
+        "x": 880,
         "y": 920
       },
       "data": {
@@ -1955,7 +1955,7 @@
       "id": "device-77",
       "type": "device",
       "position": {
-        "x": 680,
+        "x": 600,
         "y": 640
       },
       "data": {

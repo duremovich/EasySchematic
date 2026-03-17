@@ -1,6 +1,11 @@
 import type { DeviceData, SchematicNode } from "./types";
 
-const SNAP_THRESHOLD = 5;
+import { GRID_SIZE } from "./store";
+
+// Must be >= half the grid size so alignment snapping works with grid-snapped positions.
+// React Flow's snapToGrid moves nodes in GRID_SIZE increments, so we need to catch
+// candidates within one grid step.
+const SNAP_THRESHOLD = GRID_SIZE;
 
 export interface GuideLine {
   orientation: "h" | "v";
@@ -25,8 +30,8 @@ interface Rect {
 }
 
 function nodeRect(node: SchematicNode): Rect {
-  const w = node.measured?.width ?? 180;
-  const h = node.measured?.height ?? 60;
+  const w = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "room" ? 400 : 180);
+  const h = node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? (node.type === "room" ? 300 : 60);
   return {
     left: node.position.x,
     right: node.position.x + w,
@@ -79,18 +84,35 @@ export function computeSnap(
   const dw = dragged.right - dragged.left;
   const dh = dragged.bottom - dragged.top;
 
-  const others = allNodes.filter(
-    (n) => n.id !== draggedNode.id && n.type !== "room",
-  );
+  const isDraggedRoom = draggedNode.type === "room";
+  const others = allNodes.filter((n) => {
+    if (n.id === draggedNode.id) return false;
+    // Rooms snap to other rooms
+    if (isDraggedRoom) return n.type === "room";
+    // Devices snap to other devices (same parent) and top-level rooms
+    return true;
+  });
 
   const xCandidates: XCandidate[] = [];
   const yCandidates: YCandidate[] = [];
 
   for (const other of others) {
-    if (other.parentId !== draggedNode.parentId) continue;
-    const r = nodeRect(other);
+    // Same-parent check for device-to-device snapping; skip for room targets
+    if (other.type !== "room" && other.parentId !== draggedNode.parentId) continue;
+
+    // For room targets when dragging a child device, compute delta in the
+    // dragged node's coordinate space (relative to its parent)
+    const isRoomTarget = other.type === "room" && !isDraggedRoom;
+    let r: Rect;
+    if (isRoomTarget && draggedNode.parentId) {
+      // Convert room's absolute coords to the parent-relative space of the dragged device
+      const parentOff = getParentOffset(draggedNode, allNodes);
+      r = offsetRect(nodeRect(other), -parentOff.dx, -parentOff.dy);
+    } else {
+      r = nodeRect(other);
+    }
     const absOffset = getParentOffset(other, allNodes);
-    const absR = offsetRect(r, absOffset.dx, absOffset.dy);
+    const absR = offsetRect(nodeRect(other), absOffset.dx, absOffset.dy);
 
     // X-axis snaps (produce vertical guide lines)
     xCandidates.push({ delta: r.left - dragged.left, alignX: r.left, anchorAbsRect: absR });
@@ -179,6 +201,148 @@ export function computeSnap(
   }
 
   return { x: snappedX, y: snappedY, guides };
+}
+
+// ---------- Resize snap ----------
+
+export interface ResizeSnapResult {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  guides: GuideLine[];
+}
+
+/**
+ * Snap a room's edges to other rooms while resizing.
+ * `direction` is [dx, dy] from React Flow's NodeResizer — indicates which edges move.
+ *   dx: -1 = left edge moving, 0 = neither, 1 = right edge moving
+ *   dy: -1 = top edge moving, 0 = neither, 1 = bottom edge moving
+ */
+export function computeResizeSnap(
+  nodeId: string,
+  params: { x: number; y: number; width: number; height: number },
+  direction: number[],
+  allNodes: SchematicNode[],
+): ResizeSnapResult {
+  const { x, y, width, height } = params;
+  const [dx, dy] = direction;
+
+  // Current edges of the resizing room
+  const left = x;
+  const right = x + width;
+  const top = y;
+  const bottom = y + height;
+
+  const others = allNodes.filter((n) => n.id !== nodeId && n.type === "room");
+
+  let bestLeftDelta: number | null = null;
+  let bestRightDelta: number | null = null;
+  let bestTopDelta: number | null = null;
+  let bestBottomDelta: number | null = null;
+
+  interface EdgeCandidate { delta: number; anchorRect: Rect }
+
+  const leftCandidates: EdgeCandidate[] = [];
+  const rightCandidates: EdgeCandidate[] = [];
+  const topCandidates: EdgeCandidate[] = [];
+  const bottomCandidates: EdgeCandidate[] = [];
+
+  for (const other of others) {
+    const r = nodeRect(other);
+
+    if (dx !== 0) {
+      // The moving horizontal edge
+      const movingX = dx < 0 ? left : right;
+      const targets = [r.left, r.right, r.centerX];
+      const bucket = dx < 0 ? leftCandidates : rightCandidates;
+      for (const t of targets) {
+        const delta = t - movingX;
+        if (Math.abs(delta) <= SNAP_THRESHOLD) {
+          bucket.push({ delta, anchorRect: r });
+          const best = dx < 0 ? bestLeftDelta : bestRightDelta;
+          if (best === null || Math.abs(delta) < Math.abs(best)) {
+            if (dx < 0) bestLeftDelta = delta;
+            else bestRightDelta = delta;
+          }
+        }
+      }
+    }
+
+    if (dy !== 0) {
+      const movingY = dy < 0 ? top : bottom;
+      const targets = [r.top, r.bottom, r.centerY];
+      const bucket = dy < 0 ? topCandidates : bottomCandidates;
+      for (const t of targets) {
+        const delta = t - movingY;
+        if (Math.abs(delta) <= SNAP_THRESHOLD) {
+          bucket.push({ delta, anchorRect: r });
+          const best = dy < 0 ? bestTopDelta : bestBottomDelta;
+          if (best === null || Math.abs(delta) < Math.abs(best)) {
+            if (dy < 0) bestTopDelta = delta;
+            else bestBottomDelta = delta;
+          }
+        }
+      }
+    }
+  }
+
+  // Apply snaps
+  let newX = x, newY = y, newW = width, newH = height;
+
+  if (dx < 0 && bestLeftDelta !== null) {
+    newX = x + bestLeftDelta;
+    newW = width - bestLeftDelta;
+  } else if (dx > 0 && bestRightDelta !== null) {
+    newW = width + bestRightDelta;
+  }
+
+  if (dy < 0 && bestTopDelta !== null) {
+    newY = y + bestTopDelta;
+    newH = height - bestTopDelta;
+  } else if (dy > 0 && bestBottomDelta !== null) {
+    newH = height + bestBottomDelta;
+  }
+
+  // Build guide lines
+  const guides: GuideLine[] = [];
+  const snappedLeft = newX;
+  const snappedRight = newX + newW;
+  const snappedTop = newY;
+  const snappedBottom = newY + newH;
+
+  const addXGuides = (candidates: EdgeCandidate[], bestDelta: number, absX: number) => {
+    const matching = candidates.filter((c) => Math.abs(c.delta - bestDelta) < 0.5);
+    const seen = new Set<number>();
+    for (const m of matching) {
+      const key = Math.round(absX * 10);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const from = Math.min(m.anchorRect.top, snappedTop);
+      const to = Math.max(m.anchorRect.bottom, snappedBottom);
+      guides.push({ orientation: "v", pos: absX, from, to });
+    }
+  };
+
+  const addYGuides = (candidates: EdgeCandidate[], bestDelta: number, absY: number) => {
+    const matching = candidates.filter((c) => Math.abs(c.delta - bestDelta) < 0.5);
+    const seen = new Set<number>();
+    for (const m of matching) {
+      const key = Math.round(absY * 10);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const from = Math.min(m.anchorRect.left, snappedLeft);
+      const to = Math.max(m.anchorRect.right, snappedRight);
+      guides.push({ orientation: "h", pos: absY, from, to });
+    }
+  };
+
+  if (bestLeftDelta !== null) addXGuides(leftCandidates, bestLeftDelta, snappedLeft);
+  if (bestRightDelta !== null) addXGuides(rightCandidates, bestRightDelta, snappedRight);
+  if (bestTopDelta !== null) addYGuides(topCandidates, bestTopDelta, snappedTop);
+  if (bestBottomDelta !== null) addYGuides(bottomCandidates, bestBottomDelta, snappedBottom);
+
+  return { x: newX, y: newY, width: newW, height: newH, guides };
 }
 
 // ---------- Minimum spacing enforcement ----------

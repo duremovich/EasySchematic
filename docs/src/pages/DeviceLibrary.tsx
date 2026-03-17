@@ -29,7 +29,7 @@ export default function DeviceLibraryPage() {
 
       <h2>Using templates</h2>
       <ol>
-        <li><strong>Search</strong> by typing in the search box at the top of the sidebar</li>
+        <li><strong>Search</strong> by typing in the search box — multi-word queries are scored and ranked, with favorites boosted to the top</li>
         <li><strong>Drag</strong> a template from the library onto the canvas</li>
         <li>The device appears with pre-configured ports matching the real hardware</li>
       </ol>
@@ -38,15 +38,44 @@ export default function DeviceLibraryPage() {
         device type.
       </p>
 
-      <h2>Custom templates</h2>
+      <h2>User templates</h2>
       <p>After editing a device's ports and configuration:</p>
       <ol>
         <li><strong>Double-click</strong> the device to open the editor</li>
         <li>Configure ports, labels, and signal types as needed</li>
-        <li>Click <strong>Save as Template</strong> at the bottom of the editor</li>
-        <li>The template appears in a "Custom" category in the library</li>
+        <li>Click <strong>Save as User Template</strong> at the bottom of the editor</li>
+        <li>The template appears in a "User Templates" category in the library</li>
       </ol>
-      <p>Custom templates persist in your browser's localStorage.</p>
+      <p>User templates persist in your browser's localStorage.</p>
+
+      <h2>Favorites</h2>
+      <p>
+        Star any device template in the library to mark it as a favorite. Favorites are pinned to
+        the top of the sidebar in their own <strong>Favorites</strong> category and are boosted to the
+        top of search results.
+      </p>
+      <ul>
+        <li>Click the <strong>star icon</strong> on any library item to toggle favorite status</li>
+        <li>Favorites are saved in your schematic file and persist across sessions</li>
+      </ul>
+
+      <h2>Template presets</h2>
+      <p>
+        Presets let you save a device configuration as the <strong>project-wide default</strong> for
+        that template. Every new placement of that device will automatically apply the preset
+        configuration.
+      </p>
+      <ol>
+        <li>Edit a device's ports, labels, or signal types</li>
+        <li>Click <strong>Save as Preset</strong> in the device editor</li>
+        <li>The library shows a <strong>preset badge</strong> on that template</li>
+      </ol>
+      <p>
+        When editing a device that has a preset, a blue banner shows the active preset with
+        a <strong>Clear</strong> button. If the device's configuration has drifted from the preset,
+        you'll see <strong>Revert to Preset</strong> and <strong>Revert to Template</strong> buttons
+        to restore either baseline.
+      </p>
 
       <h2>Auto-numbering</h2>
       <p>

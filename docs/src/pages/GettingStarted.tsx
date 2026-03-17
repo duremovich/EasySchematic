@@ -15,6 +15,9 @@ export default function GettingStartedPage() {
           <strong>Drag a device</strong> from the library sidebar on the left onto the canvas
         </li>
         <li>
+          Or <strong>double-click</strong> the canvas to search and place a device without dragging
+        </li>
+        <li>
           <strong>Connect ports</strong> by clicking an output port, then clicking a matching input port
         </li>
         <li>
@@ -49,6 +52,9 @@ export default function GettingStartedPage() {
           <tr><td><strong>Copy/Paste</strong></td><td>Ctrl+C / Ctrl+V</td></tr>
           <tr><td><strong>Undo/Redo</strong></td><td>Ctrl+Z / Ctrl+Shift+Z (or Ctrl+Y)</td></tr>
           <tr><td><strong>Align</strong></td><td>Select multiple items, then use the Align menu in the menu bar</td></tr>
+          <tr><td><strong>Quick-add device</strong></td><td>Double-click empty canvas or room background</td></tr>
+          <tr><td><strong>Room properties</strong></td><td>Right-click a room</td></tr>
+          <tr><td><strong>Print View</strong></td><td>Press F9</td></tr>
         </tbody>
       </table>
 
