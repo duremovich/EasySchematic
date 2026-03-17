@@ -28,7 +28,7 @@ export default function UserMenu({ user, onLogout }: Props) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="text-sm text-slate-300 hover:text-white transition-colors flex items-center gap-1"
+        className="text-sm text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
       >
         {user.name || user.email}
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

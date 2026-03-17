@@ -59,32 +59,32 @@ export default function App() {
 
   return (
     <div className="min-h-full flex flex-col">
-      <nav className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between">
-        <a href="#/" className="flex items-center gap-2 text-lg font-semibold tracking-tight hover:text-slate-300 transition-colors">
+      <nav className="bg-gray-50 border-b border-gray-200 text-gray-900 px-6 py-3 flex items-center justify-between">
+        <a href="#/" className="flex items-center gap-2 text-lg font-semibold tracking-tight hover:text-gray-600 transition-colors">
           <img src="/favicon.svg" alt="" className="w-6 h-6" />
-          EasySchematic <span className="text-slate-400 font-normal">Devices</span>
+          EasySchematic <span className="text-gray-400 font-normal">Devices</span>
         </a>
         <div className="flex items-center gap-4">
-          <a href="#/contributors" className="text-sm text-slate-400 hover:text-white transition-colors">
+          <a href="#/contributors" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
             Contributors
           </a>
-          <a href="https://easyschematic.live" className="text-sm text-slate-400 hover:text-white transition-colors">
+          <a href="https://easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
             Main App
           </a>
           {!authLoading && user && (
             <>
-              <a href="#/submit" className="text-sm text-blue-400 hover:text-blue-300 transition-colors font-medium">
+              <a href="#/submit" className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium">
                 Submit Device
               </a>
               {isMod && (
-                <a href="#/review" className="text-sm text-yellow-400 hover:text-yellow-300 transition-colors">
+                <a href="#/review" className="text-sm text-yellow-600 hover:text-yellow-800 transition-colors">
                   Review Queue
                 </a>
               )}
             </>
           )}
           {isAdmin && (
-            <a href="#/admin" className="text-sm text-slate-400 hover:text-white transition-colors">
+            <a href="#/admin" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
               Admin
             </a>
           )}
@@ -92,7 +92,7 @@ export default function App() {
             user ? (
               <UserMenu user={user} onLogout={handleLogout} />
             ) : (
-              <a href="#/login" className="text-sm text-slate-400 hover:text-white transition-colors">
+              <a href="#/login" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
                 Log in
               </a>
             )

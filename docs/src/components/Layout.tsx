@@ -39,7 +39,8 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="flex h-full">
       {/* Sidebar */}
       <nav className="w-64 shrink-0 border-r border-gray-200 bg-gray-50 overflow-y-auto p-4">
-        <a href="#/" className="block text-lg font-bold text-gray-900 mb-4 px-3">
+        <a href="#/" className="flex items-center gap-2 text-lg font-bold text-gray-900 mb-4 px-3">
+          <img src="/favicon.svg" alt="" className="w-6 h-6" />
           EasySchematic
         </a>
         <div className="flex flex-col gap-0.5">
