@@ -73,9 +73,15 @@ export default function DeviceDetailPage({ id }: { id: string }) {
           {template.color && (
             <span className="w-6 h-6 rounded-full border border-slate-200" style={{ backgroundColor: template.color }} />
           )}
+          <a
+            href={`#/submit/${template.id}`}
+            className="px-3 py-2 rounded-lg border border-slate-300 text-slate-600 text-sm hover:bg-slate-50 transition-colors"
+          >
+            Suggest Edit
+          </a>
           {hasAdmin && (
             <a
-              href={`#/admin/${template.id}`}
+              href={`#/admin/edit/${template.id}`}
               className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-800 transition-colors"
             >
               Edit

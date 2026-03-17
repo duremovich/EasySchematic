@@ -1,15 +1,12 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { rowToTemplate, templateToRow } from "./db";
-import { authMiddleware } from "./auth";
+import { authMiddleware, sessionMiddleware, requireSession, requireModerator, requireAdmin } from "./auth";
+import type { Env } from "./auth";
 import { validateTemplate } from "./validate";
+import { checkRateLimit, cleanupExpiredRateLimits } from "./rateLimiter";
 
-type Bindings = {
-  easyschematic_db: D1Database;
-  ADMIN_TOKEN: string;
-};
-
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<Env>();
 
 app.use(
   "*",
@@ -23,9 +20,14 @@ app.use(
     ],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Authorization", "Content-Type"],
+    credentials: true,
   })
 );
 
+// Session middleware on all routes
+app.use("*", sessionMiddleware);
+
+// Admin token auth on template write routes
 app.use("/templates/*", authMiddleware);
 app.use("/templates", authMiddleware);
 
@@ -37,12 +39,390 @@ const NO_CACHE_HEADERS = {
   "Cache-Control": "no-cache",
 };
 
-// --- Read endpoints ---
+function sessionCookie(sessionId: string, maxAge: number): string {
+  return `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${maxAge}`;
+}
+
+function getClientIP(c: { req: { header: (name: string) => string | undefined } }): string {
+  return c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() || "unknown";
+}
+
+// ==================== AUTH ENDPOINTS ====================
+
+app.post("/auth/login", async (c) => {
+  const body = await c.req.json<{ email?: string }>();
+  const email = body.email?.trim().toLowerCase();
+
+  if (!email || !email.includes("@")) {
+    return c.json({ error: "Valid email is required" }, 400);
+  }
+
+  const db = c.env.easyschematic_db;
+
+  // Rate limit: 3 per email per hour, 10 per IP per hour
+  const ip = getClientIP(c);
+  const emailLimit = await checkRateLimit(db, `login:email:${email}`, 3);
+  if (!emailLimit.allowed) {
+    return c.json({ error: "Too many login attempts for this email. Try again later." }, 429);
+  }
+  const ipLimit = await checkRateLimit(db, `login:ip:${ip}`, 10);
+  if (!ipLimit.allowed) {
+    return c.json({ error: "Too many login attempts. Try again later." }, 429);
+  }
+
+  // Generate magic link token
+  const token = crypto.randomUUID() + "-" + crypto.randomUUID();
+  const id = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+
+  await db
+    .prepare("INSERT INTO magic_links (id, email, token, expires_at) VALUES (?, ?, ?, ?)")
+    .bind(id, email, token, expiresAt)
+    .run();
+
+  // Send magic link email via Resend
+  const verifyUrl = `https://api.easyschematic.live/auth/verify?token=${token}`;
+
+  const emailRes = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
+    },
+    body: JSON.stringify({
+      from: "EasySchematic <noreply@easyschematic.live>",
+      to: email,
+      subject: "Your login link",
+      html: `<p>Click below to log in to EasySchematic Devices:</p>
+<p><a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;background:#1e293b;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Log in to EasySchematic</a></p>
+<p style="color:#64748b;font-size:14px;">This link expires in 15 minutes. If you didn't request this, you can ignore this email.</p>`,
+    }),
+  });
+
+  if (!emailRes.ok) {
+    console.error("Resend error:", await emailRes.text());
+    return c.json({ error: "Failed to send login email" }, 500);
+  }
+
+  return c.json({ ok: true });
+});
+
+app.get("/auth/verify", async (c) => {
+  const token = c.req.query("token");
+  if (!token) {
+    return c.json({ error: "Token required" }, 400);
+  }
+
+  const db = c.env.easyschematic_db;
+
+  // Find and validate magic link
+  const link = await db
+    .prepare("SELECT * FROM magic_links WHERE token = ? AND used = 0 AND expires_at > datetime('now')")
+    .bind(token)
+    .first<{ id: string; email: string }>();
+
+  if (!link) {
+    return c.redirect("https://devices.easyschematic.live/#/login?error=expired");
+  }
+
+  // Mark as used
+  await db.prepare("UPDATE magic_links SET used = 1 WHERE id = ?").bind(link.id).run();
+
+  // Find or create user
+  let user = await db.prepare("SELECT id FROM users WHERE email = ?").bind(link.email).first<{ id: string }>();
+
+  if (!user) {
+    const userId = crypto.randomUUID();
+    await db
+      .prepare("INSERT INTO users (id, email, last_login_at) VALUES (?, ?, datetime('now'))")
+      .bind(userId, link.email)
+      .run();
+    user = { id: userId };
+  } else {
+    await db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?").bind(user.id).run();
+  }
+
+  // Create session (30-day TTL)
+  const sessionId = crypto.randomUUID();
+  const sessionExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  await db
+    .prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)")
+    .bind(sessionId, user.id, sessionExpires)
+    .run();
+
+  // Redirect to devices site with session cookie
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: "https://devices.easyschematic.live/#/",
+      "Set-Cookie": sessionCookie(sessionId, 30 * 24 * 60 * 60),
+    },
+  });
+});
+
+app.post("/auth/logout", async (c) => {
+  const cookie = c.req.header("Cookie");
+  const match = cookie?.match(/(?:^|;\s*)session=([^\s;]+)/);
+
+  if (match) {
+    await c.env.easyschematic_db.prepare("DELETE FROM sessions WHERE id = ?").bind(match[1]).run();
+  }
+
+  return new Response(JSON.stringify({ ok: true }), {
+    status: 200,
+    headers: {
+      "Content-Type": "application/json",
+      "Set-Cookie": sessionCookie("", 0),
+    },
+  });
+});
+
+app.get("/auth/me", async (c) => {
+  const user = requireSession(c);
+  if (!user) return c.json({ error: "Not authenticated" }, 401);
+
+  return c.json({
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+  });
+});
+
+// ==================== SUBMISSION ENDPOINTS ====================
+
+app.post("/submissions", async (c) => {
+  const user = requireSession(c);
+  if (!user) return c.json({ error: "Not authenticated" }, 401);
+  if (user.banned) return c.json({ error: "Account suspended" }, 403);
+
+  const db = c.env.easyschematic_db;
+
+  // Rate limit: 10 submissions per user per hour
+  const limit = await checkRateLimit(db, `submit:user:${user.id}`, 10);
+  if (!limit.allowed) {
+    return c.json({ error: "Too many submissions. Try again later." }, 429);
+  }
+
+  const body = await c.req.json<{ action?: string; templateId?: string; data?: unknown }>();
+
+  if (!body.action || (body.action !== "create" && body.action !== "update")) {
+    return c.json({ error: "action must be 'create' or 'update'" }, 400);
+  }
+
+  if (body.action === "update" && !body.templateId) {
+    return c.json({ error: "templateId is required for update submissions" }, 400);
+  }
+
+  // Validate the template data
+  const validation = validateTemplate(body.data);
+  if (!validation.ok) {
+    return c.json({ error: validation.error }, 400);
+  }
+
+  const id = crypto.randomUUID();
+
+  await db
+    .prepare(
+      "INSERT INTO submissions (id, user_id, action, template_id, data) VALUES (?, ?, ?, ?, ?)",
+    )
+    .bind(id, user.id, body.action, body.templateId ?? null, JSON.stringify(body.data))
+    .run();
+
+  const created = await db.prepare("SELECT * FROM submissions WHERE id = ?").bind(id).first();
+  return c.json(formatSubmission(created as unknown as SubmissionRow), 201, NO_CACHE_HEADERS);
+});
+
+app.get("/submissions/mine", async (c) => {
+  const user = requireSession(c);
+  if (!user) return c.json({ error: "Not authenticated" }, 401);
+
+  const { results } = await c.env.easyschematic_db
+    .prepare("SELECT * FROM submissions WHERE user_id = ? ORDER BY created_at DESC")
+    .bind(user.id)
+    .all();
+
+  return c.json(results.map((r) => formatSubmission(r as unknown as SubmissionRow)));
+});
+
+app.get("/submissions/pending", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const { results } = await c.env.easyschematic_db
+    .prepare(
+      `SELECT s.*, u.email as submitter_email, u.name as submitter_name
+       FROM submissions s JOIN users u ON s.user_id = u.id
+       WHERE s.status = 'pending' ORDER BY s.created_at ASC`,
+    )
+    .all();
+
+  return c.json(results.map((r) => formatSubmission(r as unknown as SubmissionRow)));
+});
+
+app.get("/submissions/:id", async (c) => {
+  const user = requireSession(c);
+  if (!user) return c.json({ error: "Not authenticated" }, 401);
+
+  const id = c.req.param("id");
+  const row = await c.env.easyschematic_db.prepare("SELECT * FROM submissions WHERE id = ?").bind(id).first();
+
+  if (!row) return c.json({ error: "Submission not found" }, 404);
+
+  const submission = row as unknown as SubmissionRow;
+  // Users can see their own, moderators can see all
+  if (submission.user_id !== user.id && user.role !== "moderator" && user.role !== "admin") {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  return c.json(formatSubmission(submission));
+});
+
+app.post("/submissions/:id/approve", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const db = c.env.easyschematic_db;
+
+  const row = await db.prepare("SELECT * FROM submissions WHERE id = ? AND status = 'pending'").bind(id).first();
+  if (!row) return c.json({ error: "Pending submission not found" }, 404);
+
+  const submission = row as unknown as SubmissionRow;
+  const data = JSON.parse(submission.data);
+
+  if (submission.action === "create") {
+    // Create new template
+    const templateId = crypto.randomUUID();
+    const templateRow = templateToRow({ ...data, id: templateId });
+
+    await db
+      .prepare(
+        `INSERT INTO templates (id, version, device_type, label, manufacturer, model_number, color, image_url, search_terms, ports, sort_order)
+         VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        templateRow.id,
+        templateRow.device_type,
+        templateRow.label,
+        templateRow.manufacturer,
+        templateRow.model_number,
+        templateRow.color,
+        templateRow.image_url,
+        templateRow.search_terms,
+        templateRow.ports,
+        templateRow.sort_order,
+      )
+      .run();
+  } else if (submission.action === "update" && submission.template_id) {
+    // Update existing template
+    const templateRow = templateToRow({ ...data, id: submission.template_id });
+
+    await db
+      .prepare(
+        `UPDATE templates
+         SET device_type = ?, label = ?, manufacturer = ?, model_number = ?,
+             color = ?, image_url = ?, search_terms = ?, ports = ?, sort_order = ?,
+             version = version + 1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`,
+      )
+      .bind(
+        templateRow.device_type,
+        templateRow.label,
+        templateRow.manufacturer,
+        templateRow.model_number,
+        templateRow.color,
+        templateRow.image_url,
+        templateRow.search_terms,
+        templateRow.ports,
+        templateRow.sort_order,
+        submission.template_id,
+      )
+      .run();
+  }
+
+  // Mark submission approved
+  await db
+    .prepare("UPDATE submissions SET status = 'approved', reviewer_id = ?, reviewed_at = datetime('now') WHERE id = ?")
+    .bind(mod.id, id)
+    .run();
+
+  return c.json({ ok: true, status: "approved" }, 200, NO_CACHE_HEADERS);
+});
+
+app.post("/submissions/:id/reject", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const body = await c.req.json<{ note?: string }>();
+
+  const row = await c.env.easyschematic_db
+    .prepare("SELECT id FROM submissions WHERE id = ? AND status = 'pending'")
+    .bind(id)
+    .first();
+
+  if (!row) return c.json({ error: "Pending submission not found" }, 404);
+
+  await c.env.easyschematic_db
+    .prepare(
+      "UPDATE submissions SET status = 'rejected', reviewer_id = ?, reviewer_note = ?, reviewed_at = datetime('now') WHERE id = ?",
+    )
+    .bind(mod.id, body.note ?? null, id)
+    .run();
+
+  return c.json({ ok: true, status: "rejected" }, 200, NO_CACHE_HEADERS);
+});
+
+// ==================== USER MANAGEMENT (ADMIN) ====================
+
+app.get("/users", async (c) => {
+  const admin = requireAdmin(c);
+  if (!admin) return c.json({ error: "Admin access required" }, 403);
+
+  const { results } = await c.env.easyschematic_db
+    .prepare("SELECT id, email, name, role, banned, created_at, last_login_at FROM users ORDER BY created_at DESC")
+    .all();
+
+  return c.json(results);
+});
+
+app.put("/users/:id/role", async (c) => {
+  const admin = requireAdmin(c);
+  if (!admin) return c.json({ error: "Admin access required" }, 403);
+
+  const id = c.req.param("id");
+  const body = await c.req.json<{ role?: string }>();
+
+  if (!body.role || !["contributor", "moderator", "admin"].includes(body.role)) {
+    return c.json({ error: "role must be 'contributor', 'moderator', or 'admin'" }, 400);
+  }
+
+  await c.env.easyschematic_db.prepare("UPDATE users SET role = ? WHERE id = ?").bind(body.role, id).run();
+  return c.json({ ok: true });
+});
+
+app.put("/users/:id/ban", async (c) => {
+  const admin = requireAdmin(c);
+  if (!admin) return c.json({ error: "Admin access required" }, 403);
+
+  const id = c.req.param("id");
+  const body = await c.req.json<{ banned?: boolean }>();
+
+  await c.env.easyschematic_db
+    .prepare("UPDATE users SET banned = ? WHERE id = ?")
+    .bind(body.banned ? 1 : 0, id)
+    .run();
+  return c.json({ ok: true });
+});
+
+// ==================== TEMPLATE ENDPOINTS ====================
 
 app.get("/templates", async (c) => {
-  const { results } = await c.env.easyschematic_db.prepare(
-    "SELECT * FROM templates ORDER BY sort_order, label"
-  ).all();
+  const { results } = await c.env.easyschematic_db
+    .prepare("SELECT * FROM templates ORDER BY sort_order, label")
+    .all();
 
   const templates = results.map((row) => rowToTemplate(row as never));
   return c.json(templates, 200, CACHE_HEADERS);
@@ -50,9 +430,10 @@ app.get("/templates", async (c) => {
 
 app.get("/templates/:id", async (c) => {
   const id = c.req.param("id");
-  const row = await c.env.easyschematic_db.prepare(
-    "SELECT * FROM templates WHERE id = ?"
-  ).bind(id).first();
+  const row = await c.env.easyschematic_db
+    .prepare("SELECT * FROM templates WHERE id = ?")
+    .bind(id)
+    .first();
 
   if (!row) {
     return c.json({ error: "Template not found" }, 404);
@@ -60,8 +441,6 @@ app.get("/templates/:id", async (c) => {
 
   return c.json(rowToTemplate(row as never), 200, CACHE_HEADERS);
 });
-
-// --- Write endpoints ---
 
 app.post("/templates", async (c) => {
   const body = await c.req.json();
@@ -74,25 +453,29 @@ app.post("/templates", async (c) => {
   const id = crypto.randomUUID();
   const row = templateToRow({ ...result.data, id });
 
-  await c.env.easyschematic_db.prepare(
-    `INSERT INTO templates (id, version, device_type, label, manufacturer, model_number, color, image_url, search_terms, ports, sort_order)
-     VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(
-    row.id,
-    row.device_type,
-    row.label,
-    row.manufacturer,
-    row.model_number,
-    row.color,
-    row.image_url,
-    row.search_terms,
-    row.ports,
-    row.sort_order,
-  ).run();
+  await c.env.easyschematic_db
+    .prepare(
+      `INSERT INTO templates (id, version, device_type, label, manufacturer, model_number, color, image_url, search_terms, ports, sort_order)
+     VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      row.id,
+      row.device_type,
+      row.label,
+      row.manufacturer,
+      row.model_number,
+      row.color,
+      row.image_url,
+      row.search_terms,
+      row.ports,
+      row.sort_order,
+    )
+    .run();
 
-  const created = await c.env.easyschematic_db.prepare(
-    "SELECT * FROM templates WHERE id = ?"
-  ).bind(id).first();
+  const created = await c.env.easyschematic_db
+    .prepare("SELECT * FROM templates WHERE id = ?")
+    .bind(id)
+    .first();
 
   return c.json(rowToTemplate(created as never), 201, NO_CACHE_HEADERS);
 });
@@ -100,9 +483,10 @@ app.post("/templates", async (c) => {
 app.put("/templates/:id", async (c) => {
   const id = c.req.param("id");
 
-  const existing = await c.env.easyschematic_db.prepare(
-    "SELECT * FROM templates WHERE id = ?"
-  ).bind(id).first();
+  const existing = await c.env.easyschematic_db
+    .prepare("SELECT * FROM templates WHERE id = ?")
+    .bind(id)
+    .first();
 
   if (!existing) {
     return c.json({ error: "Template not found" }, 404);
@@ -117,28 +501,32 @@ app.put("/templates/:id", async (c) => {
 
   const row = templateToRow({ ...result.data, id });
 
-  await c.env.easyschematic_db.prepare(
-    `UPDATE templates
+  await c.env.easyschematic_db
+    .prepare(
+      `UPDATE templates
      SET device_type = ?, label = ?, manufacturer = ?, model_number = ?,
          color = ?, image_url = ?, search_terms = ?, ports = ?, sort_order = ?,
          version = version + 1, updated_at = CURRENT_TIMESTAMP
-     WHERE id = ?`
-  ).bind(
-    row.device_type,
-    row.label,
-    row.manufacturer,
-    row.model_number,
-    row.color,
-    row.image_url,
-    row.search_terms,
-    row.ports,
-    row.sort_order,
-    id,
-  ).run();
+     WHERE id = ?`,
+    )
+    .bind(
+      row.device_type,
+      row.label,
+      row.manufacturer,
+      row.model_number,
+      row.color,
+      row.image_url,
+      row.search_terms,
+      row.ports,
+      row.sort_order,
+      id,
+    )
+    .run();
 
-  const updated = await c.env.easyschematic_db.prepare(
-    "SELECT * FROM templates WHERE id = ?"
-  ).bind(id).first();
+  const updated = await c.env.easyschematic_db
+    .prepare("SELECT * FROM templates WHERE id = ?")
+    .bind(id)
+    .first();
 
   return c.json(rowToTemplate(updated as never), 200, NO_CACHE_HEADERS);
 });
@@ -146,25 +534,61 @@ app.put("/templates/:id", async (c) => {
 app.delete("/templates/:id", async (c) => {
   const id = c.req.param("id");
 
-  const existing = await c.env.easyschematic_db.prepare(
-    "SELECT id FROM templates WHERE id = ?"
-  ).bind(id).first();
+  const existing = await c.env.easyschematic_db
+    .prepare("SELECT id FROM templates WHERE id = ?")
+    .bind(id)
+    .first();
 
   if (!existing) {
     return c.json({ error: "Template not found" }, 404);
   }
 
-  await c.env.easyschematic_db.prepare(
-    "DELETE FROM templates WHERE id = ?"
-  ).bind(id).run();
+  await c.env.easyschematic_db.prepare("DELETE FROM templates WHERE id = ?").bind(id).run();
 
   return c.body(null, 204);
 });
 
-// --- Health ---
+// ==================== HEALTH ====================
 
-app.get("/health", (c) => {
+app.get("/health", async (c) => {
+  // Opportunistically clean up expired rate limits
+  await cleanupExpiredRateLimits(c.env.easyschematic_db).catch(() => {});
   return c.json({ ok: true });
 });
 
 export default app;
+
+// ==================== HELPERS ====================
+
+interface SubmissionRow {
+  id: string;
+  user_id: string;
+  action: string;
+  template_id: string | null;
+  data: string;
+  status: string;
+  reviewer_id: string | null;
+  reviewer_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+  // Joined fields (optional)
+  submitter_email?: string;
+  submitter_name?: string;
+}
+
+function formatSubmission(row: SubmissionRow) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    action: row.action,
+    templateId: row.template_id,
+    data: JSON.parse(row.data),
+    status: row.status,
+    reviewerId: row.reviewer_id,
+    reviewerNote: row.reviewer_note,
+    createdAt: row.created_at,
+    reviewedAt: row.reviewed_at,
+    ...(row.submitter_email && { submitterEmail: row.submitter_email }),
+    ...(row.submitter_name && { submitterName: row.submitter_name }),
+  };
+}
