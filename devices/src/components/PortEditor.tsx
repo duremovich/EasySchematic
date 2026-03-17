@@ -83,6 +83,14 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
           >
             Bulk Add
           </button>
+          {grouped[direction].length > 0 && (
+            <button
+              onClick={() => onChange(ports.filter((p) => p.direction !== direction))}
+              className="text-xs text-red-500 hover:text-red-700 transition-colors"
+            >
+              Clear All
+            </button>
+          )}
           <button
             onClick={() => addPort(direction)}
             className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors"
