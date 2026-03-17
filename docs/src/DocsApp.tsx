@@ -11,6 +11,7 @@ import ImportExportPage from "./pages/ImportExport";
 import NotesPage from "./pages/Notes";
 import PrintingPage from "./pages/Printing";
 import PackListPage from "./pages/PackList";
+import ApiPage from "./pages/Api";
 
 const routes: Record<string, { title: string; component: React.FC }> = {
   "": { title: "Overview", component: OverviewPage },
@@ -25,6 +26,7 @@ const routes: Record<string, { title: string; component: React.FC }> = {
   "pack-list": { title: "Pack List & Reports", component: PackListPage },
   printing: { title: "Printing & Title Block", component: PrintingPage },
   "import-export": { title: "Import / Export", component: ImportExportPage },
+  api: { title: "Public API", component: ApiPage },
 };
 
 function getHash() {

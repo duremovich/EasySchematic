@@ -14,6 +14,7 @@ const navItems = [
   { hash: "pack-list", label: "Pack List & Reports" },
   { hash: "printing", label: "Printing & Title Block" },
   { hash: "import-export", label: "Import / Export" },
+  { hash: "api", label: "Public API" },
 ];
 
 function NavLink({ hash, label }: { hash: string; label: string }) {
