@@ -379,7 +379,7 @@ const smallSelect =
   "bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500";
 
 const FONT_MAP: Record<string, string> = {
-  "sans-serif": "system-ui, sans-serif",
+  "sans-serif": "'Inter', system-ui, sans-serif",
   "serif": "Georgia, serif",
   "monospace": "'Courier New', monospace",
 };

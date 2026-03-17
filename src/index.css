@@ -2,6 +2,21 @@
 @import "@xyflow/react/dist/style.css";
 @import "./theme.css";
 
+@font-face {
+  font-family: 'Inter';
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/Inter-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Inter';
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/Inter-Bold.ttf') format('truetype');
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
@@ -9,7 +24,7 @@ html, body, #root {
   overflow: hidden;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* React Flow overrides */

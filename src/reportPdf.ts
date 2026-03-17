@@ -16,14 +16,33 @@ const HEADER_HEIGHT = 7;
 const FONT_SIZE = 8;
 const HEADER_FONT_SIZE = 9;
 
-// ─── Helpers ───
+// ─── Inter font embedding ───
 
-function pdfSafe(text: string): string {
-  return text
-    .replace(/\u2192/g, ">")
-    .replace(/\u00d7/g, "x")
-    .replace(/\u2014/g, "-")
-    .replace(/\u2013/g, "-");
+let interRegularB64: string | null = null;
+let interBoldB64: string | null = null;
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+async function loadInterFont(doc: jsPDF) {
+  if (!interRegularB64) {
+    const [regular, bold] = await Promise.all([
+      fetch("/fonts/Inter-Regular.ttf").then((r) => r.arrayBuffer()),
+      fetch("/fonts/Inter-Bold.ttf").then((r) => r.arrayBuffer()),
+    ]);
+    interRegularB64 = arrayBufferToBase64(regular);
+    interBoldB64 = arrayBufferToBase64(bold);
+  }
+  doc.addFileToVFS("Inter-Regular.ttf", interRegularB64);
+  doc.addFileToVFS("Inter-Bold.ttf", interBoldB64!);
+  doc.addFont("Inter-Regular.ttf", "Inter", "normal");
+  doc.addFont("Inter-Bold.ttf", "Inter", "bold");
 }
 
 // ─── Table data types ───
@@ -60,7 +79,7 @@ function drawGridBlock(
   for (let i = 0; i < rows.length; i++) rowStarts.push(rowStarts[i] + rows[i]);
 
   const FONT_MAP: Record<string, string> = {
-    "sans-serif": "helvetica",
+    "sans-serif": "Inter",
     serif: "times",
     monospace: "courier",
   };
@@ -75,7 +94,7 @@ function drawGridBlock(
     for (let r = cell.row; r < cell.row + cell.rowSpan && r < rows.length; r++) h += rows[r];
     h *= blockH;
 
-    const fontName = FONT_MAP[cell.fontFamily] ?? "helvetica";
+    const fontName = FONT_MAP[cell.fontFamily] ?? "Inter";
     doc.setFont(fontName, cell.fontWeight === "bold" ? "bold" : "normal");
     doc.setFontSize(cell.fontSize);
 
@@ -124,13 +143,12 @@ function drawGridBlock(
 
     if (text && cell.content.type !== "logo") {
       const textY = y + h / 2 + cell.fontSize * 0.15;
-      const safeText = pdfSafe(text);
       if (cell.align === "center") {
-        doc.text(safeText, x + w / 2, textY, { align: "center", maxWidth: w - 2 });
+        doc.text(text, x + w / 2, textY, { align: "center", maxWidth: w - 2 });
       } else if (cell.align === "right") {
-        doc.text(safeText, x + w - 1, textY, { align: "right", maxWidth: w - 2 });
+        doc.text(text, x + w - 1, textY, { align: "right", maxWidth: w - 2 });
       } else {
-        doc.text(safeText, x + 1, textY, { maxWidth: w - 2 });
+        doc.text(text, x + 1, textY, { maxWidth: w - 2 });
       }
     }
   }
@@ -154,18 +172,18 @@ function drawTableSection(
 
   const drawSectionTitle = (label: string) => {
     doc.setFontSize(11);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Inter", "bold");
     doc.setTextColor(0);
-    doc.text(pdfSafe(label), REPORT_MARGIN_MM, y);
+    doc.text(label, REPORT_MARGIN_MM, y);
     y += HEADER_HEIGHT;
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Inter", "normal");
   };
 
   drawSectionTitle(tableDef.label);
 
   const drawHeaders = () => {
     doc.setFontSize(HEADER_FONT_SIZE);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Inter", "bold");
     doc.setFillColor(240, 240, 240);
     const totalW = visCols.reduce((s, c) => s + c.widthMm + COL_GAP, -COL_GAP);
     doc.rect(REPORT_MARGIN_MM - 1, y - HEADER_HEIGHT + 2, totalW + COL_GAP, HEADER_HEIGHT, "F");
@@ -175,7 +193,7 @@ function drawTableSection(
       doc.text(col.header, x, y);
       x += col.widthMm + COL_GAP;
     }
-    doc.setFont("helvetica", "normal");
+    doc.setFont("Inter", "normal");
     doc.setFontSize(FONT_SIZE);
     y += 2;
   };
@@ -203,7 +221,7 @@ function drawTableSection(
     doc.setTextColor(0);
     let x = REPORT_MARGIN_MM;
     for (const col of visCols) {
-      const text = pdfSafe(row[col.key] ?? "");
+      const text = row[col.key] ?? "";
       doc.text(text, x, y, { maxWidth: col.widthMm });
       x += col.widthMm + COL_GAP;
     }
@@ -216,13 +234,13 @@ function drawTableSection(
       y += ROW_HEIGHT + 2;
     }
     doc.setFontSize(FONT_SIZE);
-    doc.setFont("helvetica", "bold");
+    doc.setFont("Inter", "bold");
     doc.setFillColor(230, 235, 245);
     const totalW = visCols.reduce((s, c) => s + c.widthMm + COL_GAP, -COL_GAP);
     doc.rect(REPORT_MARGIN_MM - 1, y - ROW_HEIGHT + 2, totalW + COL_GAP, ROW_HEIGHT, "F");
     doc.setTextColor(0);
-    doc.text(pdfSafe(label), REPORT_MARGIN_MM, y);
-    doc.setFont("helvetica", "normal");
+    doc.text(label, REPORT_MARGIN_MM, y);
+    doc.setFont("Inter", "normal");
   };
 
   if (tableData.groupedRows && tableDef.groupBy) {
@@ -241,18 +259,21 @@ function drawTableSection(
 
 // ─── Main Export ───
 
-export function renderReportPdf(
+export async function renderReportPdf(
   layout: ReportLayout,
   titleBlock: TitleBlock,
   tableData: ReportTableData[],
   filename: string,
-): void {
+): Promise<void> {
   const { widthMm, heightMm } = getPageDimensions(layout.paperSize, layout.orientation);
   const doc = new jsPDF({
     orientation: layout.orientation,
     unit: "mm",
     format: layout.paperSize,
   });
+
+  // Load Inter font into jsPDF
+  await loadInterFont(doc);
 
   // Footer reserve: content must stop before the footer
   const bottomLimit = heightMm - REPORT_MARGIN_MM - layout.footerHeightMm - 2;
@@ -286,4 +307,3 @@ export function renderReportPdf(
   doc.save(filename);
 }
 
-export { pdfSafe };

@@ -1,10 +1,242 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { useViewport, useReactFlow } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import { computePageGrid, type PageRect } from "../printPageGrid";
-import { PAPER_SIZES } from "../printConfig";
-import type { TitleBlock, TitleBlockLayout } from "../types";
+import { PAPER_SIZES, PAGE_MARGIN_IN } from "../printConfig";
+import type { TitleBlock, TitleBlockLayout, DeviceData, SignalType } from "../types";
+import type { RoutedEdge } from "../edgeRouter";
 import { computeCellRects, normalizeSizes, getFieldValue, getFieldLabel } from "../titleBlockLayout";
+import { DEFAULT_SIGNAL_COLORS } from "../signalColors";
+
+// ─── Page crossing labels ─────────────────────────────────────────
+
+interface CrossingLabel {
+  /** Position of the label in canvas coords */
+  x: number;
+  y: number;
+  /** Text to display */
+  text: string;
+  /** Page number the signal continues on */
+  pageNum: number;
+  /** Anchor side: which direction the label text should flow from the crossing */
+  anchor: "left" | "right" | "up" | "down";
+  /** Signal wire color (hex) */
+  color: string;
+}
+
+/** Find which page (1-indexed) contains a given point, or 0 if none. */
+function pageAtPoint(x: number, y: number, pages: PageRect[]): number {
+  for (const p of pages) {
+    if (x >= p.x && x < p.x + p.widthPx && y >= p.y && y < p.y + p.heightPx) {
+      return p.index + 1;
+    }
+  }
+  return 0;
+}
+
+/**
+ * Find all points where routed edge segments cross page boundary lines,
+ * and generate labels showing the device (and room) on the other side.
+ */
+function computeCrossingLabels(
+  pages: PageRect[],
+  routedEdges: Record<string, RoutedEdge>,
+  edges: { id: string; source: string; target: string; data?: { signalType?: SignalType } }[],
+  nodes: { id: string; type?: string; data: Record<string, unknown>; parentId?: string }[],
+  pxPerPt: number,
+  signalColorOverrides?: Partial<Record<SignalType, string>>,
+): CrossingLabel[] {
+  if (pages.length <= 1) return [];
+
+  // Collect unique page boundary lines
+  const vLines = new Set<number>(); // vertical boundaries (x values)
+  const hLines = new Set<number>(); // horizontal boundaries (y values)
+  for (const p of pages) {
+    if (p.col > 0) vLines.add(p.x);
+    if (p.row > 0) hLines.add(p.y);
+    vLines.add(p.x + p.widthPx);
+    hLines.add(p.y + p.heightPx);
+  }
+
+  // Build lookup: nodeId → label and room name
+  const nodeInfo = new Map<string, { label: string; room?: string }>();
+  for (const n of nodes) {
+    if (n.type !== "device") continue;
+    const data = n.data as DeviceData;
+    let room: string | undefined;
+    if (n.parentId) {
+      const parent = nodes.find((p) => p.id === n.parentId);
+      if (parent) room = (parent.data as { label?: string }).label;
+    }
+    nodeInfo.set(n.id, { label: data.label, room });
+  }
+
+  // Build edge lookup
+  const edgeMap = new Map(edges.map((e) => [e.id, e]));
+
+  const labels: CrossingLabel[] = [];
+  // Margin width in canvas px (distance from page edge to content border)
+  const marginPx = pages.length > 0 ? pages[0].contentX - pages[0].x : 0;
+  // Inset from content border — 15% of margin keeps pills visually separated
+  const inset = marginPx * 0.15;
+
+  // Resolve signal colors
+  const resolveColor = (edge: { data?: { signalType?: SignalType } }): string => {
+    const st = edge.data?.signalType;
+    if (!st) return DEFAULT_SIGNAL_COLORS.custom;
+    return signalColorOverrides?.[st] ?? DEFAULT_SIGNAL_COLORS[st];
+  };
+
+  for (const [edgeId, route] of Object.entries(routedEdges)) {
+    const edge = edgeMap.get(edgeId);
+    if (!edge) continue;
+    const sourceInfo = nodeInfo.get(edge.source);
+    const targetInfo = nodeInfo.get(edge.target);
+    if (!sourceInfo || !targetInfo) continue;
+
+    for (const seg of route.segments) {
+      if (seg.axis === "h") {
+        const y = seg.y1;
+        const minX = Math.min(seg.x1, seg.x2);
+        const maxX = Math.max(seg.x1, seg.x2);
+        const goingRight = seg.x2 > seg.x1;
+        for (const bx of vLines) {
+          if (bx > minX && bx < maxX) {
+            const rightwardTarget = goingRight ? targetInfo : sourceInfo;
+            const leftwardTarget = goingRight ? sourceInfo : targetInfo;
+
+            const rightPageNum = pageAtPoint(bx + 1, y, pages);
+            const leftPageNum = pageAtPoint(bx - 1, y, pages);
+
+            // Position inside the content border (margin + inset from boundary)
+            const edgeColor = resolveColor(edge);
+            labels.push({ x: bx - marginPx - inset, y, text: formatLabel(rightwardTarget), pageNum: rightPageNum, anchor: "left", color: edgeColor });
+            labels.push({ x: bx + marginPx + inset, y, text: formatLabel(leftwardTarget), pageNum: leftPageNum, anchor: "right", color: edgeColor });
+          }
+        }
+      } else {
+        const x = seg.x1;
+        const minY = Math.min(seg.y1, seg.y2);
+        const maxY = Math.max(seg.y1, seg.y2);
+        const goingDown = seg.y2 > seg.y1;
+        for (const by of hLines) {
+          if (by > minY && by < maxY) {
+            const downwardTarget = goingDown ? targetInfo : sourceInfo;
+            const upwardTarget = goingDown ? sourceInfo : targetInfo;
+
+            const downPageNum = pageAtPoint(x, by + 1, pages);
+            const upPageNum = pageAtPoint(x, by - 1, pages);
+
+            const edgeColor = resolveColor(edge);
+            labels.push({ x, y: by - marginPx - inset, text: formatLabel(downwardTarget), pageNum: downPageNum, anchor: "up", color: edgeColor });
+            labels.push({ x, y: by + marginPx + inset, text: formatLabel(upwardTarget), pageNum: upPageNum, anchor: "down", color: edgeColor });
+          }
+        }
+      }
+    }
+  }
+
+  return labels;
+}
+
+function formatLabel(info: { label: string; room?: string }): string {
+  if (info.room) return `${info.label} (${info.room})`;
+  return info.label;
+}
+
+/** Measure text width using a canvas 2D context for pixel-accurate sizing. */
+let measureCtx: CanvasRenderingContext2D | null = null;
+function measureTextWidth(text: string, font: string): number {
+  if (!measureCtx) {
+    measureCtx = document.createElement("canvas").getContext("2d")!;
+  }
+  measureCtx.font = font;
+  return measureCtx.measureText(text).width;
+}
+
+function CrossingLabels({ labels, pxPerPt }: { labels: CrossingLabel[]; pxPerPt: number }) {
+  if (labels.length === 0) return null;
+  const fontSize = 6.5 * pxPerPt;
+  const pad = 1.5 * pxPerPt;
+  const radius = 1.5 * pxPerPt;
+  const font = `500 ${fontSize}px Inter, system-ui, sans-serif`;
+
+  return (
+    <g>
+      {labels.map((l, i) => {
+        const arrow = l.anchor === "left" ? "\u2192" : l.anchor === "right" ? "\u2190" : l.anchor === "up" ? "\u2193" : "\u2191";
+        const pgRef = l.pageNum > 0 ? ` Pg ${l.pageNum}` : "";
+        const displayText = `${arrow} ${l.text}${pgRef}`;
+
+        const textW = measureTextWidth(displayText, font);
+        const boxW = textW + pad * 2;
+        const boxH = fontSize + pad * 2;
+
+        // Box outer edge sits at l.x/l.y, growing INWARD (away from the page boundary)
+        let boxX: number;
+        let boxY: number;
+        let textX: number;
+        let textY: number;
+
+        switch (l.anchor) {
+          case "left":
+            boxX = l.x - boxW;
+            boxY = l.y - boxH / 2;
+            textX = boxX + pad;
+            textY = l.y;
+            break;
+          case "right":
+            boxX = l.x;
+            boxY = l.y - boxH / 2;
+            textX = boxX + pad;
+            textY = l.y;
+            break;
+          case "up":
+            boxX = l.x - boxW / 2;
+            boxY = l.y - boxH;
+            textX = boxX + pad;
+            textY = l.y - boxH / 2;
+            break;
+          case "down":
+            boxX = l.x - boxW / 2;
+            boxY = l.y;
+            textX = boxX + pad;
+            textY = l.y + boxH / 2;
+            break;
+        }
+
+        return (
+          <g key={i}>
+            <rect
+              x={boxX}
+              y={boxY}
+              width={boxW}
+              height={boxH}
+              rx={radius}
+              ry={radius}
+              fill="white"
+              stroke={l.color}
+              strokeWidth={0.5 * pxPerPt}
+            />
+            <text
+              x={textX}
+              y={textY}
+              dominantBaseline="central"
+              fill="#374151"
+              fontSize={fontSize}
+              fontFamily="'Inter', system-ui, sans-serif"
+              fontWeight="500"
+            >
+              {displayText}
+            </text>
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+// ─── Main overlay ─────────────────────────────────────────────────
 
 function PageBoundaryOverlay() {
   const { x: vx, y: vy, zoom } = useViewport();
@@ -15,6 +247,10 @@ function PageBoundaryOverlay() {
   const printScale = useSchematicStore((s) => s.printScale);
   const titleBlock = useSchematicStore((s) => s.titleBlock);
   const titleBlockLayout = useSchematicStore((s) => s.titleBlockLayout);
+  const routedEdges = useSchematicStore((s) => s.routedEdges);
+  const storeNodes = useSchematicStore((s) => s.nodes);
+  const storeEdges = useSchematicStore((s) => s.edges);
+  const signalColors = useSchematicStore((s) => s.signalColors);
   // Subscribe to node positions so the overlay re-renders when nodes move
   useSchematicStore((s) =>
     s.nodes.map((n) => `${n.id}:${Math.round(n.position.x)},${Math.round(n.position.y)},${n.measured?.width ?? 0},${n.measured?.height ?? 0}`).join("|"),
@@ -24,6 +260,16 @@ function PageBoundaryOverlay() {
   const nodes = rfInstance.getNodes();
 
   const pages = computePageGrid(paperSize, printOrientation, printScale, nodes, titleBlockLayout.heightIn);
+
+  // Compute page-relative sizing: pxPerPt scales with page dimensions, not zoom
+  const marginPx = pages.length > 0 ? pages[0].contentX - pages[0].x : 0;
+  const pxPerIn = PAGE_MARGIN_IN > 0 ? marginPx / PAGE_MARGIN_IN : 96 / printScale;
+  const pxPerPt = pxPerIn / 72;
+
+  const crossingLabels = useMemo(
+    () => computeCrossingLabels(pages, routedEdges, storeEdges, storeNodes, pxPerPt, signalColors),
+    [pages, routedEdges, storeEdges, storeNodes, pxPerPt, signalColors],
+  );
 
   if (pages.length === 0) return null;
 
@@ -53,13 +299,14 @@ function PageBoundaryOverlay() {
         {pages.map((p) => (
           <PageOverlay key={p.index} page={p} zoom={zoom} titleBlock={titleBlock} layout={titleBlockLayout} totalPages={totalPages} />
         ))}
+        <CrossingLabels labels={crossingLabels} pxPerPt={pxPerPt} />
       </svg>
     </div>
   );
 }
 
 const FONT_FAMILY_MAP: Record<string, string> = {
-  "sans-serif": "system-ui, sans-serif",
+  "sans-serif": "'Inter', system-ui, sans-serif",
   "serif": "Georgia, serif",
   "monospace": "'Courier New', monospace",
 };
@@ -315,7 +562,7 @@ function PageOverlay({
         textAnchor="middle"
         fill="#6b7280"
         fontSize={fontSize}
-        fontFamily="system-ui, sans-serif"
+        fontFamily="'Inter', system-ui, sans-serif"
         fontWeight="600"
       >
         Page {p.index + 1}
@@ -328,7 +575,7 @@ function PageOverlay({
         textAnchor="middle"
         fill="#9ca3af"
         fontSize={labelFontSize}
-        fontFamily="system-ui, sans-serif"
+        fontFamily="'Inter', system-ui, sans-serif"
       >
         {p.col + 1},{p.row + 1}
       </text>

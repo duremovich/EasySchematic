@@ -198,8 +198,8 @@ function ReportPreviewDialog({
     [],
   );
 
-  const handleExportPdf = useCallback(() => {
-    renderReportPdf(layout, titleBlock, tables, filename);
+  const handleExportPdf = useCallback(async () => {
+    await renderReportPdf(layout, titleBlock, tables, filename);
   }, [layout, titleBlock, tables, filename]);
 
   // Header layout state
