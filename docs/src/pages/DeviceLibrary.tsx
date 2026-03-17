@@ -50,6 +50,22 @@ export default function DeviceLibraryPage() {
         When you place multiple instances of the same device template, EasySchematic automatically numbers them:
         "Camera 1", "Camera 2", etc. Renaming a device manually removes it from auto-numbering.
       </p>
+
+      <h2>Community device database</h2>
+      <p>
+        The <a href="https://devices.easyschematic.live" target="_blank" rel="noopener noreferrer">community device database</a> lets
+        anyone browse, search, and contribute device templates.
+      </p>
+      <ul>
+        <li><strong>Submit new devices</strong> — log in with your email, fill out the device form with ports and specs,
+          and include a reference URL to the manufacturer's product page</li>
+        <li><strong>Suggest edits</strong> — see a mistake or missing port? Propose changes to any existing template</li>
+        <li><strong>Moderation</strong> — submissions are reviewed by moderators before going live to ensure accuracy</li>
+        <li><strong>Reference URLs</strong> — branded devices link directly to the manufacturer's product page so
+          moderators (and you) can verify specs</li>
+        <li><strong>Contributor credit</strong> — approved submissions are attributed to you on the device page and
+          the contributors hall of fame</li>
+      </ul>
     </>
   );
 }

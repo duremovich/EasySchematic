@@ -6,7 +6,7 @@
 
 <p align="center">A drag-and-drop AV signal flow diagram tool for designing and documenting audio/video system hook-ups.<br>Built for broadcast, live production, and AV integration workflows.</p>
 
-<p align="center"><b><a href="https://easyschematic.live">Try it live →</a></b> · <b><a href="https://docs.easyschematic.live">Documentation →</a></b></p>
+<p align="center"><b><a href="https://easyschematic.live">Try it live →</a></b> · <b><a href="https://docs.easyschematic.live">Documentation →</a></b> · <b><a href="https://devices.easyschematic.live">Device Database →</a></b></p>
 
 ## Features
 
@@ -62,6 +62,15 @@ SDI · HDMI · NDI · Dante · Analog Audio · AES · USB · Ethernet · Fiber �
 - **CSV export** for spreadsheet use
 - **PDF export** matching the preview layout exactly
 - Layout preferences saved per-schematic
+
+### Community Device Database
+
+- **[devices.easyschematic.live](https://devices.easyschematic.live)** — browse, search, and submit device templates
+- **Community submissions** — submit new devices or suggest edits to existing templates via magic-link email auth
+- **Moderation workflow** — submissions are reviewed by moderators before going live
+- **Reference URLs** — branded devices link to manufacturer product pages for spec verification
+- **Contributor attribution** — approved submissions credit the contributor on the device page and the hall of fame
+- **REST API** at `api.easyschematic.live` backed by Cloudflare D1 (SQLite)
 
 ### Save & Export
 

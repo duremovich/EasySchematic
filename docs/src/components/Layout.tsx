@@ -57,7 +57,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             )
           )}
         </div>
-        <div className="mt-8 px-3">
+        <div className="mt-8 px-3 flex flex-col gap-2">
           <a
             href="https://easyschematic.live/"
             target="_blank"
@@ -65,6 +65,14 @@ export default function Layout({ children }: { children: ReactNode }) {
             className="block text-sm text-blue-600 hover:text-blue-800"
           >
             Open App &rarr;
+          </a>
+          <a
+            href="https://devices.easyschematic.live/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-sm text-blue-600 hover:text-blue-800"
+          >
+            Device Database &rarr;
           </a>
         </div>
       </nav>
