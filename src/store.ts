@@ -86,6 +86,11 @@ interface SchematicState {
   redo: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
+  undoSize: number;
+  redoSize: number;
+
+  // Selection
+  selectAll: () => void;
 
   // Custom templates
   addCustomTemplate: (template: DeviceTemplate) => void;
@@ -318,6 +323,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   edgeContextMenu: null,
   debugEdges: false,
   isDragging: false,
+  undoSize: 0,
+  redoSize: 0,
   printView: false,
   printPaperId: "arch-d",
   printOrientation: "landscape" as Orientation,
@@ -787,6 +794,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   pushSnapshot: () => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({ undoSize: undoStack.length, redoSize: 0 });
   },
 
   setPendingUndoSnapshot: () => {
@@ -803,7 +811,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!prev) return;
     const state = get();
     redoStack.push({ nodes: state.nodes, edges: state.edges });
-    set({ nodes: prev.nodes, edges: prev.edges });
+    set({ nodes: prev.nodes, edges: prev.edges, undoSize: undoStack.length, redoSize: redoStack.length });
     get().saveToLocalStorage();
   },
 
@@ -812,12 +820,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!next) return;
     const state = get();
     undoStack.push({ nodes: state.nodes, edges: state.edges });
-    set({ nodes: next.nodes, edges: next.edges });
+    set({ nodes: next.nodes, edges: next.edges, undoSize: undoStack.length, redoSize: redoStack.length });
     get().saveToLocalStorage();
   },
 
   canUndo: () => undoStack.length > 0,
   canRedo: () => redoStack.length > 0,
+
+  selectAll: () => {
+    const state = get();
+    set({
+      nodes: state.nodes.map((n) => ({ ...n, selected: true })),
+      edges: state.edges.map((e) => ({ ...e, selected: true })),
+    });
+  },
 
   addCustomTemplate: (template) => {
     const updated = [...get().customTemplates, template];
@@ -1013,6 +1029,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   },
 
   newSchematic: () => {
+    undoStack.length = 0;
+    redoStack.length = 0;
     set({
       nodes: [],
       edges: [],
@@ -1022,6 +1040,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       hiddenSignalTypes: "",
       hideDeviceTypes: false,
       reportLayouts: {},
+      undoSize: 0,
+      redoSize: 0,
     });
     get().saveToLocalStorage();
   },

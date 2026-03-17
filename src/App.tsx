@@ -24,7 +24,7 @@ import DeviceEditor from "./components/DeviceEditor";
 import SignalColorPanel from "./components/SignalColorPanel";
 import ShowInfoPanel from "./components/ShowInfoPanel";
 import ViewOptionsPanel from "./components/ViewOptionsPanel";
-import Toolbar from "./components/Toolbar";
+import MenuBar from "./components/MenuBar";
 import EdgeContextMenu from "./components/EdgeContextMenu";
 import { computeSnap, enforceMinSpacing, type GuideLine } from "./snapUtils";
 import type { DeviceTemplate, SchematicNode } from "./types";
@@ -185,6 +185,15 @@ function SchematicCanvas() {
       } else if ((e.ctrlKey || e.metaKey) && e.key === "b") {
         e.preventDefault();
         useSchematicStore.getState().toggleDebugEdges();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("easyschematic:save"));
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "o") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("easyschematic:open"));
+      } else if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+        e.preventDefault();
+        useSchematicStore.getState().selectAll();
       }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -717,7 +726,7 @@ export default function App() {
   return (
     <div className="flex flex-col h-full">
       <div data-print-hide>
-        <Toolbar />
+        <MenuBar />
       </div>
       {printView && <PrintViewBar />}
       <PrintTitleBlock />
