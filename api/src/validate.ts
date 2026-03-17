@@ -22,6 +22,18 @@ type ValidationResult =
   | { ok: true; data: TemplateInput }
   | { ok: false; error: string };
 
+const MAX_STRING = 200;
+const MAX_PORTS = 200;
+const MAX_SEARCH_TERMS = 20;
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/;
+
+function checkString(value: unknown, field: string, maxLen = MAX_STRING): string | null {
+  if (typeof value !== "string") return `${field} must be a string`;
+  if (value.trim() === "") return `${field} must be non-empty`;
+  if (value.length > maxLen) return `${field} must be ${maxLen} characters or fewer`;
+  return null;
+}
+
 export function validateTemplate(body: unknown): ValidationResult {
   if (!body || typeof body !== "object") {
     return { ok: false, error: "Request body must be a JSON object" };
@@ -29,16 +41,48 @@ export function validateTemplate(body: unknown): ValidationResult {
 
   const obj = body as Record<string, unknown>;
 
-  if (typeof obj.label !== "string" || obj.label.trim() === "") {
-    return { ok: false, error: "label is required and must be a non-empty string" };
+  const labelErr = checkString(obj.label, "label");
+  if (labelErr) return { ok: false, error: labelErr };
+
+  const typeErr = checkString(obj.deviceType, "deviceType", 100);
+  if (typeErr) return { ok: false, error: typeErr };
+
+  // Optional string fields — validate length if present
+  for (const [key, max] of [["manufacturer", MAX_STRING], ["modelNumber", MAX_STRING], ["imageUrl", 500]] as const) {
+    if (obj[key] != null) {
+      const err = checkString(obj[key], key, max);
+      if (err) return { ok: false, error: err };
+    }
   }
 
-  if (typeof obj.deviceType !== "string" || obj.deviceType.trim() === "") {
-    return { ok: false, error: "deviceType is required and must be a non-empty string" };
+  // Color — must be valid hex if provided
+  if (obj.color != null) {
+    if (typeof obj.color !== "string" || !HEX_COLOR_RE.test(obj.color)) {
+      return { ok: false, error: "color must be a valid hex color (e.g. #3b82f6)" };
+    }
   }
 
+  // Search terms — array of strings, limited count and length
+  if (obj.searchTerms != null) {
+    if (!Array.isArray(obj.searchTerms)) {
+      return { ok: false, error: "searchTerms must be an array of strings" };
+    }
+    if (obj.searchTerms.length > MAX_SEARCH_TERMS) {
+      return { ok: false, error: `searchTerms must have ${MAX_SEARCH_TERMS} or fewer entries` };
+    }
+    for (let i = 0; i < obj.searchTerms.length; i++) {
+      if (typeof obj.searchTerms[i] !== "string" || obj.searchTerms[i].length > 100) {
+        return { ok: false, error: `searchTerms[${i}] must be a string of 100 characters or fewer` };
+      }
+    }
+  }
+
+  // Ports
   if (!Array.isArray(obj.ports)) {
     return { ok: false, error: "ports is required and must be an array" };
+  }
+  if (obj.ports.length > MAX_PORTS) {
+    return { ok: false, error: `ports must have ${MAX_PORTS} or fewer entries` };
   }
 
   for (let i = 0; i < obj.ports.length; i++) {
@@ -46,17 +90,16 @@ export function validateTemplate(body: unknown): ValidationResult {
     if (!port || typeof port !== "object") {
       return { ok: false, error: `ports[${i}] must be an object` };
     }
-    if (typeof port.id !== "string" || port.id.trim() === "") {
-      return { ok: false, error: `ports[${i}].id is required and must be a non-empty string` };
+    for (const field of ["id", "label", "signalType", "direction"] as const) {
+      const err = checkString(port[field], `ports[${i}].${field}`, 100);
+      if (err) return { ok: false, error: err };
     }
-    if (typeof port.label !== "string" || port.label.trim() === "") {
-      return { ok: false, error: `ports[${i}].label is required and must be a non-empty string` };
-    }
-    if (typeof port.signalType !== "string" || port.signalType.trim() === "") {
-      return { ok: false, error: `ports[${i}].signalType is required and must be a non-empty string` };
-    }
-    if (typeof port.direction !== "string" || port.direction.trim() === "") {
-      return { ok: false, error: `ports[${i}].direction is required and must be a non-empty string` };
+    // Optional port string fields
+    for (const field of ["connectorType", "section"] as const) {
+      if (port[field] != null) {
+        const err = checkString(port[field], `ports[${i}].${field}`, 100);
+        if (err) return { ok: false, error: err };
+      }
     }
   }
 
