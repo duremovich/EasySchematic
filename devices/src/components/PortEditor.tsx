@@ -32,11 +32,22 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
     onChange(ports.filter((p) => p.id !== id));
   };
 
+  const insertAtTop = (direction: PortDirection, newPorts: Port[]) => {
+    const idx = ports.findIndex((p) => p.direction === direction);
+    if (idx < 0) {
+      onChange([...ports, ...newPorts]);
+    } else {
+      const next = [...ports];
+      next.splice(idx, 0, ...newPorts);
+      onChange(next);
+    }
+  };
+
   const addPort = (direction: PortDirection) => {
     const id = crypto.randomUUID().slice(0, 8);
     const dirLabel = direction === "input" ? "IN" : direction === "output" ? "OUT" : "IO";
     const count = grouped[direction].length + 1;
-    onChange([...ports, {
+    insertAtTop(direction, [{
       id,
       label: `${dirLabel} ${count}`,
       signalType: "sdi",
@@ -55,7 +66,7 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
         connectorType: bulkConnector,
       });
     }
-    onChange([...ports, ...newPorts]);
+    insertAtTop(direction, newPorts);
     setBulkOpen(null);
   };
 
