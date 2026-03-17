@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { Port, SignalType, PortDirection, ConnectorType } from "../../../src/types";
 import { SIGNAL_LABELS, CONNECTOR_LABELS } from "../../../src/types";
 import PortRow from "./PortRow";
 
 const SIGNAL_TYPES = Object.keys(SIGNAL_LABELS) as SignalType[];
+const CONNECTOR_TYPES = Object.keys(CONNECTOR_LABELS) as ConnectorType[];
 
 interface PortEditorProps {
   ports: Port[];
@@ -18,10 +19,77 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
   const [bulkSignal, setBulkSignal] = useState<SignalType>("sdi");
   const [bulkConnector, setBulkConnector] = useState<ConnectorType>("bnc");
 
+  // Multi-select state
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [lastClicked, setLastClicked] = useState<string | null>(null);
+
+  // Bulk edit toolbar state
+  const [findText, setFindText] = useState("");
+  const [replaceText, setReplaceText] = useState("");
+
   const grouped = {
     input: ports.filter((p) => p.direction === "input"),
     output: ports.filter((p) => p.direction === "output"),
     bidirectional: ports.filter((p) => p.direction === "bidirectional"),
+  };
+
+  // Flat ordered list for shift-click range selection
+  const orderedIds = [...grouped.input, ...grouped.output, ...grouped.bidirectional].map((p) => p.id);
+
+  const handlePortClick = useCallback((portId: string, e: React.MouseEvent) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (e.shiftKey && lastClicked) {
+        // Range select
+        const startIdx = orderedIds.indexOf(lastClicked);
+        const endIdx = orderedIds.indexOf(portId);
+        if (startIdx >= 0 && endIdx >= 0) {
+          const [lo, hi] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+          for (let i = lo; i <= hi; i++) {
+            next.add(orderedIds[i]);
+          }
+        }
+      } else if (e.ctrlKey || e.metaKey) {
+        // Toggle individual
+        if (next.has(portId)) next.delete(portId);
+        else next.add(portId);
+      } else {
+        // Single select (or deselect if already the only one selected)
+        if (next.size === 1 && next.has(portId)) {
+          next.clear();
+        } else {
+          next.clear();
+          next.add(portId);
+        }
+      }
+      return next;
+    });
+    setLastClicked(portId);
+  }, [lastClicked, orderedIds]);
+
+  const clearSelection = () => {
+    setSelected(new Set());
+    setLastClicked(null);
+  };
+
+  // Bulk edit actions on selected ports
+  const applyToSelected = (updates: Partial<Port>) => {
+    onChange(ports.map((p) => selected.has(p.id) ? { ...p, ...updates } : p));
+  };
+
+  const applyFindReplace = () => {
+    if (!findText) return;
+    onChange(ports.map((p) => {
+      if (!selected.has(p.id)) return p;
+      return { ...p, label: p.label.split(findText).join(replaceText) };
+    }));
+    setFindText("");
+    setReplaceText("");
+  };
+
+  const deleteSelected = () => {
+    onChange(ports.filter((p) => !selected.has(p.id)));
+    clearSelection();
   };
 
   const updatePort = (id: string, updates: Partial<Port>) => {
@@ -30,6 +98,7 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
 
   const removePort = (id: string) => {
     onChange(ports.filter((p) => p.id !== id));
+    setSelected((prev) => { const next = new Set(prev); next.delete(id); return next; });
   };
 
   const insertAtTop = (direction: PortDirection, newPorts: Port[]) => {
@@ -80,6 +149,8 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
     onChange(next);
   };
 
+  const selectedCount = selected.size;
+
   const renderSection = (direction: PortDirection, label: string) => (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
@@ -96,7 +167,14 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
           </button>
           {grouped[direction].length > 0 && (
             <button
-              onClick={() => onChange(ports.filter((p) => p.direction !== direction))}
+              onClick={() => {
+                onChange(ports.filter((p) => p.direction !== direction));
+                setSelected((prev) => {
+                  const next = new Set(prev);
+                  grouped[direction].forEach((p) => next.delete(p.id));
+                  return next;
+                });
+              }}
               className="text-xs text-red-500 hover:text-red-700 transition-colors"
             >
               Clear All
@@ -133,7 +211,7 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
           <label className="text-xs">
             <span className="block text-slate-500 mb-1">Connector</span>
             <select value={bulkConnector} onChange={(e) => setBulkConnector(e.target.value as ConnectorType)} className="px-2 py-1 rounded border border-slate-300 text-sm">
-              {(Object.keys(CONNECTOR_LABELS) as ConnectorType[]).map((c) => <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>)}
+              {CONNECTOR_TYPES.map((c) => <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>)}
             </select>
           </label>
           <button onClick={() => addBulk(direction)} className="px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors">Add</button>
@@ -147,6 +225,8 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
             <PortRow
               key={port.id}
               port={port}
+              selected={selected.has(port.id)}
+              onSelect={(e) => handlePortClick(port.id, e)}
               onChange={(updates) => updatePort(port.id, updates)}
               onRemove={() => removePort(port.id)}
               onMoveUp={() => movePort(port.id, -1)}
@@ -160,7 +240,60 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
 
   return (
     <div>
-      <h2 className="text-base font-semibold text-slate-900 mb-4">Ports</h2>
+      <h2 className="text-base font-semibold text-slate-900 mb-1">Ports</h2>
+      <p className="text-xs text-slate-400 mb-4">Click to select, Ctrl+click to toggle, Shift+click for range</p>
+
+      {/* Selection toolbar */}
+      {selectedCount > 0 && (
+        <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-indigo-700">{selectedCount} port{selectedCount > 1 ? "s" : ""} selected</span>
+            <button onClick={clearSelection} className="text-xs text-indigo-500 hover:text-indigo-700">Deselect all</button>
+          </div>
+
+          {/* Find & Replace */}
+          <div className="flex flex-wrap items-end gap-2 mb-3">
+            <label className="text-xs">
+              <span className="block text-indigo-600 mb-1">Find in labels</span>
+              <input value={findText} onChange={(e) => setFindText(e.target.value)} className="w-32 px-2 py-1 rounded border border-indigo-200 text-sm" placeholder="IN" />
+            </label>
+            <label className="text-xs">
+              <span className="block text-indigo-600 mb-1">Replace with</span>
+              <input value={replaceText} onChange={(e) => setReplaceText(e.target.value)} className="w-32 px-2 py-1 rounded border border-indigo-200 text-sm" placeholder="XLR IN" />
+            </label>
+            <button onClick={applyFindReplace} disabled={!findText} className="px-3 py-1 rounded bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors">Replace</button>
+          </div>
+
+          {/* Bulk property changes */}
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="text-xs">
+              <span className="block text-indigo-600 mb-1">Signal</span>
+              <select defaultValue="" onChange={(e) => { if (e.target.value) { applyToSelected({ signalType: e.target.value as SignalType }); e.target.value = ""; } }} className="px-2 py-1 rounded border border-indigo-200 text-sm">
+                <option value="" disabled>Change...</option>
+                {SIGNAL_TYPES.map((s) => <option key={s} value={s}>{SIGNAL_LABELS[s]}</option>)}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block text-indigo-600 mb-1">Connector</span>
+              <select defaultValue="" onChange={(e) => { if (e.target.value) { applyToSelected({ connectorType: e.target.value as ConnectorType }); e.target.value = ""; } }} className="px-2 py-1 rounded border border-indigo-200 text-sm">
+                <option value="" disabled>Change...</option>
+                {CONNECTOR_TYPES.map((c) => <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>)}
+              </select>
+            </label>
+            <label className="text-xs">
+              <span className="block text-indigo-600 mb-1">Direction</span>
+              <select defaultValue="" onChange={(e) => { if (e.target.value) { applyToSelected({ direction: e.target.value as PortDirection }); e.target.value = ""; } }} className="px-2 py-1 rounded border border-indigo-200 text-sm">
+                <option value="" disabled>Change...</option>
+                <option value="input">Input</option>
+                <option value="output">Output</option>
+                <option value="bidirectional">Bidirectional</option>
+              </select>
+            </label>
+            <button onClick={deleteSelected} className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700 transition-colors">Delete Selected</button>
+          </div>
+        </div>
+      )}
+
       {renderSection("input", "Inputs")}
       {renderSection("output", "Outputs")}
       {renderSection("bidirectional", "Bidirectional")}
