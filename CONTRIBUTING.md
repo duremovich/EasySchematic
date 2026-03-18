@@ -37,7 +37,7 @@ To run everything together: `bash start-dev.sh`
 ### Build & Lint
 
 ```bash
-npm run build    # TypeScript check (tsc -b) + Vite build
+npm run build    # Generate fallback data + TypeScript check (tsc -b) + Vite build
 npm run lint     # ESLint
 ```
 

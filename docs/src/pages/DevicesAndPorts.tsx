@@ -68,7 +68,7 @@ export default function DevicesAndPortsPage() {
 
       <h2>Editing devices</h2>
       <p>
-        <strong>Double-click</strong> any device to open the device editor panel on the right side. From there you can:
+        <strong>Double-click</strong> any device to open the device editor. From there you can:
       </p>
       <ul>
         <li>Rename the device</li>

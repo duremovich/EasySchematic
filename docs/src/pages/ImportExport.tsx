@@ -27,7 +27,7 @@ export default function ImportExportPage() {
 
       <h3>Import</h3>
       <p>
-        Click <strong>Load</strong> in the menu bar to import a previously exported file. Schema migrations run automatically if
+        Click <strong>Open...</strong> in the menu bar to import a previously exported file. Schema migrations run automatically if
         the file was saved with an older version.
       </p>
 

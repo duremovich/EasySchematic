@@ -64,7 +64,7 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
 
           <div className="flex flex-col gap-1 text-xs text-[var(--color-text)]">
             <span>{Math.floor(DEVICE_TEMPLATES.length / 10) * 10}+ device templates</span>
-            <span>24 signal types</span>
+            <span>23 signal types</span>
             <span>Community device database</span>
           </div>
 
@@ -93,7 +93,7 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
           <div className="w-full h-px bg-[var(--color-border)]" />
 
           <div className="text-[11px] text-[var(--color-text-muted)] leading-relaxed">
-            <div>AGPL-3.0 &middot; &copy; 2025 EasySchematic</div>
+            <div>AGPL-3.0 &middot; &copy; 2025–2026 EasySchematic</div>
             <div className="mt-0.5">Built with React, React Flow, and Zustand</div>
           </div>
         </div>

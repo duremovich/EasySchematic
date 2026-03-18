@@ -5,7 +5,7 @@ export default function PackListPage() {
 
       <p>
         The <strong>Pack List</strong> generates a bill of materials from your schematic — a summary of every device
-        and cable you need. Open it from the <strong>View</strong> menu in the menu bar.
+        and cable you need. Open it from the <strong>Reports</strong> menu in the menu bar.
       </p>
 
       <h2>Browsing the pack list</h2>

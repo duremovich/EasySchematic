@@ -13,7 +13,7 @@ export default function PrintingPage() {
       </p>
       <ul>
         <li>Page boundaries appear as an overlay on the canvas</li>
-        <li>Areas outside the printable region are dimmed in grayscale</li>
+        <li>Areas outside the canvas origin are dimmed</li>
         <li>Devices and connections within the page boundaries print as-is</li>
       </ul>
 
@@ -21,7 +21,7 @@ export default function PrintingPage() {
       <p>The Print View toolbar controls let you configure:</p>
       <ul>
         <li>
-          <strong>Paper size</strong> — 15 options including Letter, Legal, Tabloid, ANSI C/D/E, and Arch A/B/C/D/E
+          <strong>Paper size</strong> — 11 options including Letter, Legal, Tabloid, ANSI C/D/E, and Arch A/B/C/D/E
         </li>
         <li><strong>Orientation</strong> — Landscape or Portrait</li>
         <li><strong>Scale</strong> — 0.25x to 2.0x, controlling how much of the canvas fits on each page</li>

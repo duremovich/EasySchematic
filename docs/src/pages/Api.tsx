@@ -36,7 +36,7 @@ export default function ApiPage() {
         <li><code>id</code> — unique port ID within the template</li>
         <li><code>label</code> — display name (e.g. "SDI In 1")</li>
         <li><code>signalType</code> — one of: <code>sdi</code>, <code>hdmi</code>, <code>ndi</code>, <code>dante</code>,
-          {" "}<code>analog-audio</code>, <code>aes</code>, <code>usb</code>, <code>ethernet</code>, <code>fiber</code>,
+          {" "}<code>analog-audio</code>, <code>aes</code>, <code>dmx</code>, <code>madi</code>, <code>usb</code>, <code>ethernet</code>, <code>fiber</code>,
           {" "}<code>displayport</code>, <code>hdbaset</code>, <code>srt</code>, <code>genlock</code>, <code>gpio</code>,
           {" "}<code>rs422</code>, <code>serial</code>, <code>thunderbolt</code>, <code>composite</code>, <code>vga</code>,
           {" "}<code>power</code>, <code>custom</code></li>
