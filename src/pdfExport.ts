@@ -585,17 +585,29 @@ export async function exportPdf(
       const viewportEl = document.querySelector(".react-flow__viewport") as HTMLElement;
       if (!viewportEl) continue;
 
-      const dataUrl = await toPng(viewportEl, {
-        backgroundColor: "#ffffff",
-        width: contentWPx,
-        height: contentHPx,
-        pixelRatio: PIXEL_RATIO,
-        style: {
-          width: `${contentWPx}px`,
-          height: `${contentHPx}px`,
-          transform: `translate(${-page.contentX * scale}px, ${-page.contentY * scale}px) scale(${scale})`,
-        },
-      });
+      // Firefox returns `undefined` from getPropertyValue() for unrecognized CSS
+      // properties, but html-to-image calls .trim() on the result without a null
+      // check. Patch it to return '' instead while html-to-image runs.
+      const origGetPropertyValue = CSSStyleDeclaration.prototype.getPropertyValue;
+      CSSStyleDeclaration.prototype.getPropertyValue = function (prop) {
+        return origGetPropertyValue.call(this, prop) ?? '';
+      };
+      let dataUrl: string;
+      try {
+        dataUrl = await toPng(viewportEl, {
+          backgroundColor: "#ffffff",
+          width: contentWPx,
+          height: contentHPx,
+          pixelRatio: PIXEL_RATIO,
+          style: {
+            width: `${contentWPx}px`,
+            height: `${contentHPx}px`,
+            transform: `translate(${-page.contentX * scale}px, ${-page.contentY * scale}px) scale(${scale})`,
+          },
+        });
+      } finally {
+        CSSStyleDeclaration.prototype.getPropertyValue = origGetPropertyValue;
+      }
 
       // Add image to PDF page
       const imgWidthIn = pageWIn - 2 * PAGE_MARGIN_IN;

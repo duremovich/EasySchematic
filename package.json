@@ -31,7 +31,8 @@
     "build": "npm run generate-fallback && tsc -b && vite build",
     "lint": "eslint .",
     "db:sync": "cd api && npm run seed:remote",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@xyflow/react": "12.10.1",
@@ -52,6 +53,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "patch-package": "^8.0.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1",
     "typescript": "~5.9.3",

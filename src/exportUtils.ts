@@ -38,17 +38,29 @@ export async function exportImage(
 
   const toImage = format === "svg" ? toSvg : toPng;
 
-  const dataUrl = await toImage(viewportEl, {
-    backgroundColor,
-    width,
-    height,
-    pixelRatio: format === "svg" ? 1 : pixelRatio,
-    style: {
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
-    },
-  });
+  // Firefox returns `undefined` from getPropertyValue() for unrecognized CSS
+  // properties, but html-to-image calls .trim() on the result without a null
+  // check. Patch it to return '' instead while html-to-image runs.
+  const origGetPropertyValue = CSSStyleDeclaration.prototype.getPropertyValue;
+  CSSStyleDeclaration.prototype.getPropertyValue = function (prop) {
+    return origGetPropertyValue.call(this, prop) ?? '';
+  };
+  let dataUrl: string;
+  try {
+    dataUrl = await toImage(viewportEl, {
+      backgroundColor,
+      width,
+      height,
+      pixelRatio: format === "svg" ? 1 : pixelRatio,
+      style: {
+        width: `${width}px`,
+        height: `${height}px`,
+        transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
+      },
+    });
+  } finally {
+    CSSStyleDeclaration.prototype.getPropertyValue = origGetPropertyValue;
+  }
 
   // Trigger download
   const link = document.createElement("a");

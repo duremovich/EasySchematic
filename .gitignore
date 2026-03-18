@@ -41,3 +41,6 @@ api/seed/seed-data.sql
 
 # Wrangler local state
 .wrangler/
+
+# Internal notes
+internal/
