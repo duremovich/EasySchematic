@@ -34,5 +34,8 @@ debug/
 edge-debug.log
 *.tmp.*
 
+# Generated seed data
+api/seed/seed-data.sql
+
 # Wrangler local state
 .wrangler/

@@ -8,6 +8,7 @@ import { PAPER_SIZES } from "../printConfig";
 import type { SchematicFile } from "../types";
 import ReportsDialog, { type ReportsTab } from "./ReportsDialog";
 import TitleBlockDialog from "./TitleBlockDialog";
+import AboutDialog from "./AboutDialog";
 import AlignmentMenu from "./AlignmentMenu";
 
 // ─── Menu data types ─────────────────────────────────────────────
@@ -114,6 +115,7 @@ export default function MenuBar() {
   const [nameValue, setNameValue] = useState(schematicName);
   const [reportsTab, setReportsTab] = useState<ReportsTab | null>(null);
   const [showTitleBlockDialog, setShowTitleBlockDialog] = useState(false);
+  const [showAboutDialog, setShowAboutDialog] = useState(false);
 
   // Keep nameValue in sync when schematicName changes externally
   useEffect(() => {
@@ -289,7 +291,7 @@ export default function MenuBar() {
       {
         type: "item",
         label: "About EasySchematic",
-        onClick: () => window.open("https://easyschematic.live", "_blank", "noopener,noreferrer"),
+        onClick: () => setShowAboutDialog(true),
       },
     ],
   };
@@ -402,6 +404,9 @@ export default function MenuBar() {
       )}
       {showTitleBlockDialog && (
         <TitleBlockDialog onClose={() => setShowTitleBlockDialog(false)} />
+      )}
+      {showAboutDialog && (
+        <AboutDialog onClose={() => setShowAboutDialog(false)} />
       )}
     </div>
   );
