@@ -166,7 +166,7 @@ export function useSpreadsheetSelection<TRow>(options: Options<TRow>) {
       const col = columns.find((c) => c.id === editingCell.columnId);
 
       if (selectedCount > 1 && col?.fillType && FILL_SERIES_CONFIGS[col.fillType]) {
-        // Multi-selection: trigger fill series
+        // Multi-selection with fill series support: trigger fill series dialog
         const config = FILL_SERIES_CONFIGS[col.fillType];
         // Get selected row indices sorted
         const rowIndices = Array.from(selectedCells)
@@ -184,6 +184,14 @@ export function useSpreadsheetSelection<TRow>(options: Options<TRow>) {
           columnId: editingCell.columnId,
           rowIndices,
         });
+      } else if (selectedCount > 1) {
+        // Multi-selection without fill series: apply same value to all selected cells
+        const changes = Array.from(selectedCells)
+          .map(parseCellKey)
+          .map((addr) => ({ rowIndex: addr.rowIndex, columnId: addr.columnId, value }));
+        onBatchChange(changes);
+        setEditingCell(null);
+        setEditValue("");
       } else {
         // Single cell: commit directly
         onCellChange(editingCell.rowIndex, editingCell.columnId, value);
@@ -191,7 +199,7 @@ export function useSpreadsheetSelection<TRow>(options: Options<TRow>) {
         setEditValue("");
       }
     },
-    [editingCell, selectedCells, columns, onCellChange],
+    [editingCell, selectedCells, columns, onCellChange, onBatchChange],
   );
 
   const cancelEdit = useCallback(() => {

@@ -7,15 +7,14 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const load = () => {
-    setLoading(true);
+  useEffect(() => {
+    let cancelled = false;
     fetchUsers()
-      .then(setUsers)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(load, []);
+      .then((data) => { if (!cancelled) setUsers(data); })
+      .catch((e) => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleRoleChange = async (user: UserRecord, role: string) => {
     try {

@@ -41,6 +41,7 @@ export function computeNetworkReport(nodes: SchematicNode[], edges: ConnectionEd
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
+    if (data.isCableAccessory) continue;
     const room = getRoomLabel(nodes, node.parentId);
 
     for (const port of data.ports) {

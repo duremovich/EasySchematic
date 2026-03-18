@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 16,
   "name": "Untitled Schematic",
   "nodes": [
     {
@@ -353,7 +353,7 @@
       "parentId": "room-4",
       "measured": {
         "width": 180,
-        "height": 211
+        "height": 251
       },
       "selected": false,
       "dragging": false
@@ -389,7 +389,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 71
+        "height": 91
       },
       "parentId": "room-4",
       "selected": false,
@@ -426,7 +426,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 71
+        "height": 91
       },
       "parentId": "room-4",
       "selected": false,
@@ -463,7 +463,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 71
+        "height": 91
       },
       "parentId": "room-4",
       "selected": false,
@@ -500,7 +500,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 71
+        "height": 91
       },
       "parentId": "room-4",
       "selected": false,
@@ -537,7 +537,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 71
+        "height": 91
       },
       "parentId": "room-4",
       "selected": false,
@@ -574,7 +574,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 71
+        "height": 91
       },
       "parentId": "room-4",
       "selected": false,
@@ -611,7 +611,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 71
+        "height": 91
       },
       "parentId": "room-4",
       "selected": false,
@@ -648,7 +648,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 71
+        "height": 91
       },
       "parentId": "room-4",
       "selected": false,
@@ -1280,7 +1280,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 211
+        "height": 231
       },
       "parentId": "room-3",
       "selected": false,
@@ -1363,7 +1363,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 131
+        "height": 151
       },
       "parentId": "room-4",
       "selected": false,
@@ -1446,7 +1446,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 131
+        "height": 151
       },
       "parentId": "room-4",
       "selected": false,
@@ -1508,7 +1508,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 131
+        "height": 151
       },
       "parentId": "room-5",
       "selected": false,
@@ -1703,7 +1703,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 91
+        "height": 111
       },
       "selected": false,
       "dragging": false,
@@ -1856,7 +1856,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 91
+        "height": 111
       },
       "selected": false,
       "dragging": false,
@@ -1906,7 +1906,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 91
+        "height": 111
       },
       "selected": false,
       "dragging": false,
@@ -1981,7 +1981,7 @@
       },
       "measured": {
         "width": 180,
-        "height": 91
+        "height": 111
       },
       "selected": false,
       "dragging": false,
@@ -2841,10 +2841,6 @@
     ],
     "widthIn": 3
   },
-  "hiddenSignalTypes": [
-    "power",
-    "serial"
-  ],
   "reportLayouts": {
     "easyschematic-packlist-layout": {
       "headerLayout": {
@@ -2856,7 +2852,7 @@
           0.3666666666666667,
           0.3,
           0.2766212429035464,
-          0.056712090429786956
+          0.05671209042978696
         ],
         "widthIn": 8,
         "heightIn": 0.8,
@@ -3311,7 +3307,7 @@
       0.3666666666666667,
       0.3,
       0.2766212429035464,
-      0.056712090429786956
+      0.05671209042978696
     ],
     "widthIn": 8,
     "heightIn": 0.8,

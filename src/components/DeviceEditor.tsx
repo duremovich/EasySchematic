@@ -32,6 +32,8 @@ interface PortDraft {
   networkConfig?: PortNetworkConfig;
   addressable?: boolean;
   capabilities?: PortCapabilities;
+  isMulticable?: boolean;
+  channelCount?: number;
 }
 
 function newPortDraft(direction: PortDirection): PortDraft {
@@ -73,6 +75,10 @@ export default function DeviceEditor() {
   // DHCP server config
   const [dhcpServer, setDhcpServer] = useState<DhcpServerConfig | undefined>(undefined);
 
+  // Cable accessory flags
+  const [isCableAccessory, setIsCableAccessory] = useState(false);
+  const [integratedWithCable, setIntegratedWithCable] = useState(false);
+
   // Drag state — which port is being dragged and where it would drop
   const [draggedPortId, setDraggedPortId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ direction: PortDirection; index: number } | null>(null);
@@ -93,12 +99,16 @@ export default function DeviceEditor() {
         connectorType: p.connectorType,
         networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
         capabilities: p.capabilities ? { ...p.capabilities } : undefined,
+        isMulticable: p.isMulticable,
+        channelCount: p.channelCount,
       })),
     );
     setShowAllPorts(node.data.showAllPorts ?? false);
     setHiddenPorts(node.data.hiddenPorts ?? []);
     setPortVisOpen(false);
     setDhcpServer(node.data.dhcpServer ? { ...node.data.dhcpServer } : undefined);
+    setIsCableAccessory(node.data.isCableAccessory ?? false);
+    setIntegratedWithCable(node.data.integratedWithCable ?? false);
   }, [node]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -139,10 +149,12 @@ export default function DeviceEditor() {
       ...(finalHiddenPorts.length > 0 ? { hiddenPorts: finalHiddenPorts } : {}),
       // Always persist dhcpServer if set (preserves range config when toggling off)
       ...(dhcpServer ? { dhcpServer } : {}),
+      ...(isCableAccessory ? { isCableAccessory: true } : {}),
+      ...(integratedWithCable ? { integratedWithCable: true } : {}),
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, deviceType, color, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer]);
+  }, [editingNodeId, ports, label, deviceType, color, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, isCableAccessory, integratedWithCable]);
 
   const handleSaveAsTemplate = useCallback(() => {
     const finalPorts: Port[] = ports
@@ -492,6 +504,38 @@ export default function DeviceEditor() {
           {ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
             <DhcpServerSection dhcpServer={dhcpServer} onChange={setDhcpServer} />
           )}
+
+          {/* Flags */}
+          <details className="text-xs">
+            <summary className="cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text)] select-none py-1">
+              Flags
+            </summary>
+            <div className="flex flex-col gap-2 pt-1 pl-2">
+              <label className="flex items-center gap-1.5 text-[var(--color-text)] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={isCableAccessory}
+                  onChange={(e) => {
+                    setIsCableAccessory(e.target.checked);
+                    if (!e.target.checked) setIntegratedWithCable(false);
+                  }}
+                  className="cursor-pointer"
+                />
+                Cable accessory
+              </label>
+              {isCableAccessory && (
+                <label className="flex items-center gap-1.5 text-[var(--color-text)] cursor-pointer select-none ml-4">
+                  <input
+                    type="checkbox"
+                    checked={integratedWithCable}
+                    onChange={(e) => setIntegratedWithCable(e.target.checked)}
+                    className="cursor-pointer"
+                  />
+                  Integrated with cable
+                </label>
+              )}
+            </div>
+          </details>
         </div>
 
         {/* Footer */}
@@ -1085,6 +1129,36 @@ function PortRow({
             </option>
           ))}
         </select>
+
+        {/* Multicable trunk toggle */}
+        <label
+          className={`text-[9px] px-1 py-0.5 rounded cursor-pointer transition-colors shrink-0 select-none ${
+            port.isMulticable
+              ? "bg-purple-100 text-purple-600"
+              : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] opacity-0 group-hover:opacity-100"
+          }`}
+          title="Multicable trunk port"
+        >
+          <input
+            type="checkbox"
+            checked={port.isMulticable ?? false}
+            onChange={(e) => onUpdate({ isMulticable: e.target.checked || undefined, channelCount: e.target.checked ? (port.channelCount ?? 0) : undefined })}
+            className="hidden"
+          />
+          {port.isMulticable ? `T${port.channelCount ?? 0}` : "T"}
+        </label>
+
+        {port.isMulticable && (
+          <input
+            type="number"
+            min={0}
+            className="w-8 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] text-[var(--color-text-heading)] outline-none focus:border-blue-500 shrink-0"
+            value={port.channelCount ?? 0}
+            onChange={(e) => onUpdate({ channelCount: parseInt(e.target.value) || 0 })}
+            title="Channel count"
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+        )}
 
         {/* Section badge */}
         <button

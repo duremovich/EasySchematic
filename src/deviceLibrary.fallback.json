@@ -20059,5 +20059,1389 @@
         "connectorType": "other"
       }
     ]
+  },
+  {
+    "id": "c0a80101-00e0-4000-8000-000000000300",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake (4-ch) Break-in",
+    "searchTerms": [
+      "snake",
+      "breakin",
+      "break-in",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "4ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2401",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2402",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2403",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2404",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2405",
+        "label": "Trunk Out",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 4
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e1-4000-8000-000000000301",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake (4-ch) Break-out",
+    "searchTerms": [
+      "snake",
+      "breakout",
+      "break-out",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "4ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2406",
+        "label": "Trunk In",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 4
+      },
+      {
+        "id": "port-2407",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2408",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2409",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2410",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e0-4000-8000-000000000310",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake (8-ch) Break-in",
+    "searchTerms": [
+      "snake",
+      "breakin",
+      "break-in",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "8ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2411",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2412",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2413",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2414",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2415",
+        "label": "Ch 5",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2416",
+        "label": "Ch 6",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2417",
+        "label": "Ch 7",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2418",
+        "label": "Ch 8",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2419",
+        "label": "Trunk Out",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 8
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e1-4000-8000-000000000311",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake (8-ch) Break-out",
+    "searchTerms": [
+      "snake",
+      "breakout",
+      "break-out",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "8ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2420",
+        "label": "Trunk In",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 8
+      },
+      {
+        "id": "port-2421",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2422",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2423",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2424",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2425",
+        "label": "Ch 5",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2426",
+        "label": "Ch 6",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2427",
+        "label": "Ch 7",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2428",
+        "label": "Ch 8",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e0-4000-8000-000000000320",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake (16-ch) Break-in",
+    "searchTerms": [
+      "snake",
+      "breakin",
+      "break-in",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "16ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2429",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2430",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2431",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2432",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2433",
+        "label": "Ch 5",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2434",
+        "label": "Ch 6",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2435",
+        "label": "Ch 7",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2436",
+        "label": "Ch 8",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2437",
+        "label": "Ch 9",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2438",
+        "label": "Ch 10",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2439",
+        "label": "Ch 11",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2440",
+        "label": "Ch 12",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2441",
+        "label": "Ch 13",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2442",
+        "label": "Ch 14",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2443",
+        "label": "Ch 15",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2444",
+        "label": "Ch 16",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2445",
+        "label": "Trunk Out",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 16
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e1-4000-8000-000000000321",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake (16-ch) Break-out",
+    "searchTerms": [
+      "snake",
+      "breakout",
+      "break-out",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "16ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2446",
+        "label": "Trunk In",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 16
+      },
+      {
+        "id": "port-2447",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2448",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2449",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2450",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2451",
+        "label": "Ch 5",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2452",
+        "label": "Ch 6",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2453",
+        "label": "Ch 7",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2454",
+        "label": "Ch 8",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2455",
+        "label": "Ch 9",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2456",
+        "label": "Ch 10",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2457",
+        "label": "Ch 11",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2458",
+        "label": "Ch 12",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2459",
+        "label": "Ch 13",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2460",
+        "label": "Ch 14",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2461",
+        "label": "Ch 15",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2462",
+        "label": "Ch 16",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e0-4000-8000-000000000330",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake (24-ch) Break-in",
+    "searchTerms": [
+      "snake",
+      "breakin",
+      "break-in",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "24ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2463",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2464",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2465",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2466",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2467",
+        "label": "Ch 5",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2468",
+        "label": "Ch 6",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2469",
+        "label": "Ch 7",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2470",
+        "label": "Ch 8",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2471",
+        "label": "Ch 9",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2472",
+        "label": "Ch 10",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2473",
+        "label": "Ch 11",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2474",
+        "label": "Ch 12",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2475",
+        "label": "Ch 13",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2476",
+        "label": "Ch 14",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2477",
+        "label": "Ch 15",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2478",
+        "label": "Ch 16",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2479",
+        "label": "Ch 17",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2480",
+        "label": "Ch 18",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2481",
+        "label": "Ch 19",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2482",
+        "label": "Ch 20",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2483",
+        "label": "Ch 21",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2484",
+        "label": "Ch 22",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2485",
+        "label": "Ch 23",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2486",
+        "label": "Ch 24",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2487",
+        "label": "Trunk Out",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 24
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e1-4000-8000-000000000331",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake (24-ch) Break-out",
+    "searchTerms": [
+      "snake",
+      "breakout",
+      "break-out",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "24ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2488",
+        "label": "Trunk In",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 24
+      },
+      {
+        "id": "port-2489",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2490",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2491",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2492",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2493",
+        "label": "Ch 5",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2494",
+        "label": "Ch 6",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2495",
+        "label": "Ch 7",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2496",
+        "label": "Ch 8",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2497",
+        "label": "Ch 9",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2498",
+        "label": "Ch 10",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2499",
+        "label": "Ch 11",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2500",
+        "label": "Ch 12",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2501",
+        "label": "Ch 13",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2502",
+        "label": "Ch 14",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2503",
+        "label": "Ch 15",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2504",
+        "label": "Ch 16",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2505",
+        "label": "Ch 17",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2506",
+        "label": "Ch 18",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2507",
+        "label": "Ch 19",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2508",
+        "label": "Ch 20",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2509",
+        "label": "Ch 21",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2510",
+        "label": "Ch 22",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2511",
+        "label": "Ch 23",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2512",
+        "label": "Ch 24",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e0-4000-8000-000000000340",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake DB25 (8-ch) Break-in",
+    "searchTerms": [
+      "snake",
+      "breakin",
+      "break-in",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "db25",
+      "8ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2513",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2514",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2515",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2516",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2517",
+        "label": "Ch 5",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2518",
+        "label": "Ch 6",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2519",
+        "label": "Ch 7",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2520",
+        "label": "Ch 8",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2521",
+        "label": "Trunk Out",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "db25",
+        "isMulticable": true,
+        "channelCount": 8
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e1-4000-8000-000000000341",
+    "deviceType": "cable-accessory",
+    "label": "Audio Snake DB25 (8-ch) Break-out",
+    "searchTerms": [
+      "snake",
+      "breakout",
+      "break-out",
+      "multicable",
+      "audio",
+      "xlr",
+      "fanout",
+      "db25",
+      "8ch"
+    ],
+    "ports": [
+      {
+        "id": "port-2522",
+        "label": "Trunk In",
+        "signalType": "analog-audio",
+        "direction": "input",
+        "connectorType": "db25",
+        "isMulticable": true,
+        "channelCount": 8
+      },
+      {
+        "id": "port-2523",
+        "label": "Ch 1",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2524",
+        "label": "Ch 2",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2525",
+        "label": "Ch 3",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2526",
+        "label": "Ch 4",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2527",
+        "label": "Ch 5",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2528",
+        "label": "Ch 6",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2529",
+        "label": "Ch 7",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "port-2530",
+        "label": "Ch 8",
+        "signalType": "analog-audio",
+        "direction": "output",
+        "connectorType": "xlr-3"
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e2-4000-8000-000000000302",
+    "deviceType": "cable-accessory",
+    "label": "Socapex Break-in (6-ch)",
+    "searchTerms": [
+      "socapex",
+      "breakin",
+      "break-in",
+      "multicable",
+      "power",
+      "fanout"
+    ],
+    "ports": [
+      {
+        "id": "port-2531",
+        "label": "Ch 1",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2532",
+        "label": "Ch 2",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2533",
+        "label": "Ch 3",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2534",
+        "label": "Ch 4",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2535",
+        "label": "Ch 5",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2536",
+        "label": "Ch 6",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2537",
+        "label": "Trunk Out",
+        "signalType": "power",
+        "direction": "output",
+        "connectorType": "socapex",
+        "isMulticable": true,
+        "channelCount": 6
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e3-4000-8000-000000000303",
+    "deviceType": "cable-accessory",
+    "label": "Socapex Break-out (6-ch)",
+    "searchTerms": [
+      "socapex",
+      "breakout",
+      "break-out",
+      "multicable",
+      "power",
+      "fanout"
+    ],
+    "ports": [
+      {
+        "id": "port-2538",
+        "label": "Trunk In",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "socapex",
+        "isMulticable": true,
+        "channelCount": 6
+      },
+      {
+        "id": "port-2539",
+        "label": "Ch 1",
+        "signalType": "power",
+        "direction": "output",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2540",
+        "label": "Ch 2",
+        "signalType": "power",
+        "direction": "output",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2541",
+        "label": "Ch 3",
+        "signalType": "power",
+        "direction": "output",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2542",
+        "label": "Ch 4",
+        "signalType": "power",
+        "direction": "output",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2543",
+        "label": "Ch 5",
+        "signalType": "power",
+        "direction": "output",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "port-2544",
+        "label": "Ch 6",
+        "signalType": "power",
+        "direction": "output",
+        "connectorType": "powercon"
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e4-4000-8000-000000000304",
+    "deviceType": "cable-accessory",
+    "label": "Fiber Break-in (4-ch)",
+    "searchTerms": [
+      "fiber",
+      "breakin",
+      "break-in",
+      "multicable",
+      "optical",
+      "fanout"
+    ],
+    "ports": [
+      {
+        "id": "port-2545",
+        "label": "Ch 1",
+        "signalType": "fiber",
+        "direction": "input",
+        "connectorType": "lc"
+      },
+      {
+        "id": "port-2546",
+        "label": "Ch 2",
+        "signalType": "fiber",
+        "direction": "input",
+        "connectorType": "lc"
+      },
+      {
+        "id": "port-2547",
+        "label": "Ch 3",
+        "signalType": "fiber",
+        "direction": "input",
+        "connectorType": "lc"
+      },
+      {
+        "id": "port-2548",
+        "label": "Ch 4",
+        "signalType": "fiber",
+        "direction": "input",
+        "connectorType": "lc"
+      },
+      {
+        "id": "port-2549",
+        "label": "Trunk Out",
+        "signalType": "fiber",
+        "direction": "output",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 4
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e5-4000-8000-000000000305",
+    "deviceType": "cable-accessory",
+    "label": "Fiber Break-out (4-ch)",
+    "searchTerms": [
+      "fiber",
+      "breakout",
+      "break-out",
+      "multicable",
+      "optical",
+      "fanout"
+    ],
+    "ports": [
+      {
+        "id": "port-2550",
+        "label": "Trunk In",
+        "signalType": "fiber",
+        "direction": "input",
+        "connectorType": "none",
+        "isMulticable": true,
+        "channelCount": 4
+      },
+      {
+        "id": "port-2551",
+        "label": "Ch 1",
+        "signalType": "fiber",
+        "direction": "output",
+        "connectorType": "lc"
+      },
+      {
+        "id": "port-2552",
+        "label": "Ch 2",
+        "signalType": "fiber",
+        "direction": "output",
+        "connectorType": "lc"
+      },
+      {
+        "id": "port-2553",
+        "label": "Ch 3",
+        "signalType": "fiber",
+        "direction": "output",
+        "connectorType": "lc"
+      },
+      {
+        "id": "port-2554",
+        "label": "Ch 4",
+        "signalType": "fiber",
+        "direction": "output",
+        "connectorType": "lc"
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e6-4000-8000-000000000306",
+    "deviceType": "cable-accessory",
+    "label": "Custom Break-in",
+    "searchTerms": [
+      "breakin",
+      "break-in",
+      "multicable",
+      "custom",
+      "fanout"
+    ],
+    "ports": [
+      {
+        "id": "port-2555",
+        "label": "Trunk Out",
+        "signalType": "custom",
+        "direction": "output",
+        "connectorType": "multipin",
+        "isMulticable": true,
+        "channelCount": 0
+      }
+    ]
+  },
+  {
+    "id": "c0a80101-00e7-4000-8000-000000000307",
+    "deviceType": "cable-accessory",
+    "label": "Custom Break-out",
+    "searchTerms": [
+      "breakout",
+      "break-out",
+      "multicable",
+      "custom",
+      "fanout"
+    ],
+    "ports": [
+      {
+        "id": "port-2556",
+        "label": "Trunk In",
+        "signalType": "custom",
+        "direction": "input",
+        "connectorType": "multipin",
+        "isMulticable": true,
+        "channelCount": 0
+      }
+    ]
   }
 ]

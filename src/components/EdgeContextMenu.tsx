@@ -1,5 +1,6 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useSchematicStore } from "../store";
+import { resolvePort } from "../packList";
 
 /** Project a point onto the nearest segment and return the projected point. */
 function projectOntoSegments(
@@ -164,10 +165,37 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
+  const [editingLabel, setEditingLabel] = useState(false);
+  const [labelValue, setLabelValue] = useState("");
+
+  const setCableLabel = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    setLabelValue((edge?.data?.multicableLabel as string) ?? "");
+    setEditingLabel(true);
+  }, [menu]);
+
+  const commitLabel = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    store.patchEdgeData(menu.edgeId, { multicableLabel: labelValue.trim() || undefined });
+    useSchematicStore.setState({ edgeContextMenu: null });
+    setEditingLabel(false);
+  }, [menu, labelValue]);
+
   if (!menu) return null;
 
-  const edge = useSchematicStore.getState().edges.find((e) => e.id === menu.edgeId);
+  const store = useSchematicStore.getState();
+  const edge = store.edges.find((e) => e.id === menu.edgeId);
   const hasManual = !!(edge?.data?.manualWaypoints?.length);
+
+  // Check if this is a trunk (multicable) edge
+  const srcNode = store.nodes.find((n) => n.id === edge?.source);
+  const tgtNode = store.nodes.find((n) => n.id === edge?.target);
+  const srcPort = resolvePort(srcNode, edge?.sourceHandle);
+  const tgtPort = resolvePort(tgtNode, edge?.targetHandle);
+  const isTrunkEdge = !!(srcPort?.isMulticable || tgtPort?.isMulticable);
 
   let nearWaypoint = false;
   if (hasManual) {
@@ -178,6 +206,47 @@ export default function EdgeContextMenu() {
         break;
       }
     }
+  }
+
+  if (editingLabel) {
+    return (
+      <div
+        className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg p-2 min-w-[200px]"
+        style={{ left: menu.screenX, top: menu.screenY }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-xs text-gray-500 mb-1">Cable Label</div>
+        <input
+          className="w-full bg-gray-50 border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-blue-500"
+          value={labelValue}
+          onChange={(e) => setLabelValue(e.target.value)}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") commitLabel();
+            else if (e.key === "Escape") {
+              setEditingLabel(false);
+              useSchematicStore.setState({ edgeContextMenu: null });
+            }
+          }}
+          placeholder="e.g. Audio Snake A"
+          autoFocus
+        />
+        <div className="flex justify-end gap-1 mt-1.5">
+          <button
+            onClick={() => { setEditingLabel(false); useSchematicStore.setState({ edgeContextMenu: null }); }}
+            className="px-2 py-0.5 text-[10px] text-gray-500 hover:text-gray-700 cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={commitLabel}
+            className="px-2 py-0.5 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-500 cursor-pointer"
+          >
+            Set
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -194,6 +263,12 @@ export default function EdgeContextMenu() {
         <>
           <div className="h-px bg-gray-200 my-1" />
           <MenuItem label="Reset Route" onClick={resetRoute} />
+        </>
+      )}
+      {isTrunkEdge && (
+        <>
+          <div className="h-px bg-gray-200 my-1" />
+          <MenuItem label="Set Cable Label..." onClick={setCableLabel} />
         </>
       )}
     </div>

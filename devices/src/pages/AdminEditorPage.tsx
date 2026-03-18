@@ -33,13 +33,8 @@ function Editor({ id }: { id?: string }) {
     const token = getAdminToken();
     if (!token) return;
 
-    try {
-      await deleteTemplate(id, token);
-      window.location.hash = "#/";
-    } catch (e) {
-      // Re-throw so the form displays it — but delete errors are rare
-      throw e;
-    }
+    await deleteTemplate(id, token);
+    window.location.hash = "#/";
   };
 
   return (

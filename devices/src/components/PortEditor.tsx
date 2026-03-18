@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import type { Port, SignalType, PortDirection, ConnectorType } from "../../../src/types";
 import { SIGNAL_LABELS, CONNECTOR_LABELS } from "../../../src/types";
 
@@ -36,7 +36,10 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
   };
 
   // Flat ordered list for shift-click range selection
-  const orderedIds = [...grouped.input, ...grouped.output, ...grouped.bidirectional].map((p) => p.id);
+  const orderedIds = useMemo(
+    () => [...grouped.input, ...grouped.output, ...grouped.bidirectional].map((p) => p.id),
+    [grouped.input, grouped.output, grouped.bidirectional],
+  );
 
   const handlePortClick = useCallback((portId: string, e: React.MouseEvent) => {
     setSelected((prev) => {
@@ -69,10 +72,10 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
     setLastClicked(portId);
   }, [lastClicked, orderedIds]);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelected(new Set());
     setLastClicked(null);
-  };
+  }, []);
 
   // Bulk edit actions on selected ports
   const applyToSelected = (updates: Partial<Port>) => {

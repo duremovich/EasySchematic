@@ -27,6 +27,7 @@ const CATEGORIES: { label: string; types: string[] }[] = [
   { label: "Media Servers", types: ["media-server"] },
   { label: "Lighting", types: ["lighting-console", "moving-light", "led-fixture", "dmx-splitter"] },
   { label: "Control", types: ["control-processor", "tally-system", "timecode-generator", "midi-device"] },
+  { label: "Cable Accessories", types: ["cable-accessory"] },
 ];
 
 function onDragStart(event: DragEvent, template: DeviceTemplate) {
@@ -175,7 +176,7 @@ function CategorySection({
             const key = template.id ?? template.deviceType;
             return (
               <TemplateItem
-                key={template.deviceType}
+                key={key}
                 template={template}
                 query={query}
                 onDelete={onDelete ? () => onDelete(template.deviceType) : undefined}

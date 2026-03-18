@@ -15,11 +15,12 @@ export default function DeviceDetailPage({ id }: { id: string }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setLoading(true);
+    let cancelled = false;
     fetchTemplate(id)
-      .then(setTemplate)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+      .then((data) => { if (!cancelled) setTemplate(data); })
+      .catch((e) => { if (!cancelled) setError(e.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, [id]);
 
   if (loading) return <div className="p-8 text-center text-slate-500">Loading...</div>;

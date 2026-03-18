@@ -30,9 +30,8 @@ export default function TagAutocompleteInput({ value, onChange, suggestions, pla
 
   const show = open && filtered.length > 0;
 
-  useEffect(() => {
-    setActiveIdx(-1);
-  }, [value]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset keyboard index when input value changes
+  useEffect(() => { setActiveIdx(-1); }, [value]);
 
   useEffect(() => {
     if (activeIdx >= 0 && listRef.current) {

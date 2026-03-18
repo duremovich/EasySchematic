@@ -33,6 +33,9 @@ import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSigna
 const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
 
+/** Guard: don't persist empty state before initial load completes */
+let hydrated = false;
+
 /** Grid size in px — must match snapGrid in App.tsx and Background gap */
 export const GRID_SIZE = 20;
 
@@ -477,6 +480,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...(template.manufacturer ? { manufacturer: template.manufacturer } : {}),
         ...(template.modelNumber ? { modelNumber: template.modelNumber } : {}),
         ...(hiddenPorts && hiddenPorts.length > 0 ? { hiddenPorts } : {}),
+        ...(template.deviceType === "cable-accessory" ? { isCableAccessory: true } : {}),
+        ...(template.deviceType === "cable-accessory" &&
+          template.ports.some((p) => p.isMulticable && p.connectorType === "none")
+          ? { integratedWithCable: true }
+          : {}),
       },
     };
     set({ nodes: renumberNodes([...get().nodes, newNode]) });
@@ -664,6 +672,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const canTarget = targetPort.direction === "input" || targetPort.direction === "bidirectional";
     if (!canSource || !canTarget) return false;
     if (sourcePort.signalType !== targetPort.signalType) return false;
+
+    // Multicable ports can only connect to other multicable ports
+    const srcIsMulticable = sourcePort.isMulticable ?? false;
+    const tgtIsMulticable = targetPort.isMulticable ?? false;
+    if (srcIsMulticable !== tgtIsMulticable) return false;
 
     // Don't allow multiple connections to the same handle (input or output)
     const duplicateTarget = state.edges.some(
@@ -1034,6 +1047,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   },
 
   saveToLocalStorage: () => {
+    if (!hydrated) return;
     const state = get();
     const data: SchematicFile = {
       version: CURRENT_SCHEMA_VERSION,
@@ -1099,6 +1113,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             globalReportHeaderLayout: data.globalReportHeaderLayout ?? null,
             globalReportFooterLayout: data.globalReportFooterLayout ?? null,
           });
+          hydrated = true;
+          get().saveToLocalStorage();
         });
         return false;
       }
@@ -1129,8 +1145,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         globalReportHeaderLayout: data.globalReportHeaderLayout ?? null,
         globalReportFooterLayout: data.globalReportFooterLayout ?? null,
       });
+      hydrated = true;
       return true;
     } catch {
+      hydrated = true;
       return false;
     }
   },

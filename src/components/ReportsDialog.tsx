@@ -19,7 +19,7 @@ import { createDefaultPackListLayout, createDefaultNetworkReportLayout, createDe
 import { getNetworkReportTableData } from "../networkReport";
 import ReportPreviewDialog from "./ReportPreviewDialog";
 import IpInput from "./IpInput";
-import type { DeviceData, SchematicNode, RoomData } from "../types";
+import type { DeviceData, SchematicNode, RoomData, ConnectionData } from "../types";
 import { useSpreadsheetSelection } from "../spreadsheet/useSpreadsheetSelection";
 import type { SpreadsheetColumn } from "../spreadsheet/types";
 import FillSeriesDialog from "../spreadsheet/FillSeriesDialog";
@@ -794,6 +794,7 @@ function computeDeviceReport(nodes: SchematicNode[]): DeviceReportRow[] {
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
+    if (data.isCableAccessory) continue;
     const parentRoom = nodes.find((n) => n.id === node.parentId);
     const room =
       parentRoom?.type === "room"
@@ -1079,11 +1080,12 @@ const DeviceRow = memo(function DeviceRow({
 
 // ─── Cable Schedule Tab ────────────────────────────────────────
 
-type CableSortKey = "cableId" | "sourceDevice" | "sourcePort" | "sourceConnector" | "targetDevice" | "targetPort" | "targetConnector" | "cableType" | "signalType" | "sourceRoom" | "targetRoom";
-type CableGroupBy = "" | "sourceRoom" | "signalType" | "cableType";
+type CableSortKey = "cableId" | "sourceDevice" | "sourcePort" | "sourceConnector" | "targetDevice" | "targetPort" | "targetConnector" | "cableType" | "signalType" | "cableLength" | "sourceRoom" | "targetRoom" | "multicableLabel";
+type CableGroupBy = "" | "sourceRoom" | "signalType" | "cableType" | "multicableLabel";
 
 const cableScheduleColumns: SpreadsheetColumn<CableScheduleRow>[] = [
   { id: "cableId", header: "Cable ID", getValue: (r) => r.cableId, editable: true, fillType: "deviceName" },
+  { id: "cableLength", header: "Length", getValue: (r) => r.cableLength, editable: true },
 ];
 
 function CableScheduleTabInline() {
@@ -1113,8 +1115,10 @@ function CableScheduleTabInline() {
         r.targetConnector.toLowerCase().includes(q) ||
         r.cableType.toLowerCase().includes(q) ||
         r.signalType.toLowerCase().includes(q) ||
+        r.cableLength.toLowerCase().includes(q) ||
         r.sourceRoom.toLowerCase().includes(q) ||
-        r.targetRoom.toLowerCase().includes(q),
+        r.targetRoom.toLowerCase().includes(q) ||
+        r.multicableLabel.toLowerCase().includes(q),
     );
   }, [rows, filter]);
 
@@ -1139,10 +1143,15 @@ function CableScheduleTabInline() {
     sortKey === key ? (sortAsc ? " ▴" : " ▾") : "";
 
   const onCellChange = useCallback(
-    (rowIndex: number, _columnId: string, value: string) => {
+    (rowIndex: number, columnId: string, value: string) => {
       const row = sorted[rowIndex];
-      if (!row || !value.trim()) return;
-      patchEdgeData(row.edgeId, { cableId: value.trim() });
+      if (!row) return;
+      if (columnId === "cableLength") {
+        patchEdgeData(row.edgeId, { cableLength: value.trim() });
+      } else {
+        if (!value.trim()) return;
+        patchEdgeData(row.edgeId, { cableId: value.trim() });
+      }
     },
     [sorted, patchEdgeData],
   );
@@ -1152,10 +1161,14 @@ function CableScheduleTabInline() {
       const edgeChanges = changes
         .map((c) => {
           const row = sorted[c.rowIndex];
-          if (!row || !c.value.trim()) return null;
+          if (!row) return null;
+          if (c.columnId === "cableLength") {
+            return { edgeId: row.edgeId, patch: { cableLength: c.value.trim() } };
+          }
+          if (!c.value.trim()) return null;
           return { edgeId: row.edgeId, patch: { cableId: c.value.trim() } };
         })
-        .filter((c): c is { edgeId: string; patch: { cableId: string } } => c !== null);
+        .filter((c) => c !== null) as { edgeId: string; patch: Partial<ConnectionData> }[];
       if (edgeChanges.length > 0) {
         batchPatchEdgeData(edgeChanges);
       }
@@ -1169,7 +1182,12 @@ function CableScheduleTabInline() {
   );
 
   const getCellValue = useCallback(
-    (rowIndex: number, _columnId: string) => sorted[rowIndex]?.cableId ?? "",
+    (rowIndex: number, columnId: string) => {
+      const row = sorted[rowIndex];
+      if (!row) return "";
+      if (columnId === "cableLength") return row.cableLength;
+      return row.cableId;
+    },
     [sorted],
   );
 
@@ -1206,7 +1224,7 @@ function CableScheduleTabInline() {
       {spreadsheet.selectedCells.size > 0 && (
         <div className="mb-3 flex items-center gap-3 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg">
           <span className="text-xs font-medium text-blue-700">
-            {spreadsheet.selectedCells.size} cable ID{spreadsheet.selectedCells.size > 1 ? "s" : ""} selected
+            {spreadsheet.selectedCells.size} cell{spreadsheet.selectedCells.size > 1 ? "s" : ""} selected
           </span>
           <span className="text-[11px] text-blue-500">
             {spreadsheet.selectedCells.size > 1 ? "Type a value + Enter to fill series" : "Double-click or type to edit"}
@@ -1238,6 +1256,7 @@ function CableScheduleTabInline() {
           <option value="sourceRoom">Source Room</option>
           <option value="signalType">Signal Type</option>
           <option value="cableType">Cable Type</option>
+          <option value="multicableLabel">Snake</option>
         </select>
       </div>
       <div {...spreadsheet.getContainerProps()}>
@@ -1253,8 +1272,10 @@ function CableScheduleTabInline() {
               <th className={thClass} onClick={() => toggleSort("targetConnector")}>Tgt Conn{sortArrow("targetConnector")}</th>
               <th className={thClass} onClick={() => toggleSort("cableType")}>Cable Type{sortArrow("cableType")}</th>
               <th className={thClass} onClick={() => toggleSort("signalType")}>Signal{sortArrow("signalType")}</th>
+              <th className={thClass} onClick={() => toggleSort("cableLength")}>Length{sortArrow("cableLength")}</th>
               <th className={thClass} onClick={() => toggleSort("sourceRoom")}>Src Room{sortArrow("sourceRoom")}</th>
               <th className={thClass} onClick={() => toggleSort("targetRoom")}>Tgt Room{sortArrow("targetRoom")}</th>
+              <th className={thClass} onClick={() => toggleSort("multicableLabel")}>Snake{sortArrow("multicableLabel")}</th>
             </tr>
           </thead>
           <tbody>
@@ -1287,6 +1308,44 @@ function CableScheduleTabInline() {
   );
 }
 
+function EditableCell({ spreadsheet, rowIndex, columnId, value }: {
+  spreadsheet: ReturnType<typeof useSpreadsheetSelection<CableScheduleRow>>;
+  rowIndex: number;
+  columnId: string;
+  value: string;
+}) {
+  const cellProps = spreadsheet.getCellProps(rowIndex, columnId);
+  if (cellProps.isEditing) {
+    return (
+      <td className={`${tdClass} p-0.5`}>
+        <input
+          className="w-full bg-[var(--color-surface)] border border-blue-500 rounded px-1 py-0.5 text-xs outline-none"
+          value={spreadsheet.editValue}
+          onChange={(e) => spreadsheet.setEditValue(e.target.value)}
+          onBlur={() => spreadsheet.commitEdit(spreadsheet.editValue)}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Enter") { e.preventDefault(); spreadsheet.commitEdit(spreadsheet.editValue); }
+            else if (e.key === "Escape") { e.preventDefault(); spreadsheet.cancelEdit(); }
+            else if (e.key === "Tab") { e.preventDefault(); spreadsheet.commitEdit(spreadsheet.editValue); }
+          }}
+          autoFocus
+        />
+      </td>
+    );
+  }
+  return (
+    <td
+      className={`${tdClass} p-0.5 cursor-cell ${cellProps.isSelected ? "bg-blue-100 ring-1 ring-inset ring-blue-300" : ""}`}
+      onMouseDown={cellProps.onMouseDown}
+      onMouseEnter={cellProps.onMouseEnter}
+      onDoubleClick={cellProps.onDoubleClick}
+    >
+      <span className="text-[10px] px-1 select-none">{value}</span>
+    </td>
+  );
+}
+
 const CableScheduleRow_ = memo(function CableScheduleRow_({
   row,
   rowIndex,
@@ -1298,37 +1357,13 @@ const CableScheduleRow_ = memo(function CableScheduleRow_({
   altClass: string;
   spreadsheet: ReturnType<typeof useSpreadsheetSelection<CableScheduleRow>>;
 }) {
-  const cellProps = spreadsheet.getCellProps(rowIndex, "cableId");
-  const hasSelection = cellProps.isSelected;
+  const cableIdProps = spreadsheet.getCellProps(rowIndex, "cableId");
+  const lengthProps = spreadsheet.getCellProps(rowIndex, "cableLength");
+  const hasSelection = cableIdProps.isSelected || lengthProps.isSelected;
 
   return (
     <tr className={hasSelection ? "bg-blue-50" : altClass}>
-      {cellProps.isEditing ? (
-        <td className={`${tdClass} p-0.5`}>
-          <input
-            className="w-full bg-[var(--color-surface)] border border-blue-500 rounded px-1 py-0.5 text-xs outline-none"
-            value={spreadsheet.editValue}
-            onChange={(e) => spreadsheet.setEditValue(e.target.value)}
-            onBlur={() => spreadsheet.commitEdit(spreadsheet.editValue)}
-            onKeyDown={(e) => {
-              e.stopPropagation();
-              if (e.key === "Enter") { e.preventDefault(); spreadsheet.commitEdit(spreadsheet.editValue); }
-              else if (e.key === "Escape") { e.preventDefault(); spreadsheet.cancelEdit(); }
-              else if (e.key === "Tab") { e.preventDefault(); spreadsheet.commitEdit(spreadsheet.editValue); }
-            }}
-            autoFocus
-          />
-        </td>
-      ) : (
-        <td
-          className={`${tdClass} p-0.5 cursor-cell ${cellProps.isSelected ? "bg-blue-100 ring-1 ring-inset ring-blue-300" : ""}`}
-          onMouseDown={cellProps.onMouseDown}
-          onMouseEnter={cellProps.onMouseEnter}
-          onDoubleClick={cellProps.onDoubleClick}
-        >
-          <span className="text-[10px] px-1 select-none">{row.cableId}</span>
-        </td>
-      )}
+      <EditableCell spreadsheet={spreadsheet} rowIndex={rowIndex} columnId="cableId" value={row.cableId} />
       <td className={tdClass}>{row.sourceDevice}</td>
       <td className={tdClass}>{row.sourcePort}</td>
       <td className={tdClass}>{row.sourceConnector}</td>
@@ -1337,8 +1372,10 @@ const CableScheduleRow_ = memo(function CableScheduleRow_({
       <td className={tdClass}>{row.targetConnector}</td>
       <td className={tdClass}>{row.cableType}</td>
       <td className={tdClass}>{row.signalType}</td>
+      <EditableCell spreadsheet={spreadsheet} rowIndex={rowIndex} columnId="cableLength" value={row.cableLength} />
       <td className={tdClass}>{row.sourceRoom}</td>
       <td className={tdClass}>{row.targetRoom}</td>
+      <td className={tdClass}>{row.multicableLabel}</td>
     </tr>
   );
 });
@@ -1346,7 +1383,7 @@ const CableScheduleRow_ = memo(function CableScheduleRow_({
 function groupCableScheduleRows(rows: CableScheduleRow[], key: CableGroupBy): Map<string, CableScheduleRow[]> {
   const map = new Map<string, CableScheduleRow[]>();
   for (const r of rows) {
-    const groupKey = key === "sourceRoom" ? r.sourceRoom : key === "signalType" ? r.signalType : r.cableType;
+    const groupKey = key === "sourceRoom" ? r.sourceRoom : key === "signalType" ? r.signalType : key === "multicableLabel" ? (r.multicableLabel || "Ungrouped") : r.cableType;
     const arr = map.get(groupKey);
     if (arr) arr.push(r);
     else map.set(groupKey, [r]);
@@ -1364,7 +1401,7 @@ function renderGroupedCableSchedule(
     elements.push(
       <tr key={`h-${group}`}>
         <td
-          colSpan={11}
+          colSpan={13}
           className="pt-3 pb-1 px-2 text-xs font-semibold text-[var(--color-text-heading)] border-b border-[var(--color-border)]"
         >
           {group}
@@ -1393,7 +1430,7 @@ function PackListTabInline() {
   const nodes = useSchematicStore((s) => s.nodes);
   const edges = useSchematicStore((s) => s.edges);
 
-  type SubTab = "devices" | "cables";
+  type SubTab = "devices" | "cables" | "accessories";
   const [subTab, setSubTab] = useState<SubTab>("devices");
   const [groupDevicesByRoom, setGroupDevicesByRoom] = useState(false);
   const [groupCablesByPath, setGroupCablesByPath] = useState(false);
@@ -1419,6 +1456,11 @@ function PackListTabInline() {
         <button className={subTabClass("cables")} onClick={() => setSubTab("cables")}>
           Cables
         </button>
+        {data.accessories.length > 0 && (
+          <button className={subTabClass("accessories")} onClick={() => setSubTab("accessories")}>
+            Accessories
+          </button>
+        )}
         <div className="flex-1" />
         {subTab === "devices" && (
           <label className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)] cursor-pointer select-none">
@@ -1489,6 +1531,7 @@ function PackListTabInline() {
                   <th className={plThClass}>Qty</th>
                   <th className={plThClass}>Cable Type</th>
                   <th className={plThClass}>Signal</th>
+                  <th className={plThClass}>Length</th>
                   {groupCablesByPath && <th className={plThClass}>Route</th>}
                 </tr>
               </thead>
@@ -1499,6 +1542,7 @@ function PackListTabInline() {
                         <td className={tdClass}>{s.count}&times;</td>
                         <td className={tdClass}>{s.cableType}</td>
                         <td className={tdClass}>{s.signalType}</td>
+                        <td className={tdClass}>{s.cableLength}</td>
                         <td className={tdClass}>{s.route}</td>
                       </tr>
                     ))
@@ -1507,9 +1551,41 @@ function PackListTabInline() {
                         <td className={tdClass}>{s.count}&times;</td>
                         <td className={tdClass}>{s.cableType}</td>
                         <td className={tdClass}>{s.signalType}</td>
+                        <td className={tdClass}>{s.cableLength}</td>
                       </tr>
                     ))
                 )}
+              </tbody>
+            </table>
+          )}
+        </>
+      )}
+
+      {subTab === "accessories" && (
+        <>
+          {data.accessories.length === 0 ? (
+            <div className="text-sm text-[var(--color-text-muted)] text-center py-8">
+              No cable accessories in this schematic.
+            </div>
+          ) : (
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className={plThClass}>Qty</th>
+                  <th className={plThClass}>Accessory</th>
+                  <th className={plThClass}>Type</th>
+                  <th className={plThClass}>Room</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.accessories.map((a, i) => (
+                  <tr key={i} className={rowClass(i)}>
+                    <td className={tdClass}>{a.count}&times;</td>
+                    <td className={tdClass}>{a.model}</td>
+                    <td className={tdClass}>{a.accessoryType}</td>
+                    <td className={tdClass}>{a.room}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}

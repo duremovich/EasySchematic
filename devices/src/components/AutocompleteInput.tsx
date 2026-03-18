@@ -20,9 +20,8 @@ export default function AutocompleteInput({ value, onChange, suggestions, placeh
 
   const show = open && filtered.length > 0;
 
-  useEffect(() => {
-    setActiveIdx(-1);
-  }, [value]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset keyboard index when input value changes
+  useEffect(() => { setActiveIdx(-1); }, [value]);
 
   // Scroll active item into view
   useEffect(() => {

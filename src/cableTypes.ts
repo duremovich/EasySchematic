@@ -1,4 +1,5 @@
 import type { Port, SignalType } from "./types";
+import { SIGNAL_LABELS } from "./types";
 import { CONNECTOR_TO_CABLE } from "./connectorTypes";
 
 /** Maps each signal type to a physical cable type label for pack lists (legacy fallback) */
@@ -37,6 +38,17 @@ export function getCableType(
   targetPort: Port | undefined,
   signalType: SignalType,
 ): string {
+  // Multicable trunk: derive from channel count + signal type
+  const multicablePort = sourcePort?.isMulticable ? sourcePort : targetPort?.isMulticable ? targetPort : undefined;
+  if (multicablePort) {
+    const count = multicablePort.channelCount ?? 0;
+    const connector = multicablePort.connectorType;
+    if (connector === "socapex") {
+      return `Socapex (${count}-Ch ${SIGNAL_LABELS[signalType]})`;
+    }
+    return `${count}-Ch ${SIGNAL_LABELS[signalType]}`;
+  }
+
   // Use source port connector if available
   const connector = sourcePort?.connectorType ?? targetPort?.connectorType;
   if (connector) {

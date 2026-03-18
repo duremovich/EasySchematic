@@ -13,7 +13,7 @@
 import { createDefaultLayout } from "./titleBlockLayout";
 import { DEFAULT_CONNECTOR } from "./connectorTypes";
 
-export const CURRENT_SCHEMA_VERSION = 14;
+export const CURRENT_SCHEMA_VERSION = 16;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -128,6 +128,16 @@ const migrations: Record<number, Migration> = {
   13: (data) => {
     // v13 → v14: dhcpServer added as optional field on DeviceData — no transform needed
     data.version = 14;
+    return data;
+  },
+  14: (data) => {
+    // v14 → v15: multicable/cable accessory fields — all optional, no transform needed
+    data.version = 15;
+    return data;
+  },
+  15: (data) => {
+    // v15 → v16: cableLength on connections — optional, no transform needed
+    data.version = 16;
     return data;
   },
   12: (data) => {

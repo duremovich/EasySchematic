@@ -21,8 +21,10 @@ export interface CableScheduleRow {
   targetConnector: string;
   cableType: string;
   signalType: string;
+  cableLength: string;
   sourceRoom: string;
   targetRoom: string;
+  multicableLabel: string;
 }
 
 export function computeCableSchedule(
@@ -58,6 +60,8 @@ export function computeCableSchedule(
       return {
         edgeId: e.id,
         storedCableId: e.data?.cableId as string | undefined,
+        storedCableLength: (e.data?.cableLength as string | undefined) ?? "",
+        multicableLabel: (e.data?.multicableLabel as string) ?? "",
         sourceDevice,
         sourcePort,
         sourceConnector,
@@ -90,8 +94,10 @@ export function computeCableSchedule(
     targetConnector: c.targetConnector,
     cableType: c.cableType,
     signalType: c.signalType,
+    cableLength: c.storedCableLength,
     sourceRoom: c.sourceRoom,
     targetRoom: c.targetRoom,
+    multicableLabel: c.multicableLabel,
   }));
 }
 
@@ -108,13 +114,15 @@ export function exportCableScheduleCsv(
   lines.push(csvRow([
     "Cable ID", "Source", "Src Port", "Src Conn",
     "Target", "Tgt Port", "Tgt Conn",
-    "Cable Type", "Signal", "Src Room", "Tgt Room",
+    "Cable Type", "Signal", "Length",
+    "Src Room", "Tgt Room", "Snake",
   ]));
   for (const r of rows) {
     lines.push(csvRow([
       r.cableId, r.sourceDevice, r.sourcePort, r.sourceConnector,
       r.targetDevice, r.targetPort, r.targetConnector,
-      r.cableType, r.signalType, r.sourceRoom, r.targetRoom,
+      r.cableType, r.signalType, r.cableLength,
+      r.sourceRoom, r.targetRoom, r.multicableLabel,
     ]));
   }
 
@@ -143,8 +151,10 @@ export function getCableScheduleTableData(
     targetConnector: r.targetConnector,
     cableType: r.cableType,
     signalType: r.signalType,
+    cableLength: r.cableLength,
     sourceRoom: r.sourceRoom,
     targetRoom: r.targetRoom,
+    multicableLabel: r.multicableLabel,
   }));
 
   // Sorting
@@ -169,6 +179,8 @@ export function getCableScheduleTableData(
     groupedRows = groupBy(sorted, (r) => r.signalType);
   } else if (groupByKey === "cableType") {
     groupedRows = groupBy(sorted, (r) => r.cableType);
+  } else if (groupByKey === "multicableLabel") {
+    groupedRows = groupBy(sorted, (r) => r.multicableLabel || "Ungrouped");
   }
 
   return [

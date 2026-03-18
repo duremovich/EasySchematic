@@ -37,6 +37,10 @@ const seedFile = path.join(__dirname, "seed-data.sql");
 writeFileSync(seedFile, sql, "utf-8");
 console.log(`Generated ${seedFile} with ${lines.length} templates`);
 
+if (process.argv.includes("--sql-only")) {
+  process.exit(0);
+}
+
 const isRemote = process.argv.includes("--remote");
 const flag = isRemote ? "--remote" : "--local";
 

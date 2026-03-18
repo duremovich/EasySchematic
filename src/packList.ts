@@ -20,6 +20,7 @@ export interface PackListDevice {
 export interface PackListCable {
   cableType: string;
   signalType: string;
+  cableLength: string;
   sourceDevice: string;
   sourcePort: string;
   sourceRoom: string;
@@ -31,21 +32,31 @@ export interface PackListCable {
 export interface PackListSummaryRow {
   cableType: string;
   signalType: string;
+  cableLength: string;
   route: string;
   count: number;
+}
+
+export interface PackListAccessory {
+  model: string;
+  accessoryType: string;
+  room: string;
+  count: number;
+  integratedWithCable: boolean;
 }
 
 export interface PackListData {
   devices: PackListDevice[];
   cables: PackListCable[];
   summary: PackListSummaryRow[];
+  accessories: PackListAccessory[];
 }
 
-/** Merge summary rows by (cableType, signalType), dropping route (for non-room-grouped views) */
+/** Merge summary rows by (cableType, signalType, cableLength), dropping route (for non-room-grouped views) */
 export function mergeCablesByType(summary: PackListSummaryRow[]): PackListSummaryRow[] {
   const map = new Map<string, PackListSummaryRow>();
   for (const s of summary) {
-    const key = `${s.cableType}|${s.signalType}`;
+    const key = `${s.cableType}|${s.signalType}|${s.cableLength}`;
     const existing = map.get(key);
     if (existing) {
       existing.count += s.count;
@@ -110,13 +121,32 @@ export function computePackList(
   nodes: SchematicNode[],
   edges: ConnectionEdge[],
 ): PackListData {
-  // Devices — grouped by (model, room) with counts
+  // Devices — grouped by (model, room) with counts (excluding cable accessories)
   const deviceMap = new Map<string, PackListDevice>();
+  const accessoryMap = new Map<string, PackListAccessory>();
   for (const n of nodes) {
     if (n.type !== "device") continue;
     const data = n.data as DeviceData;
     const model = data.model ?? data.baseLabel ?? data.label;
     const room = getRoomLabel(nodes, n.parentId);
+
+    if (data.isCableAccessory) {
+      const key = `${model}|${room}`;
+      const existing = accessoryMap.get(key);
+      if (existing) {
+        existing.count++;
+      } else {
+        accessoryMap.set(key, {
+          model,
+          accessoryType: data.deviceType,
+          room,
+          count: 1,
+          integratedWithCable: data.integratedWithCable ?? false,
+        });
+      }
+      continue;
+    }
+
     const key = `${model}|${room}`;
     const existing = deviceMap.get(key);
     if (existing) {
@@ -133,6 +163,11 @@ export function computePackList(
   const devices = [...deviceMap.values()].sort(
     (a, b) => a.room.localeCompare(b.room) || a.model.localeCompare(b.model),
   );
+
+  // Accessories — only non-integrated ones (integrated are grouped with trunk cable)
+  const accessories = [...accessoryMap.values()]
+    .filter((a) => !a.integratedWithCable)
+    .sort((a, b) => a.room.localeCompare(b.room) || a.model.localeCompare(b.model));
 
   // Cables
   const cables: PackListCable[] = edges
@@ -152,6 +187,7 @@ export function computePackList(
       return {
         cableType: getCableType(srcPort, tgtPort, signalType),
         signalType: SIGNAL_LABELS[signalType],
+        cableLength: (e.data?.cableLength as string) ?? "",
         sourceDevice: srcNode?.type === "device"
           ? (srcNode.data as DeviceData).label
           : "Unknown",
@@ -170,14 +206,14 @@ export function computePackList(
         a.signalType.localeCompare(b.signalType),
     );
 
-  // Summary — group by (cableType, signalType, route)
+  // Summary — group by (cableType, signalType, cableLength, route)
   const summaryMap = new Map<string, PackListSummaryRow>();
   for (const c of cables) {
     const route =
       c.sourceRoom === c.targetRoom
         ? `Within ${c.sourceRoom}`
         : `${c.sourceRoom} > ${c.targetRoom}`;
-    const key = `${c.cableType}|${c.signalType}|${route}`;
+    const key = `${c.cableType}|${c.signalType}|${c.cableLength}|${route}`;
     const existing = summaryMap.get(key);
     if (existing) {
       existing.count++;
@@ -185,6 +221,7 @@ export function computePackList(
       summaryMap.set(key, {
         cableType: c.cableType,
         signalType: c.signalType,
+        cableLength: c.cableLength,
         route,
         count: 1,
       });
@@ -196,7 +233,7 @@ export function computePackList(
       a.cableType.localeCompare(b.cableType),
   );
 
-  return { devices, cables, summary };
+  return { devices, cables, summary, accessories };
 }
 
 // --------------- CSV Export ---------------
@@ -230,12 +267,22 @@ export function exportPackListCsv(
   }
   lines.push("");
 
+  // Cable Accessories
+  if (data.accessories.length > 0) {
+    lines.push("CABLE ACCESSORIES");
+    lines.push(csvRow(["Qty", "Accessory", "Type", "Room"]));
+    for (const a of data.accessories) {
+      lines.push(csvRow([`${a.count}`, a.model, a.accessoryType, a.room]));
+    }
+    lines.push("");
+  }
+
   // Cable List
   lines.push("CABLE LIST");
-  lines.push(csvRow(["Qty", "Cable Type", "Signal", "Route"]));
+  lines.push(csvRow(["Qty", "Cable Type", "Signal", "Length", "Route"]));
   for (const s of data.summary) {
     lines.push(
-      csvRow([`${s.count}`, s.cableType, s.signalType, s.route]),
+      csvRow([`${s.count}`, s.cableType, s.signalType, s.cableLength, s.route]),
     );
   }
 
@@ -296,6 +343,7 @@ export function getPackListTableData(
     count: `${s.count}x`,
     cableType: s.cableType,
     signalType: s.signalType,
+    cableLength: s.cableLength,
     route: s.route,
   }));
 
@@ -339,6 +387,22 @@ export function getPackListTableData(
     });
   }
 
+  // Accessories table
+  const accessoriesTableDef = layout.tables.find((t) => t.id === "accessories");
+  const accessoryRows = data.accessories.map((a) => ({
+    count: `${a.count}x`,
+    model: a.model,
+    accessoryType: a.accessoryType,
+    room: a.room,
+  }));
+
+  const sortedAccessoryRows = sortRows(accessoryRows, accessoriesTableDef?.sortBy, accessoriesTableDef?.sortDir);
+
+  let accessoryGroupedRows: Map<string, Record<string, string>[]> | undefined;
+  if (accessoriesTableDef?.groupBy === "room") {
+    accessoryGroupedRows = groupBy(sortedAccessoryRows, (r) => r.room);
+  }
+
   return [
     {
       id: "devices",
@@ -349,6 +413,11 @@ export function getPackListTableData(
       id: "cables",
       rows: sortedCableRows,
       groupedRows: sortedCableGrouped,
+    },
+    {
+      id: "accessories",
+      rows: sortedAccessoryRows,
+      groupedRows: accessoryGroupedRows,
     },
   ];
 }

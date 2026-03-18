@@ -5,8 +5,8 @@ export type ConnectorType =
   | "xlr-3" | "xlr-5" | "trs-quarter" | "trs-eighth"
   | "rj45" | "ethercon" | "sfp" | "lc"
   | "usb-a" | "usb-b" | "usb-c"
-  | "db9" | "phoenix" | "powercon" | "edison" | "iec"
-  | "speakon" | "none" | "other";
+  | "db9" | "db25" | "phoenix" | "powercon" | "edison" | "iec"
+  | "speakon" | "socapex" | "multipin" | "none" | "other";
 
 export interface PortNetworkConfig {
   ip?: string;
@@ -76,6 +76,8 @@ export interface Port {
   networkConfig?: PortNetworkConfig;
   addressable?: boolean;
   activeConfig?: PortActiveConfig;
+  isMulticable?: boolean;
+  channelCount?: number;
 }
 
 export interface DeviceData {
@@ -97,6 +99,8 @@ export interface DeviceData {
   showAllPorts?: boolean;
   hiddenPorts?: string[];
   dhcpServer?: DhcpServerConfig;
+  isCableAccessory?: boolean;
+  integratedWithCable?: boolean;
 }
 
 export type DeviceNode = Node<DeviceData, "device">;
@@ -128,6 +132,8 @@ export interface ConnectionData {
   manualWaypoints?: { x: number; y: number }[];
   connectorMismatch?: boolean;
   cableId?: string;
+  cableLength?: string;
+  multicableLabel?: string;
 }
 
 export type ConnectionEdge = Edge<ConnectionData>;
@@ -266,11 +272,14 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "usb-b": "USB-B",
   "usb-c": "USB-C",
   db9: "DB9",
+  db25: "DB25",
   phoenix: "Phoenix",
   powercon: "powerCON",
   edison: "Edison",
   iec: "IEC C13",
   speakon: "speakON",
+  socapex: "Socapex",
+  multipin: "Multi-pin",
   none: "None",
   other: "Other",
 };
