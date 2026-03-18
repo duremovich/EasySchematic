@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import type { NoteNode as NoteNodeType } from "../types";
 import { useSchematicStore } from "../store";
+import { sanitizeNoteHtml } from "../sanitizeHtml";
 
 const FORMATS = [
   { cmd: "bold", label: "B", style: "font-bold" },
@@ -27,7 +28,7 @@ function NoteNodeComponent({ id, data, selected }: NodeProps<NoteNodeType>) {
   // Populate on mount + sync external data changes when not editing
   useEffect(() => {
     if (editorRef.current && !editing) {
-      editorRef.current.innerHTML = data.html;
+      editorRef.current.innerHTML = sanitizeNoteHtml(data.html);
     }
   }, [data.html, editing]);
 

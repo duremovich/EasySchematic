@@ -27,6 +27,7 @@ import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 import { routeAllEdges, type RoutedEdge } from "./edgeRouter";
 import { areConnectorsCompatible } from "./connectorTypes";
 import { createDefaultLayout } from "./titleBlockLayout";
+import { sanitizeNoteHtml } from "./sanitizeHtml";
 import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
 
 const STORAGE_KEY = "easyschematic-autosave";
@@ -1160,6 +1161,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const data = migrateSchematic(rawData) as SchematicFile;
     const nodes = data.nodes ?? [];
     const edges = data.edges ?? [];
+    // Sanitize note HTML to prevent XSS from malicious schematic files
+    for (const node of nodes) {
+      if (node.type === "note" && node.data && "html" in node.data) {
+        (node.data as { html: string }).html = sanitizeNoteHtml((node.data as { html: string }).html);
+      }
+    }
     snapNodesToGrid(nodes);
     syncCounters(nodes, edges);
     // Merge imported custom templates with existing ones (avoid duplicates by deviceType)
