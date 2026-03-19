@@ -15,6 +15,8 @@ export interface PackListDevice {
   deviceType: string;
   room: string;
   count: number;
+  manufacturer: string;
+  modelNumber: string;
 }
 
 export interface PackListCable {
@@ -73,11 +75,12 @@ export function mergeCablesByType(summary: PackListSummaryRow[]): PackListSummar
 export function mergeDevicesByModel(devices: PackListDevice[]): PackListDevice[] {
   const map = new Map<string, PackListDevice>();
   for (const d of devices) {
-    const existing = map.get(d.model);
+    const key = `${d.manufacturer}|${d.modelNumber}|${d.model}`;
+    const existing = map.get(key);
     if (existing) {
       existing.count += d.count;
     } else {
-      map.set(d.model, { ...d, room: "" });
+      map.set(key, { ...d, room: "" });
     }
   }
   return [...map.values()].sort(
@@ -157,6 +160,8 @@ export function computePackList(
         deviceType: data.deviceType,
         room,
         count: 1,
+        manufacturer: data.manufacturer ?? "",
+        modelNumber: data.modelNumber ?? "",
       });
     }
   }
@@ -261,9 +266,9 @@ export function exportPackListCsv(
 
   // Device List
   lines.push("DEVICE LIST");
-  lines.push(csvRow(["Qty", "Device", "Type", "Room"]));
+  lines.push(csvRow(["Qty", "Device", "Manufacturer", "Model #", "Type", "Room"]));
   for (const d of data.devices) {
-    lines.push(csvRow([`${d.count}`, d.model, d.deviceType, d.room]));
+    lines.push(csvRow([`${d.count}`, d.model, d.manufacturer, d.modelNumber, d.deviceType, d.room]));
   }
   lines.push("");
 
@@ -324,6 +329,8 @@ export function getPackListTableData(
     (d) => ({
       count: `${d.count}x`,
       model: d.model,
+      manufacturer: d.manufacturer,
+      modelNumber: d.modelNumber,
       deviceType: d.deviceType,
       room: d.room,
     }),
