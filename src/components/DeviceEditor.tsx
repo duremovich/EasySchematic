@@ -1117,6 +1117,19 @@ function PortRow({
           ))}
         </select>
 
+        {port.signalType === "gpio" && (
+          <select
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-1 text-[10px] text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer"
+            value={port.direction}
+            onChange={(e) => onUpdate({ direction: e.target.value as PortDirection })}
+            title="GPIO direction"
+          >
+            <option value="input">In</option>
+            <option value="output">Out</option>
+            <option value="bidirectional">I/O</option>
+          </select>
+        )}
+
         <select
           className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-1 text-[10px] text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer max-w-[80px]"
           value={port.connectorType ?? DEFAULT_CONNECTOR[port.signalType]}
