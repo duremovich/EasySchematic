@@ -99,7 +99,10 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       `}
     >
       {/* Header */}
-      <div className="px-3 h-10 flex flex-col justify-center border-b border-[var(--color-border)] rounded-t-lg bg-[var(--color-surface)]">
+      <div
+        className="px-3 h-10 flex flex-col justify-center border-b border-[var(--color-border)] rounded-t-lg"
+        style={{ backgroundColor: data.headerColor || "var(--color-surface)" }}
+      >
         <div className="text-xs font-semibold text-[var(--color-text-heading)] truncate leading-tight">
           {data.label}
         </div>
