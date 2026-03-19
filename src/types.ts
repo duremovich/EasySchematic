@@ -88,6 +88,8 @@ export interface DeviceData {
   deviceType: string;
   ports: Port[];
   color?: string;
+  /** Custom header background color (#9) */
+  headerColor?: string;
   /** Original template label — present while device participates in auto-numbering.
    *  Cleared when the user gives the device a custom name. */
   baseLabel?: string;
@@ -127,7 +129,21 @@ export interface NoteData {
 
 export type NoteNode = Node<NoteData, "note">;
 
-export type SchematicNode = DeviceNode | RoomNode | NoteNode;
+export interface AnnotationData {
+  [key: string]: unknown;
+  /** Shape type for the annotation (#24) */
+  shape: "rectangle" | "ellipse";
+  /** Fill color */
+  color?: string;
+  /** Border color */
+  borderColor?: string;
+  /** Optional text label */
+  label?: string;
+}
+
+export type AnnotationNode = Node<AnnotationData, "annotation">;
+
+export type SchematicNode = DeviceNode | RoomNode | NoteNode | AnnotationNode;
 
 export interface ConnectionData {
   [key: string]: unknown;
@@ -137,6 +153,12 @@ export interface ConnectionData {
   cableId?: string;
   cableLength?: string;
   multicableLabel?: string;
+  /** User-defined label displayed on the connection line (#5) */
+  label?: string;
+  /** When true, render as a short stub from each end instead of a full connection (#13) */
+  stubbed?: boolean;
+  /** Allow connection between incompatible connector types (#6) */
+  allowIncompatible?: boolean;
 }
 
 export type ConnectionEdge = Edge<ConnectionData>;
@@ -231,6 +253,10 @@ export interface SchematicFile {
   reportLayouts?: Record<string, unknown>;
   globalReportHeaderLayout?: TitleBlockLayout;
   globalReportFooterLayout?: TitleBlockLayout;
+  /** Scroll wheel behavior: zoom (default) or pan (#19) */
+  scrollBehavior?: "zoom" | "pan";
+  /** Cable naming scheme for cable schedule (#1) */
+  cableNamingScheme?: "sequential" | "type-prefix";
 }
 
 export const SIGNAL_COLORS: Record<SignalType, string> = {

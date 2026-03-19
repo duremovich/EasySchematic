@@ -190,6 +190,18 @@ interface SchematicState {
   favoriteTemplates: string[];
   toggleFavoriteTemplate: (templateKey: string) => void;
 
+  // Scroll behavior (#19)
+  scrollBehavior: "zoom" | "pan";
+  setScrollBehavior: (v: "zoom" | "pan") => void;
+
+  // Cable naming scheme (#1)
+  cableNamingScheme: "sequential" | "type-prefix";
+  setCableNamingScheme: (v: "sequential" | "type-prefix") => void;
+
+  // Template import/export (#12/#26)
+  exportCustomTemplates: () => DeviceTemplate[];
+  importCustomTemplates: (templates: DeviceTemplate[]) => void;
+
   // Persistence
   saveToLocalStorage: () => void;
   loadFromLocalStorage: () => boolean;
@@ -391,6 +403,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   templateHiddenSignals: {},
   templatePresets: {},
   favoriteTemplates: [],
+  scrollBehavior: "zoom" as "zoom" | "pan",
+  cableNamingScheme: "sequential" as "sequential" | "type-prefix",
 
   onNodesChange: (changes) => {
     const updated = applyNodeChanges(changes, get().nodes) as SchematicNode[];
@@ -1082,6 +1096,31 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  setScrollBehavior: (v) => {
+    set({ scrollBehavior: v });
+    get().saveToLocalStorage();
+  },
+
+  setCableNamingScheme: (v) => {
+    set({ cableNamingScheme: v });
+    get().saveToLocalStorage();
+  },
+
+  exportCustomTemplates: () => {
+    return structuredClone(get().customTemplates);
+  },
+
+  importCustomTemplates: (templates) => {
+    const existing = get().customTemplates;
+    const existingTypes = new Set(existing.map((t) => t.deviceType));
+    const newTemplates = templates.filter((t) => !existingTypes.has(t.deviceType));
+    if (newTemplates.length > 0) {
+      const merged = [...existing, ...newTemplates];
+      set({ customTemplates: merged });
+      saveCustomTemplates(merged);
+    }
+  },
+
   saveToLocalStorage: () => {
     if (!hydrated) return;
     const state = get();
@@ -1105,6 +1144,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       reportLayouts: Object.keys(state.reportLayouts).length > 0 ? state.reportLayouts : undefined,
       globalReportHeaderLayout: state.globalReportHeaderLayout ?? undefined,
       globalReportFooterLayout: state.globalReportFooterLayout ?? undefined,
+      scrollBehavior: state.scrollBehavior !== "zoom" ? state.scrollBehavior : undefined,
+      cableNamingScheme: state.cableNamingScheme !== "sequential" ? state.cableNamingScheme : undefined,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -1149,6 +1190,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             reportLayouts: data.reportLayouts ?? {},
             globalReportHeaderLayout: data.globalReportHeaderLayout ?? null,
             globalReportFooterLayout: data.globalReportFooterLayout ?? null,
+            scrollBehavior: data.scrollBehavior ?? "zoom",
+            cableNamingScheme: data.cableNamingScheme ?? "sequential",
           });
           hydrated = true;
           get().saveToLocalStorage();
@@ -1182,6 +1225,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         reportLayouts: data.reportLayouts ?? {},
         globalReportHeaderLayout: data.globalReportHeaderLayout ?? null,
         globalReportFooterLayout: data.globalReportFooterLayout ?? null,
+        scrollBehavior: data.scrollBehavior ?? "zoom",
+        cableNamingScheme: data.cableNamingScheme ?? "sequential",
       });
       hydrated = true;
       return true;
@@ -1214,6 +1259,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       reportLayouts: Object.keys(state.reportLayouts).length > 0 ? state.reportLayouts : undefined,
       globalReportHeaderLayout: state.globalReportHeaderLayout ?? undefined,
       globalReportFooterLayout: state.globalReportFooterLayout ?? undefined,
+      scrollBehavior: state.scrollBehavior !== "zoom" ? state.scrollBehavior : undefined,
+      cableNamingScheme: state.cableNamingScheme !== "sequential" ? state.cableNamingScheme : undefined,
     };
   },
 
@@ -1265,6 +1312,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       reportLayouts: data.reportLayouts ?? {},
       globalReportHeaderLayout: data.globalReportHeaderLayout ?? null,
       globalReportFooterLayout: data.globalReportFooterLayout ?? null,
+      scrollBehavior: data.scrollBehavior ?? "zoom",
+      cableNamingScheme: data.cableNamingScheme ?? "sequential",
     });
     get().saveToLocalStorage();
   },
@@ -1288,6 +1337,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       reportLayouts: {},
       globalReportHeaderLayout: null,
       globalReportFooterLayout: null,
+      scrollBehavior: "zoom",
+      cableNamingScheme: "sequential",
       undoSize: 0,
       redoSize: 0,
     });
