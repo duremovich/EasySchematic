@@ -165,24 +165,33 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
-  const [editingLabel, setEditingLabel] = useState(false);
+  const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable">(false);
   const [labelValue, setLabelValue] = useState("");
+
+  const setConnectionLabel = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    setLabelValue((edge?.data?.label as string) ?? "");
+    setEditingLabel("label");
+  }, [menu]);
 
   const setCableLabel = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
     const edge = store.edges.find((e) => e.id === menu.edgeId);
     setLabelValue((edge?.data?.multicableLabel as string) ?? "");
-    setEditingLabel(true);
+    setEditingLabel("multicable");
   }, [menu]);
 
   const commitLabel = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
-    store.patchEdgeData(menu.edgeId, { multicableLabel: labelValue.trim() || undefined });
+    const field = editingLabel === "multicable" ? "multicableLabel" : "label";
+    store.patchEdgeData(menu.edgeId, { [field]: labelValue.trim() || undefined });
     useSchematicStore.setState({ edgeContextMenu: null });
     setEditingLabel(false);
-  }, [menu, labelValue]);
+  }, [menu, labelValue, editingLabel]);
 
   if (!menu) return null;
 
@@ -215,7 +224,9 @@ export default function EdgeContextMenu() {
         style={{ left: menu.screenX, top: menu.screenY }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-xs text-gray-500 mb-1">Cable Label</div>
+        <div className="text-xs text-gray-500 mb-1">
+          {editingLabel === "multicable" ? "Cable Label" : "Connection Label"}
+        </div>
         <input
           className="w-full bg-gray-50 border border-gray-300 rounded px-2 py-1 text-xs outline-none focus:border-blue-500"
           value={labelValue}
@@ -228,7 +239,7 @@ export default function EdgeContextMenu() {
               useSchematicStore.setState({ edgeContextMenu: null });
             }
           }}
-          placeholder="e.g. Audio Snake A"
+          placeholder={editingLabel === "multicable" ? "e.g. Audio Snake A" : "e.g. Program Feed"}
           autoFocus
         />
         <div className="flex justify-end gap-1 mt-1.5">
@@ -265,11 +276,10 @@ export default function EdgeContextMenu() {
           <MenuItem label="Reset Route" onClick={resetRoute} />
         </>
       )}
+      <div className="h-px bg-gray-200 my-1" />
+      <MenuItem label="Set Label..." onClick={setConnectionLabel} />
       {isTrunkEdge && (
-        <>
-          <div className="h-px bg-gray-200 my-1" />
-          <MenuItem label="Set Cable Label..." onClick={setCableLabel} />
-        </>
+        <MenuItem label="Set Cable Label..." onClick={setCableLabel} />
       )}
     </div>
   );

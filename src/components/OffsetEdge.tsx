@@ -41,6 +41,12 @@ function OffsetEdgeComponent({
     return edge?.data?.connectorMismatch === true;
   });
 
+  // Read user-defined connection label (stable primitive selector)
+  const edgeLabel = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return (edge?.data?.label as string) ?? "";
+  });
+
   // Read manual waypoints directly (serialized for stable selector)
   const manualWpStr = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
@@ -273,6 +279,33 @@ function OffsetEdgeComponent({
     </>
   ) : null;
 
+  // User-defined connection label rendered at the midpoint
+  const connectionLabel = edgeLabel && routeStr ? (
+    <foreignObject
+      x={lx}
+      y={ly - 9}
+      width={1}
+      height={1}
+      style={{ pointerEvents: "none", overflow: "visible" }}
+    >
+      <div style={{
+        fontSize: 10,
+        fontFamily: "Inter, system-ui, sans-serif",
+        fontWeight: 500,
+        color: "#374151",
+        background: "rgba(255,255,255,0.92)",
+        padding: "1px 4px",
+        borderRadius: 3,
+        whiteSpace: "nowrap",
+        width: "max-content",
+        transform: "translateX(-50%)",
+        border: "1px solid #e5e7eb",
+      }}>
+        {edgeLabel}
+      </div>
+    </foreignObject>
+  ) : null;
+
   // Log routing data when debug mode is active
   const prevDebugRef = useRef(false);
   useEffect(() => {
@@ -292,6 +325,7 @@ function OffsetEdgeComponent({
         style={edgeStyle}
         markerEnd={markerEnd}
       />
+      {connectionLabel}
       {waypointHandles}
       {debugLabel}
     </>
