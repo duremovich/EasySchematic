@@ -65,6 +65,7 @@ export default function DeviceEditor() {
   const [label, setLabel] = useState("");
   const [deviceType, setDeviceType] = useState("");
   const [color, setColor] = useState<string | undefined>(undefined);
+  const [headerColor, setHeaderColor] = useState<string | undefined>(undefined);
   const [ports, setPorts] = useState<PortDraft[]>([]);
 
   // Port visibility local state
@@ -89,6 +90,7 @@ export default function DeviceEditor() {
     setLabel(node.data.label);
     setDeviceType(node.data.deviceType);
     setColor(node.data.color);
+    setHeaderColor(node.data.headerColor);
     setPorts(
       node.data.ports.map((p) => ({
         id: p.id,
@@ -144,6 +146,7 @@ export default function DeviceEditor() {
       ...(existing?.templateId ? { templateId: existing.templateId } : {}),
       ...(existing?.templateVersion ? { templateVersion: existing.templateVersion } : {}),
       ...(color ? { color } : {}),
+      ...(headerColor ? { headerColor } : {}),
       ...(existing?.model ? { model: existing.model } : {}),
       ...(showAllPorts ? { showAllPorts: true } : {}),
       ...(finalHiddenPorts.length > 0 ? { hiddenPorts: finalHiddenPorts } : {}),
@@ -154,7 +157,7 @@ export default function DeviceEditor() {
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, deviceType, color, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, isCableAccessory, integratedWithCable]);
+  }, [editingNodeId, ports, label, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, isCableAccessory, integratedWithCable]);
 
   const handleSaveAsTemplate = useCallback(() => {
     const finalPorts: Port[] = ports
@@ -392,6 +395,25 @@ export default function DeviceEditor() {
                 placeholder="e.g. camera"
               />
             </Field>
+          </div>
+
+          {/* Header color picker */}
+          <div className="flex items-center gap-2 -mt-1">
+            <span className="text-[10px] text-[var(--color-text-muted)]">Header Color</span>
+            <input
+              type="color"
+              className="w-6 h-6 rounded border border-[var(--color-border)] cursor-pointer p-0"
+              value={headerColor ?? "#4b5563"}
+              onChange={(e) => setHeaderColor(e.target.value)}
+            />
+            {headerColor && (
+              <button
+                className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+                onClick={() => setHeaderColor(undefined)}
+              >
+                Reset
+              </button>
+            )}
           </div>
 
           {(node.data.manufacturer || node.data.modelNumber) && (() => {
