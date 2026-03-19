@@ -26,6 +26,7 @@ import ShowInfoPanel from "./components/ShowInfoPanel";
 import ViewOptionsPanel from "./components/ViewOptionsPanel";
 import MenuBar from "./components/MenuBar";
 import EdgeContextMenu from "./components/EdgeContextMenu";
+import IncompatibleConnectionDialog from "./components/IncompatibleConnectionDialog";
 import RoomContextMenu from "./components/RoomContextMenu";
 import RoomEditor from "./components/RoomEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
@@ -139,7 +140,6 @@ function SchematicCanvas() {
   const isDragging = useSchematicStore((s) => s.isDragging);
   const debugEdges = useSchematicStore((s) => s.debugEdges);
   const printView = useSchematicStore((s) => s.printView);
-  const scrollBehavior = useSchematicStore((s) => s.scrollBehavior);
   const hiddenSignalTypesStr = useSchematicStore((s) => s.hiddenSignalTypes);
   const nodeCount = useSchematicStore((s) => s.nodes.length);
   const edgeCount = useSchematicStore((s) => s.edges.length);
@@ -168,6 +168,59 @@ function SchematicCanvas() {
     }, 50);
     return () => clearTimeout(timer);
   }, [isDragging, nodeDigest, edgeDigest, nodeCount, edgeCount, rfInstance, hiddenSignalTypesStr]);
+
+  // Recompute cable ID map when edges/nodes/naming change
+  const cableNamingScheme = useSchematicStore((s) => s.cableNamingScheme);
+  const cableIdDigest = useSchematicStore((s) =>
+    s.edges.map((e) => `${e.id}:${e.data?.signalType ?? ""}:${e.data?.cableId ?? ""}`).join("|"),
+  );
+  const labelDigest = useSchematicStore((s) =>
+    s.nodes.filter((n) => n.type === "device").map((n) => `${n.id}:${(n.data as { label?: string }).label ?? ""}`).join("|"),
+  );
+  useEffect(() => {
+    useSchematicStore.getState().recomputeCableIds();
+  }, [cableIdDigest, labelDigest, cableNamingScheme, nodeCount, edgeCount]);
+
+  // Custom wheel handler for configurable scroll/zoom/pan (#19)
+  useEffect(() => {
+    // Find the React Flow viewport element
+    const el = document.querySelector(".react-flow") as HTMLElement | null;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
+      // Don't interfere with scrolling inside overlays (dialogs, panels, etc.)
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-allow-scroll]")) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      const cfg = useSchematicStore.getState().scrollConfig;
+      const action = e.ctrlKey ? cfg.ctrlScroll : e.shiftKey ? cfg.shiftScroll : cfg.scroll;
+      const delta = e.deltaY;
+      let vp: { x: number; y: number; zoom: number };
+      try { vp = rfInstance.getViewport(); } catch { return; }
+
+      if (action === "zoom") {
+        const factor = 1 - delta * 0.001;
+        const newZoom = Math.min(8, Math.max(0.05, vp.zoom * factor));
+        // Zoom toward cursor: keep the flow point under the cursor stationary
+        const rect = el.getBoundingClientRect();
+        const sx = e.clientX - rect.left;
+        const sy = e.clientY - rect.top;
+        const ratio = newZoom / vp.zoom;
+        rfInstance.setViewport({
+          x: sx - (sx - vp.x) * ratio,
+          y: sy - (sy - vp.y) * ratio,
+          zoom: newZoom,
+        });
+      } else if (action === "pan-x") {
+        rfInstance.setViewport({ x: vp.x - delta, y: vp.y, zoom: vp.zoom });
+      } else {
+        rfInstance.setViewport({ x: vp.x, y: vp.y - delta, zoom: vp.zoom });
+      }
+    };
+    el.addEventListener("wheel", handler, { passive: false, capture: true });
+    return () => el.removeEventListener("wheel", handler, { capture: true });
+  }, [rfInstance]);
 
   // Click-to-connect: show preview line between first click and mouse
   const clearClickConnect = useCallback(() => {
@@ -467,8 +520,34 @@ function SchematicCanvas() {
   );
 
   // Drag-to-connect: clear preview on drag end (but not if in click-connect mode)
-  const onConnectEnd = useCallback(() => {
+  // Also detect drops on incompatible handles → show adapter dialog
+  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent) => {
     if (!isClickConnectMode.current) {
+      // Before clearing, check if user dropped on an incompatible handle
+      const from = clickConnectFromRef.current;
+      if (from) {
+        const clientX = "clientX" in event ? event.clientX : event.changedTouches?.[0]?.clientX;
+        const clientY = "clientY" in event ? event.clientY : event.changedTouches?.[0]?.clientY;
+        if (clientX !== undefined && clientY !== undefined) {
+          const el = document.elementFromPoint(clientX, clientY);
+          const handleEl = el?.closest(".react-flow__handle") as HTMLElement | null;
+          if (handleEl) {
+            const targetNodeEl = handleEl.closest(".react-flow__node");
+            const targetNodeId = targetNodeEl?.getAttribute("data-id");
+            const targetHandleId = handleEl.getAttribute("data-handleid");
+            if (targetNodeId && targetHandleId && targetNodeId !== from.nodeId) {
+              const connection = from.fromSource
+                ? { source: from.nodeId, sourceHandle: from.handleId, target: targetNodeId, targetHandle: targetHandleId }
+                : { source: targetNodeId, sourceHandle: targetHandleId, target: from.nodeId, targetHandle: from.handleId };
+              const state = useSchematicStore.getState();
+              if (!state.isValidConnection(connection as Connection)) {
+                // Trigger the signal-type mismatch check in onConnect
+                state.onConnect(connection as Connection);
+              }
+            }
+          }
+        }
+      }
       clearClickConnect();
     }
   }, [clearClickConnect]);
@@ -636,11 +715,21 @@ function SchematicCanvas() {
           }
         }
 
+        if (!connected) {
+          // No compatible handle — try triggering incompatible dialog on first signal-type mismatch
+          for (const h of targetHandles ?? []) {
+            if (!h.id) continue;
+            const conn = from.fromSource
+              ? { source: from.nodeId, sourceHandle: from.handleId, target: node.id, targetHandle: h.id }
+              : { source: node.id, sourceHandle: h.id, target: from.nodeId, targetHandle: from.handleId };
+            // onConnect will detect signal-type mismatch and show dialog
+            state.onConnect(conn as Connection);
+            if (useSchematicStore.getState().pendingIncompatibleConnection) break;
+          }
+        }
+
         clearClickConnect();
         rfStore.setState({ connectionClickStartHandle: null });
-        if (!connected) {
-          // No valid handle found — just cancel silently
-        }
       }}
       onNodeDoubleClick={(event, node) => {
         if (node.type !== "room") return;
@@ -674,8 +763,8 @@ function SchematicCanvas() {
       selectionKeyCode={null}
       multiSelectionKeyCode="Shift"
       proOptions={{ hideAttribution: true }}
-      panOnScroll={scrollBehavior === "pan"}
-      zoomOnScroll={scrollBehavior !== "pan"}
+      panOnScroll={false}
+      zoomOnScroll={false}
       zoomOnDoubleClick={false}
       connectOnClick
       edgesReconnectable
@@ -847,6 +936,7 @@ export default function App() {
       <RoomEditor />
       <EdgeContextMenu />
       <RoomContextMenu />
+      <IncompatibleConnectionDialog />
     </div>
   );
 }

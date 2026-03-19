@@ -211,12 +211,22 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
+  const toggleHideLabel = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    const current = edge?.data?.hideLabel === true;
+    store.patchEdgeData(menu.edgeId, { hideLabel: current ? undefined : true });
+    useSchematicStore.setState({ edgeContextMenu: null });
+  }, [menu]);
+
   if (!menu) return null;
 
   const store = useSchematicStore.getState();
   const edge = store.edges.find((e) => e.id === menu.edgeId);
   const hasManual = !!(edge?.data?.manualWaypoints?.length);
   const isStubbed = edge?.data?.stubbed === true;
+  const isLabelHidden = edge?.data?.hideLabel === true;
   const hasMismatch = edge?.data?.connectorMismatch === true;
   const allowIncompatible = edge?.data?.allowIncompatible === true;
 
@@ -302,6 +312,10 @@ export default function EdgeContextMenu() {
       {isTrunkEdge && (
         <MenuItem label="Set Cable Label..." onClick={setCableLabel} />
       )}
+      <MenuItem
+        label={isLabelHidden ? "Show Label" : "Hide Label"}
+        onClick={toggleHideLabel}
+      />
       <MenuItem
         label={isStubbed ? "Show Full Connection" : "Stub Connection"}
         onClick={toggleStubbed}

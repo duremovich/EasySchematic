@@ -1,6 +1,7 @@
 import { memo, useRef, useEffect, useCallback } from "react";
 import {
   BaseEdge,
+  EdgeLabelRenderer,
   useReactFlow,
   type EdgeProps,
 } from "@xyflow/react";
@@ -32,7 +33,8 @@ function OffsetEdgeComponent({
   const routeStr = useSchematicStore((s) => {
     const r = s.routedEdges[id];
     if (!r) return "";
-    return `${r.svgPath}\0${r.labelX}\0${r.labelY}\0${r.turns}`;
+    const path = (s.showLineJumps && r.svgPathWithHops) || r.svgPath;
+    return `${path}\0${r.labelX}\0${r.labelY}\0${r.turns}`;
   });
 
   // Read connector mismatch flag (stable primitive selector)
@@ -53,6 +55,14 @@ function OffsetEdgeComponent({
     return (edge?.data?.label as string) ?? "";
   });
 
+  // Cable ID label from pre-computed map
+  const showConnectionLabels = useSchematicStore((s) => s.showConnectionLabels);
+  const cableId = useSchematicStore((s) => s.cableIdMap[id] ?? "");
+  const hideLabel = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.hideLabel === true;
+  });
+
   // Read stubbed flag (stable primitive selector)
   const stubbed = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
@@ -64,13 +74,6 @@ function OffsetEdgeComponent({
     const r = s.routedEdges[id];
     if (!r?.waypoints?.length) return "";
     return r.waypoints.map((p) => `${p.x},${p.y}`).join("|");
-  });
-
-  // Read crossing points (serialized for stability)
-  const crossingStr = useSchematicStore((s) => {
-    const r = s.routedEdges[id];
-    if (!r?.crossingPoints?.length) return "";
-    return r.crossingPoints.map((p) => `${p.x},${p.y}`).join("|");
   });
 
   // Read manual waypoints directly (serialized for stable selector)
@@ -358,72 +361,13 @@ function OffsetEdgeComponent({
     };
   }
 
-  // --- Crossing arc bumps ---
-  const parsedRouteWps = routeWpStr
-    ? routeWpStr.split("|").map((s) => {
-        const [x, y] = s.split(",");
-        return { x: Number(x), y: Number(y) };
-      })
-    : [];
-  const crossingArcs = crossingStr && parsedRouteWps.length >= 2 && routeStr && !stubbed
-    ? (() => {
-        const crossings = crossingStr.split("|").map((s) => {
-          const [x, y] = s.split(",");
-          return { x: Number(x), y: Number(y) };
-        });
-        const ARC_R = 6;
-        return crossings.map((cp, i) => {
-          // Find which segment this crossing falls on
-          let isHorizontal = true;
-          for (let j = 0; j < parsedRouteWps.length - 1; j++) {
-            const a = parsedRouteWps[j], b = parsedRouteWps[j + 1];
-            const minX = Math.min(a.x, b.x), maxX = Math.max(a.x, b.x);
-            const minY = Math.min(a.y, b.y), maxY = Math.max(a.y, b.y);
-            if (cp.x >= minX - 1 && cp.x <= maxX + 1 && cp.y >= minY - 1 && cp.y <= maxY + 1) {
-              isHorizontal = Math.abs(a.y - b.y) < 1;
-              break;
-            }
-          }
-          // Draw a small semicircle arc bump with white mask behind it
-          const sw = (edgeStyle.strokeWidth as number) ?? 2;
-          const strokeColor = (edgeStyle.stroke as string) ?? "currentColor";
-          if (isHorizontal) {
-            return (
-              <g key={`cx-${i}`} style={{ pointerEvents: "none" }}>
-                <line x1={cp.x - ARC_R} y1={cp.y} x2={cp.x + ARC_R} y2={cp.y}
-                  stroke="white" strokeWidth={sw + 4} />
-                <path
-                  d={`M ${cp.x - ARC_R} ${cp.y} A ${ARC_R} ${ARC_R} 0 0 1 ${cp.x + ARC_R} ${cp.y}`}
-                  fill="none" stroke={strokeColor} strokeWidth={sw}
-                />
-              </g>
-            );
-          } else {
-            return (
-              <g key={`cx-${i}`} style={{ pointerEvents: "none" }}>
-                <line x1={cp.x} y1={cp.y - ARC_R} x2={cp.x} y2={cp.y + ARC_R}
-                  stroke="white" strokeWidth={sw + 4} />
-                <path
-                  d={`M ${cp.x} ${cp.y - ARC_R} A ${ARC_R} ${ARC_R} 0 0 1 ${cp.x} ${cp.y + ARC_R}`}
-                  fill="none" stroke={strokeColor} strokeWidth={sw}
-                />
-              </g>
-            );
-          }
-        });
-      })()
-    : null;
-
-  // User-defined connection label rendered at the midpoint
+  // User-defined connection label rendered at the midpoint (via EdgeLabelRenderer)
   const connectionLabel = edgeLabel && routeStr ? (
-    <foreignObject
-      x={lx}
-      y={ly - 9}
-      width={1}
-      height={1}
-      style={{ pointerEvents: "none", overflow: "visible" }}
-    >
-      <div style={{
+    <div
+      style={{
+        position: "absolute",
+        transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)`,
+        pointerEvents: "none",
         fontSize: 10,
         fontFamily: "Inter, system-ui, sans-serif",
         fontWeight: 500,
@@ -432,13 +376,93 @@ function OffsetEdgeComponent({
         padding: "1px 4px",
         borderRadius: 3,
         whiteSpace: "nowrap",
-        width: "max-content",
-        transform: "translateX(-50%)",
         border: "1px solid #e5e7eb",
-      }}>
-        {edgeLabel}
+      }}
+    >
+      {edgeLabel}
+    </div>
+  ) : null;
+
+  // Cable ID labels at both ends of the connection, positioned along cable direction
+  const signalColor = (style?.stroke as string) ?? "#6b7280";
+  const labelText = cableId;
+
+  // Compute direction vectors at source and target from routed waypoints
+  let srcDx = 0, srcDy = 0, tgtDx = 0, tgtDy = 0;
+  if (routeWpStr) {
+    const wps = routeWpStr.split("|").map((s) => {
+      const [x, y] = s.split(",");
+      return { x: Number(x), y: Number(y) };
+    });
+    if (wps.length >= 2) {
+      // Source: direction from first to second waypoint
+      const sdx = wps[1].x - wps[0].x;
+      const sdy = wps[1].y - wps[0].y;
+      const slen = Math.sqrt(sdx * sdx + sdy * sdy);
+      if (slen > 0) { srcDx = sdx / slen; srcDy = sdy / slen; }
+      // Target: direction from last to second-to-last (approach direction, label goes outward)
+      const tdx = wps[wps.length - 1].x - wps[wps.length - 2].x;
+      const tdy = wps[wps.length - 1].y - wps[wps.length - 2].y;
+      const tlen = Math.sqrt(tdx * tdx + tdy * tdy);
+      if (tlen > 0) { tgtDx = tdx / tlen; tgtDy = tdy / tlen; }
+    }
+  }
+
+  const LABEL_GAP = 4;
+  const cableIdLabelStyle: React.CSSProperties = {
+    position: "absolute",
+    pointerEvents: "none",
+    fontSize: 9,
+    fontFamily: "Inter, system-ui, sans-serif",
+    fontWeight: 600,
+    color: "#374151",
+    background: "rgba(255,255,255,0.92)",
+    padding: "0 3px",
+    borderRadius: 2,
+    whiteSpace: "nowrap",
+    border: `1px solid ${signalColor}`,
+  };
+
+  // Build a positioned cable ID label div for EdgeLabelRenderer
+  const makeCableIdLabel = (
+    ex: number, ey: number, dx: number, dy: number, key: string,
+  ) => {
+    // Determine dominant axis (orthogonal cables: one of dx/dy is ~1, other ~0)
+    const isHoriz = Math.abs(dx) >= Math.abs(dy);
+    // Offset along the cable direction from the endpoint
+    const px = isHoriz ? ex + Math.sign(dx) * LABEL_GAP : ex;
+    const py = isHoriz ? ey : ey + Math.sign(dy) * LABEL_GAP;
+    // CSS translate: place at (px, py) then anchor appropriately
+    const anchorX = isHoriz ? (dx < 0 ? "-100%" : "0%") : "-50%";
+    const anchorY = isHoriz ? "-50%" : (dy < 0 ? "-100%" : "0%");
+
+    return (
+      <div
+        key={key}
+        style={{
+          ...cableIdLabelStyle,
+          transform: `translate(${anchorX}, ${anchorY}) translate(${px}px, ${py}px)`,
+        }}
+      >
+        {labelText}
       </div>
-    </foreignObject>
+    );
+  };
+
+  const cableIdLabels = showConnectionLabels && !hideLabel && labelText && routeStr ? (
+    <>
+      {makeCableIdLabel(sourceX, sourceY, srcDx, srcDy, "lbl-src")}
+      {makeCableIdLabel(targetX, targetY, -tgtDx, -tgtDy, "lbl-tgt")}
+    </>
+  ) : null;
+
+  // All labels rendered via EdgeLabelRenderer (HTML layer above all SVG edges)
+  const hasLabels = connectionLabel || cableIdLabels;
+  const edgeLabelsPortal = hasLabels ? (
+    <EdgeLabelRenderer>
+      {cableIdLabels}
+      {connectionLabel}
+    </EdgeLabelRenderer>
   ) : null;
 
   // Log routing data when debug mode is active
@@ -474,7 +498,7 @@ function OffsetEdgeComponent({
         <path d={stubPaths.tgtPath} fill="none" style={edgeStyle} markerEnd={markerEnd} />
         {renderSlash(stubPaths.srcEnd, "slash-src")}
         {renderSlash(stubPaths.tgtEnd, "slash-tgt")}
-        {connectionLabel}
+        {edgeLabelsPortal}
         {debugLabel}
       </>
     );
@@ -490,8 +514,7 @@ function OffsetEdgeComponent({
         style={edgeStyle}
         markerEnd={markerEnd}
       />
-      {crossingArcs}
-      {connectionLabel}
+      {edgeLabelsPortal}
       {waypointHandles}
       {debugLabel}
     </>
