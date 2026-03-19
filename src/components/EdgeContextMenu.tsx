@@ -193,6 +193,15 @@ export default function EdgeContextMenu() {
     setEditingLabel(false);
   }, [menu, labelValue, editingLabel]);
 
+  const toggleAllowIncompatible = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    const current = edge?.data?.allowIncompatible === true;
+    store.patchEdgeData(menu.edgeId, { allowIncompatible: current ? undefined : true });
+    useSchematicStore.setState({ edgeContextMenu: null });
+  }, [menu]);
+
   const toggleStubbed = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
@@ -208,6 +217,8 @@ export default function EdgeContextMenu() {
   const edge = store.edges.find((e) => e.id === menu.edgeId);
   const hasManual = !!(edge?.data?.manualWaypoints?.length);
   const isStubbed = edge?.data?.stubbed === true;
+  const hasMismatch = edge?.data?.connectorMismatch === true;
+  const allowIncompatible = edge?.data?.allowIncompatible === true;
 
   // Check if this is a trunk (multicable) edge
   const srcNode = store.nodes.find((n) => n.id === edge?.source);
@@ -295,6 +306,12 @@ export default function EdgeContextMenu() {
         label={isStubbed ? "Show Full Connection" : "Stub Connection"}
         onClick={toggleStubbed}
       />
+      {(hasMismatch || allowIncompatible) && (
+        <MenuItem
+          label={allowIncompatible ? "Disallow Incompatible" : "Allow Incompatible"}
+          onClick={toggleAllowIncompatible}
+        />
+      )}
     </div>
   );
 }

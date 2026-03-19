@@ -41,6 +41,12 @@ function OffsetEdgeComponent({
     return edge?.data?.connectorMismatch === true;
   });
 
+  // Read allow incompatible override (stable primitive selector)
+  const allowIncompatible = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.allowIncompatible === true;
+  });
+
   // Read user-defined connection label (stable primitive selector)
   const edgeLabel = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
@@ -92,7 +98,7 @@ function OffsetEdgeComponent({
     ? {
         ...style,
         strokeWidth: selected ? 3 : 2,
-        ...(connectorMismatch ? { strokeDasharray: "6 3" } : {}),
+        ...(connectorMismatch && !allowIncompatible ? { strokeDasharray: "6 3" } : {}),
       }
     : { ...style, strokeWidth: 0, opacity: 0 };
 
