@@ -76,7 +76,7 @@ export default function DeviceDetailPage({ id }: { id: string }) {
           </div>
           {template.referenceUrl && (
             <a href={template.referenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800">
-              Manufacturer Page <span aria-hidden="true">&nearr;</span>
+              Manufacturer Page <span aria-hidden="true">{"\u2197"}</span>
             </a>
           )}
         </div>

@@ -571,12 +571,12 @@ app.get("/templates/:id", async (c) => {
 
   if (r.submitted_by) {
     result.submittedBy = {
-      name: (r.submitter_name as string) || anonymizeEmail(r.submitter_email as string),
+      name: (r.submitter_name as string) || "Awesome Community Member",
     };
   }
   if (r.last_edited_by) {
     result.lastEditedBy = {
-      name: (r.editor_name as string) || anonymizeEmail(r.editor_email as string),
+      name: (r.editor_name as string) || "Awesome Community Member",
     };
   }
 
