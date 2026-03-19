@@ -215,7 +215,7 @@ function OffsetEdgeComponent({
               fill="rgba(0,0,0,0.001)"
               stroke="rgba(0,0,0,0.001)"
               strokeWidth={4}
-              style={{ cursor: "grab" }}
+              style={{ cursor: "grab", pointerEvents: "all" }}
               onMouseDown={(e) => onHandleMouseDown(e, i)}
             />
           </g>
