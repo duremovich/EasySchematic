@@ -13,7 +13,15 @@ import {
   simplifyWaypoints,
   waypointsToSvgPath,
   type PenaltyZone,
+  type Rect,
 } from "./pathfinding";
+import { computePageGrid } from "./printPageGrid";
+import {
+  type Orientation,
+  PAPER_SIZES,
+  PAGE_MARGIN_IN,
+  TITLE_BLOCK_HEIGHT_IN,
+} from "./printConfig";
 
 // ---------- Types ----------
 
@@ -69,8 +77,16 @@ export function orthogonalize(points: Point[]): Point[] {
   return result;
 }
 
+/** Optional print-view configuration for title block obstacle avoidance. */
+export interface PrintConfig {
+  paperId: string;
+  orientation: Orientation;
+  scale: number;
+}
+
 // ---------- Constants ----------
 
+const DPI = 96;
 const SEPARATION_THRESHOLD = 8;
 const MAX_ITERATIONS = 5;
 const STUB_GAP = 6;
@@ -574,6 +590,41 @@ function logRoutingReport(
   (window as unknown as Record<string, unknown>).__routingReport = report;
 }
 
+// ---------- Title block obstacles ----------
+
+/**
+ * Compute obstacle rects for the title block area on each print page.
+ * The title block occupies the bottom of each page's content area.
+ */
+function buildTitleBlockObstacles(
+  nodes: SchematicNode[],
+  printConfig: PrintConfig,
+): Rect[] {
+  const paper = PAPER_SIZES.find((p) => p.id === printConfig.paperId);
+  if (!paper) return [];
+
+  const pages = computePageGrid(
+    paper,
+    printConfig.orientation,
+    printConfig.scale,
+    nodes,
+  );
+
+  const marginPx = (PAGE_MARGIN_IN * DPI) / printConfig.scale;
+  const titleBlockPx = (TITLE_BLOCK_HEIGHT_IN * DPI) / printConfig.scale;
+
+  const rects: Rect[] = [];
+  for (const page of pages) {
+    // Title block sits below the content area, above the bottom margin
+    const top = page.y + page.heightPx - marginPx - titleBlockPx;
+    const bottom = top + titleBlockPx;
+    const left = page.contentX;
+    const right = page.contentX + page.contentW;
+    rects.push({ left, top, right, bottom });
+  }
+  return rects;
+}
+
 // ---------- Main routing function ----------
 
 export function routeAllEdges(
@@ -581,6 +632,7 @@ export function routeAllEdges(
   edges: ConnectionEdge[],
   rfInstance: ReactFlowInstance,
   debug?: boolean,
+  printConfig?: PrintConfig,
 ): Record<string, RoutedEdge> {
   // Build handle position map
   const handleMap = new Map<string, HandlePos>();
@@ -594,6 +646,12 @@ export function routeAllEdges(
   const getAbsPosAdapter = (n: { id: string; position: { x: number; y: number }; parentId?: string }) =>
     getAbsPos(n as SchematicNode, nodes);
   const obs = buildObstacles(nodes, [], getAbsPosAdapter);
+
+  // Add title block obstacles in print view
+  if (printConfig) {
+    const tbRects = buildTitleBlockObstacles(nodes, printConfig);
+    obs.rects.push(...tbRects);
+  }
 
   // Resolve edge endpoints
   const edgeEndpoints: EdgeEndpoints[] = [];
