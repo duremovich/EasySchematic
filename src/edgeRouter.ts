@@ -25,6 +25,11 @@ import {
 
 // ---------- Types ----------
 
+export interface CrossingPoint {
+  x: number;
+  y: number;
+}
+
 export interface RoutedEdge {
   edgeId: string;
   svgPath: string;
@@ -33,6 +38,7 @@ export interface RoutedEdge {
   labelX: number;
   labelY: number;
   turns: string;
+  crossingPoints?: CrossingPoint[];
 }
 
 interface Point {
@@ -1053,6 +1059,31 @@ export function routeAllEdges(
     }
   }
 
+  // Detect crossing points between all edge pairs
+  const crossingMap = new Map<string, CrossingPoint[]>();
+  for (const rs of routeStates) {
+    crossingMap.set(rs.edgeId, []);
+  }
+  for (let i = 0; i < routeStates.length; i++) {
+    for (let j = i + 1; j < routeStates.length; j++) {
+      const a = routeStates[i];
+      const b = routeStates[j];
+      for (const sa of a.segments) {
+        for (const sb of b.segments) {
+          if (segmentsCross(sa, sb)) {
+            // Intersection of perpendicular segments: the vertical segment's X
+            // and the horizontal segment's Y
+            const h = sa.axis === "h" ? sa : sb;
+            const v = sa.axis === "v" ? sa : sb;
+            const pt: CrossingPoint = { x: v.x1, y: h.y1 };
+            crossingMap.get(a.edgeId)!.push(pt);
+            crossingMap.get(b.edgeId)!.push(pt);
+          }
+        }
+      }
+    }
+  }
+
   // Build final results
   for (const rs of routeStates) {
     results[rs.edgeId] = {
@@ -1063,6 +1094,7 @@ export function routeAllEdges(
       labelX: rs.labelX,
       labelY: rs.labelY,
       turns: rs.turns,
+      crossingPoints: crossingMap.get(rs.edgeId) ?? [],
     };
   }
 
