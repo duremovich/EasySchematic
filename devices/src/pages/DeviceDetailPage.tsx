@@ -116,9 +116,15 @@ export default function DeviceDetailPage({ id }: { id: string }) {
       {renderPortTable(outputs, "Outputs")}
       {renderPortTable(bidi, "Bidirectional")}
 
-      {template.submittedBy && (
+      {(template.submittedBy || template.lastEditedBy) && (
         <div className="mt-8 pt-4 border-t border-slate-200 text-xs text-slate-400">
-          Submitted by <span className="text-slate-500">{template.submittedBy.name}</span>
+          {template.submittedBy && (
+            <>Submitted by <span className="text-slate-500">{template.submittedBy.name}</span></>
+          )}
+          {template.submittedBy && template.lastEditedBy && " · "}
+          {template.lastEditedBy && (
+            <>Last edited by <span className="text-slate-500">{template.lastEditedBy.name}</span></>
+          )}
         </div>
       )}
     </div>

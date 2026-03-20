@@ -75,7 +75,13 @@ export default function ContributorsPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-lg font-bold text-slate-900">{c.approvedCount}</p>
-                  <p className="text-xs text-slate-500">{c.approvedCount === 1 ? "device" : "devices"}</p>
+                  <p className="text-xs text-slate-500">
+                    {c.createdCount > 0 && c.editedCount > 0
+                      ? `${c.createdCount} submitted · ${c.editedCount} edited`
+                      : c.editedCount > 0
+                        ? `${c.editedCount} edited`
+                        : `${c.createdCount} submitted`}
+                  </p>
                 </div>
                 <svg
                   className={`w-4 h-4 text-slate-400 transition-transform ${expandedId === c.id ? "rotate-180" : ""}`}
@@ -99,6 +105,12 @@ export default function ContributorsPage() {
                             >
                               {t.label}
                             </a>
+                            {t.contribution === "edited" && (
+                              <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 rounded">edited</span>
+                            )}
+                            {t.contribution === "both" && (
+                              <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 rounded">created + edited</span>
+                            )}
                             <span className="ml-2 text-xs text-slate-400 capitalize">{t.category}</span>
                           </li>
                         ))}

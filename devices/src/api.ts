@@ -130,6 +130,8 @@ export interface Contributor {
   id: string;
   name: string;
   approvedCount: number;
+  createdCount: number;
+  editedCount: number;
 }
 
 export async function fetchContributors(): Promise<Contributor[]> {
@@ -143,6 +145,7 @@ export interface ContributorTemplate {
   label: string;
   device_type: string;
   category: string;
+  contribution: "created" | "edited" | "both";
 }
 
 export async function fetchContributorTemplates(userId: string): Promise<ContributorTemplate[]> {

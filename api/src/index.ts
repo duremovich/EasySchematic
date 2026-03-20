@@ -478,7 +478,9 @@ app.get("/contributors", async (c) => {
   const { results } = await c.env.easyschematic_db
     .prepare(
       `SELECT u.id, u.name, u.email,
-              COUNT(*) as approved_count
+              COUNT(*) as approved_count,
+              SUM(CASE WHEN s.action = 'create' THEN 1 ELSE 0 END) as created_count,
+              SUM(CASE WHEN s.action = 'update' THEN 1 ELSE 0 END) as edited_count
        FROM submissions s JOIN users u ON s.user_id = u.id
        WHERE s.status = 'approved'
        GROUP BY u.id
@@ -488,10 +490,12 @@ app.get("/contributors", async (c) => {
     .all();
 
   // Only expose name (or anonymized email) — not full email
-  const contributors = (results as unknown as { id: string; name: string | null; email: string; approved_count: number }[]).map((r) => ({
+  const contributors = (results as unknown as { id: string; name: string | null; email: string; approved_count: number; created_count: number; edited_count: number }[]).map((r) => ({
     id: r.id,
     name: r.name || "Awesome Community Member",
     approvedCount: r.approved_count,
+    createdCount: r.created_count,
+    editedCount: r.edited_count,
   }));
 
   return c.json(contributors, 200, NO_CACHE_HEADERS);
@@ -501,15 +505,27 @@ app.get("/contributors/:id/templates", async (c) => {
   const userId = c.req.param("id");
   const { results } = await c.env.easyschematic_db
     .prepare(
-      `SELECT t.id, t.label, t.device_type, t.category
-       FROM templates t
-       WHERE t.submitted_by = ?
+      `SELECT t.id, t.label, t.device_type, t.category,
+              MAX(CASE WHEN s.action = 'create' THEN 1 ELSE 0 END) as is_creator,
+              MAX(CASE WHEN s.action = 'update' THEN 1 ELSE 0 END) as is_editor
+       FROM submissions s
+       JOIN templates t ON s.template_id = t.id
+       WHERE s.user_id = ? AND s.status = 'approved'
+       GROUP BY t.id
        ORDER BY t.label`,
     )
     .bind(userId)
     .all();
 
-  return c.json(results, 200, NO_CACHE_HEADERS);
+  const templatesWithContribution = (results as unknown as { id: string; label: string; device_type: string; category: string; is_creator: number; is_editor: number }[]).map((r) => ({
+    id: r.id,
+    label: r.label,
+    device_type: r.device_type,
+    category: r.category,
+    contribution: r.is_creator && r.is_editor ? "both" as const : r.is_editor ? "edited" as const : "created" as const,
+  }));
+
+  return c.json(templatesWithContribution, 200, NO_CACHE_HEADERS);
 });
 
 // ==================== TEMPLATE ENDPOINTS ====================
