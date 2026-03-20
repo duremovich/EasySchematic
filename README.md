@@ -8,18 +8,6 @@
 
 <p align="center"><b><a href="https://easyschematic.live">Try it live →</a></b> · <b><a href="https://docs.easyschematic.live">Documentation →</a></b> · <b><a href="https://devices.easyschematic.live">Device Database →</a></b></p>
 
-## Design Principles
-
-1. **AV signal flow, nothing else.** This is a tool for designing audiovisual systems — not a general diagramming app. Every feature decision starts from "does this serve AV workflows?"
-
-2. **Your workflow, your way.** Signal colors, display names, device templates, port layouts — customization is a first-class feature. Different shops work differently, and the tool should adapt to you, not the other way around.
-
-3. **Simple to start, deep to master.** A student can drag devices and draw cables in five minutes. The depth is there when you need it, but it's never in your face on day one.
-
-4. **Automate the tedious, not the creative.** Smart routing, auto-numbering, and sensible defaults handle the grunt work. When the algorithm gets it wrong, manual overrides put you back in control.
-
-5. **Community-built device library.** The shared device database grows because users contribute to it. Submit a template, everyone benefits.
-
 ## Features
 
 ### Canvas & Devices
@@ -140,6 +128,18 @@ npm run build
 ```
 
 Output goes to `dist/` — deploy as a static site anywhere.
+
+## Design Principles
+
+1. **AV signal flow, nothing else.** This is a tool for designing audiovisual systems — not a general diagramming app. Every feature decision starts from "does this serve AV workflows?"
+
+2. **Your workflow, your way.** Signal colors, display names, device templates, port layouts — customization is a first-class feature. Different shops work differently, and the tool should adapt to you, not the other way around.
+
+3. **Simple to start, deep to master.** A student can drag devices and draw cables in five minutes. The depth is there when you need it, but it's never in your face on day one.
+
+4. **Automate the tedious, not the creative.** Smart routing, auto-numbering, and sensible defaults handle the grunt work. When the algorithm gets it wrong, manual overrides put you back in control.
+
+5. **Community-built device library.** The shared device database grows because users contribute to it. Submit a template, everyone benefits.
 
 ## Tech Stack
 
