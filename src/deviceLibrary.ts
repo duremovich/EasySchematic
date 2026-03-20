@@ -200,7 +200,6 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Fiber Out 2", "fiber", "output"),
       port("Fiber Out 3", "fiber", "output"),
       port("Fiber Out 4", "fiber", "output"),
-      port("AC Power", "power", "input"),
     ],
   },
   // AJA FiDO-4R — Quad Fiber to SDI Receiver
@@ -221,7 +220,6 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Out 2", "sdi", "output"),
       port("SDI Out 3", "sdi", "output"),
       port("SDI Out 4", "sdi", "output"),
-      port("AC Power", "power", "input"),
     ],
   },
   // AJA FiDO-T — Single SDI to Fiber Transmitter
@@ -272,6 +270,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("HDMI Out", "hdmi", "output"),
       port("SDI Loop", "sdi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("Audio In L", "analog-audio", "input", "rca"),
+    
+      port("Audio In R", "analog-audio", "input", "rca"),
     ],
   },
   // Decimator MD-HX — Scaler / Cross Converter
@@ -369,7 +371,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
   {
     id: "c0a80101-0015-4000-8000-000000000021",
     deviceType: "router",
-    label: "BMD Videohub 20x20",
+    label: "BMD Videohub 20x20 12G",
     manufacturer: "Blackmagic Design",
     modelNumber: "Smart Videohub 20x20",
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicvideohub/techspecs",
@@ -417,6 +419,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Out 20", "sdi", "output"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("USB-C", "usb", "bidirectional", "usb-c"),
     ],
   },
   // Blackmagic CleanSwitch 12x12
@@ -455,6 +461,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Out 12", "sdi", "output"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("RS-422", "rs422", "bidirectional", "rj45"),
     ],
   },
   // Kramer VS-88H2 — 8x8 HDMI Matrix Switcher
@@ -512,6 +522,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI In", "sdi", "input"),
       port("Ref In", "genlock", "input"),
       port("SDI Out", "sdi", "output"),
+    
+      port("AC Power", "power", "input"),
     ],
   },
   // Recorder
@@ -523,6 +535,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
       port("SDI Out", "sdi", "output"),
+    
+      port("AC Power", "power", "input"),
     ],
   },
   // Blackmagic HyperDeck Extreme
@@ -535,14 +549,40 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/hyperdeckextreme/techspecs",
     searchTerms: ["blackmagic", "hyperdeck", "4k", "hdr", "recorder", "player"],
     ports: [
-      port("SDI In", "sdi", "input"),
+      port("SDI In 1", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
-      port("SDI Out", "sdi", "output"),
+      port("SDI Out 1", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
       port("SDI Monitor", "sdi", "output"),
       port("RS-422", "rs422", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("SDI In 2", "sdi", "input"),
+    
+      port("SDI In 3", "sdi", "input"),
+    
+      port("SDI In 4", "sdi", "input"),
+    
+      port("SDI Out 2", "sdi", "output"),
+    
+      port("SDI Out 3", "sdi", "output"),
+    
+      port("SDI Out 4", "sdi", "output"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("Timecode In", "genlock", "input", "xlr-3"),
+    
+      port("Timecode Out", "genlock", "output", "xlr-3"),
+    
+      port("XLR In 1", "analog-audio", "input"),
+    
+      port("XLR In 2", "analog-audio", "input"),
+    
+      port("XLR In 3", "analog-audio", "input"),
+    
+      port("XLR In 4", "analog-audio", "input"),
     ],
   },
   // Graphics
@@ -554,6 +594,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Fill", "sdi", "output"),
       port("SDI Key", "sdi", "output"),
       port("NDI Out", "ndi", "output"),
+    
+      port("Ethernet", "ethernet", "bidirectional"),
+    
+      port("AC Power", "power", "input"),
     ],
   },
   // Distribution Amp
@@ -591,13 +635,22 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     searchTerms: ["blackmagic", "ultrastudio", "capture", "playback", "thunderbolt"],
     ports: [
       port("SDI In 1", "sdi", "input"),
-      port("SDI In 2", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
       port("SDI Out 1", "sdi", "output"),
-      port("SDI Out 2", "sdi", "output"),
+      port("SDI Loop", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
       port("Thunderbolt 3", "thunderbolt", "bidirectional"),
       port("RS-422", "rs422", "bidirectional"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("Analog In", "analog-audio", "input", "trs-quarter"),
+    
+      port("Analog Out", "analog-audio", "output", "trs-quarter"),
+    
+      port("XLR Mic In", "analog-audio", "input"),
+    
+      port("AC Power", "power", "input", "iec"),
     ],
   },
   // Datapath FX4 SDI — Video Wall Controller (SDI variant)
@@ -620,6 +673,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Out 4", "sdi", "output"),
       port("DP Loop", "displayport", "output"),
       port("AC Power", "power", "input"),
+    
+      port("Ethernet 1", "ethernet", "bidirectional"),
+    
+      port("Ethernet 2", "ethernet", "bidirectional"),
+    
+      port("USB-B", "usb", "bidirectional", "usb-b"),
     ],
   },
   // Datapath FX4 HDMI — Video Wall Controller
@@ -641,6 +700,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("HDMI Out 4", "hdmi", "output"),
       port("DP Loop", "displayport", "output"),
       port("AC Power", "power", "input"),
+    
+      port("Ethernet 1", "ethernet", "bidirectional"),
+    
+      port("Ethernet 2", "ethernet", "bidirectional"),
+    
+      port("USB-B", "usb", "bidirectional", "usb-b"),
     ],
   },
   // Panasonic PT-DZ13K — Large Venue Projector
@@ -707,6 +772,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB-C Front 2", "usb", "bidirectional", "usb-c"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("SDXC Card", "usb", "bidirectional", "other"),
+    
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
     ],
   },
   // Ethernet Switch (4-port)
@@ -792,6 +861,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB-C Out", "usb", "bidirectional", "usb-c"),
       port("RS-232 Out", "serial", "output"),
       port("AC Power", "power", "input"),
+    
+      port("3.5mm Audio Out", "analog-audio", "output", "trs-eighth"),
+    
+      port("RS-485", "serial", "bidirectional", "phoenix"),
     ],
   },
 
@@ -925,12 +998,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     searchTerms: ["blackmagic", "teranex", "de-embedder", "deembed", "audio extract"],
     ports: [
       port("SDI In", "sdi", "input"),
-      port("SDI Out", "sdi", "output"),
+      port("SDI Loop", "sdi", "output"),
       port("Analog Out L", "analog-audio", "output"),
       port("Analog Out R", "analog-audio", "output"),
       port("AES Out 1-2", "aes", "output"),
       port("AES Out 3-4", "aes", "output"),
       port("AC Power", "power", "input"),
+    
+      port("S/PDIF Out", "spdif", "output", "toslink"),
     ],
   },
   // BMD Teranex Mini Audio to SDI 12G — Audio Embedder
@@ -950,6 +1025,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("AES In 3-4", "aes", "input"),
       port("SDI Out", "sdi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("S/PDIF In", "spdif", "input", "toslink"),
     ],
   },
 
@@ -972,6 +1049,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB 1", "usb", "bidirectional"),
       port("USB 2", "usb", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("SDI Out", "sdi", "output"),
+    
+      port("HDMI Out", "hdmi", "output"),
     ],
   },
 
@@ -991,7 +1072,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Ethernet", "ethernet", "bidirectional"),
       port("USB-A", "usb", "bidirectional", "usb-a"),
       port("USB-C", "usb", "bidirectional", "usb-c"),
-      port("RS-232", "serial", "bidirectional"),
+      port("RS-232", "serial", "bidirectional", "trs-eighth"),
       port("GPIO", "gpio", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -1015,6 +1096,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Dante 1", "dante", "bidirectional"),
       port("Dante 2", "dante", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("AES Out 1-2", "aes", "output"),
+    
+      port("AES Out 3-4", "aes", "output"),
     ],
   },
   // Sennheiser EW-DX EM 4 Dante — Quad Wireless Mic Receiver
@@ -1049,14 +1134,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://us.focusrite.com/products/rednet-a16r-mkii",
     searchTerms: ["focusrite", "rednet", "dante", "audio interface", "a16r"],
     ports: [
-      port("Analog In 1-8", "analog-audio", "input"),
-      port("Analog In 9-16", "analog-audio", "input"),
+      port("Analog In 1-8", "analog-audio", "input", "db25"),
+      port("Analog In 9-16", "analog-audio", "input", "db25"),
       port("AES In", "aes", "input"),
-      port("Analog Out 1-8", "analog-audio", "output"),
-      port("Analog Out 9-16", "analog-audio", "output"),
+      port("Analog Out 1-8", "analog-audio", "output", "db25"),
+      port("Analog Out 9-16", "analog-audio", "output", "db25"),
       port("AES Out", "aes", "output"),
-      port("Dante Primary", "dante", "bidirectional"),
-      port("Dante Secondary", "dante", "bidirectional"),
+      port("Dante Primary", "dante", "bidirectional", "ethercon"),
+      port("Dante Secondary", "dante", "bidirectional", "ethercon"),
       port("Word Clock In", "genlock", "input"),
       port("Word Clock Out", "genlock", "output"),
       port("AC Power", "power", "input"),
@@ -1099,8 +1184,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       port("Ethernet In", "ethernet", "bidirectional"),
       port("Ethernet Loop", "ethernet", "bidirectional"),
-      trunkPort("GPI In", "gpio", "input", 8),
-      trunkPort("GPI Out", "gpio", "output", 8),
+      trunkPort("GPI In", "gpio", "input", 8, "db25"),
+      trunkPort("GPI Out", "gpio", "output", 8, "db25"),
       port("AC Power", "power", "input"),
     ],
   },
@@ -1271,6 +1356,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Out 1", "sdi", "output"),
       port("SDI Out 2", "sdi", "output"),
       port("USB-C Out", "usb", "output", "usb-c"),
+    
+      port("Mic In 1", "analog-audio", "input", "trs-eighth"),
+    
+      port("Mic In 2", "analog-audio", "input", "trs-eighth"),
+    
+      port("Ethernet", "ethernet", "bidirectional"),
     ],
   },
   {
@@ -1287,6 +1378,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Out 2", "sdi", "output"),
       port("USB-C Out", "usb", "output", "usb-c"),
       port("Ethernet", "ethernet", "bidirectional"),
+    
+      port("Mic In 1", "analog-audio", "input", "trs-eighth"),
+    
+      port("Mic In 2", "analog-audio", "input", "trs-eighth"),
     ],
   },
   {
@@ -1303,6 +1398,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Out 2", "sdi", "output"),
       port("USB-C Out", "usb", "output", "usb-c"),
       port("Ethernet", "ethernet", "bidirectional"),
+    
+      port("SDI Out 3", "sdi", "output"),
+    
+      port("SDI Out 4", "sdi", "output"),
+    
+      port("Mic In 1", "analog-audio", "input", "trs-eighth"),
+    
+      port("Mic In 2", "analog-audio", "input", "trs-eighth"),
+    
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
+    
+      port("USB-C Out 2", "usb", "output", "usb-c"),
     ],
   },
   {
@@ -1324,6 +1431,36 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Ethernet", "ethernet", "bidirectional"),
       port("RS-422", "rs422", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("SDI Out 3", "sdi", "output"),
+    
+      port("SDI Out 4", "sdi", "output"),
+    
+      port("SDI Out 5", "sdi", "output"),
+    
+      port("SDI Out 6", "sdi", "output"),
+    
+      port("SDI Out 7", "sdi", "output"),
+    
+      port("MADI In", "madi", "input"),
+    
+      port("MADI Out", "madi", "output"),
+    
+      port("XLR In 1", "analog-audio", "input"),
+    
+      port("XLR In 2", "analog-audio", "input"),
+    
+      port("Timecode In", "genlock", "input"),
+    
+      port("Timecode Out", "genlock", "output"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("Ref Out", "genlock", "output"),
+    
+      port("USB-C 1", "usb", "bidirectional", "usb-c"),
+    
+      port("USB-C 2", "usb", "bidirectional", "usb-c"),
     ],
   },
   {
@@ -1337,11 +1474,15 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       ...ports("SDI In", "sdi", "input", 10),
       ...ports("SDI Out", "sdi", "output", 6),
-      port("MV HDMI 1", "hdmi", "output"),
-      port("MV HDMI 2", "hdmi", "output"),
       port("Ref In", "genlock", "input"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Analog In L", "analog-audio", "input", "trs-quarter"),
+    
+      port("Analog In R", "analog-audio", "input", "trs-quarter"),
+    
+      port("Talkback", "analog-audio", "bidirectional", "xlr-5"),
     ],
   },
   {
@@ -1355,11 +1496,17 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       ...ports("SDI In", "sdi", "input", 20),
       ...ports("SDI Out", "sdi", "output", 12),
-      port("MV HDMI 1", "hdmi", "output"),
-      port("MV HDMI 2", "hdmi", "output"),
       port("Ref In", "genlock", "input"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Analog In L", "analog-audio", "input", "trs-quarter"),
+    
+      port("Analog In R", "analog-audio", "input", "trs-quarter"),
+    
+      port("Talkback", "analog-audio", "bidirectional", "xlr-5"),
+    
+      port("MADI", "madi", "bidirectional"),
     ],
   },
   {
@@ -1373,11 +1520,27 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       ...ports("SDI In", "sdi", "input", 40),
       ...ports("SDI Out", "sdi", "output", 24),
-      port("MV HDMI 1", "hdmi", "output"),
-      port("MV HDMI 2", "hdmi", "output"),
       port("Ref In", "genlock", "input"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Analog In L", "analog-audio", "input", "trs-quarter"),
+    
+      port("Analog In R", "analog-audio", "input", "trs-quarter"),
+    
+      port("MADI In", "madi", "input"),
+    
+      port("MADI Out 1", "madi", "output"),
+    
+      port("MADI Out 2", "madi", "output"),
+    
+      port("Talkback", "analog-audio", "bidirectional", "xlr-5"),
+    
+      port("RS-422", "rs422", "bidirectional", "rj45"),
+    
+      port("Analog Out L", "analog-audio", "output", "trs-quarter"),
+    
+      port("Analog Out R", "analog-audio", "output", "trs-quarter"),
     ],
   },
   {
@@ -1405,6 +1568,22 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("RS-232", "serial", "bidirectional"),
       port("GPIO", "gpio", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("HDMI In 5", "hdmi", "input"),
+    
+      port("HDMI In 6", "hdmi", "input"),
+    
+      port("VGA In", "vga", "input"),
+    
+      port("XLR In 3", "analog-audio", "input"),
+    
+      port("XLR In 4", "analog-audio", "input"),
+    
+      port("RCA In 5", "analog-audio", "input", "rca"),
+    
+      port("RCA In 6", "analog-audio", "input", "rca"),
+    
+      port("RCA Out", "analog-audio", "output", "rca"),
     ],
   },
   {
@@ -1479,6 +1658,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("Out", "sdi", "output", 10),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Ref In", "genlock", "input"),
     ],
   },
   {
@@ -1494,21 +1675,25 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("Out", "sdi", "output", 40),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Ref In", "genlock", "input"),
     ],
   },
   {
     id: "c0a80101-004f-4000-8000-000000000079",
     deviceType: "router",
-    label: "BMD Videohub 12G 80x80",
+    label: "BMD Videohub 80x80 12G",
     manufacturer: "Blackmagic Design",
     modelNumber: "Universal Videohub 72",
-    referenceUrl: "https://www.blackmagicdesign.com/products/universalvideohub",
+    referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicvideohub",
     searchTerms: ["blackmagic", "videohub", "universal", "72x72", "matrix"],
     ports: [
       ...ports("In", "sdi", "input", 72),
       ...ports("Out", "sdi", "output", 72),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Ref In", "genlock", "input"),
     ],
   },
   {
@@ -1662,6 +1847,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Loop", "sdi", "output"),
       port("HDMI 2.0 Out", "hdmi", "output"),
       port("Fiber In", "fiber", "input", "sfp"),
+    
+      port("Analog Out L", "analog-audio", "output", "rca"),
+    
+      port("Analog Out R", "analog-audio", "output", "rca"),
     ],
   },
   {
@@ -1677,6 +1866,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("12G-SDI Out 1", "sdi", "output"),
       port("12G-SDI Out 2", "sdi", "output"),
       port("Fiber Out", "fiber", "output", "sfp"),
+    
+      port("Analog In L", "analog-audio", "input", "rca"),
+    
+      port("Analog In R", "analog-audio", "input", "rca"),
     ],
   },
   {
@@ -1727,6 +1920,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("SDI Loop 1", "sdi", "output"),
+    
+      port("SDI Loop 2", "sdi", "output"),
+    
+      port("SDI Loop 3", "sdi", "output"),
+    
+      port("SDI Loop 4", "sdi", "output"),
     ],
   },
   {
@@ -1742,6 +1943,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("SDI MV Out 2", "sdi", "output"),
+    
+      port("SDI MV Out 3", "sdi", "output"),
+    
+      port("SDI MV Out 4", "sdi", "output"),
+    
+      port("Ref In", "genlock", "input"),
     ],
   },
   {
@@ -1787,6 +1996,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI MV Out 1", "sdi", "output"),
       port("SDI MV Out 2", "sdi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("HDMI MV Out", "hdmi", "output"),
     ],
   },
 
@@ -1794,7 +2005,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
   {
     id: "c0a80101-0062-4000-8000-000000000098",
     deviceType: "monitor",
-    label: "BMD SmartView HD",
+    label: "BMD SmartView Duo",
     manufacturer: "Blackmagic Design",
     modelNumber: "SmartView HD",
     referenceUrl: "https://www.blackmagicdesign.com/products/smartview",
@@ -1808,7 +2019,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
   {
     id: "c0a80101-0063-4000-8000-000000000099",
     deviceType: "monitor",
-    label: "BMD SmartView 4K",
+    label: "BMD SmartScope Duo 4K",
     manufacturer: "Blackmagic Design",
     modelNumber: "SmartView 4K",
     referenceUrl: "https://www.blackmagicdesign.com/products/smartview",
@@ -1817,6 +2028,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("12G-SDI In", "sdi", "input"),
       port("SDI Loop", "sdi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("SDI In 2", "sdi", "input"),
+    
+      port("SDI Loop 2", "sdi", "output"),
     ],
   },
   {
@@ -1848,6 +2063,16 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("HDMI In", "hdmi", "input"),
       port("12G-SDI Out", "sdi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("12G-SDI Out 2", "sdi", "output"),
+    
+      port("12G-SDI Out 3", "sdi", "output"),
+    
+      port("12G-SDI Out 4", "sdi", "output"),
+    
+      port("HDMI Out", "hdmi", "output"),
+    
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
     ],
   },
   {
@@ -1863,6 +2088,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("HDMI In", "hdmi", "input"),
       port("12G-SDI Out", "sdi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("12G-SDI Out 2", "sdi", "output"),
+    
+      port("12G-SDI Out 3", "sdi", "output"),
+    
+      port("12G-SDI Out 4", "sdi", "output"),
+    
+      port("HDMI Out", "hdmi", "output"),
+    
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
+    
+      port("Ethernet", "ethernet", "bidirectional"),
     ],
   },
   {
@@ -1879,6 +2116,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("HDMI In 1", "hdmi", "input"),
       port("HDMI In 2", "hdmi", "input"),
       port("AC Power", "power", "input"),
+    
+      port("SDI Loop 1", "sdi", "output"),
+    
+      port("SDI Loop 2", "sdi", "output"),
+    
+      port("HDMI Loop 1", "hdmi", "output"),
+    
+      port("HDMI Loop 2", "hdmi", "output"),
+    
+      port("Composite In 1", "composite", "input"),
+    
+      port("Composite In 2", "composite", "input"),
     ],
   },
   {
@@ -1897,6 +2146,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("12G-SDI Out 2", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+    
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
+    
+      port("Ethernet", "ethernet", "bidirectional"),
+    
+      port("USB-C", "usb", "bidirectional", "usb-c"),
     ],
   },
   {
@@ -1910,6 +2167,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Out", "hdmi", "output"),
+    
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
     ],
   },
 
@@ -1926,6 +2185,22 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SDI In", "sdi", "input"),
       port("SDI Out", "sdi", "output"),
       port("AC Power", "power", "input"),
+    
+      port("HDMI Out", "hdmi", "output"),
+    
+      port("RS-422", "rs422", "bidirectional", "other"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("Ref Out", "genlock", "output"),
+    
+      port("Timecode In", "genlock", "input"),
+    
+      port("Timecode Out", "genlock", "output"),
+    
+      port("Ethernet", "ethernet", "bidirectional"),
+    
+      port("USB-C", "usb", "bidirectional", "usb-c"),
     ],
   },
   {
@@ -1944,6 +2219,20 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("RS-422", "rs422", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("SDI Out 2", "sdi", "output"),
+    
+      port("SDI Monitor", "sdi", "output"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("Ref Out", "genlock", "output"),
+    
+      port("Timecode In", "genlock", "input"),
+    
+      port("Timecode Out", "genlock", "output"),
+    
+      port("USB-C", "usb", "bidirectional", "usb-c"),
     ],
   },
   {
@@ -1956,7 +2245,6 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     searchTerms: ["blackmagic", "hyperdeck", "4k pro", "recorder"],
     ports: [
       port("12G-SDI In 1", "sdi", "input"),
-      port("12G-SDI In 2", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
       port("12G-SDI Out 1", "sdi", "output"),
       port("12G-SDI Out 2", "sdi", "output"),
@@ -1964,6 +2252,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("RS-422", "rs422", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("SDI Monitor", "sdi", "output"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("Ref Out", "genlock", "output"),
+    
+      port("Timecode In", "genlock", "input", "xlr-3"),
+    
+      port("Timecode Out", "genlock", "output", "xlr-3"),
+    
+      port("USB-C", "usb", "bidirectional", "usb-c"),
     ],
   },
   {
@@ -1988,6 +2288,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("RS-422", "rs422", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("HDMI In", "hdmi", "input"),
     ],
   },
   {
@@ -2011,6 +2313,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Analog Out 2", "analog-audio", "output"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("MADI", "madi", "bidirectional"),
+    
+      port("Dante", "dante", "bidirectional"),
     ],
   },
 
@@ -2026,6 +2332,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       port("SDI In", "sdi", "input"),
       port("SDI Out", "sdi", "output"),
+    
+      port("Ref In", "genlock", "input"),
+    
+      port("RS-422", "rs422", "bidirectional", "other"),
     ],
   },
   {
@@ -2038,6 +2348,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     searchTerms: ["blackmagic", "decklink", "duo", "pcie", "4 channel"],
     ports: [
       ...ports("SDI", "sdi", "bidirectional", 4),
+    
+      port("Ref In", "genlock", "input"),
     ],
   },
   {
@@ -2050,6 +2362,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     searchTerms: ["blackmagic", "decklink", "quad", "pcie", "8 channel"],
     ports: [
       ...ports("SDI", "sdi", "bidirectional", 8),
+    
+      port("Ref In", "genlock", "input"),
     ],
   },
   {
@@ -2075,6 +2389,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("AES In", "aes", "input"),
       port("AES Out", "aes", "output"),
       port("AC Power", "power", "input"),
+    
+      port("6G-SDI In 1", "sdi", "input"),
+    
+      port("6G-SDI In 2", "sdi", "input"),
+    
+      port("Thunderbolt 3 (2)", "thunderbolt", "bidirectional", "usb-c"),
+    
+      port("Timecode In", "genlock", "input", "xlr-3"),
+    
+      port("Timecode Out", "genlock", "output", "xlr-3"),
+    
+      port("RS-422 (2)", "rs422", "bidirectional", "other"),
     ],
   },
   {
@@ -2111,7 +2437,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Magewell NDI→HDMI",
     manufacturer: "Magewell",
     modelNumber: "Pro Convert NDI to HDMI",
-    referenceUrl: "https://www.magewell.com/products/pro-convert-ndi-to-hdmi",
+    referenceUrl: "https://www.magewell.com/products/pro-convert-for-ndi-to-hdmi",
     searchTerms: ["magewell", "pro convert", "ndi", "decoder"],
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
@@ -2123,7 +2449,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
   {
     id: "c0a80101-0076-4000-8000-000000000118",
     deviceType: "streaming-encoder",
-    label: "BMD Web Presenter HD",
+    label: "BMD Streaming Encoder HD",
     manufacturer: "Blackmagic Design",
     modelNumber: "Web Presenter HD",
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicwebpresenter",
@@ -2139,7 +2465,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
   {
     id: "c0a80101-0077-4000-8000-000000000119",
     deviceType: "streaming-encoder",
-    label: "BMD Web Presenter 4K",
+    label: "BMD Streaming Encoder 4K",
     manufacturer: "Blackmagic Design",
     modelNumber: "Web Presenter 4K",
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicwebpresenter",
@@ -2150,6 +2476,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB-C Out", "usb", "output", "usb-c"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("SDI Loop", "sdi", "output"),
     ],
   },
   {
@@ -2163,7 +2491,6 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
-      port("SDI Loop", "sdi", "output"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -2234,6 +2561,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Headphone", "analog-audio", "output", "trs-eighth"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("3.5mm In", "analog-audio", "input", "trs-eighth"),
+    
+      port("Talkback", "analog-audio", "bidirectional", "xlr-5"),
+    
+      port("USB-C 2", "usb", "bidirectional", "usb-c"),
     ],
   },
   {
@@ -2255,6 +2588,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Headphone", "analog-audio", "output", "trs-eighth"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("3.5mm In", "analog-audio", "input", "trs-eighth"),
+    
+      port("Talkback", "analog-audio", "bidirectional", "xlr-5"),
+    
+      port("USB-C 2", "usb", "bidirectional", "usb-c"),
     ],
   },
   {
@@ -2266,17 +2605,17 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicursabroadcast",
     searchTerms: ["blackmagic", "ursa", "broadcast", "cinema camera"],
     ports: [
-      port("12G-SDI Out 1", "sdi", "output"),
-      port("12G-SDI Out 2", "sdi", "output"),
-      port("HDMI Out", "hdmi", "output"),
-      port("SDI Return In", "sdi", "input"),
-      port("Genlock In", "genlock", "input"),
+      port("SDI Out", "sdi", "output"),
+      port("SDI In", "sdi", "input"),
+      port("Ref/TC In", "genlock", "input"),
       port("XLR In 1", "analog-audio", "input"),
       port("XLR In 2", "analog-audio", "input"),
       port("Headphone", "analog-audio", "output", "trs-quarter"),
-      port("RS-422", "rs422", "bidirectional"),
-      port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("SDI Monitor", "sdi", "output"),
+    
+      port("USB-C", "usb", "bidirectional", "usb-c"),
     ],
   },
   {
@@ -2349,6 +2688,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("XLR In 2", "analog-audio", "input"),
       port("USB-C", "usb", "bidirectional", "usb-c"),
       port("AC Power", "power", "input"),
+    
+      port("12G-SDI Out", "sdi", "output"),
+    
+      port("Genlock In", "genlock", "input"),
+    
+      port("TC In/Out", "genlock", "bidirectional"),
+    
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
     ],
   },
   {
@@ -2366,6 +2713,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Ethernet", "ethernet", "bidirectional"),
       port("Genlock In", "genlock", "input"),
       port("AC Power", "power", "input"),
+    
+      port("3G-SDI Out 1", "sdi", "output"),
+    
+      port("3G-SDI Out 2", "sdi", "output"),
+    
+      port("SFP+", "fiber", "bidirectional", "sfp"),
+    
+      port("XLR In 1", "analog-audio", "input"),
+    
+      port("XLR In 2", "analog-audio", "input"),
+    
+      port("RS-422", "rs422", "bidirectional", "rj45"),
     ],
   },
   {
@@ -2384,6 +2743,16 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Ethernet", "ethernet", "bidirectional"),
       port("Genlock In", "genlock", "input"),
       port("AC Power", "power", "input"),
+    
+      port("3G-SDI Out", "sdi", "output"),
+    
+      port("SDI Monitor", "sdi", "output"),
+    
+      port("SFP+", "fiber", "output", "sfp"),
+    
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+    
+      port("RS-422", "rs422", "bidirectional", "rj45"),
     ],
   },
   {
@@ -2400,6 +2769,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB-C", "usb", "bidirectional", "usb-c"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("3G-SDI Out", "sdi", "output"),
+    
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+    
+      port("RS-422", "rs422", "bidirectional", "rj45"),
     ],
   },
   {
@@ -2413,9 +2788,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       port("3G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
-      port("USB-C", "usb", "bidirectional", "usb-c"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Genlock In", "genlock", "input"),
+    
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+    
+      port("RS-422", "rs422", "bidirectional", "rj45"),
     ],
   },
   {
@@ -2432,6 +2812,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB", "usb", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+    
+      port("RS-422", "rs422", "bidirectional", "rj45"),
     ],
   },
   {
@@ -2447,6 +2831,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("HDMI Out", "hdmi", "output"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+    
+      port("RS-422", "rs422", "bidirectional", "rj45"),
     ],
   },
   {
@@ -2464,6 +2852,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Ethernet", "ethernet", "bidirectional"),
       port("RS-232", "serial", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+    
+      port("3.5mm Audio Out", "analog-audio", "output", "trs-eighth"),
     ],
   },
   {
@@ -2501,11 +2893,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("OMNI Out", "analog-audio", "output", 8),
       port("AES In", "aes", "input"),
       port("AES Out", "aes", "output"),
-      port("MADI", "madi", "bidirectional"),
       port("Dante Primary", "dante", "bidirectional"),
       port("Dante Secondary", "dante", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
+    
+      port("Word Clock In", "genlock", "input"),
+    
+      port("Word Clock Out", "genlock", "output"),
+    
+      port("Talkback In", "analog-audio", "input"),
     ],
   },
   {
@@ -2521,11 +2920,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("OMNI Out", "analog-audio", "output", 8),
       port("AES In", "aes", "input"),
       port("AES Out", "aes", "output"),
-      port("MADI", "madi", "bidirectional"),
       port("Dante Primary", "dante", "bidirectional"),
       port("Dante Secondary", "dante", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
+    
+      port("Word Clock In", "genlock", "input"),
+    
+      port("Word Clock Out", "genlock", "output"),
+    
+      port("Talkback In", "analog-audio", "input"),
     ],
   },
   {
@@ -2541,11 +2947,18 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("OMNI Out", "analog-audio", "output", 8),
       port("AES In", "aes", "input"),
       port("AES Out", "aes", "output"),
-      port("MADI", "madi", "bidirectional"),
       port("Dante Primary", "dante", "bidirectional"),
       port("Dante Secondary", "dante", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
+    
+      port("Word Clock In", "genlock", "input"),
+    
+      port("Word Clock Out", "genlock", "output"),
+    
+      port("Talkback In", "analog-audio", "input"),
     ],
   },
   {
@@ -2565,6 +2978,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Dante Secondary", "dante", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
+    
+      port("Word Clock In", "genlock", "input"),
+    
+      port("Word Clock Out", "genlock", "output"),
     ],
   },
   {
@@ -2584,6 +3003,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Dante Secondary", "dante", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
+    
+      port("Word Clock In", "genlock", "input"),
+    
+      port("Word Clock Out", "genlock", "output"),
     ],
   },
   {
@@ -2601,6 +3026,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB", "usb", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("RCA In L", "analog-audio", "input", "rca"),
+    
+      port("RCA In R", "analog-audio", "input", "rca"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
     ],
   },
   {
@@ -2618,6 +3049,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB", "usb", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("RCA In L", "analog-audio", "input", "rca"),
+    
+      port("RCA In R", "analog-audio", "input", "rca"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
     ],
   },
   {
@@ -2635,6 +3072,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("USB", "usb", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("RCA In L", "analog-audio", "input", "rca"),
+    
+      port("RCA In R", "analog-audio", "input", "rca"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
     ],
   },
   {
@@ -2649,11 +3092,51 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("SLink 1", "fiber", "bidirectional"),
       port("SLink 2", "fiber", "bidirectional"),
       port("SLink 3", "fiber", "bidirectional"),
-      port("Dante", "dante", "bidirectional"),
-      port("MADI", "madi", "bidirectional"),
       port("Word Clock", "genlock", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("AES In 1", "aes", "input"),
+    
+      port("AES In 2", "aes", "input"),
+    
+      port("AES Out 1", "aes", "output"),
+    
+      port("AES Out 2", "aes", "output"),
+    
+      port("AES Out 3", "aes", "output"),
+    
+      port("Analog In 1", "analog-audio", "input"),
+    
+      port("Analog In 2", "analog-audio", "input"),
+    
+      port("Analog In 3", "analog-audio", "input"),
+    
+      port("Analog In 4", "analog-audio", "input"),
+    
+      port("Analog In 5", "analog-audio", "input"),
+    
+      port("Analog In 6", "analog-audio", "input"),
+    
+      port("Analog In 7", "analog-audio", "input"),
+    
+      port("Analog In 8", "analog-audio", "input"),
+    
+      port("Analog Out 1", "analog-audio", "output"),
+    
+      port("Analog Out 2", "analog-audio", "output"),
+    
+      port("Analog Out 3", "analog-audio", "output"),
+    
+      port("Analog Out 4", "analog-audio", "output"),
+    
+      port("Analog Out 5", "analog-audio", "output"),
+    
+      port("Analog Out 6", "analog-audio", "output"),
+    
+      port("Analog Out 7", "analog-audio", "output"),
+    
+      port("Analog Out 8", "analog-audio", "output"),
     ],
   },
   {
@@ -2668,10 +3151,23 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("Analog In", "analog-audio", "input", 32),
       ...ports("Analog Out", "analog-audio", "output", 12),
       port("SLink", "fiber", "bidirectional"),
-      port("Dante", "dante", "bidirectional"),
       port("USB", "usb", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("AES Out", "aes", "output"),
+    
+      port("ST1 In L", "analog-audio", "input", "trs-quarter"),
+    
+      port("ST1 In R", "analog-audio", "input", "trs-quarter"),
+    
+      port("ST2 In L", "analog-audio", "input", "trs-quarter"),
+    
+      port("ST2 In R", "analog-audio", "input", "trs-quarter"),
+    
+      port("ST3 In", "analog-audio", "input", "trs-eighth"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
     ],
   },
   {
@@ -2686,10 +3182,23 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("Analog In", "analog-audio", "input", 16),
       ...ports("Analog Out", "analog-audio", "output", 12),
       port("SLink", "fiber", "bidirectional"),
-      port("Dante", "dante", "bidirectional"),
       port("USB", "usb", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("AES Out", "aes", "output"),
+    
+      port("ST1 In L", "analog-audio", "input", "trs-quarter"),
+    
+      port("ST1 In R", "analog-audio", "input", "trs-quarter"),
+    
+      port("ST2 In L", "analog-audio", "input", "trs-quarter"),
+    
+      port("ST2 In R", "analog-audio", "input", "trs-quarter"),
+    
+      port("ST3 In", "analog-audio", "input", "trs-eighth"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
     ],
   },
   {
@@ -2712,6 +3221,54 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Word Clock", "genlock", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Analog In 1", "analog-audio", "input"),
+    
+      port("Analog In 2", "analog-audio", "input"),
+    
+      port("Analog In 3", "analog-audio", "input"),
+    
+      port("Analog In 4", "analog-audio", "input"),
+    
+      port("Analog In 5", "analog-audio", "input"),
+    
+      port("Analog In 6", "analog-audio", "input"),
+    
+      port("Analog In 7", "analog-audio", "input"),
+    
+      port("Analog In 8", "analog-audio", "input"),
+    
+      port("Analog In 9", "analog-audio", "input"),
+    
+      port("Analog In 10", "analog-audio", "input"),
+    
+      port("Analog In 11", "analog-audio", "input"),
+    
+      port("Analog In 12", "analog-audio", "input"),
+    
+      port("Analog Out 1", "analog-audio", "output"),
+    
+      port("Analog Out 2", "analog-audio", "output"),
+    
+      port("Analog Out 3", "analog-audio", "output"),
+    
+      port("Analog Out 4", "analog-audio", "output"),
+    
+      port("Analog Out 5", "analog-audio", "output"),
+    
+      port("Analog Out 6", "analog-audio", "output"),
+    
+      port("Analog Out 7", "analog-audio", "output"),
+    
+      port("Analog Out 8", "analog-audio", "output"),
+    
+      port("Analog Out 9", "analog-audio", "output"),
+    
+      port("Analog Out 10", "analog-audio", "output"),
+    
+      port("Analog Out 11", "analog-audio", "output"),
+    
+      port("Analog Out 12", "analog-audio", "output"),
     ],
   },
 
@@ -2732,6 +3289,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Word Clock In", "genlock", "input"),
       port("Word Clock Out", "genlock", "output"),
       port("AC Power", "power", "input"),
+    
+      port("AES In", "aes", "input"),
+    
+      port("AES Out", "aes", "output"),
     ],
   },
   {
@@ -2759,14 +3320,15 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://www.qsc.com/resource-files/productresources/dsp/q-sys_core/q_qsc_core_110f_spec.pdf",
     searchTerms: ["qsc", "q-sys", "core", "dsp", "audio processor"],
     ports: [
-      ...ports("Analog In", "analog-audio", "input", 8),
-      ...ports("Analog Out", "analog-audio", "output", 8),
-      port("AES In", "aes", "input"),
-      port("AES Out", "aes", "output"),
+      ...ports("Analog In", "analog-audio", "input", 8, "phoenix"),
+      ...ports("Analog Out", "analog-audio", "output", 8, "phoenix"),
+      port("AES In", "aes", "input", "phoenix"),
+      port("AES Out", "aes", "output", "phoenix"),
       port("Ethernet 1", "ethernet", "bidirectional"),
       port("Ethernet 2", "ethernet", "bidirectional"),
       port("USB", "usb", "bidirectional"),
       port("GPIO", "gpio", "bidirectional"),
+      port("RS-232", "serial", "bidirectional", "phoenix"),
       port("AC Power", "power", "input"),
     ],
   },
@@ -2779,8 +3341,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://www.biamp.com/products/tesira-platform",
     searchTerms: ["biamp", "tesira", "server", "dsp", "avb"],
     ports: [
-      ...ports("Analog In", "analog-audio", "input", 12),
-      ...ports("Analog Out", "analog-audio", "output", 8),
+      ...ports("Analog In", "analog-audio", "input", 12, "phoenix"),
+      ...ports("Analog Out", "analog-audio", "output", 8, "phoenix"),
       ...ports("AES In", "aes", "input", 8),
       ...ports("AES Out", "aes", "output", 8),
       port("Ethernet 1", "ethernet", "bidirectional"),
@@ -2811,8 +3373,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://www.audinate.com/products/devices/dante-avio",
     searchTerms: ["audinate", "avio", "dante", "analog input", "adapter"],
     ports: [
-      port("Analog In 1", "analog-audio", "input"),
-      port("Analog In 2", "analog-audio", "input"),
+      port("Analog In 1", "analog-audio", "input", "phoenix"),
+      port("Analog In 2", "analog-audio", "input", "phoenix"),
       port("Ethernet", "ethernet", "bidirectional"),
     ],
   },
@@ -2825,8 +3387,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://www.audinate.com/products/devices/dante-avio",
     searchTerms: ["audinate", "avio", "dante", "analog output", "adapter"],
     ports: [
-      port("Analog Out 1", "analog-audio", "output"),
-      port("Analog Out 2", "analog-audio", "output"),
+      port("Analog Out 1", "analog-audio", "output", "phoenix"),
+      port("Analog Out 2", "analog-audio", "output", "phoenix"),
       port("Ethernet", "ethernet", "bidirectional"),
     ],
   },
@@ -2906,6 +3468,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Dante Secondary", "dante", "bidirectional"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Word Clock In", "genlock", "input"),
+    
+      port("Word Clock Out", "genlock", "output"),
     ],
   },
 
@@ -2978,6 +3544,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("Ethernet 1", "ethernet", "bidirectional"),
       port("Ethernet 2", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Dante Primary", "dante", "bidirectional"),
+    
+      port("Dante Secondary", "dante", "bidirectional"),
     ],
   },
 
@@ -3138,6 +3708,12 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("Speaker Out", "analog-audio", "output", 4, "speakon"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("AES In 1-2", "aes", "input"),
+    
+      port("AES In 3-4", "aes", "input"),
+    
+      port("AES Link 1-2", "aes", "output"),
     ],
   },
   {
@@ -3155,6 +3731,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("AES Out", "aes", "output"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
     ],
   },
 
@@ -3165,16 +3743,20 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Brompton Tessera SX40",
     manufacturer: "Brompton Technology",
     modelNumber: "Tessera SX40",
-    referenceUrl: "https://www.bromptontech.com/products/tessera-sx40/",
+    referenceUrl: "https://www.bromptontech.com/product/sx40/",
     searchTerms: ["brompton", "tessera", "sx40", "led processor", "led wall"],
     ports: [
-      ...ports("12G-SDI In", "sdi", "input", 4),
-      port("HDMI In 1", "hdmi", "input"),
-      port("HDMI In 2", "hdmi", "input"),
-      port("DP In 1", "displayport", "input"),
-      port("DP In 2", "displayport", "input"),
+      port("12G-SDI In", "sdi", "input"),
+      port("HDMI In", "hdmi", "input"),
       port("Genlock In", "genlock", "input"),
-      ...ports("LED Out", "ethernet", "output", 20),
+      port("LED Out 1", "ethernet", "output", "opticalcon"),
+      port("LED Out 2", "ethernet", "output", "opticalcon"),
+      port("LED Out 3", "ethernet", "output", "opticalcon"),
+      port("LED Out 4", "ethernet", "output", "opticalcon"),
+      port("LED Out 5", "ethernet", "output", "ethercon"),
+      port("LED Out 6", "ethernet", "output", "ethercon"),
+      port("LED Out 7", "ethernet", "output", "ethercon"),
+      port("LED Out 8", "ethernet", "output", "ethercon"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -3185,14 +3767,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Brompton Tessera S4",
     manufacturer: "Brompton Technology",
     modelNumber: "Tessera S4",
-    referenceUrl: "https://www.bromptontech.com/products/tessera-s4/",
+    referenceUrl: "https://www.bromptontech.com/product/s4/",
     searchTerms: ["brompton", "tessera", "s4", "led processor"],
     ports: [
-      port("SDI In 1", "sdi", "input"),
-      port("SDI In 2", "sdi", "input"),
-      port("HDMI In", "hdmi", "input"),
-      port("DP In", "displayport", "input"),
-      ...ports("LED Out", "ethernet", "output", 4),
+      port("DVI-D In", "hdmi", "input", "dvi"),
+      port("LED Out 1", "ethernet", "output", "rj45"),
+      port("LED Out 2", "ethernet", "output", "rj45"),
+      port("LED Out 3", "ethernet", "output", "rj45"),
+      port("LED Out 4", "ethernet", "output", "rj45"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -3203,7 +3785,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Brompton Tessera M2",
     manufacturer: "Brompton Technology",
     modelNumber: "Tessera M2",
-    referenceUrl: "https://www.bromptontech.com/products/tessera-m2/",
+    referenceUrl: "https://www.bromptontech.com/product/r2-plus/",
     searchTerms: ["brompton", "tessera", "m2", "receiver card", "led"],
     ports: [
       port("LED Data In", "ethernet", "input"),
@@ -3216,16 +3798,25 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Novastar NovaPro HD",
     manufacturer: "Novastar",
     modelNumber: "NovaPro HD",
-    referenceUrl: "https://www.novastar.tech/products/controller/novapro-hd/",
+    referenceUrl: "https://www.novastar.tech/product/detail.html?catid=3&id=36",
     searchTerms: ["novastar", "novapro", "led processor", "led wall"],
     ports: [
-      port("SDI In 1", "sdi", "input"),
-      port("SDI In 2", "sdi", "input"),
-      port("HDMI In 1", "hdmi", "input"),
-      port("HDMI In 2", "hdmi", "input"),
-      port("DVI In", "hdmi", "input"),
+      port("SDI In", "sdi", "input"),
+      port("HDMI In", "hdmi", "input"),
+      port("DVI In", "hdmi", "input", "dvi"),
+      port("DP In", "displayport", "input"),
+      port("VGA In", "vga", "input"),
+      port("Composite In", "composite", "input"),
       port("Genlock In", "genlock", "input"),
-      ...ports("LED Out", "ethernet", "output", 16),
+      port("Audio In", "analog-audio", "input", "trs-eighth"),
+      port("LED Out 1", "ethernet", "output"),
+      port("LED Out 2", "ethernet", "output"),
+      port("LED Out 3", "ethernet", "output"),
+      port("LED Out 4", "ethernet", "output"),
+      port("Fiber Out 1", "fiber", "output", "lc"),
+      port("Fiber Out 2", "fiber", "output", "lc"),
+      port("Fiber Out 3", "fiber", "output", "lc"),
+      port("Fiber Out 4", "fiber", "output", "lc"),
       port("AC Power", "power", "input"),
     ],
   },
@@ -3235,14 +3826,19 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Novastar VX2000 Pro",
     manufacturer: "Novastar",
     modelNumber: "VX2000 Pro",
-    referenceUrl: "https://www.novastar.tech/products/controller/vx2000-pro/",
+    referenceUrl: "https://www.novastar.tech/product/detail.html?catid=3&id=34",
     searchTerms: ["novastar", "vx2000", "led processor", "all-in-one"],
     ports: [
-      ...ports("HDMI In", "hdmi", "input", 2),
-      ...ports("SDI In", "sdi", "input", 4),
-      port("DP In", "displayport", "input"),
+      port("HDMI 2.0 In 1", "hdmi", "input"),
+      port("HDMI 2.0 In 2", "hdmi", "input"),
+      port("HDMI 1.3 In 1", "hdmi", "input"),
+      port("HDMI 1.3 In 2", "hdmi", "input"),
+      port("HDMI 1.3 In 3", "hdmi", "input"),
+      port("HDMI 1.3 In 4", "hdmi", "input"),
+      port("12G-SDI In", "sdi", "input"),
+      port("DP 1.2 In", "displayport", "input"),
       port("Genlock In", "genlock", "input"),
-      ...ports("LED Out", "ethernet", "output", 16),
+      ...ports("LED Out", "ethernet", "output", 20),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -3255,7 +3851,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Disguise d3 4x4pro",
     manufacturer: "Disguise",
     modelNumber: "d3 4x4pro",
-    referenceUrl: "https://www.disguise.one/en/products/d3/4x4pro/",
+    referenceUrl: "https://www.disguise.one/en/products/legacy-products/",
     searchTerms: ["disguise", "d3", "4x4pro", "media server"],
     ports: [
       ...ports("DP Out", "displayport", "output", 4),
@@ -3277,7 +3873,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Disguise d3 Solo",
     manufacturer: "Disguise",
     modelNumber: "d3 Solo",
-    referenceUrl: "https://www.disguise.one/en/products/d3/solo/",
+    referenceUrl: "https://www.disguise.one/en/products/legacy-products/",
     searchTerms: ["disguise", "d3", "solo", "media server", "compact"],
     ports: [
       port("DP Out", "displayport", "output"),
@@ -3297,7 +3893,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Dataton WATCHPAX 60",
     manufacturer: "Dataton",
     modelNumber: "WATCHPAX 60",
-    referenceUrl: "https://www.dataton.com/products/watchpax-60",
+    referenceUrl: "https://www.dataton.com/watchpax/watchpax-64",
     searchTerms: ["dataton", "watchpax", "watchout", "media server"],
     ports: [
       ...ports("HDMI Out", "hdmi", "output", 4),
@@ -3314,7 +3910,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Dataton WATCHPAX 40",
     manufacturer: "Dataton",
     modelNumber: "WATCHPAX 40",
-    referenceUrl: "https://www.dataton.com/products/watchpax-40",
+    referenceUrl: "https://www.dataton.com/watchpax/watchpax-64",
     searchTerms: ["dataton", "watchpax", "watchout", "media server", "compact"],
     ports: [
       port("HDMI Out 1", "hdmi", "output"),
@@ -3337,9 +3933,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://www.etcconnect.com/Products/Consoles/ColorSource/Features.aspx",
     searchTerms: ["etc", "colorsource", "lighting console", "compact"],
     ports: [
-      port("DMX Out 1", "dmx", "output"),
-      port("DMX Out 2", "dmx", "output"),
-      port("Ethernet", "ethernet", "bidirectional"),
+      port("DMX Out", "dmx", "output"),
       port("USB", "usb", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -3350,13 +3944,13 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Road Hog 4",
     manufacturer: "High End Systems",
     modelNumber: "Road Hog 4",
-    referenceUrl: "https://www.etcconnect.com/Products/Consoles/Hog/Road-Hog-4/Features.aspx",
+    referenceUrl: "https://www.etcconnect.com/Products/Consoles/Hog/",
     searchTerms: ["high end", "hog", "road hog", "lighting console"],
     ports: [
       ...ports("DMX Out", "dmx", "output", 8),
       port("Ethernet", "ethernet", "bidirectional"),
-      port("MIDI In", "serial", "input", "other"),
-      port("MIDI Out", "serial", "output", "other"),
+      port("MIDI In", "midi", "input", "din-5"),
+      port("MIDI Out", "midi", "output", "din-5"),
       port("USB", "usb", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -3370,11 +3964,17 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     referenceUrl: "https://www.etcconnect.com/Products/Consoles/Eos-Family/Eos-Ti/Features.aspx",
     searchTerms: ["etc", "eos", "ti", "lighting console", "flagship"],
     ports: [
-      ...ports("DMX Out", "dmx", "output", 16),
+      port("DMX Out 1", "dmx", "output"),
+      port("DMX Out 2", "dmx", "output"),
+      port("DMX Out 3", "dmx", "output"),
+      port("DMX Out 4", "dmx", "output"),
       port("Ethernet 1", "ethernet", "bidirectional"),
       port("Ethernet 2", "ethernet", "bidirectional"),
-      port("MIDI In", "serial", "input", "other"),
-      port("MIDI Out", "serial", "output", "other"),
+      port("MIDI In", "midi", "input", "din-5"),
+      port("MIDI Out", "midi", "output", "din-5"),
+      port("DP Out 1", "displayport", "output"),
+      port("DP Out 2", "displayport", "output"),
+      port("DP Out 3", "displayport", "output"),
       port("USB", "usb", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -3385,15 +3985,21 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "grandMA3 light",
     manufacturer: "MA Lighting",
     modelNumber: "grandMA3 light",
-    referenceUrl: "https://www.malighting.com/grandma3/light/",
+    referenceUrl: "https://www.malighting.com/product/grandma3-light-4010502/",
     searchTerms: ["ma", "grandma", "grandma3", "lighting console"],
     ports: [
-      ...ports("DMX Out", "dmx", "output", 4),
+      port("DMX Out 1", "dmx", "output"),
+      port("DMX Out 2", "dmx", "output"),
+      port("DMX Out 3", "dmx", "output"),
+      port("DMX Out 4", "dmx", "output"),
+      port("DMX Out 5", "dmx", "output"),
+      port("DMX Out 6", "dmx", "output"),
+      port("DMX In", "dmx", "input"),
       port("Ethernet 1", "ethernet", "bidirectional"),
       port("Ethernet 2", "ethernet", "bidirectional"),
       port("Ethernet 3", "ethernet", "bidirectional"),
-      port("MIDI In", "serial", "input", "other"),
-      port("MIDI Out", "serial", "output", "other"),
+      port("MIDI In", "midi", "input", "din-5"),
+      port("MIDI Out", "midi", "output", "din-5"),
       port("USB", "usb", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -3426,7 +4032,6 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     ports: [
       port("DMX In", "dmx", "input"),
       port("DMX Out", "dmx", "output"),
-      port("Ethernet", "ethernet", "bidirectional"),
       port("Power In", "power", "input", "powercon"),
     ],
   },
@@ -3450,12 +4055,14 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "ETC ColorSource Spot",
     manufacturer: "ETC",
     modelNumber: "ColorSource Spot",
-    referenceUrl: "https://www.etcconnect.com/Products/Entertainment-Fixtures/ColorSource-Spot/Features.aspx",
+    referenceUrl: "https://www.etcconnect.com/Products/Entertainment-Fixtures/ColorSource-Spot/",
     searchTerms: ["etc", "colorsource", "spot", "led", "leko", "ellipsoidal"],
     ports: [
       port("DMX In", "dmx", "input"),
       port("DMX Out", "dmx", "output"),
-      port("Power In", "power", "input", "edison"),
+      port("Power In", "power", "input", "powercon"),
+    
+      port("Power Thru", "power", "output", "powercon"),
     ],
   },
   {
@@ -3477,7 +4084,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Litepanels Astra 1x1",
     manufacturer: "Litepanels",
     modelNumber: "Astra 1x1",
-    referenceUrl: "https://www.litepanels.com/products/astra-1x1",
+    referenceUrl: "https://www.litepanels.com/en/products",
     searchTerms: ["litepanels", "astra", "led panel", "soft light", "bi-color"],
     ports: [
       port("DMX In", "dmx", "input"),
@@ -3612,7 +4219,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "D'San Perfect Cue",
     manufacturer: "D'San",
     modelNumber: "Perfect Cue",
-    referenceUrl: "https://www.dfrntmedia.com/product/dsans-perfectcue/",
+    referenceUrl: "https://dsanproducts.com/",
     searchTerms: ["dsan", "perfect cue", "speaker timer", "presentation"],
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
@@ -3633,7 +4240,7 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("LTC Out 2", "analog-audio", "output"),
       port("Ref In", "genlock", "input"),
       port("Ethernet", "ethernet", "bidirectional"),
-      port("MIDI Out", "serial", "output", "other"),
+      port("MIDI Out", "midi", "output", "din-5"),
       port("USB", "usb", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
@@ -3644,9 +4251,9 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "MIDI Merge 4x2",
     searchTerms: ["midi", "merge", "combiner"],
     ports: [
-      ...ports("MIDI In", "serial", "input", 4, "other"),
-      port("MIDI Out 1", "serial", "output", "other"),
-      port("MIDI Out 2", "serial", "output", "other"),
+      ...ports("MIDI In", "midi", "input", 4, "din-5"),
+      port("MIDI Out 1", "midi", "output", "din-5"),
+      port("MIDI Out 2", "midi", "output", "din-5"),
     ],
   },
   {
@@ -3655,8 +4262,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "MIDI Thru 1x4",
     searchTerms: ["midi", "thru", "splitter"],
     ports: [
-      port("MIDI In", "serial", "input", "other"),
-      ...ports("MIDI Thru", "serial", "output", 4, "other"),
+      port("MIDI In", "midi", "input", "din-5"),
+      ...ports("MIDI Thru", "midi", "output", 4, "din-5"),
     ],
   },
 
@@ -3892,21 +4499,15 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
     label: "Cisco Room Kit",
     manufacturer: "Cisco",
     modelNumber: "CS-KIT-K9",
-    referenceUrl: "https://www.cisco.com/c/en/us/support/collaboration-endpoints/spark-room-kit/model.html",
+    referenceUrl: "https://www.cisco.com/c/en/us/products/collateral/collaboration-endpoints/spark-room-kit-series/datasheet-c78-738729.html",
     searchTerms: ["cisco", "room kit", "video conferencing", "webex", "collaboration"],
     ports: [
-      port("HDMI In 1", "hdmi", "input"),
-      port("HDMI In 2", "hdmi", "input"),
-      port("HDMI In 3", "hdmi", "input"),
+      port("HDMI In", "hdmi", "input"),
       port("HDMI Out 1", "hdmi", "output"),
       port("HDMI Out 2", "hdmi", "output"),
-      port("HDMI Out 3", "hdmi", "output"),
-      port("USB-C In", "usb", "input", "usb-c"),
-      port("USB-A 1", "usb", "bidirectional", "usb-a"),
-      port("USB-A 2", "usb", "bidirectional", "usb-a"),
-      port("Network", "ethernet", "bidirectional"),
-      port("PoE 1", "ethernet", "output"),
-      port("PoE 2", "ethernet", "output"),
+      port("USB-A", "usb", "bidirectional", "usb-a"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
     ],
   },
@@ -3938,6 +4539,8 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       ...ports("Mic/Line In", "analog-audio", "input", 8, "phoenix"),
       ...ports("Line Out", "analog-audio", "output", 6, "phoenix"),
       port("AC Power", "power", "input"),
+    
+      port("GPIO", "gpio", "bidirectional", "phoenix"),
     ],
   },
 
@@ -4033,6 +4636,569 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
       port("DASH Endpoint", "ethernet", "output", "none"),
       port("CMAF Endpoint", "ethernet", "output", "none"),
       port("MSS Endpoint", "ethernet", "output", "none"),
+    ],
+  },
+
+  // ─── New devices from audit reports ───────────────────────────────────────
+
+  // BMD new devices
+  {
+    id: "c0a80101-00f8-4000-8000-000000000324",
+    deviceType: "recorder",
+    category: "recorders",
+    label: "BMD Video Assist 12G HDR 7in",
+    manufacturer: "Blackmagic Design",
+    modelNumber: "Video Assist 7 inch 12G HDR",
+    referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicvideoassist",
+    searchTerms: ["blackmagic", "video assist", "monitor recorder", "12g", "hdr"],
+    ports: [
+      port("12G-SDI In", "sdi", "input"),
+      port("12G-SDI Out", "sdi", "output"),
+      port("HDMI In", "hdmi", "input"),
+      port("HDMI Out", "hdmi", "output"),
+      port("Mini XLR In 1", "analog-audio", "input", "mini-xlr"),
+      port("Mini XLR In 2", "analog-audio", "input", "mini-xlr"),
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
+      port("USB-C", "usb", "bidirectional", "usb-c"),
+    ],
+  },
+  {
+    id: "c0a80101-00f9-4000-8000-000000000325",
+    deviceType: "recorder",
+    category: "recorders",
+    label: "BMD Video Assist 12G HDR 5in",
+    manufacturer: "Blackmagic Design",
+    modelNumber: "Video Assist 5 inch 12G HDR",
+    referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicvideoassist",
+    searchTerms: ["blackmagic", "video assist", "monitor recorder", "5 inch", "12g"],
+    ports: [
+      port("12G-SDI In", "sdi", "input"),
+      port("12G-SDI Out", "sdi", "output"),
+      port("HDMI In", "hdmi", "input"),
+      port("HDMI Out", "hdmi", "output"),
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
+      port("USB-C", "usb", "bidirectional", "usb-c"),
+    ],
+  },
+  {
+    id: "c0a80101-00fa-4000-8000-000000000326",
+    deviceType: "monitor",
+    category: "monitors",
+    label: "BMD Audio Monitor 12G G3",
+    manufacturer: "Blackmagic Design",
+    modelNumber: "Audio Monitor 12G G3",
+    referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicaudiomonitor",
+    searchTerms: ["blackmagic", "audio monitor", "speakers", "12g"],
+    ports: [
+      port("12G-SDI In", "sdi", "input"),
+      port("SDI Loop", "sdi", "output"),
+      port("HDMI Out", "hdmi", "output"),
+      port("XLR In L", "analog-audio", "input"),
+      port("XLR In R", "analog-audio", "input"),
+      port("AES In", "aes", "input"),
+      port("RCA In L", "analog-audio", "input", "rca"),
+      port("RCA In R", "analog-audio", "input", "rca"),
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-00fb-4000-8000-000000000327",
+    deviceType: "streaming-encoder",
+    category: "streaming",
+    label: "BMD Streaming Decoder 4K",
+    manufacturer: "Blackmagic Design",
+    modelNumber: "Streaming Decoder 4K",
+    referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicwebpresenter",
+    searchTerms: ["blackmagic", "streaming", "decoder", "srt", "rtmp"],
+    ports: [
+      port("12G-SDI Out", "sdi", "output"),
+      port("HDMI Out", "hdmi", "output"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("USB-C", "usb", "bidirectional", "usb-c"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-00fc-4000-8000-000000000328",
+    deviceType: "camera",
+    category: "cameras",
+    label: "BMD Micro Studio Camera 4K G2",
+    manufacturer: "Blackmagic Design",
+    modelNumber: "Micro Studio Camera 4K G2",
+    referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicmicrostudiocamera4k",
+    searchTerms: ["blackmagic", "micro studio", "camera", "compact"],
+    ports: [
+      port("SDI Out", "sdi", "output"),
+      port("SDI In", "sdi", "input"),
+      port("HDMI Out", "hdmi", "output"),
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+    ],
+  },
+  {
+    id: "c0a80101-00fd-4000-8000-000000000329",
+    deviceType: "da",
+    category: "distribution",
+    label: "BMD Teranex SDI Distribution 12G",
+    manufacturer: "Blackmagic Design",
+    modelNumber: "Teranex Mini SDI Distribution 12G",
+    referenceUrl: "https://www.blackmagicdesign.com/products/teranexmini",
+    searchTerms: ["blackmagic", "teranex", "distribution", "da", "12g"],
+    ports: [
+      port("SDI In", "sdi", "input"),
+      ...ports("SDI Out", "sdi", "output", 8),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-00fe-4000-8000-000000000330",
+    deviceType: "converter",
+    category: "converters",
+    label: "BMD Mini Converter Optical Fiber 12G",
+    manufacturer: "Blackmagic Design",
+    modelNumber: "Mini Converter Optical Fiber 12G",
+    referenceUrl: "https://www.blackmagicdesign.com/products/miniconverters",
+    searchTerms: ["blackmagic", "mini converter", "optical", "fiber", "12g", "sdi"],
+    ports: [
+      port("SDI In", "sdi", "input"),
+      port("SDI Out", "sdi", "output"),
+      port("Fiber In", "fiber", "input"),
+      port("Fiber Out", "fiber", "output"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+
+  // Video new devices
+  {
+    id: "c0a80101-00ff-4000-8000-000000000331",
+    deviceType: "ndi-encoder",
+    category: "ndi",
+    label: "BirdDog Mini HDMI",
+    manufacturer: "BirdDog",
+    modelNumber: "Mini HDMI",
+    referenceUrl: "https://birddog.tv/mini-overview/",
+    searchTerms: ["birddog", "mini", "ndi", "encoder", "hdmi", "poe"],
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("Ethernet", "ethernet", "bidirectional"),
+    ],
+  },
+  {
+    id: "c0a80101-0100-4000-8000-000000000332",
+    deviceType: "ndi-encoder",
+    category: "ndi",
+    label: "Kiloview E2",
+    manufacturer: "Kiloview",
+    modelNumber: "E2",
+    referenceUrl: "https://www.kiloview.com/en/ndi/ndi-wired/",
+    searchTerms: ["kiloview", "e2", "ndi", "encoder", "hdmi"],
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("Ethernet", "ethernet", "bidirectional"),
+    ],
+  },
+  {
+    id: "c0a80101-0101-4000-8000-000000000333",
+    deviceType: "recorder",
+    category: "recorders",
+    label: "Atomos Ninja Ultra",
+    manufacturer: "Atomos",
+    modelNumber: "Ninja Ultra",
+    referenceUrl: "https://www.atomos.com/product/ninja-ultra/",
+    searchTerms: ["atomos", "ninja", "ultra", "monitor recorder", "5 inch"],
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("HDMI Out", "hdmi", "output"),
+      port("SDI In", "sdi", "input"),
+      port("SDI Out", "sdi", "output"),
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
+      port("USB-C", "usb", "bidirectional", "usb-c"),
+    ],
+  },
+  {
+    id: "c0a80101-0102-4000-8000-000000000334",
+    deviceType: "monitor",
+    category: "monitors",
+    label: "SmallHD Cine 18",
+    manufacturer: "SmallHD",
+    modelNumber: "Cine 18",
+    referenceUrl: "https://www.smallhd.com/cine-18",
+    searchTerms: ["smallhd", "cine", "18 inch", "production monitor"],
+    ports: [
+      port("12G-SDI In 1", "sdi", "input"),
+      port("12G-SDI In 2", "sdi", "input"),
+      port("12G-SDI In 3", "sdi", "input"),
+      port("12G-SDI In 4", "sdi", "input"),
+      port("HDMI In", "hdmi", "input"),
+      port("12G-SDI Out 1", "sdi", "output"),
+      port("12G-SDI Out 2", "sdi", "output"),
+      port("12G-SDI Out 3", "sdi", "output"),
+      port("12G-SDI Out 4", "sdi", "output"),
+      port("HDMI Out", "hdmi", "output"),
+      port("Headphone", "analog-audio", "output", "trs-eighth"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-0103-4000-8000-000000000335",
+    deviceType: "router",
+    category: "routing",
+    label: "AJA KUMO 1616-12G",
+    manufacturer: "AJA",
+    modelNumber: "KUMO 1616-12G",
+    referenceUrl: "https://www.aja.com/products/kumo-1616-12g",
+    searchTerms: ["aja", "kumo", "router", "16x16", "12g", "sdi"],
+    ports: [
+      ...ports("In", "sdi", "input", 16),
+      ...ports("Out", "sdi", "output", 16),
+      port("Ref In", "genlock", "input"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-0104-4000-8000-000000000336",
+    deviceType: "camera",
+    category: "cameras",
+    label: "Sony BRC-X400",
+    manufacturer: "Sony",
+    modelNumber: "BRC-X400",
+    referenceUrl: "https://pro.sony/en_US/products/ptz-network-cameras/brc-x400",
+    searchTerms: ["sony", "brc", "ptz", "camera", "ndi"],
+    ports: [
+      port("12G-SDI Out", "sdi", "output"),
+      port("HDMI Out", "hdmi", "output"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("RS-422", "rs422", "bidirectional"),
+      port("Genlock In", "genlock", "input"),
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+      port("DC Power", "power", "input", "barrel"),
+    ],
+  },
+  {
+    id: "c0a80101-0105-4000-8000-000000000337",
+    deviceType: "ndi-encoder",
+    category: "ndi",
+    label: "Magewell USB Capture HDMI Plus",
+    manufacturer: "Magewell",
+    modelNumber: "USB Capture HDMI Plus",
+    referenceUrl: "https://www.magewell.com/products/usb-capture-hdmi-plus",
+    searchTerms: ["magewell", "usb capture", "hdmi", "capture card"],
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("HDMI Loop", "hdmi", "output"),
+      port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
+      port("3.5mm Audio Out", "analog-audio", "output", "trs-eighth"),
+      port("USB-B 3.0", "usb", "output", "usb-b"),
+    ],
+  },
+  {
+    id: "c0a80101-0106-4000-8000-000000000338",
+    deviceType: "ndi-encoder",
+    category: "ndi",
+    label: "Magewell SDI→NDI",
+    manufacturer: "Magewell",
+    modelNumber: "Pro Convert SDI Plus",
+    referenceUrl: "https://www.magewell.com/products/pro-convert-sdi-plus",
+    searchTerms: ["magewell", "pro convert", "ndi", "encoder", "sdi"],
+    ports: [
+      port("SDI In", "sdi", "input"),
+      port("SDI Loop", "sdi", "output"),
+      port("Ethernet", "ethernet", "bidirectional"),
+    ],
+  },
+
+  // Audio new devices
+  {
+    id: "c0a80101-0107-4000-8000-000000000339",
+    deviceType: "audio-mixer",
+    category: "audio-mixers",
+    label: "Yamaha DM7",
+    manufacturer: "Yamaha",
+    modelNumber: "DM7",
+    referenceUrl: "https://usa.yamaha.com/products/proaudio/mixers/dm7/index.html",
+    searchTerms: ["yamaha", "dm7", "digital console"],
+    ports: [
+      ...ports("Analog In", "analog-audio", "input", 16),
+      ...ports("Analog Out", "analog-audio", "output", 8),
+      port("AES Out", "aes", "output"),
+      port("Dante Primary", "dante", "bidirectional"),
+      port("Dante Secondary", "dante", "bidirectional"),
+      port("USB", "usb", "bidirectional", "usb-c"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-0108-4000-8000-000000000340",
+    deviceType: "audio-interface",
+    category: "audio-interfaces",
+    label: "Shure ANI4IN",
+    manufacturer: "Shure",
+    modelNumber: "ANI4IN-XLR",
+    referenceUrl: "https://www.shure.com/en-US/products/mixers/ani/ani4in-xlr",
+    searchTerms: ["shure", "ani", "dante", "audio network interface", "4 input"],
+    ports: [
+      port("Analog In 1", "analog-audio", "input"),
+      port("Analog In 2", "analog-audio", "input"),
+      port("Analog In 3", "analog-audio", "input"),
+      port("Analog In 4", "analog-audio", "input"),
+      port("Dante Primary", "dante", "bidirectional"),
+      port("Dante Secondary", "dante", "bidirectional"),
+    ],
+  },
+  {
+    id: "c0a80101-0109-4000-8000-000000000341",
+    deviceType: "audio-interface",
+    category: "audio-interfaces",
+    label: "Shure ANI4OUT",
+    manufacturer: "Shure",
+    modelNumber: "ANI4OUT-XLR",
+    referenceUrl: "https://www.shure.com/en-US/products/mixers/ani/ani4out-xlr",
+    searchTerms: ["shure", "ani", "dante", "audio network interface", "4 output"],
+    ports: [
+      port("Analog Out 1", "analog-audio", "output"),
+      port("Analog Out 2", "analog-audio", "output"),
+      port("Analog Out 3", "analog-audio", "output"),
+      port("Analog Out 4", "analog-audio", "output"),
+      port("Dante Primary", "dante", "bidirectional"),
+      port("Dante Secondary", "dante", "bidirectional"),
+    ],
+  },
+
+  // Infrastructure new devices
+  {
+    id: "c0a80101-010a-4000-8000-000000000342",
+    deviceType: "media-server",
+    category: "media-servers",
+    label: "Disguise VX 4+",
+    manufacturer: "Disguise",
+    modelNumber: "VX 4+",
+    referenceUrl: "https://www.disguise.one/en/products/vx-range/",
+    searchTerms: ["disguise", "vx4", "media server", "d3"],
+    ports: [
+      port("DP Out 1", "displayport", "output"),
+      port("DP Out 2", "displayport", "output"),
+      port("DP Out 3", "displayport", "output"),
+      port("DP Out 4", "displayport", "output"),
+      port("SDI In 1", "sdi", "input"),
+      port("SDI In 2", "sdi", "input"),
+      port("SDI In 3", "sdi", "input"),
+      port("SDI In 4", "sdi", "input"),
+      port("Genlock In", "genlock", "input"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("USB", "usb", "bidirectional", "usb-a"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-010b-4000-8000-000000000343",
+    deviceType: "media-server",
+    category: "media-servers",
+    label: "Disguise EX 2",
+    manufacturer: "Disguise",
+    modelNumber: "EX 2",
+    referenceUrl: "https://www.disguise.one/en/products/ex-range/",
+    searchTerms: ["disguise", "ex2", "media server", "d3"],
+    ports: [
+      port("DP Out 1", "displayport", "output"),
+      port("DP Out 2", "displayport", "output"),
+      port("NDI In", "ndi", "input"),
+      port("Genlock In", "genlock", "input"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("USB", "usb", "bidirectional", "usb-a"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-010c-4000-8000-000000000344",
+    deviceType: "media-server",
+    category: "media-servers",
+    label: "Dataton WATCHPAX 64",
+    manufacturer: "Dataton",
+    modelNumber: "WATCHPAX 64",
+    referenceUrl: "https://www.dataton.com/watchpax/watchpax-64",
+    searchTerms: ["dataton", "watchpax", "watchout", "media server"],
+    ports: [
+      port("DP Out 1", "displayport", "output"),
+      port("DP Out 2", "displayport", "output"),
+      port("DP Out 3", "displayport", "output"),
+      port("DP Out 4", "displayport", "output"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("USB", "usb", "bidirectional", "usb-a"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-010d-4000-8000-000000000345",
+    deviceType: "led-processor",
+    category: "led-processing",
+    label: "Novastar NovaPro UHD Jr",
+    manufacturer: "Novastar",
+    modelNumber: "NovaPro UHD Jr",
+    referenceUrl: "https://www.novastar.tech/product/detail.html?catid=3&id=36",
+    searchTerms: ["novastar", "novapro", "uhd", "led processor"],
+    ports: [
+      port("HDMI In 1", "hdmi", "input"),
+      port("HDMI In 2", "hdmi", "input"),
+      port("DP In", "displayport", "input"),
+      port("SDI In", "sdi", "input"),
+      port("Genlock In", "genlock", "input"),
+      ...ports("LED Out", "ethernet", "output", 16),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-010e-4000-8000-000000000346",
+    deviceType: "led-processor",
+    category: "led-processing",
+    label: "Brompton Tessera S8",
+    manufacturer: "Brompton Technology",
+    modelNumber: "Tessera S8",
+    referenceUrl: "https://www.bromptontech.com/product/s8/",
+    searchTerms: ["brompton", "tessera", "s8", "led processor"],
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("DP In", "displayport", "input"),
+      port("SDI In", "sdi", "input"),
+      port("Genlock In", "genlock", "input"),
+      port("LED Out 1", "ethernet", "output", "ethercon"),
+      port("LED Out 2", "ethernet", "output", "ethercon"),
+      port("LED Out 3", "ethernet", "output", "ethercon"),
+      port("LED Out 4", "ethernet", "output", "ethercon"),
+      port("LED Out 5", "ethernet", "output", "ethercon"),
+      port("LED Out 6", "ethernet", "output", "ethercon"),
+      port("LED Out 7", "ethernet", "output", "ethercon"),
+      port("LED Out 8", "ethernet", "output", "ethercon"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-010f-4000-8000-000000000347",
+    deviceType: "led-processor",
+    category: "led-processing",
+    label: "Brompton Tessera R2+",
+    manufacturer: "Brompton Technology",
+    modelNumber: "Tessera R2+",
+    referenceUrl: "https://www.bromptontech.com/product/r2-plus/",
+    searchTerms: ["brompton", "tessera", "r2", "receiver", "led"],
+    ports: [
+      port("Data In", "ethernet", "input", "ethercon"),
+      port("Data Out", "ethernet", "output", "ethercon"),
+    ],
+  },
+  {
+    id: "c0a80101-0110-4000-8000-000000000348",
+    deviceType: "lighting-console",
+    category: "lighting",
+    label: "ETC Eos Apex",
+    manufacturer: "ETC",
+    modelNumber: "Eos Apex",
+    referenceUrl: "https://www.etcconnect.com/Products/Consoles/Eos-Consoles/",
+    searchTerms: ["etc", "eos", "apex", "lighting console"],
+    ports: [
+      port("DMX Out 1", "dmx", "output"),
+      port("DMX Out 2", "dmx", "output"),
+      port("DMX Out 3", "dmx", "output"),
+      port("DMX Out 4", "dmx", "output"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("MIDI In", "midi", "input", "din-5"),
+      port("MIDI Out", "midi", "output", "din-5"),
+      port("DP Out 1", "displayport", "output"),
+      port("DP Out 2", "displayport", "output"),
+      port("DP Out 3", "displayport", "output"),
+      port("USB", "usb", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-0111-4000-8000-000000000349",
+    deviceType: "lighting-console",
+    category: "lighting",
+    label: "grandMA3 full-size",
+    manufacturer: "MA Lighting",
+    modelNumber: "grandMA3 full-size",
+    referenceUrl: "https://www.malighting.com/grandma3/",
+    searchTerms: ["ma", "grandma3", "full", "lighting console"],
+    ports: [
+      ...ports("DMX Out", "dmx", "output", 8),
+      port("DMX In", "dmx", "input"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("Ethernet 3", "ethernet", "bidirectional"),
+      port("MIDI In", "midi", "input", "din-5"),
+      port("MIDI Out", "midi", "output", "din-5"),
+      port("USB", "usb", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-0112-4000-8000-000000000350",
+    deviceType: "lighting-console",
+    category: "lighting",
+    label: "grandMA3 compact XT",
+    manufacturer: "MA Lighting",
+    modelNumber: "grandMA3 compact XT",
+    referenceUrl: "https://www.malighting.com/grandma3/",
+    searchTerms: ["ma", "grandma3", "compact", "xt", "lighting console"],
+    ports: [
+      ...ports("DMX Out", "dmx", "output", 6),
+      port("DMX In", "dmx", "input"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("Ethernet 3", "ethernet", "bidirectional"),
+      port("MIDI In", "midi", "input", "din-5"),
+      port("MIDI Out", "midi", "output", "din-5"),
+      port("USB", "usb", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+
+  // Other new devices
+  {
+    id: "c0a80101-0113-4000-8000-000000000351",
+    deviceType: "video-wall-controller",
+    category: "video-processing",
+    label: "Datapath Hx4",
+    manufacturer: "Datapath",
+    modelNumber: "Hx4",
+    referenceUrl: "https://www.datapath.co.uk/products/video-wall-controllers/hx4/",
+    searchTerms: ["datapath", "hx4", "video wall", "4k"],
+    ports: [
+      port("HDMI In", "hdmi", "input"),
+      port("DP In", "displayport", "input"),
+      port("HDMI Out 1", "hdmi", "output"),
+      port("HDMI Out 2", "hdmi", "output"),
+      port("HDMI Out 3", "hdmi", "output"),
+      port("HDMI Out 4", "hdmi", "output"),
+      port("DP Loop", "displayport", "output"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("USB-B", "usb", "bidirectional", "usb-b"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-0114-4000-8000-000000000352",
+    deviceType: "moving-light",
+    category: "lighting",
+    label: "Martin MAC Ultra Performance",
+    manufacturer: "Martin",
+    modelNumber: "MAC Ultra Performance",
+    referenceUrl: "https://www.martin.com/products/mac-ultra-performance",
+    searchTerms: ["martin", "mac ultra", "moving light", "performance"],
+    ports: [
+      port("DMX In", "dmx", "input"),
+      port("DMX Out", "dmx", "output"),
+      port("Ethernet", "ethernet", "bidirectional", "ethercon"),
+      port("Power In", "power", "input", "powercon"),
     ],
   },
 ];

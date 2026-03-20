@@ -35,6 +35,9 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
 export const CONNECTOR_COMPAT_GROUPS: ConnectorType[][] = [
   ["rj45", "ethercon"],
   ["usb-a", "usb-b", "usb-c"],
+  ["dvi", "hdmi"],
+  ["opticalcon", "lc"],
+  ["mini-xlr", "xlr-3"],
 ];
 
 /** Check if two connector types are compatible (same type or in a compat group) */
@@ -77,6 +80,9 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   rca: "RCA",
   toslink: "TOSLINK",
   barrel: "DC Barrel",
+  dvi: "DVI",
+  "mini-xlr": "Mini XLR",
+  opticalcon: "opticalCON Fiber",
   none: "",
   other: "Other",
 };

@@ -6,7 +6,9 @@ export type ConnectorType =
   | "rj45" | "ethercon" | "sfp" | "lc"
   | "usb-a" | "usb-b" | "usb-c"
   | "db9" | "db25" | "din-5" | "phoenix" | "powercon" | "edison" | "iec"
-  | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel" | "none" | "other";
+  | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel"
+  | "dvi" | "mini-xlr" | "opticalcon"
+  | "none" | "other";
 
 export interface PortNetworkConfig {
   ip?: string;
@@ -345,6 +347,9 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   rca: "RCA",
   toslink: "TOSLINK",
   barrel: "DC Barrel",
+  dvi: "DVI",
+  "mini-xlr": "Mini XLR",
+  opticalcon: "opticalCON",
   none: "None",
   other: "Other",
 };
