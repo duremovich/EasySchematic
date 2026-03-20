@@ -39,7 +39,7 @@ export default function ApiPage() {
           {" "}<code>analog-audio</code>, <code>aes</code>, <code>dmx</code>, <code>madi</code>, <code>usb</code>, <code>ethernet</code>, <code>fiber</code>,
           {" "}<code>displayport</code>, <code>hdbaset</code>, <code>srt</code>, <code>genlock</code>, <code>gpio</code>,
           {" "}<code>rs422</code>, <code>serial</code>, <code>thunderbolt</code>, <code>composite</code>, <code>vga</code>,
-          {" "}<code>power</code>, <code>custom</code></li>
+          {" "}<code>power</code>, <code>midi</code>, <code>tally</code>, <code>spdif</code>, <code>adat</code>, <code>custom</code></li>
         <li><code>direction</code> — <code>input</code>, <code>output</code>, or <code>bidirectional</code></li>
         <li><code>connectorType</code> — physical connector (e.g. <code>bnc</code>, <code>hdmi</code>, <code>xlr-3</code>,
           {" "}<code>rj45</code>, <code>usb-c</code>) (optional)</li>
@@ -68,7 +68,7 @@ export default function ApiPage() {
       <h3>GET /contributors</h3>
       <p>Returns the top 50 community contributors ranked by approved submission count.</p>
       <pre><code>GET https://api.easyschematic.live/contributors</code></pre>
-      <p>Each entry includes <code>id</code>, <code>name</code> (display name or anonymized email), and <code>approvedCount</code>.</p>
+      <p>Each entry includes <code>id</code>, <code>name</code> (display name or anonymized email), <code>approvedCount</code>, <code>createdCount</code> (new templates submitted), and <code>editedCount</code> (edits to existing templates).</p>
 
       <h2>Authentication</h2>
       <p>

@@ -42,8 +42,11 @@ export default function OverviewPage() {
           <strong>Line jump arcs</strong> — arc markers at connection crossings for visual clarity
         </li>
         <li>
-          <strong>Device library</strong> — 250+ real-world device templates across cameras, switchers, audio, lighting,
+          <strong>Device library</strong> — 350+ real-world device templates across cameras, switchers, audio, lighting,
           LED video, and more
+        </li>
+        <li>
+          <strong>Expansion slots</strong> — devices with swappable card bays; right-click a slot to swap I/O cards in or out
         </li>
         <li>
           <strong>User templates &amp; presets</strong> — save device configurations or set project-wide defaults for any template

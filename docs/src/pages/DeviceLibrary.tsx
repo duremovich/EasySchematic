@@ -5,7 +5,7 @@ export default function DeviceLibraryPage() {
 
       <h2>Built-in templates</h2>
       <p>
-        The device library sidebar contains <strong>210+ real-world device templates</strong> organized by category:
+        The device library sidebar contains <strong>350+ real-world device templates</strong> organized by category:
       </p>
       <ul>
         <li><strong>Sources</strong> — cameras, PTZ cameras, graphics, computers, media players</li>
@@ -24,6 +24,9 @@ export default function DeviceLibraryPage() {
         <li><strong>KVM / Extenders</strong> — KVM switches, HDBaseT extenders</li>
         <li><strong>Control</strong> — control processors, tally systems, timecode generators, MIDI devices</li>
         <li><strong>Projection</strong> — large venue projectors</li>
+        <li><strong>Infrastructure</strong> — patch panels, rack shelves, power distribution</li>
+        <li><strong>Cloud Services</strong> — cloud platforms, streaming services, SaaS endpoints</li>
+        <li><strong>Cable Accessories</strong> — snakes, breakout cables, stage boxes, multicables</li>
         <li><strong>Peripherals</strong> — mice, keyboards, adapters</li>
       </ul>
 
@@ -82,6 +85,19 @@ export default function DeviceLibraryPage() {
         When you place multiple instances of the same device template, EasySchematic automatically numbers them:
         "Camera 1", "Camera 2", etc. Renaming a device manually removes it from auto-numbering.
       </p>
+
+      <h2>Expansion slots</h2>
+      <p>
+        Some devices have <strong>expansion slots</strong> — swappable card bays that accept different I/O cards.
+        This mirrors how real hardware works: a video router chassis might ship with empty slots that you populate
+        with SDI, HDMI, or fiber cards depending on the job.
+      </p>
+      <ul>
+        <li><strong>Right-click a slot</strong> on a device to see available cards and swap one in</li>
+        <li>Each card contributes its own ports to the parent device</li>
+        <li>Slots show the currently installed card name (or "Empty" if unoccupied)</li>
+        <li>Swapping a card removes the old card's ports and adds the new card's ports</li>
+      </ul>
 
       <h2>Community device database</h2>
       <p>

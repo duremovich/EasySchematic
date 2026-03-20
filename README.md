@@ -12,11 +12,12 @@
 
 ### Canvas & Devices
 
-- **270+ built-in device templates** across 19 categories — Sources, Peripherals, Switching, Processing, Distribution, Monitoring, Projection, Recording, Audio, Speakers & Amps, Networking, KVM/Extenders, Wireless, LED Video, Media Servers, Lighting, Control, Infrastructure, Cable Accessories
+- **350+ built-in device templates** across 20 categories — Sources, Peripherals, Switching, Processing, Distribution, Monitoring, Projection, Recording, Audio, Speakers & Amps, Networking, KVM/Extenders, Wireless, LED Video, Media Servers, Lighting, Control, Infrastructure, Cloud Services, Cable Accessories
 - **User templates** — save modified devices as reusable templates
 - **Favorite devices** — star templates in the library for quick access; favorites pin to the top and sort first in search
 - **Template presets** — save a device configuration as the project default for that template; new placements auto-apply the preset
 - **Quick-add** — double-click empty canvas to open a search dialog; type to find any device, note, or room and place it instantly
+- **Expansion slots** — devices with swappable card bays (e.g. router chassis with SDI/HDMI/fiber cards); right-click a slot to swap cards in or out
 - **Quick-create routers** — generate routers with configurable input/output counts and signal type
 - **Notes & annotations** — text annotations on the canvas with rectangle and ellipse shapes
 - **Rooms** — resizable dashed-border containers for grouping devices, with lock/unlock to prevent accidental moves
