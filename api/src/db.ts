@@ -12,6 +12,8 @@ interface TemplateOutput {
   referenceUrl?: string;
   searchTerms?: string[];
   ports: unknown[];
+  slots?: unknown[];
+  slotFamily?: string;
 }
 
 export interface TemplateRow {
@@ -27,6 +29,8 @@ export interface TemplateRow {
   reference_url: string | null;
   search_terms: string | null;
   ports: string;
+  slots: string | null;
+  slot_family: string | null;
   sort_order: number;
 }
 
@@ -42,6 +46,8 @@ interface TemplateInput {
   referenceUrl?: string;
   searchTerms?: string[];
   ports: unknown[];
+  slots?: unknown[];
+  slotFamily?: string;
   sortOrder?: number;
 }
 
@@ -58,6 +64,8 @@ export function templateToRow(input: TemplateInput): Omit<TemplateRow, "version"
     reference_url: input.referenceUrl ?? null,
     search_terms: input.searchTerms ? JSON.stringify(input.searchTerms) : null,
     ports: JSON.stringify(input.ports),
+    slots: input.slots ? JSON.stringify(input.slots) : null,
+    slot_family: input.slotFamily ?? null,
     sort_order: input.sortOrder ?? 0,
   };
 }
@@ -76,5 +84,7 @@ export function rowToTemplate(row: TemplateRow): TemplateOutput {
     ...(row.reference_url && { referenceUrl: row.reference_url }),
     ...(row.search_terms && { searchTerms: JSON.parse(row.search_terms) as string[] }),
     ports: JSON.parse(row.ports) as unknown[],
+    ...(row.slots && { slots: JSON.parse(row.slots) as unknown[] }),
+    ...(row.slot_family && { slotFamily: row.slot_family }),
   };
 }

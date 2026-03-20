@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { fetchSubmission, fetchTemplate, approveSubmission, rejectSubmission } from "../api";
 import type { Submission } from "../api";
-import type { DeviceTemplate, Port } from "../../../src/types";
+import type { DeviceTemplate, Port, SlotDefinition } from "../../../src/types";
 import { CONNECTOR_LABELS } from "../../../src/types";
 import StatusBadge from "../components/StatusBadge";
 import SignalBadge from "../components/SignalBadge";
@@ -25,6 +25,8 @@ export default function ReviewDetailPage({ id }: { id: string }) {
   const [editSearchTerms, setEditSearchTerms] = useState("");
   const [editColor, setEditColor] = useState("");
   const [editPorts, setEditPorts] = useState<Port[]>([]);
+  const [editSlots, setEditSlots] = useState<SlotDefinition[]>([]);
+  const [editSlotFamily, setEditSlotFamily] = useState("");
 
   useEffect(() => {
     fetchSubmission(id)
@@ -54,6 +56,8 @@ export default function ReviewDetailPage({ id }: { id: string }) {
     setEditSearchTerms(d.searchTerms?.join(", ") ?? "");
     setEditColor(d.color ?? "");
     setEditPorts((d.ports ?? []) as Port[]);
+    setEditSlots((d.slots ?? []) as SlotDefinition[]);
+    setEditSlotFamily((d as Record<string, unknown>).slotFamily as string ?? "");
     setEditing(true);
   };
 
@@ -71,6 +75,8 @@ export default function ReviewDetailPage({ id }: { id: string }) {
           ...(editReferenceUrl.trim() && { referenceUrl: editReferenceUrl.trim() }),
           ...(editColor.trim() && { color: editColor.trim() }),
           ...(editSearchTerms.trim() && { searchTerms: editSearchTerms.split(",").map((s) => s.trim()).filter(Boolean) }),
+          ...(editSlots.length > 0 && { slots: editSlots }),
+          ...(editSlotFamily.trim() && { slotFamily: editSlotFamily.trim() }),
         };
       }
       await approveSubmission(id, editedData);
@@ -261,7 +267,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
   );
 }
 
-function DeviceInfo({ data }: { data: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl"> }) {
+function DeviceInfo({ data }: { data: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily"> }) {
   return (
     <div className="grid grid-cols-2 gap-2 text-sm mb-4">
       <div><span className="text-slate-500">Label:</span> <span className="font-medium">{data.label}</span></div>
@@ -280,6 +286,12 @@ function DeviceInfo({ data }: { data: Pick<DeviceTemplate, "label" | "deviceType
           <span className="w-4 h-4 rounded border border-slate-200 inline-block" style={{ backgroundColor: data.color }} />
           <span>{data.color}</span>
         </div>
+      )}
+      {data.slots && data.slots.length > 0 && (
+        <div><span className="text-slate-500">Slots:</span> {data.slots.length} ({[...new Set(data.slots.map((s) => s.slotFamily))].join(", ")})</div>
+      )}
+      {data.slotFamily && (
+        <div><span className="text-slate-500">Slot Family:</span> {data.slotFamily}</div>
       )}
     </div>
   );

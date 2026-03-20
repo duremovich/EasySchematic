@@ -1,3 +1,10 @@
+interface SlotInput {
+  id: string;
+  label: string;
+  slotFamily: string;
+  defaultCardId?: string;
+}
+
 interface TemplateInput {
   label: string;
   deviceType: string;
@@ -9,6 +16,8 @@ interface TemplateInput {
   referenceUrl?: string;
   searchTerms?: string[];
   ports: PortInput[];
+  slots?: SlotInput[];
+  slotFamily?: string;
   sortOrder?: number;
 }
 
@@ -115,6 +124,37 @@ export function validateTemplate(body: unknown): ValidationResult {
     }
   }
 
+  // Slot family — optional string for expansion card templates
+  if (obj.slotFamily != null) {
+    const sfErr = checkString(obj.slotFamily, "slotFamily", 100);
+    if (sfErr) return { ok: false, error: sfErr };
+  }
+
+  // Slots — optional array of slot definitions
+  if (obj.slots != null) {
+    if (!Array.isArray(obj.slots)) {
+      return { ok: false, error: "slots must be an array" };
+    }
+    if (obj.slots.length > 20) {
+      return { ok: false, error: "slots must have 20 or fewer entries" };
+    }
+    for (let i = 0; i < obj.slots.length; i++) {
+      const slot = obj.slots[i] as Record<string, unknown> | null;
+      if (!slot || typeof slot !== "object") {
+        return { ok: false, error: `slots[${i}] must be an object` };
+      }
+      for (const field of ["id", "label"] as const) {
+        const err = checkString(slot[field], `slots[${i}].${field}`, 100);
+        if (err) return { ok: false, error: err };
+      }
+      const familyErr = checkString(slot.slotFamily, `slots[${i}].slotFamily`, 100);
+      if (familyErr) return { ok: false, error: familyErr };
+      if (slot.defaultCardId != null && typeof slot.defaultCardId !== "string") {
+        return { ok: false, error: `slots[${i}].defaultCardId must be a string` };
+      }
+    }
+  }
+
   return {
     ok: true,
     data: {
@@ -128,6 +168,8 @@ export function validateTemplate(body: unknown): ValidationResult {
       ...(obj.referenceUrl != null && { referenceUrl: obj.referenceUrl as string }),
       ...(obj.searchTerms != null && { searchTerms: obj.searchTerms as string[] }),
       ports: obj.ports as PortInput[],
+      ...(obj.slots != null && { slots: obj.slots as SlotInput[] }),
+      ...(obj.slotFamily != null && { slotFamily: obj.slotFamily as string }),
       ...(obj.sortOrder != null && { sortOrder: obj.sortOrder as number }),
     },
   };

@@ -113,6 +113,11 @@ function TemplateItem({
         <span className="text-[10px] text-[var(--color-text-muted)]">
           <HighlightedText text={signalText} query={query} />
         </span>
+        {template.slots && template.slots.length > 0 && (
+          <span className="text-[9px] text-[var(--color-text-muted)] opacity-60">
+            {template.slots.length} slot{template.slots.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
       {onDelete && (
         <button
@@ -225,7 +230,7 @@ export default function DeviceLibrary() {
   // When searching, produce a flat ranked list; when browsing, keep categories
   const rankedResults = useMemo(() => {
     if (!query) return null;
-    const all = [...templates, ...customTemplates];
+    const all = [...templates, ...customTemplates].filter((t) => t.category !== "Expansion Cards");
     const scored = all
       .map((t) => {
         let score = scoreTemplate(t, query);
@@ -248,9 +253,10 @@ export default function DeviceLibrary() {
   }, [templates, customTemplates, favoriteTemplates]);
 
   const filteredCategories = useMemo(() => {
-    // Group templates by category
+    // Group templates by category (hide expansion cards from browse view — they're only surfaced in slot pickers)
     const groups = new Map<string, DeviceTemplate[]>();
     for (const t of templates) {
+      if (t.category === "Expansion Cards") continue;
       const cat = t.category ?? "Other";
       const arr = groups.get(cat);
       if (arr) arr.push(t);

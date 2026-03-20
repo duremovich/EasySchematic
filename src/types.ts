@@ -86,6 +86,23 @@ export interface Port {
   channelCount?: number;
 }
 
+export interface SlotDefinition {
+  id: string;
+  label: string;               // "Slot 1", "VFC Slot A"
+  slotFamily: string;           // e.g. "disguise-vfc", "yamaha-my"
+  defaultCardId?: string;       // pre-populated when placed on canvas
+}
+
+export interface InstalledSlot {
+  slotId: string;
+  label: string;
+  cardTemplateId?: string;      // undefined = empty slot
+  cardLabel?: string;           // denormalized for display/pack list
+  cardManufacturer?: string;
+  cardModelNumber?: string;
+  portIds: string[];            // tracks which ports in device.ports belong to this slot
+}
+
 export interface DeviceData {
   [key: string]: unknown;
   label: string;
@@ -109,6 +126,7 @@ export interface DeviceData {
   dhcpServer?: DhcpServerConfig;
   isCableAccessory?: boolean;
   integratedWithCable?: boolean;
+  slots?: InstalledSlot[];
 }
 
 export type DeviceNode = Node<DeviceData, "device">;
@@ -182,6 +200,8 @@ export interface DeviceTemplate {
   modelNumber?: string;
   imageUrl?: string;
   referenceUrl?: string;
+  slots?: SlotDefinition[];
+  slotFamily?: string;           // only set on expansion card templates
 }
 
 export interface TemplatePreset {

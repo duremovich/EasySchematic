@@ -30,6 +30,9 @@ export default function DeviceCard({ template }: { template: DeviceTemplate }) {
       </div>
       <p className="mt-2 text-xs text-slate-400">
         {template.ports.length} port{template.ports.length !== 1 ? "s" : ""}
+        {template.slots && template.slots.length > 0 && (
+          <> &middot; {template.slots.length} slot{template.slots.length !== 1 ? "s" : ""}</>
+        )}
       </p>
     </a>
   );

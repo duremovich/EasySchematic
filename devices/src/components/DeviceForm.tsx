@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
-import type { Port } from "../../../src/types";
-import { fetchTemplate, fetchDeviceTypes, fetchSearchTerms, fetchCategories } from "../api";
+import type { Port, SlotDefinition, DeviceTemplate } from "../../../src/types";
+import { fetchTemplate, fetchDeviceTypes, fetchSearchTerms, fetchCategories, fetchTemplates } from "../api";
 import PortEditor from "./PortEditor";
 import AutocompleteInput from "./AutocompleteInput";
 import TagAutocompleteInput from "./TagAutocompleteInput";
@@ -15,6 +15,8 @@ export interface DeviceFormData {
   referenceUrl?: string;
   color?: string;
   searchTerms?: string[];
+  slots?: SlotDefinition[];
+  slotFamily?: string;
 }
 
 interface DeviceFormProps {
@@ -42,17 +44,21 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
   const [searchTerms, setSearchTerms] = useState("");
   const [color, setColor] = useState("");
   const [ports, setPorts] = useState<Port[]>([]);
+  const [slots, setSlots] = useState<SlotDefinition[]>([]);
+  const [slotFamily, setSlotFamily] = useState("");
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [deviceTypes, setDeviceTypes] = useState<string[]>([]);
   const [knownCategories, setKnownCategories] = useState<string[]>([]);
   const [knownSearchTerms, setKnownSearchTerms] = useState<string[]>([]);
+  const [allTemplates, setAllTemplates] = useState<DeviceTemplate[]>([]);
 
   useEffect(() => {
     fetchDeviceTypes().then(setDeviceTypes);
     fetchCategories().then(setKnownCategories);
     fetchSearchTerms().then(setKnownSearchTerms);
+    fetchTemplates().then(setAllTemplates).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -68,6 +74,8 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
         setSearchTerms(t.searchTerms?.join(", ") ?? "");
         setColor(t.color ?? "");
         setPorts(t.ports);
+        setSlots(t.slots ?? []);
+        setSlotFamily(t.slotFamily ?? "");
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -97,6 +105,8 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
         ...(referenceUrl.trim() && { referenceUrl: referenceUrl.trim() }),
         ...(color.trim() && { color: color.trim() }),
         ...(searchTerms.trim() && { searchTerms: searchTerms.split(",").map((s) => s.trim()).filter(Boolean) }),
+        ...(slots.length > 0 && { slots }),
+        ...(slotFamily.trim() && { slotFamily: slotFamily.trim() }),
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
@@ -152,10 +162,25 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
             {color && <span className="w-8 h-8 rounded border border-slate-200" style={{ backgroundColor: color }} />}
           </div>
         </label>
+        {category === "Expansion Cards" && (
+          <label>
+            <span className="block text-sm font-medium text-slate-700 mb-1">Slot Family</span>
+            <AutocompleteInput
+              value={slotFamily}
+              onChange={setSlotFamily}
+              suggestions={[...new Set(allTemplates.filter((t) => t.slotFamily).map((t) => t.slotFamily!))]}
+              className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span className="text-xs text-slate-400 mt-1 block">Family this card belongs to (e.g. disguise-vfc)</span>
+          </label>
+        )}
         {extraFields}
       </div>
 
       <PortEditor ports={ports} onChange={setPorts} />
+
+      {/* Expansion Slots */}
+      <SlotEditor slots={slots} onChange={setSlots} allTemplates={allTemplates} />
 
       <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200">
         <div>{footer}</div>
@@ -173,5 +198,110 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
         </div>
       </div>
     </>
+  );
+}
+
+// ==================== Slot Editor ====================
+
+function SlotEditor({
+  slots,
+  onChange,
+  allTemplates,
+}: {
+  slots: SlotDefinition[];
+  onChange: (slots: SlotDefinition[]) => void;
+  allTemplates: DeviceTemplate[];
+}) {
+  const [open, setOpen] = useState(slots.length > 0);
+  const knownFamilies = [...new Set(allTemplates.filter((t) => t.slotFamily).map((t) => t.slotFamily!))];
+
+  const addSlot = () => {
+    const id = `slot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    onChange([...slots, { id, label: `Slot ${slots.length + 1}`, slotFamily: "" }]);
+    setOpen(true);
+  };
+
+  const removeSlot = (index: number) => {
+    onChange(slots.filter((_, i) => i !== index));
+  };
+
+  const updateSlot = (index: number, patch: Partial<SlotDefinition>) => {
+    onChange(slots.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+  };
+
+  return (
+    <div className="mt-8">
+      <div className="flex items-center justify-between mb-3">
+        <button
+          onClick={() => setOpen(!open)}
+          className="text-sm font-semibold text-slate-700 flex items-center gap-1 cursor-pointer"
+        >
+          <span className={`text-[10px] text-slate-400 transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
+          Expansion Slots
+          {slots.length > 0 && <span className="text-xs text-slate-400 font-normal ml-1">({slots.length})</span>}
+        </button>
+        <button
+          onClick={addSlot}
+          className="text-xs text-blue-600 hover:text-blue-700 cursor-pointer"
+        >
+          + Add Slot
+        </button>
+      </div>
+
+      {open && slots.length === 0 && (
+        <p className="text-xs text-slate-400 mb-2">No expansion slots defined. Add a slot for devices with modular card bays.</p>
+      )}
+
+      {open && slots.map((slot, i) => {
+        const familyCards = allTemplates.filter((t) => t.slotFamily === slot.slotFamily);
+        return (
+          <div key={slot.id} className="border border-slate-200 rounded-lg p-3 mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                value={slot.label}
+                onChange={(e) => updateSlot(i, { label: e.target.value })}
+                className="flex-1 px-2 py-1 rounded border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Slot label (e.g. VFC Slot A)"
+              />
+              <button
+                onClick={() => removeSlot(i)}
+                className="text-red-400 hover:text-red-500 text-sm cursor-pointer px-1"
+                title="Remove slot"
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Slot Family */}
+            <div className="mb-2">
+              <label className="block text-xs text-slate-500 mb-1">Slot Family</label>
+              <AutocompleteInput
+                value={slot.slotFamily}
+                onChange={(v) => updateSlot(i, { slotFamily: v })}
+                suggestions={knownFamilies}
+                className="w-full px-2 py-1 rounded border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Default Card */}
+            {slot.slotFamily && familyCards.length > 0 && (
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Default Card</label>
+                <select
+                  value={slot.defaultCardId ?? ""}
+                  onChange={(e) => updateSlot(i, { defaultCardId: e.target.value || undefined })}
+                  className="w-full px-2 py-1 rounded border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">(empty)</option>
+                  {familyCards.map((card) => (
+                    <option key={card.id} value={card.id!}>{card.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
   );
 }

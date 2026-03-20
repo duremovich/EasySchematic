@@ -27,9 +27,12 @@ DEVICE_TEMPLATES.forEach((t, i) => {
     ? `'${escapeSQL(JSON.stringify(t.searchTerms))}'`
     : "NULL";
   const ports = escapeSQL(JSON.stringify(t.ports));
+  const slots = t.slots ? `'${escapeSQL(JSON.stringify(t.slots))}'` : "NULL";
+  const slotFamily = t.slotFamily ? `'${escapeSQL(t.slotFamily)}'` : "NULL";
+  const referenceUrl = t.referenceUrl ? `'${escapeSQL(t.referenceUrl)}'` : "NULL";
 
   lines.push(
-    `INSERT OR REPLACE INTO templates (id, version, device_type, category, label, manufacturer, model_number, color, image_url, search_terms, ports, sort_order) VALUES ('${escapeSQL(id)}', ${version}, '${deviceType}', '${category}', '${label}', ${manufacturer}, ${modelNumber}, ${color}, ${imageUrl}, ${searchTerms}, '${ports}', ${i});`
+    `INSERT OR REPLACE INTO templates (id, version, device_type, category, label, manufacturer, model_number, color, image_url, reference_url, search_terms, ports, slots, slot_family, sort_order) VALUES ('${escapeSQL(id)}', ${version}, '${deviceType}', '${category}', '${label}', ${manufacturer}, ${modelNumber}, ${color}, ${imageUrl}, ${referenceUrl}, ${searchTerms}, '${ports}', ${slots}, ${slotFamily}, ${i});`
   );
 });
 

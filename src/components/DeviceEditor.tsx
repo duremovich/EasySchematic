@@ -13,9 +13,10 @@ import {
   type DeviceData,
   type DeviceNode,
   type DhcpServerConfig,
+  type SlotDefinition,
 } from "../types";
 import { DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES } from "../connectorTypes";
-import { getBundledTemplates } from "../templateApi";
+import { getBundledTemplates, getCardsByFamily } from "../templateApi";
 import { isValidIpv4, isValidSubnetMask, isValidVlan, findDuplicateIps } from "../networkValidation";
 import IpInput from "./IpInput";
 
@@ -154,6 +155,8 @@ export default function DeviceEditor() {
       ...(dhcpServer ? { dhcpServer } : {}),
       ...(isCableAccessory ? { isCableAccessory: true } : {}),
       ...(integratedWithCable ? { integratedWithCable: true } : {}),
+      ...(existing?.baseLabel ? { baseLabel: existing.baseLabel } : {}),
+      ...(existing?.slots ? { slots: existing.slots } : {}),
     };
     updateDevice(editingNodeId, data);
     close();
@@ -526,6 +529,21 @@ export default function DeviceEditor() {
           {ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
             <DhcpServerSection dhcpServer={dhcpServer} onChange={setDhcpServer} />
           )}
+
+          {/* Expansion Slots */}
+          {node.data.slots && node.data.slots.length > 0 && (() => {
+            const templateDef = node.data.templateId
+              ? getBundledTemplates().find((t) => t.id === node.data.templateId)
+              : undefined;
+            const slotDefs = templateDef?.slots ?? [];
+            return (
+              <SlotSwapSection
+                nodeId={node.id}
+                installedSlots={node.data.slots}
+                slotDefs={slotDefs}
+              />
+            );
+          })()}
 
           {/* Flags */}
           <details className="text-xs">
@@ -1450,6 +1468,70 @@ function DhcpServerSection({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function SlotSwapSection({
+  nodeId,
+  installedSlots,
+  slotDefs,
+}: {
+  nodeId: string;
+  installedSlots: DeviceData["slots"] & object;
+  slotDefs: SlotDefinition[];
+}) {
+  const swapCard = useSchematicStore((s) => s.swapCard);
+  const edges = useSchematicStore((s) => s.edges);
+
+  return (
+    <div className="space-y-2">
+      <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium">Expansion Slots</div>
+      {installedSlots.map((slot) => {
+        const def = slotDefs.find((d) => d.id === slot.slotId);
+        const familyCards = def?.slotFamily ? getCardsByFamily(def.slotFamily) : [];
+
+        // Count connections to this slot's ports
+        const slotPortSet = new Set(slot.portIds);
+        const connCount = edges.filter((e) => {
+          if (e.source === nodeId && slotPortSet.has(e.sourceHandle ?? "")) return true;
+          if (e.target === nodeId && slotPortSet.has(e.targetHandle ?? "")) return true;
+          if (e.source === nodeId && slotPortSet.has((e.sourceHandle ?? "").replace(/-(in|out)$/, ""))) return true;
+          if (e.target === nodeId && slotPortSet.has((e.targetHandle ?? "").replace(/-(in|out)$/, ""))) return true;
+          return false;
+        }).length;
+
+        return (
+          <div key={slot.slotId} className="bg-[var(--color-surface)] rounded px-2 py-1.5 border border-[var(--color-border)]">
+            <div className="text-[10px] text-[var(--color-text-muted)] mb-1">{slot.label}</div>
+            <select
+              value={slot.cardTemplateId ?? ""}
+              onChange={(e) => {
+                const newCardId = e.target.value || null;
+                // Same card type — no warning needed
+                if (newCardId === slot.cardTemplateId) return;
+                if (connCount > 0) {
+                  if (!confirm(`Swapping this card will disconnect ${connCount} connection(s). Continue?`)) return;
+                }
+                swapCard(nodeId, slot.slotId, newCardId);
+              }}
+              className="w-full bg-white border border-[var(--color-border)] rounded px-1.5 py-1 text-xs outline-none focus:border-blue-500"
+            >
+              <option value="">(empty)</option>
+              {familyCards.map((card) => (
+                <option key={card.id} value={card.id!}>
+                  {card.label}
+                </option>
+              ))}
+            </select>
+            {slot.cardLabel && (
+              <div className="text-[9px] text-[var(--color-text-muted)] mt-0.5">
+                {[slot.cardManufacturer, slot.cardModelNumber].filter(Boolean).join(" ")}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
