@@ -67,6 +67,19 @@ export default function DevicesAndPortsPage() {
         "Audio", "Control". Sections appear as labeled dividers within the port columns.
       </p>
 
+      <h2>Expansion slots</h2>
+      <p>
+        Some devices have <strong>expansion slots</strong> — swappable card bays that accept different I/O cards.
+        This mirrors real hardware: a router chassis might have empty slots you populate with SDI, HDMI, or fiber
+        cards depending on the job.
+      </p>
+      <ul>
+        <li><strong>Right-click a slot</strong> on a device to see available cards and swap one in</li>
+        <li>Each card contributes its own ports to the parent device</li>
+        <li>Slots show the currently installed card name (or "Empty" if unoccupied)</li>
+        <li>Swapping a card removes the old card's ports and adds the new card's ports</li>
+      </ul>
+
       <h2>Editing devices</h2>
       <p>
         <strong>Double-click</strong> any device to open the device editor. From there you can:
