@@ -1,4 +1,4 @@
-import { DEVICE_TEMPLATES } from "../../src/deviceLibrary";
+import { DEVICE_TEMPLATES, CARD_TEMPLATES } from "../../src/deviceLibrary";
 import { writeFileSync } from "fs";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
@@ -11,9 +11,10 @@ function escapeSQL(s: string): string {
   return s.replace(/'/g, "''");
 }
 
+const allTemplates = [...DEVICE_TEMPLATES, ...CARD_TEMPLATES];
 const lines: string[] = [];
 
-DEVICE_TEMPLATES.forEach((t, i) => {
+allTemplates.forEach((t, i) => {
   const id = t.id ?? `auto-${i}`;
   const version = t.version ?? 1;
   const deviceType = escapeSQL(t.deviceType);
@@ -72,7 +73,7 @@ const rows: { id: string; label: string; submitted_by: string | null }[] =
   parsed[0]?.results ?? [];
 
 const bundledIds = new Set(
-  DEVICE_TEMPLATES.map((t, i) => t.id ?? `auto-${i}`)
+  allTemplates.map((t, i) => t.id ?? `auto-${i}`)
 );
 
 const communityTemplates = rows.filter(

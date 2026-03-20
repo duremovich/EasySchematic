@@ -98,9 +98,10 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
   ...lighting,
   ...cableAccessories,
   ...cloudServices,
-  ...expansionCards,
 ];
 
-for (const t of DEVICE_TEMPLATES) {
+export const CARD_TEMPLATES: DeviceTemplate[] = [...expansionCards];
+
+for (const t of [...DEVICE_TEMPLATES, ...CARD_TEMPLATES]) {
   (t as { category?: string }).category = DEVICE_TYPE_TO_CATEGORY[t.deviceType] ?? "Other";
 }
