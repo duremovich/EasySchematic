@@ -4,7 +4,7 @@
 
 <h1 align="center">EasySchematic</h1>
 
-<p align="center">A drag-and-drop AV signal flow diagram tool for designing and documenting audio/video system hook-ups.<br>Built for broadcast, live production, and AV integration workflows.</p>
+<p align="center">A drag-and-drop AV signal flow diagram tool for designing and documenting AV system hook-ups.<br>Built for broadcast, live production, and AV integration workflows.</p>
 
 <p align="center"><b><a href="https://easyschematic.live">Try it live →</a></b> · <b><a href="https://docs.easyschematic.live">Documentation →</a></b> · <b><a href="https://devices.easyschematic.live">Device Database →</a></b></p>
 
@@ -12,7 +12,7 @@
 
 ### Canvas & Devices
 
-- **210+ built-in device templates** across 17 categories — Sources, Peripherals, Switching, Processing, Distribution, Monitoring, Projection, Recording, Audio, Speakers & Amps, Networking, KVM/Extenders, Wireless, LED Video, Media Servers, Lighting, Control
+- **250+ built-in device templates** across 19 categories — Sources, Peripherals, Switching, Processing, Distribution, Monitoring, Projection, Recording, Audio, Speakers & Amps, Networking, KVM/Extenders, Wireless, LED Video, Media Servers, Lighting, Control, Infrastructure, Cable Accessories
 - **User templates** — save modified devices as reusable templates
 - **Favorite devices** — star templates in the library for quick access; favorites pin to the top and sort first in search
 - **Template presets** — save a device configuration as the project default for that template; new placements auto-apply the preset
@@ -86,7 +86,7 @@ SDI · HDMI · NDI · Dante · Analog Audio · AES · DMX · MADI · USB · Ethe
 
 #### Public API
 
-If you're building AV tooling and need a structured database of professional video/audio equipment with port definitions, signal types, and connector types, help yourself:
+If you're building AV tooling and need a structured database of professional audiovisual equipment with port definitions, signal types, and connector types, help yourself:
 
 - `GET https://api.easyschematic.live/templates` — all device templates
 - `GET https://api.easyschematic.live/templates/:id` — single template with contributor attribution

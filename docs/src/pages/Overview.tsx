@@ -4,7 +4,7 @@ export default function OverviewPage() {
       <h1>EasySchematic</h1>
 
       <p>
-        EasySchematic is a browser-based tool for designing <strong>audio/video signal flow diagrams</strong> (hook-up
+        EasySchematic is a browser-based tool for designing <strong>AV signal flow diagrams</strong> (hook-up
         sheets). It's built for broadcast engineers, live production teams, and AV integrators who need to quickly map
         out how devices connect.
       </p>
@@ -42,7 +42,7 @@ export default function OverviewPage() {
           <strong>Line jump arcs</strong> — arc markers at connection crossings for visual clarity
         </li>
         <li>
-          <strong>Device library</strong> — 210+ real-world device templates across cameras, switchers, audio, lighting,
+          <strong>Device library</strong> — 250+ real-world device templates across cameras, switchers, audio, lighting,
           LED video, and more
         </li>
         <li>

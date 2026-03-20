@@ -9,7 +9,7 @@ export default function ApiPage() {
       </p>
       <p>
         This data is free to use. If you're building AV tooling and need a structured database of professional
-        video/audio equipment with port definitions, signal types, and connector types, help yourself.
+        audiovisual equipment with port definitions, signal types, and connector types, help yourself.
       </p>
 
       <h2>Endpoints</h2>
