@@ -230,7 +230,7 @@ export default function DeviceLibrary() {
   // When searching, produce a flat ranked list; when browsing, keep categories
   const rankedResults = useMemo(() => {
     if (!query) return null;
-    const all = [...templates, ...customTemplates];
+    const all = [...templates, ...customTemplates].filter((t) => t.category !== "Expansion Cards");
     const scored = all
       .map((t) => {
         let score = scoreTemplate(t, query);
@@ -255,6 +255,8 @@ export default function DeviceLibrary() {
   const filteredCategories = useMemo(() => {
     const groups = new Map<string, DeviceTemplate[]>();
     for (const t of templates) {
+      // Expansion cards are only selectable via the slot picker, not the library
+      if (t.category === "Expansion Cards") continue;
       const cat = t.category ?? "Other";
       const arr = groups.get(cat);
       if (arr) arr.push(t);
