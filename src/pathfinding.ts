@@ -733,8 +733,15 @@ export function waypointsToSvgPathWithHops(
           for (const cy of filtered) {
             // The arc peaks at cy - ARC_R (top of the semicircle) — center the gap there
             const gapCenter = cy - ARC_R;
-            parts.push(`L ${x} ${gapCenter - GAP_HALF}`);
-            parts.push(`M ${x} ${gapCenter + GAP_HALF}`);
+            if (topToBottom) {
+              // Traveling downward (increasing Y): stop above gap, jump past it
+              parts.push(`L ${x} ${gapCenter - GAP_HALF}`);
+              parts.push(`M ${x} ${gapCenter + GAP_HALF}`);
+            } else {
+              // Traveling upward (decreasing Y): stop below gap, jump past it
+              parts.push(`L ${x} ${gapCenter + GAP_HALF}`);
+              parts.push(`M ${x} ${gapCenter - GAP_HALF}`);
+            }
           }
           parts.push(`L ${segEndX} ${segEndY}`);
         } else {
@@ -830,8 +837,13 @@ function buildVerticalSegmentWithGaps(
   for (const cy of filtered) {
     // The arc peaks at cy - ARC_R (top of the semicircle) — center the gap there
     const gapCenter = cy - ARC_R;
-    parts.push(`L ${x} ${gapCenter - GAP_HALF}`);
-    parts.push(`M ${x} ${gapCenter + GAP_HALF}`);
+    if (topToBottom) {
+      parts.push(`L ${x} ${gapCenter - GAP_HALF}`);
+      parts.push(`M ${x} ${gapCenter + GAP_HALF}`);
+    } else {
+      parts.push(`L ${x} ${gapCenter + GAP_HALF}`);
+      parts.push(`M ${x} ${gapCenter - GAP_HALF}`);
+    }
   }
   parts.push(`L ${x} ${y2}`);
   return parts.join(" ");
