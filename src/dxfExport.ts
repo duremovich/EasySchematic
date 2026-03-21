@@ -30,6 +30,8 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   tally: 1,        // deep rose
   spdif: 178,      // lighter violet
   adat: 4,         // dark cyan
+  ultranet: 3,     // green
+  aes50: 171,      // blue-violet
   custom: 9,       // cool gray
 };
 

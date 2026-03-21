@@ -117,12 +117,33 @@ export default function ConnectionsPage() {
         a connection and select <strong>Stub Connection</strong> to toggle between stubbed and fully routed display.
       </p>
 
+      <h2>Connector compatibility</h2>
+      <p>
+        Ports have a <strong>connector type</strong> (XLR-3, RJ45, HDMI, etc.) in addition to their signal type.
+        EasySchematic automatically handles connector compatibility:
+      </p>
+      <ul>
+        <li>
+          <strong>Combo connectors</strong> — some connectors natively accept multiple plug types. For example, an
+          XLR/TRS Combo jack accepts both XLR-3 and 1/4" TRS plugs without adapters. The cable schedule automatically
+          labels the cable based on the plug type, not the jack type.
+        </li>
+        <li>
+          <strong>Adapter connections</strong> — some connector pairs are compatible but require an adapter cable
+          (e.g. USB-A to USB-C, DVI to HDMI). These connections are allowed automatically and the cable schedule
+          labels them as adapter cables.
+        </li>
+        <li>
+          <strong>Native acceptance</strong> — connectors like EtherCon (accepts RJ45) and opticalCON (accepts LC)
+          are physically compatible with no adapter needed.
+        </li>
+      </ul>
+
       <h2>Incompatible connector override</h2>
       <p>
-        By default, connections require <strong>matching connector types</strong> on both ports. In some setups you
-        may need to force-connect ports with mismatched connectors (e.g. an adapter cable). Right-click a connection
-        and select <strong>Allow Incompatible Connectors</strong> to override the compatibility check for that
-        connection.
+        If you need to force-connect ports with truly mismatched connectors that aren't covered by the automatic
+        compatibility rules, right-click a connection and select <strong>Allow Incompatible Connectors</strong> to
+        override the check for that connection.
       </p>
     </>
   );

@@ -80,6 +80,14 @@ export default function DevicesAndPortsPage() {
         <li>Swapping a card removes the old card's ports and adds the new card's ports</li>
       </ul>
 
+      <h2>Connector types</h2>
+      <p>
+        Each port can have a <strong>connector type</strong> (XLR-3, HDMI, RJ45, etc.) that determines physical
+        cable compatibility. Some connectors are <strong>combo types</strong> — for example, an XLR/TRS Combo jack
+        accepts both XLR-3 and 1/4" TRS plugs. EasySchematic handles these automatically: connecting a TRS cable
+        to a combo jack shows no mismatch and the cable schedule labels it correctly.
+      </p>
+
       <h2>Editing devices</h2>
       <p>
         <strong>Double-click</strong> any device to open the device editor. From there you can:

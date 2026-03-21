@@ -55,6 +55,8 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   tally: "TL",
   spdif: "SP",
   adat: "AD",
+  ultranet: "UN",
+  aes50: "A5",
   custom: "X",
 };
 

@@ -1,6 +1,6 @@
 import type { Port, SignalType } from "./types";
-import { SIGNAL_LABELS } from "./types";
-import { CONNECTOR_TO_CABLE } from "./connectorTypes";
+import { SIGNAL_LABELS, CONNECTOR_LABELS } from "./types";
+import { CONNECTOR_TO_CABLE, CONNECTOR_ACCEPTS, needsAdapter } from "./connectorTypes";
 
 /** Maps each signal type to a physical cable type label for pack lists (legacy fallback) */
 export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
@@ -30,6 +30,8 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   tally: "Tally",
   spdif: "S/PDIF",
   adat: "ADAT",
+  ultranet: "Ultranet",
+  aes50: "AES50",
   custom: "Other",
 };
 
@@ -53,8 +55,27 @@ export function getCableType(
     return `${count}-Ch ${SIGNAL_LABELS[signalType]}`;
   }
 
-  // Use source port connector if available
-  const connector = sourcePort?.connectorType ?? targetPort?.connectorType;
+  const src = sourcePort?.connectorType;
+  const tgt = targetPort?.connectorType;
+
+  if (src && tgt && src !== tgt) {
+    // Adapter-needed connection: label as adapter cable
+    if (needsAdapter(src, tgt)) {
+      const srcLabel = CONNECTOR_LABELS[src];
+      const tgtLabel = CONNECTOR_LABELS[tgt];
+      return `${srcLabel} to ${tgtLabel} Adapter`;
+    }
+    // Native combo: prefer the more specific (accepted) connector for cable label
+    if (CONNECTOR_ACCEPTS[src]?.native?.includes(tgt)) {
+      return CONNECTOR_TO_CABLE[tgt] || SIGNAL_TO_CABLE[signalType];
+    }
+    if (CONNECTOR_ACCEPTS[tgt]?.native?.includes(src)) {
+      return CONNECTOR_TO_CABLE[src] || SIGNAL_TO_CABLE[signalType];
+    }
+  }
+
+  // Default: use source connector
+  const connector = src ?? tgt;
   if (connector) {
     const cable = CONNECTOR_TO_CABLE[connector];
     if (cable) return cable;

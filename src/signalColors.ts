@@ -28,6 +28,8 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   tally: "#be185d",
   spdif: "#a855f7",
   adat: "#0e7490",
+  ultranet: "#059669",
+  aes50: "#7c3aed",
   custom: "#64748b",
 };
 

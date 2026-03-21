@@ -68,6 +68,7 @@ const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "dmx-splitter": "Lighting",
   "control-processor": "Control",
   "tally-system": "Control",
+  "ptz-controller": "Control",
   "timecode-generator": "Control",
   "midi-device": "Control",
   "cable-accessory": "Cable Accessories",

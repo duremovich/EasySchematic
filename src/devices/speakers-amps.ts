@@ -81,8 +81,8 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.qsc.com/products-solutions/loudspeakers/powered-loudspeakers/k2-series/k122/",
     searchTerms: ["qsc", "k12", "k series", "powered", "portable"],
     ports: [
-      port("Combo In 1", "analog-audio", "input"),
-      port("Combo In 2", "analog-audio", "input"),
+      port("Combo In 1", "analog-audio", "input", "combo-xlr-trs"),
+      port("Combo In 2", "analog-audio", "input", "combo-xlr-trs"),
       port("Line Out", "analog-audio", "output"),
       port("AC Power", "power", "input"),
     ],

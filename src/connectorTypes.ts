@@ -28,25 +28,43 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   tally: "db9",
   spdif: "rca",
   adat: "toslink",
+  ultranet: "rj45",
+  aes50: "ethercon",
   custom: "other",
 };
 
-/** Groups of physically compatible connectors (can mate with adapter or are interchangeable) */
-export const CONNECTOR_COMPAT_GROUPS: ConnectorType[][] = [
-  ["rj45", "ethercon"],
-  ["usb-a", "usb-b", "usb-c"],
-  ["dvi", "hdmi"],
-  ["opticalcon", "lc"],
-  ["mini-xlr", "xlr-3"],
-];
+/** Directional acceptance: which other connector types a connector can physically accept */
+export interface ConnectorAcceptance {
+  native?: ConnectorType[];   // direct physical acceptance, no adapter needed
+  adapter?: ConnectorType[];  // physically compatible but needs an adapter cable
+}
 
-/** Check if two connector types are compatible (same type or in a compat group) */
+export const CONNECTOR_ACCEPTS: Partial<Record<ConnectorType, ConnectorAcceptance>> = {
+  "combo-xlr-trs": { native: ["xlr-3", "trs-quarter"] },
+  "ethercon":      { native: ["rj45"] },
+  "opticalcon":    { native: ["lc"] },
+  "usb-c":         { adapter: ["usb-a", "usb-b"] },
+  "mini-xlr":      { adapter: ["xlr-3"] },
+  "dvi":           { adapter: ["hdmi"] },
+  "iec":           { adapter: ["edison", "powercon"] },
+};
+
+/** Check if two connector types are compatible (same type or one accepts the other) */
 export function areConnectorsCompatible(a: ConnectorType | undefined, b: ConnectorType | undefined): boolean {
   if (!a || !b) return true; // missing connector info = no mismatch
   if (a === b) return true;
-  for (const group of CONNECTOR_COMPAT_GROUPS) {
-    if (group.includes(a) && group.includes(b)) return true;
-  }
+  const aAccepts = CONNECTOR_ACCEPTS[a];
+  if (aAccepts?.native?.includes(b) || aAccepts?.adapter?.includes(b)) return true;
+  const bAccepts = CONNECTOR_ACCEPTS[b];
+  if (bAccepts?.native?.includes(a) || bAccepts?.adapter?.includes(a)) return true;
+  return false;
+}
+
+/** Check if a connection between two connector types requires an adapter cable */
+export function needsAdapter(a: ConnectorType | undefined, b: ConnectorType | undefined): boolean {
+  if (!a || !b || a === b) return false;
+  if (CONNECTOR_ACCEPTS[a]?.adapter?.includes(b)) return true;
+  if (CONNECTOR_ACCEPTS[b]?.adapter?.includes(a)) return true;
   return false;
 }
 
@@ -60,6 +78,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   "xlr-5": "XLR-5",
   "trs-quarter": '1/4" TRS',
   "trs-eighth": "3.5mm TRS",
+  "combo-xlr-trs": "XLR",
   rj45: "Cat6",
   ethercon: "Cat6 (EtherCon)",
   sfp: "SFP Fiber",

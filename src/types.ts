@@ -2,7 +2,7 @@ import type { Node, Edge } from "@xyflow/react";
 
 export type ConnectorType =
   | "bnc" | "hdmi" | "displayport" | "vga"
-  | "xlr-3" | "xlr-5" | "trs-quarter" | "trs-eighth"
+  | "xlr-3" | "xlr-5" | "trs-quarter" | "trs-eighth" | "combo-xlr-trs"
   | "rj45" | "ethercon" | "sfp" | "lc"
   | "usb-a" | "usb-b" | "usb-c"
   | "db9" | "db25" | "din-5" | "phoenix" | "powercon" | "edison" | "iec"
@@ -67,6 +67,8 @@ export type SignalType =
   | "tally"
   | "spdif"
   | "adat"
+  | "ultranet"
+  | "aes50"
   | "custom";
 
 export type PortDirection = "input" | "output" | "bidirectional";
@@ -335,6 +337,8 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   tally: "var(--color-tally)",
   spdif: "var(--color-spdif)",
   adat: "var(--color-adat)",
+  ultranet: "var(--color-ultranet)",
+  aes50: "var(--color-aes50)",
   custom: "var(--color-custom)",
 };
 
@@ -347,6 +351,7 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "xlr-5": "XLR-5",
   "trs-quarter": '1/4" TRS',
   "trs-eighth": '3.5mm TRS',
+  "combo-xlr-trs": "XLR/TRS Combo",
   rj45: "RJ45",
   ethercon: "EtherCon",
   sfp: "SFP/SFP+",
@@ -401,5 +406,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   tally: "Tally",
   spdif: "S/PDIF",
   adat: "ADAT",
+  ultranet: "Ultranet",
+  aes50: "AES50",
   custom: "Custom",
 };
