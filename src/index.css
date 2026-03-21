@@ -84,6 +84,11 @@ html, body, #root {
   pointer-events: none;
 }
 
+/* Edge labels must sit above edges with elevated zIndex (line-jump hops) */
+.react-flow__edgelabel-renderer {
+  z-index: 2;
+}
+
 .react-flow__edge-path {
   stroke-width: 2;
 }
