@@ -61,18 +61,40 @@ export function validateTemplate(body: unknown): ValidationResult {
   const catErr = checkString(obj.category, "category", 100);
   if (catErr) return { ok: false, error: catErr };
 
-  // Optional string fields — validate length if present
-  for (const [key, max] of [["manufacturer", MAX_STRING], ["modelNumber", MAX_STRING], ["imageUrl", 500], ["referenceUrl", 2000]] as const) {
-    if (obj[key] != null) {
-      const err = checkString(obj[key], key, max);
-      if (err) return { ok: false, error: err };
+  // Manufacturer — required
+  const mfrErr = checkString(obj.manufacturer, "manufacturer");
+  if (mfrErr) return { ok: false, error: mfrErr };
+
+  const isGeneric = (obj.manufacturer as string).trim().toLowerCase() === "generic";
+
+  // Model number — required unless manufacturer is "Generic"
+  if (!isGeneric) {
+    const mnErr = checkString(obj.modelNumber, "modelNumber");
+    if (mnErr) return { ok: false, error: mnErr };
+  } else if (obj.modelNumber != null) {
+    const mnErr = checkString(obj.modelNumber, "modelNumber");
+    if (mnErr) return { ok: false, error: mnErr };
+  }
+
+  // Reference URL — required unless manufacturer is "Generic", must be HTTPS
+  if (!isGeneric) {
+    const ruErr = checkString(obj.referenceUrl, "referenceUrl", 2000);
+    if (ruErr) return { ok: false, error: ruErr };
+    if (!(obj.referenceUrl as string).startsWith("https://")) {
+      return { ok: false, error: "referenceUrl must start with https://" };
+    }
+  } else if (obj.referenceUrl != null && typeof obj.referenceUrl === "string" && obj.referenceUrl.trim() !== "") {
+    if (obj.referenceUrl.length > 2000) return { ok: false, error: "referenceUrl must be 2000 characters or fewer" };
+    if (!obj.referenceUrl.startsWith("https://")) {
+      return { ok: false, error: "referenceUrl must start with https://" };
     }
   }
 
-  // Reference URL — must be HTTPS if provided
-  if (obj.referenceUrl != null && typeof obj.referenceUrl === "string" && obj.referenceUrl.trim() !== "") {
-    if (!obj.referenceUrl.startsWith("https://")) {
-      return { ok: false, error: "referenceUrl must start with https://" };
+  // Optional string fields — validate length if present
+  for (const [key, max] of [["imageUrl", 500]] as const) {
+    if (obj[key] != null) {
+      const err = checkString(obj[key], key, max);
+      if (err) return { ok: false, error: err };
     }
   }
 
