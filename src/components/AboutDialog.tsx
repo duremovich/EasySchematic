@@ -76,6 +76,7 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
               { label: "Docs", href: "https://docs.easyschematic.live" },
               { label: "GitHub", href: "https://github.com/duremovich/EasySchematic" },
               { label: "Device Database", href: "https://devices.easyschematic.live" },
+              { label: "Support", href: "mailto:support@easyschematic.live" },
               { label: "Report a Bug", href: "https://github.com/duremovich/EasySchematic/issues" },
             ].map((link) => (
               <a

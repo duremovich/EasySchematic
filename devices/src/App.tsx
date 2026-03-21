@@ -71,6 +71,9 @@ export default function App() {
           <a href="https://easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
             Main App
           </a>
+          <a href="mailto:support@easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+            Support
+          </a>
           {!authLoading && user && (
             <>
               <a href="#/submit" className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium">
