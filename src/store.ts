@@ -1304,7 +1304,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const adapterW = 180; // approximate width before measurement
     const adapterH = 60;
     let posX = adapterNode.position.x;
-    let posY = adapterNode.position.y;
+    const posY = adapterNode.position.y;
     for (const other of state.nodes) {
       if (other.type !== "device") continue;
       if (other.parentId !== adapterParentId) continue;

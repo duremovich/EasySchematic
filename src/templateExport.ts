@@ -60,7 +60,7 @@ export async function importTemplateFiles(
   importFn: (templates: DeviceTemplate[]) => void,
 ): Promise<{ imported: number; skipped: number }> {
   let imported = 0;
-  let skipped = 0;
+  const skipped = 0;
   for (const file of files) {
     const templates = await readTemplateFile(file);
     const before = templates.length;

@@ -828,6 +828,18 @@ app.post("/support-emails/:id/reply", async (c) => {
     headers["References"] = row.message_id;
   }
 
+  // Convert plain text to HTML body with signature
+  const bodyHtml = body.text.split("\n").map((l: string) => l || "<br>").join("<br>") +
+    `<br><br>` +
+    `<table cellpadding="0" cellspacing="0" style="font-family:Arial,sans-serif;font-size:13px;color:#334155">` +
+    `<tr><td style="padding-right:12px;vertical-align:middle">` +
+    `<img src="https://easyschematic.live/email-logo.png" width="48" height="48" alt="EasySchematic" style="border-radius:8px">` +
+    `</td><td style="vertical-align:middle">` +
+    `<strong style="font-size:14px;color:#0f172a">EasySchematic</strong><br>` +
+    `<span style="color:#64748b">AV System Design Tool</span><br>` +
+    `<a href="https://easyschematic.live" style="color:#0ea5e9;text-decoration:none">easyschematic.live</a>` +
+    `</td></tr></table>`;
+
   const emailRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -837,8 +849,10 @@ app.post("/support-emails/:id/reply", async (c) => {
     body: JSON.stringify({
       from: "EasySchematic Support <support@easyschematic.live>",
       to: row.from_email,
+      bcc: c.env.SUPPORT_FORWARD_EMAIL,
       subject: replySubject,
       text: body.text,
+      html: bodyHtml,
       headers,
     }),
   });
@@ -869,7 +883,7 @@ import { handleEmail } from "./email";
 
 export default {
   fetch: app.fetch,
-  async email(message: ForwardableEmailMessage, env: any, ctx: ExecutionContext) {
+  async email(message: ForwardableEmailMessage, env: Env["Bindings"], _ctx: ExecutionContext) {
     await handleEmail(message, env);
   },
 };
