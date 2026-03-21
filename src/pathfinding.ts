@@ -51,7 +51,7 @@ const STUB = 30; // Minimum horizontal distance from handle before first turn
 const TURN_PENALTY = 100; // Penalty for changing direction (strongly prefer fewer turns)
 const CORNER_RADIUS = 8;
 export const ARC_R = 6; // Arc radius for crossing hop arcs / gap cuts
-const GAP_HALF = 3;    // Half-width of the gap cut on vertical edges (clears the arc stroke at its peak)
+const GAP_HALF = 3;    // Margin beyond the arc on each side of the gap cut on vertical edges
 const ESCAPE_MARGIN = 40; // Grid lines beyond the overall bounding box
 const SEPARATION_PX = 16; // Offset distance for penalty zone grid lines (>= 2*ARC_R+4 for non-overlapping hops)
 const CROSS_TYPE_SEPARATION = 20; // Wider separation between edges of different signal types
@@ -713,10 +713,9 @@ export function waypointsToSvgPathWithHops(
       if (cyList && cyList.length > 0) {
         const minY = Math.min(segStartY, segEndY);
         const maxY = Math.max(segStartY, segEndY);
-        // Gap center is at cy - ARC_R, so ensure that falls within segment bounds
+        // Gap spans from above the arc peak to below the crossing base
         const relevant = cyList.filter((cy) => {
-          const gc = cy - ARC_R;
-          return gc - GAP_HALF > minY + 1 && gc + GAP_HALF < maxY - 1;
+          return (cy - ARC_R - GAP_HALF) > minY + 1 && (cy + GAP_HALF) < maxY - 1;
         });
 
         if (relevant.length > 0) {
@@ -726,15 +725,14 @@ export function waypointsToSvgPathWithHops(
           // Filter out overlapping gaps (too close together)
           const filtered: number[] = [];
           for (const cy of relevant) {
-            if (filtered.length > 0 && Math.abs(cy - filtered[filtered.length - 1]) < 2 * GAP_HALF + 2) continue;
+            if (filtered.length > 0 && Math.abs(cy - filtered[filtered.length - 1]) < ARC_R + 2 * GAP_HALF + 2) continue;
             filtered.push(cy);
           }
 
           for (const cy of filtered) {
-            // The arc peaks at cy - ARC_R (top of the semicircle) — center the gap there
-            const gapCenter = cy - ARC_R;
-            parts.push(`L ${x} ${gapCenter - GAP_HALF}`);
-            parts.push(`M ${x} ${gapCenter + GAP_HALF}`);
+            // Gap from above the arc peak to below the crossing base
+            parts.push(`L ${x} ${cy - ARC_R - GAP_HALF}`);
+            parts.push(`M ${x} ${cy + GAP_HALF}`);
           }
           parts.push(`L ${segEndX} ${segEndY}`);
         } else {
@@ -816,22 +814,20 @@ function buildVerticalSegmentWithGaps(
   const topToBottom = y2 > y1;
   const relevant = cyList
     .filter((cy) => {
-      const gc = cy - ARC_R;
-      return gc - GAP_HALF > minY + 1 && gc + GAP_HALF < maxY - 1;
+      return (cy - ARC_R - GAP_HALF) > minY + 1 && (cy + GAP_HALF) < maxY - 1;
     })
     .sort((a, b) => topToBottom ? a - b : b - a);
 
   const filtered: number[] = [];
   for (const cy of relevant) {
-    if (filtered.length > 0 && Math.abs(cy - filtered[filtered.length - 1]) < 2 * GAP_HALF + 2) continue;
+    if (filtered.length > 0 && Math.abs(cy - filtered[filtered.length - 1]) < ARC_R + 2 * GAP_HALF + 2) continue;
     filtered.push(cy);
   }
 
   for (const cy of filtered) {
-    // The arc peaks at cy - ARC_R (top of the semicircle) — center the gap there
-    const gapCenter = cy - ARC_R;
-    parts.push(`L ${x} ${gapCenter - GAP_HALF}`);
-    parts.push(`M ${x} ${gapCenter + GAP_HALF}`);
+    // Gap from above the arc peak to below the crossing base
+    parts.push(`L ${x} ${cy - ARC_R - GAP_HALF}`);
+    parts.push(`M ${x} ${cy + GAP_HALF}`);
   }
   parts.push(`L ${x} ${y2}`);
   return parts.join(" ");
