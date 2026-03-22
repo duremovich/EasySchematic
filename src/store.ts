@@ -407,6 +407,17 @@ function getPortFromHandle(
   return ports.find((p) => p.id === baseId);
 }
 
+function removeOrphanedEdges(nodes: SchematicNode[], edges: ConnectionEdge[]): ConnectionEdge[] {
+  return edges.filter((e) => {
+    const srcNode = nodes.find((n) => n.id === e.source);
+    const tgtNode = nodes.find((n) => n.id === e.target);
+    if (!srcNode || !tgtNode) return false;
+    if (srcNode.type === "device" && !getPortFromHandle(nodes, e.source, e.sourceHandle ?? null)) return false;
+    if (tgtNode.type === "device" && !getPortFromHandle(nodes, e.target, e.targetHandle ?? null)) return false;
+    return true;
+  });
+}
+
 function loadCustomTemplates(): DeviceTemplate[] {
   try {
     const raw = localStorage.getItem(TEMPLATES_KEY);
@@ -877,8 +888,31 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   updateDevice: (nodeId, data) => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
+
+    // Diff old vs new ports to find removed port IDs
+    const oldNode = state.nodes.find((n) => n.id === nodeId && n.type === "device");
+    const oldPortIds = oldNode
+      ? new Set((oldNode.data as DeviceData).ports.map((p) => p.id))
+      : new Set<string>();
+    const newPortIds = new Set(data.ports.map((p) => p.id));
+    const removedPortIds = new Set([...oldPortIds].filter((id) => !newPortIds.has(id)));
+
+    // Remove edges connected to removed ports FIRST so React Flow doesn't
+    // reassign them to other handles when the node DOM updates
+    if (removedPortIds.size > 0) {
+      set({
+        edges: state.edges.filter((e) => {
+          const srcHandle = e.sourceHandle ?? "";
+          const tgtHandle = e.targetHandle ?? "";
+          if (e.source === nodeId && removedPortIds.has(srcHandle.replace(/-(in|out)$/, ""))) return false;
+          if (e.target === nodeId && removedPortIds.has(tgtHandle.replace(/-(in|out)$/, ""))) return false;
+          return true;
+        }),
+      });
+    }
+
     set({
-      nodes: renumberNodes(state.nodes.map((n) => {
+      nodes: renumberNodes(get().nodes.map((n) => {
         if (n.id !== nodeId || n.type !== "device") return n;
         return { ...n, data: { ...data, baseLabel: undefined } } as DeviceNode;
       })),
@@ -1560,6 +1594,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           snapNodesToGrid(data.nodes);
           applyRoomLockState(data.nodes);
           syncCounters(data.nodes, data.edges);
+          data.edges = removeOrphanedEdges(data.nodes, data.edges);
           const colors = data.signalColors ?? {};
           applySignalColors(colors);
           saveSignalColors({ ...loadSignalColors(), ...colors });
@@ -1597,6 +1632,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       snapNodesToGrid(data.nodes);
       applyRoomLockState(data.nodes);
       syncCounters(data.nodes, data.edges);
+      data.edges = removeOrphanedEdges(data.nodes, data.edges);
       // Always apply colors — if file has none, reset to defaults
       const colors = data.signalColors ?? {};
       applySignalColors(colors);
@@ -1666,7 +1702,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   importFromJSON: (rawData) => {
     const data = migrateSchematic(rawData) as SchematicFile;
     const nodes = data.nodes ?? [];
-    const edges = data.edges ?? [];
+    let edges = data.edges ?? [];
     // Sanitize note HTML to prevent XSS from malicious schematic files
     for (const node of nodes) {
       if (node.type === "note" && node.data && "html" in node.data) {
@@ -1676,6 +1712,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     snapNodesToGrid(nodes);
     applyRoomLockState(nodes);
     syncCounters(nodes, edges);
+    edges = removeOrphanedEdges(nodes, edges);
     // Merge imported custom templates with existing ones (avoid duplicates by deviceType)
     if (data.customTemplates?.length) {
       const existing = get().customTemplates;
