@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from "react";
+import { useReactFlow } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import { resolvePort } from "../packList";
 
@@ -36,6 +37,7 @@ function projectOntoSegments(
 
 export default function EdgeContextMenu() {
   const menu = useSchematicStore((s) => s.edgeContextMenu);
+  const { setCenter, getZoom } = useReactFlow();
 
   // Close on click anywhere or Escape
   useEffect(() => {
@@ -220,6 +222,16 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
+  const goToNode = useCallback((nodeId: string | undefined) => {
+    if (!menu || !nodeId) return;
+    const node = useSchematicStore.getState().nodes.find((n) => n.id === nodeId);
+    if (!node) return;
+    const w = node.measured?.width ?? 200;
+    const h = node.measured?.height ?? 100;
+    setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom: getZoom(), duration: 300 });
+    useSchematicStore.setState({ edgeContextMenu: null });
+  }, [menu, setCenter, getZoom]);
+
   if (!menu) return null;
 
   const store = useSchematicStore.getState();
@@ -326,6 +338,9 @@ export default function EdgeContextMenu() {
           onClick={toggleAllowIncompatible}
         />
       )}
+      <div className="h-px bg-gray-200 my-1" />
+      <MenuItem label="Go to Source" onClick={() => goToNode(edge?.source)} />
+      <MenuItem label="Go to Destination" onClick={() => goToNode(edge?.target)} />
     </div>
   );
 }
