@@ -37,7 +37,7 @@ function projectOntoSegments(
 
 export default function EdgeContextMenu() {
   const menu = useSchematicStore((s) => s.edgeContextMenu);
-  const { setCenter, getZoom } = useReactFlow();
+  const { setCenter, getZoom, getInternalNode } = useReactFlow();
 
   // Close on click anywhere or Escape
   useEffect(() => {
@@ -224,13 +224,14 @@ export default function EdgeContextMenu() {
 
   const goToNode = useCallback((nodeId: string | undefined) => {
     if (!menu || !nodeId) return;
-    const node = useSchematicStore.getState().nodes.find((n) => n.id === nodeId);
-    if (!node) return;
-    const w = node.measured?.width ?? 200;
-    const h = node.measured?.height ?? 100;
-    setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom: getZoom(), duration: 300 });
+    const internal = getInternalNode(nodeId);
+    if (!internal) return;
+    const { x, y } = internal.internals.positionAbsolute;
+    const w = internal.measured?.width ?? 200;
+    const h = internal.measured?.height ?? 100;
+    setCenter(x + w / 2, y + h / 2, { zoom: getZoom(), duration: 300 });
     useSchematicStore.setState({ edgeContextMenu: null });
-  }, [menu, setCenter, getZoom]);
+  }, [menu, setCenter, getZoom, getInternalNode]);
 
   if (!menu) return null;
 
