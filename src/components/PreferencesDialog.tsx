@@ -38,6 +38,36 @@ function ScrollRow({
   );
 }
 
+function SensitivityRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-[var(--color-text)]">{label}</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          min={0.25}
+          max={3}
+          step={0.25}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-[100px] accent-blue-600 cursor-pointer"
+        />
+        <span className="text-xs text-[var(--color-text-muted)] w-[32px] text-right">
+          {value.toFixed(value % 1 === 0 ? 1 : 2)}x
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function PreferencesDialog({ onClose }: { onClose: () => void }) {
   const scrollConfig = useSchematicStore((s) => s.scrollConfig);
   const setScrollConfig = useSchematicStore((s) => s.setScrollConfig);
@@ -48,7 +78,10 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
   const isDefault =
     scrollConfig.scroll === DEFAULT_SCROLL_CONFIG.scroll &&
     scrollConfig.shiftScroll === DEFAULT_SCROLL_CONFIG.shiftScroll &&
-    scrollConfig.ctrlScroll === DEFAULT_SCROLL_CONFIG.ctrlScroll;
+    scrollConfig.ctrlScroll === DEFAULT_SCROLL_CONFIG.ctrlScroll &&
+    scrollConfig.zoomSpeed === DEFAULT_SCROLL_CONFIG.zoomSpeed &&
+    scrollConfig.panSpeed === DEFAULT_SCROLL_CONFIG.panSpeed &&
+    scrollConfig.trackpadEnabled === DEFAULT_SCROLL_CONFIG.trackpadEnabled;
 
   return (
     <div
@@ -74,6 +107,7 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
 
         {/* Body */}
         <div className="px-5 py-4 space-y-4">
+          {/* Scroll Wheel */}
           <div>
             <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
               Scroll Wheel
@@ -95,15 +129,54 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
                 onChange={(v) => update({ ctrlScroll: v })}
               />
             </div>
-            {!isDefault && (
-              <button
-                onClick={() => setScrollConfig({ ...DEFAULT_SCROLL_CONFIG })}
-                className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] mt-2 cursor-pointer"
-              >
-                Reset to defaults
-              </button>
-            )}
           </div>
+
+          {/* Sensitivity */}
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+              Sensitivity
+            </div>
+            <div className="space-y-0.5">
+              <SensitivityRow
+                label="Zoom speed"
+                value={scrollConfig.zoomSpeed}
+                onChange={(v) => update({ zoomSpeed: v })}
+              />
+              <SensitivityRow
+                label="Pan speed"
+                value={scrollConfig.panSpeed}
+                onChange={(v) => update({ panSpeed: v })}
+              />
+            </div>
+          </div>
+
+          {/* Trackpad */}
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+              Trackpad
+            </div>
+            <label className="flex items-center justify-between py-1 cursor-pointer">
+              <span className="text-xs text-[var(--color-text)]">Auto-detect trackpad</span>
+              <input
+                type="checkbox"
+                checked={scrollConfig.trackpadEnabled}
+                onChange={(e) => update({ trackpadEnabled: e.target.checked })}
+                className="accent-blue-600 cursor-pointer"
+              />
+            </label>
+            <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+              When off, all scroll input uses the scroll wheel settings above
+            </p>
+          </div>
+
+          {!isDefault && (
+            <button
+              onClick={() => setScrollConfig({ ...DEFAULT_SCROLL_CONFIG })}
+              className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+            >
+              Reset to defaults
+            </button>
+          )}
         </div>
 
         {/* Footer */}

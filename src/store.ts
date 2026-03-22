@@ -38,9 +38,9 @@ const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
 
 /** Migrate legacy scrollBehavior to ScrollConfig, or use provided scrollConfig */
-function resolveScrollConfig(data: { scrollBehavior?: string; scrollConfig?: ScrollConfig }): ScrollConfig {
-  if (data.scrollConfig) return data.scrollConfig;
-  if (data.scrollBehavior === "pan") return { scroll: "pan-y", shiftScroll: "pan-x", ctrlScroll: "zoom" };
+function resolveScrollConfig(data: { scrollBehavior?: string; scrollConfig?: Partial<ScrollConfig> }): ScrollConfig {
+  if (data.scrollConfig) return { ...DEFAULT_SCROLL_CONFIG, ...data.scrollConfig };
+  if (data.scrollBehavior === "pan") return { ...DEFAULT_SCROLL_CONFIG, scroll: "pan-y", shiftScroll: "pan-x", ctrlScroll: "zoom" };
   return { ...DEFAULT_SCROLL_CONFIG };
 }
 
@@ -48,7 +48,10 @@ function resolveScrollConfig(data: { scrollBehavior?: string; scrollConfig?: Scr
 function isDefaultScrollConfig(c: ScrollConfig): boolean {
   return c.scroll === DEFAULT_SCROLL_CONFIG.scroll
     && c.shiftScroll === DEFAULT_SCROLL_CONFIG.shiftScroll
-    && c.ctrlScroll === DEFAULT_SCROLL_CONFIG.ctrlScroll;
+    && c.ctrlScroll === DEFAULT_SCROLL_CONFIG.ctrlScroll
+    && c.zoomSpeed === DEFAULT_SCROLL_CONFIG.zoomSpeed
+    && c.panSpeed === DEFAULT_SCROLL_CONFIG.panSpeed
+    && c.trackpadEnabled === DEFAULT_SCROLL_CONFIG.trackpadEnabled;
 }
 
 /** Guard: don't persist empty state before initial load completes */

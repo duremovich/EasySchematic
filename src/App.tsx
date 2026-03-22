@@ -202,21 +202,25 @@ function SchematicCanvas() {
       e.preventDefault();
       e.stopPropagation();
 
+      const cfg = useSchematicStore.getState().scrollConfig;
+
       // Detect trackpad from gesture evidence: any deltaX or synthetic ctrlKey (pinch)
-      if (e.deltaX !== 0 || (e.ctrlKey && !ctrlHeldRef.current)) {
-        trackpadActiveRef.current = true;
+      if (cfg.trackpadEnabled) {
+        if (e.deltaX !== 0 || (e.ctrlKey && !ctrlHeldRef.current)) {
+          trackpadActiveRef.current = true;
+        }
+        // Reset trackpad mode after gesture ends (no wheel events for 400ms)
+        clearTimeout(trackpadTimerRef.current);
+        trackpadTimerRef.current = setTimeout(() => { trackpadActiveRef.current = false; }, 400);
       }
-      // Reset trackpad mode after gesture ends (no wheel events for 400ms)
-      clearTimeout(trackpadTimerRef.current);
-      trackpadTimerRef.current = setTimeout(() => { trackpadActiveRef.current = false; }, 400);
 
       let vp: { x: number; y: number; zoom: number };
       try { vp = rfInstance.getViewport(); } catch { return; }
 
       // Trackpad pinch-to-zoom: browser synthesizes ctrlKey on pinch gestures.
       // If ctrlKey is set but the physical key isn't held, it's a pinch — always zoom.
-      if (e.ctrlKey && !ctrlHeldRef.current) {
-        const factor = 1 - e.deltaY * 0.01;
+      if (cfg.trackpadEnabled && e.ctrlKey && !ctrlHeldRef.current) {
+        const factor = 1 - e.deltaY * 0.01 * cfg.zoomSpeed;
         const newZoom = Math.min(8, Math.max(0.05, vp.zoom * factor));
         const rect = el.getBoundingClientRect();
         const sx = e.clientX - rect.left;
@@ -234,20 +238,19 @@ function SchematicCanvas() {
       // unmodified events (including pure-vertical scrolls that lack deltaX).
       if (!e.ctrlKey && !e.shiftKey && trackpadActiveRef.current) {
         rfInstance.setViewport({
-          x: vp.x - e.deltaX,
-          y: vp.y - e.deltaY,
+          x: vp.x - e.deltaX * cfg.panSpeed,
+          y: vp.y - e.deltaY * cfg.panSpeed,
           zoom: vp.zoom,
         });
         return;
       }
 
-      // Standard mouse wheel: use ScrollConfig as before
-      const cfg = useSchematicStore.getState().scrollConfig;
+      // Standard mouse wheel: use ScrollConfig
       const action = e.ctrlKey ? cfg.ctrlScroll : e.shiftKey ? cfg.shiftScroll : cfg.scroll;
       const delta = e.deltaY;
 
       if (action === "zoom") {
-        const factor = 1 - delta * 0.001;
+        const factor = 1 - delta * 0.001 * cfg.zoomSpeed;
         const newZoom = Math.min(8, Math.max(0.05, vp.zoom * factor));
         const rect = el.getBoundingClientRect();
         const sx = e.clientX - rect.left;
@@ -259,9 +262,9 @@ function SchematicCanvas() {
           zoom: newZoom,
         });
       } else if (action === "pan-x") {
-        rfInstance.setViewport({ x: vp.x - delta, y: vp.y, zoom: vp.zoom });
+        rfInstance.setViewport({ x: vp.x - delta * cfg.panSpeed, y: vp.y, zoom: vp.zoom });
       } else {
-        rfInstance.setViewport({ x: vp.x, y: vp.y - delta, zoom: vp.zoom });
+        rfInstance.setViewport({ x: vp.x, y: vp.y - delta * cfg.panSpeed, zoom: vp.zoom });
       }
     };
     el.addEventListener("wheel", handler, { passive: false, capture: true });

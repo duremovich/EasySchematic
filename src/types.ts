@@ -303,12 +303,21 @@ export interface ScrollConfig {
   shiftScroll: ScrollAction;
   /** Ctrl + scroll wheel */
   ctrlScroll: ScrollAction;
+  /** Zoom speed multiplier (default 1.0, range 0.25–3.0) */
+  zoomSpeed: number;
+  /** Pan speed multiplier (default 1.0, range 0.25–3.0) */
+  panSpeed: number;
+  /** Enable automatic trackpad detection (default true) */
+  trackpadEnabled: boolean;
 }
 
 export const DEFAULT_SCROLL_CONFIG: ScrollConfig = {
   scroll: "zoom",
   shiftScroll: "pan-x",
   ctrlScroll: "pan-y",
+  zoomSpeed: 1,
+  panSpeed: 1,
+  trackpadEnabled: true,
 };
 
 export const SIGNAL_COLORS: Record<SignalType, string> = {
