@@ -17,7 +17,7 @@ export default function SubmitPage({ id }: Props) {
 
   if (success) {
     return (
-      <div className="max-w-4xl mx-auto p-6 text-center">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6 text-center">
         <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-green-100 flex items-center justify-center">
           <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -37,7 +37,7 @@ export default function SubmitPage({ id }: Props) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-slate-900 mb-2">
         {isEdit ? "Suggest Edit" : "Submit New Device"}
       </h1>

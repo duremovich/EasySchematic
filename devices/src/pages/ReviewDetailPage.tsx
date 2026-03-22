@@ -127,7 +127,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
   const proposed = submission.data;
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6">
       <div className="flex items-center gap-3 mb-6">
         <a href="#/review" className="text-sm text-blue-600 hover:text-blue-800">&larr; Review Queue</a>
         <StatusBadge status={submission.status} />
@@ -136,7 +136,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
 
       {existing && submission.action === "update" ? (
         // Side-by-side diff for edits
-        <div className="grid grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div>
             <h2 className="text-lg font-semibold text-slate-700 mb-3">Current</h2>
             <DeviceInfo data={existing} />
@@ -161,8 +161,8 @@ export default function ReviewDetailPage({ id }: { id: string }) {
       {editing && submission.status === "pending" && (
         <div className="mb-8 border border-blue-200 rounded-lg p-6 bg-blue-50/50">
           <h2 className="text-lg font-semibold text-blue-700 mb-4">Edit Before Approving</h2>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <label className="col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+            <label className="sm:col-span-2">
               <span className="block text-sm font-medium text-slate-700 mb-1">Label *</span>
               <input value={editLabel} onChange={(e) => setEditLabel(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </label>
@@ -178,7 +178,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
               <span className="block text-sm font-medium text-slate-700 mb-1">Model Number</span>
               <input value={editModelNumber} onChange={(e) => setEditModelNumber(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </label>
-            <label className="col-span-2">
+            <label className="sm:col-span-2">
               <span className="block text-sm font-medium text-slate-700 mb-1">Reference URL</span>
               <input value={editReferenceUrl} onChange={(e) => setEditReferenceUrl(e.target.value)} placeholder="https://manufacturer.com/product-page" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </label>
@@ -195,7 +195,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
             </label>
           </div>
           <PortEditor ports={editPorts} onChange={setEditPorts} />
-          <div className="flex items-center gap-3 mt-6 pt-4 border-t border-blue-200">
+          <div className="flex flex-wrap items-center gap-3 mt-6 pt-4 border-t border-blue-200">
             <button
               onClick={() => handleApprove(true)}
               disabled={acting}
@@ -239,7 +239,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => handleApprove()}
                 disabled={acting}
@@ -269,13 +269,13 @@ export default function ReviewDetailPage({ id }: { id: string }) {
 
 function DeviceInfo({ data }: { data: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily"> }) {
   return (
-    <div className="grid grid-cols-2 gap-2 text-sm mb-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-4">
       <div><span className="text-slate-500">Label:</span> <span className="font-medium">{data.label}</span></div>
       <div><span className="text-slate-500">Type:</span> {data.deviceType}</div>
       {data.manufacturer && <div><span className="text-slate-500">Manufacturer:</span> {data.manufacturer}</div>}
       {data.modelNumber && <div><span className="text-slate-500">Model:</span> {data.modelNumber}</div>}
       {data.referenceUrl && (
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <span className="text-slate-500">Reference:</span>{" "}
           <a href={data.referenceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 break-all">{data.referenceUrl}</a>
         </div>
@@ -301,6 +301,7 @@ function PortTable({ ports }: { ports: Port[] }) {
   if (!ports.length) return <p className="text-sm text-slate-400">No ports</p>;
 
   return (
+    <div className="overflow-x-auto">
     <table className="w-full text-sm">
       <thead>
         <tr className="text-left text-xs text-slate-500 border-b border-slate-200">
@@ -321,5 +322,6 @@ function PortTable({ ports }: { ports: Port[] }) {
         ))}
       </tbody>
     </table>
+    </div>
   );
 }

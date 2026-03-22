@@ -39,39 +39,41 @@ export default function DeviceDetailPage({ id }: { id: string }) {
     return (
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wider mb-2">{title}</h3>
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200">
-              <th className="text-left py-2 px-3 font-medium text-slate-500">Label</th>
-              <th className="text-left py-2 px-3 font-medium text-slate-500">Signal</th>
-              <th className="text-left py-2 px-3 font-medium text-slate-500">Connector</th>
-              <th className="text-left py-2 px-3 font-medium text-slate-500">Section</th>
+              <th className="text-left py-2 px-2 sm:px-3 font-medium text-slate-500">Label</th>
+              <th className="text-left py-2 px-2 sm:px-3 font-medium text-slate-500">Signal</th>
+              <th className="text-left py-2 px-2 sm:px-3 font-medium text-slate-500">Connector</th>
+              <th className="text-left py-2 px-2 sm:px-3 font-medium text-slate-500">Section</th>
             </tr>
           </thead>
           <tbody>
             {ports.map((port) => (
               <tr key={port.id} className="border-b border-slate-100">
-                <td className="py-2 px-3">{port.label}</td>
-                <td className="py-2 px-3"><SignalBadge signalType={port.signalType} /></td>
-                <td className="py-2 px-3 text-slate-600">{port.connectorType ? CONNECTOR_LABELS[port.connectorType] ?? port.connectorType : "\u2014"}</td>
-                <td className="py-2 px-3 text-slate-600">{port.section ?? "\u2014"}</td>
+                <td className="py-2 px-2 sm:px-3">{port.label}</td>
+                <td className="py-2 px-2 sm:px-3"><SignalBadge signalType={port.signalType} /></td>
+                <td className="py-2 px-2 sm:px-3 text-slate-600">{port.connectorType ? CONNECTOR_LABELS[port.connectorType] ?? port.connectorType : "\u2014"}</td>
+                <td className="py-2 px-2 sm:px-3 text-slate-600">{port.section ?? "\u2014"}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="mb-4">
         <a href="#/" className="text-sm text-blue-600 hover:text-blue-800">&larr; All Devices</a>
       </div>
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{template.label}</h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-slate-500">
+          <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-slate-500">
             {template.manufacturer && <span>{template.manufacturer}</span>}
             {template.modelNumber && <span>Model: {template.modelNumber}</span>}
             <span className="capitalize">{template.deviceType.replace(/-/g, " ")}</span>
@@ -150,6 +152,7 @@ function SlotsSection({ slots, allTemplates }: { slots: SlotDefinition[]; allTem
         return (
           <div key={family} className="mb-4">
             <div className="text-xs text-slate-500 mb-1 font-medium">{family}</div>
+            <div className="overflow-x-auto">
             <table className="w-full text-sm mb-2">
               <thead>
                 <tr className="border-b border-slate-200">
@@ -169,6 +172,7 @@ function SlotsSection({ slots, allTemplates }: { slots: SlotDefinition[]; allTem
                 })}
               </tbody>
             </table>
+            </div>
             {compatibleCards.length > 0 && (
               <div className="px-3">
                 <span className="text-xs text-slate-400">Compatible cards: </span>

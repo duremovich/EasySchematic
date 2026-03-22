@@ -40,7 +40,7 @@ export default function ContributorsPage() {
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="max-w-2xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-slate-900 mb-2">Contributors</h1>
       <p className="text-sm text-slate-500 mb-6">
         The people building the EasySchematic device library.

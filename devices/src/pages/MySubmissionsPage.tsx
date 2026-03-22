@@ -19,7 +19,7 @@ export default function MySubmissionsPage() {
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-slate-900">My Submissions</h1>
         <a href="#/submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
@@ -36,7 +36,7 @@ export default function MySubmissionsPage() {
         <div className="space-y-3">
           {submissions.map((s) => (
             <div key={s.id} className="p-4 rounded-lg border border-slate-200 bg-white">
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-slate-900">{s.data.label}</span>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchCurrentUser, getAdminToken } from "./api";
 import type { User } from "./api";
 import BrowsePage from "./pages/BrowsePage";
@@ -57,50 +57,99 @@ export default function App() {
     window.location.hash = "#/";
   };
 
-  return (
-    <div className="min-h-full flex flex-col">
-      <nav className="bg-gray-50 border-b border-gray-200 text-gray-900 px-6 py-3 flex items-center justify-between">
-        <a href="#/" className="flex items-center gap-2 text-lg font-semibold tracking-tight hover:text-gray-600 transition-colors">
-          <img src="/favicon.svg" alt="" className="w-6 h-6" />
-          EasySchematic <span className="text-gray-400 font-normal">Devices</span>
-        </a>
-        <div className="flex items-center gap-4">
-          <a href="#/contributors" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-            Contributors
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on route change
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [route]);
+
+  // Close menu on click outside
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [menuOpen]);
+
+  const navLinks = (
+    <>
+      <a href="#/contributors" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        Contributors
+      </a>
+      <a href="https://easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        Main App
+      </a>
+      <a href="mailto:support@easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        Support
+      </a>
+      {!authLoading && user && (
+        <>
+          <a href="#/submit" className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium">
+            Submit Device
           </a>
-          <a href="https://easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-            Main App
-          </a>
-          <a href="mailto:support@easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-            Support
-          </a>
-          {!authLoading && user && (
-            <>
-              <a href="#/submit" className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium">
-                Submit Device
-              </a>
-              {isMod && (
-                <a href="#/review" className="text-sm text-yellow-600 hover:text-yellow-800 transition-colors">
-                  Review Queue
-                </a>
-              )}
-            </>
-          )}
-          {isAdmin && (
-            <a href="#/admin" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-              Admin
+          {isMod && (
+            <a href="#/review" className="text-sm text-yellow-600 hover:text-yellow-800 transition-colors">
+              Review Queue
             </a>
           )}
-          {!authLoading && (
-            user ? (
-              <UserMenu user={user} onLogout={handleLogout} />
-            ) : (
-              <a href="#/login" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
-                Log in
-              </a>
-            )
-          )}
+        </>
+      )}
+      {isAdmin && (
+        <a href="#/admin" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+          Admin
+        </a>
+      )}
+      {!authLoading && (
+        user ? (
+          <UserMenu user={user} onLogout={handleLogout} />
+        ) : (
+          <a href="#/login" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+            Log in
+          </a>
+        )
+      )}
+    </>
+  );
+
+  return (
+    <div className="min-h-full flex flex-col">
+      <nav ref={menuRef} className="bg-gray-50 border-b border-gray-200 text-gray-900 px-4 sm:px-6 py-3">
+        <div className="flex items-center justify-between">
+          <a href="#/" className="flex items-center gap-2 text-lg font-semibold tracking-tight hover:text-gray-600 transition-colors">
+            <img src="/favicon.svg" alt="" className="w-6 h-6" />
+            EasySchematic <span className="text-gray-400 font-normal">Devices</span>
+          </a>
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-4">
+            {navLinks}
+          </div>
+          {/* Mobile hamburger */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-1 text-gray-500 hover:text-gray-900"
+            aria-label="Toggle menu"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              {menuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
         </div>
+        {/* Mobile dropdown */}
+        {menuOpen && (
+          <div className="md:hidden flex flex-col gap-3 pt-3 pb-1 border-t border-gray-200 mt-3">
+            {navLinks}
+          </div>
+        )}
       </nav>
       <main className="flex-1">
         {route.page === "browse" && <BrowsePage />}

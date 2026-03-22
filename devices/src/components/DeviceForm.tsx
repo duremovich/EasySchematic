@@ -125,8 +125,8 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
         <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 mb-8">
-        <label className="col-span-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <label className="sm:col-span-2">
           <span className="block text-sm font-medium text-slate-700 mb-1">Label *</span>
           <input value={label} onChange={(e) => setLabel(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </label>
@@ -146,7 +146,7 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
           <span className="block text-sm font-medium text-slate-700 mb-1">Model Number {!isGenericMfr ? "*" : ""}</span>
           <input value={modelNumber} onChange={(e) => setModelNumber(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </label>
-        <label className="col-span-2">
+        <label className="sm:col-span-2">
           <span className="block text-sm font-medium text-slate-700 mb-1">Reference URL {!isGenericMfr ? "*" : ""}</span>
           <input value={referenceUrl} onChange={(e) => setReferenceUrl(e.target.value)} placeholder="https://manufacturer.com/product-page" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <span className="text-xs text-slate-400 mt-1 block">{isGenericMfr ? "Optional for generic devices" : "Link to the manufacturer's product page for verification"}</span>
@@ -182,7 +182,7 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
       {/* Expansion Slots */}
       <SlotEditor slots={slots} onChange={setSlots} allTemplates={allTemplates} />
 
-      <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200">
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-slate-200">
         <div>{footer}</div>
         <div className="flex items-center gap-3">
           <a href={cancelHref} className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-colors">

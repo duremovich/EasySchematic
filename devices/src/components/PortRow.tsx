@@ -30,12 +30,12 @@ export default function PortRow({ port, selected, onSelect, onChange, onRemove, 
         className="w-3 h-3 rounded-full shrink-0"
         style={{ backgroundColor: `var(--color-${port.signalType})` }}
       />
-      <div className="flex items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
+      <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
         <input
           type="text"
           value={port.label}
           onChange={(e) => onChange({ label: e.target.value })}
-          className="flex-1 min-w-0 px-2 py-1 rounded border border-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full sm:flex-1 sm:w-auto min-w-0 px-2 py-1 rounded border border-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="Label"
         />
         <select
@@ -56,7 +56,7 @@ export default function PortRow({ port, selected, onSelect, onChange, onRemove, 
           type="text"
           value={port.section ?? ""}
           onChange={(e) => onChange({ section: e.target.value || undefined })}
-          className="w-24 px-2 py-1 rounded border border-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="w-full sm:w-24 px-2 py-1 rounded border border-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           placeholder="Section"
         />
         {NETWORK_SIGNAL_TYPES.has(port.signalType) && (

@@ -39,12 +39,13 @@ export default function AdminUsersPage() {
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Users</h1>
 
       {users.length === 0 ? (
         <div className="text-center py-12 text-slate-500">No users yet.</div>
       ) : (
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 text-left">
@@ -98,6 +99,7 @@ export default function AdminUsersPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

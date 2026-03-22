@@ -19,7 +19,7 @@ export default function ReviewQueuePage() {
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Review Queue</h1>
 
       {submissions.length === 0 ? (
@@ -34,7 +34,7 @@ export default function ReviewQueuePage() {
               href={`#/review/${s.id}`}
               className="block p-4 rounded-lg border border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm transition-all"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-slate-900">{s.data.label}</span>
@@ -46,7 +46,7 @@ export default function ReviewQueuePage() {
                     {s.data.manufacturer && ` \u00b7 ${s.data.manufacturer}`}
                   </p>
                 </div>
-                <div className="text-right">
+                <div className="sm:text-right">
                   <p className="text-sm text-slate-500">{s.submitterEmail}</p>
                   <p className="text-xs text-slate-400">
                     {new Date(s.createdAt).toLocaleDateString()}

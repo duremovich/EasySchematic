@@ -197,29 +197,29 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
         <div className="mb-3 p-3 bg-slate-50 rounded-lg border border-slate-200 flex flex-wrap gap-3 items-end">
           <label className="text-xs">
             <span className="block text-slate-500 mb-1">Prefix</span>
-            <input value={bulkPrefix} onChange={(e) => setBulkPrefix(e.target.value)} className="w-20 px-2 py-1 rounded border border-slate-300 text-sm" />
+            <input value={bulkPrefix} onChange={(e) => setBulkPrefix(e.target.value)} className="w-full sm:w-20 px-2 py-1 rounded border border-slate-300 text-sm" />
           </label>
           <label className="text-xs">
             <span className="block text-slate-500 mb-1">Start #</span>
-            <input type="number" value={bulkStart} onChange={(e) => setBulkStart(+e.target.value)} className="w-16 px-2 py-1 rounded border border-slate-300 text-sm" />
+            <input type="number" value={bulkStart} onChange={(e) => setBulkStart(+e.target.value)} className="w-full sm:w-16 px-2 py-1 rounded border border-slate-300 text-sm" />
           </label>
           <label className="text-xs">
             <span className="block text-slate-500 mb-1">Count</span>
-            <input type="number" value={bulkCount} onChange={(e) => setBulkCount(+e.target.value)} className="w-16 px-2 py-1 rounded border border-slate-300 text-sm" />
+            <input type="number" value={bulkCount} onChange={(e) => setBulkCount(+e.target.value)} className="w-full sm:w-16 px-2 py-1 rounded border border-slate-300 text-sm" />
           </label>
           <label className="text-xs">
             <span className="block text-slate-500 mb-1">Signal</span>
-            <select value={bulkSignal} onChange={(e) => setBulkSignal(e.target.value as SignalType)} className="px-2 py-1 rounded border border-slate-300 text-sm">
+            <select value={bulkSignal} onChange={(e) => setBulkSignal(e.target.value as SignalType)} className="w-full sm:w-auto px-2 py-1 rounded border border-slate-300 text-sm">
               {SIGNAL_TYPES.map((s) => <option key={s} value={s}>{SIGNAL_LABELS[s]}</option>)}
             </select>
           </label>
           <label className="text-xs">
             <span className="block text-slate-500 mb-1">Connector</span>
-            <select value={bulkConnector} onChange={(e) => setBulkConnector(e.target.value as ConnectorType)} className="px-2 py-1 rounded border border-slate-300 text-sm">
+            <select value={bulkConnector} onChange={(e) => setBulkConnector(e.target.value as ConnectorType)} className="w-full sm:w-auto px-2 py-1 rounded border border-slate-300 text-sm">
               {CONNECTOR_TYPES.map((c) => <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>)}
             </select>
           </label>
-          <button onClick={() => addBulk(direction)} className="px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors">Add</button>
+          <button onClick={() => addBulk(direction)} className="w-full sm:w-auto px-3 py-1 rounded bg-blue-600 text-white text-sm hover:bg-blue-700 transition-colors">Add</button>
         </div>
       )}
       {grouped[direction].length === 0 ? (
@@ -260,11 +260,11 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
           <div className="flex flex-wrap items-end gap-2 mb-3">
             <label className="text-xs">
               <span className="block text-indigo-600 mb-1">Find in labels</span>
-              <input value={findText} onChange={(e) => setFindText(e.target.value)} className="w-32 px-2 py-1 rounded border border-indigo-200 text-sm" placeholder="IN" />
+              <input value={findText} onChange={(e) => setFindText(e.target.value)} className="w-full sm:w-32 px-2 py-1 rounded border border-indigo-200 text-sm" placeholder="IN" />
             </label>
             <label className="text-xs">
               <span className="block text-indigo-600 mb-1">Replace with</span>
-              <input value={replaceText} onChange={(e) => setReplaceText(e.target.value)} className="w-32 px-2 py-1 rounded border border-indigo-200 text-sm" placeholder="XLR IN" />
+              <input value={replaceText} onChange={(e) => setReplaceText(e.target.value)} className="w-full sm:w-32 px-2 py-1 rounded border border-indigo-200 text-sm" placeholder="XLR IN" />
             </label>
             <button onClick={applyFindReplace} disabled={!findText} className="px-3 py-1 rounded bg-indigo-600 text-white text-sm hover:bg-indigo-700 disabled:opacity-50 transition-colors">Replace</button>
           </div>
