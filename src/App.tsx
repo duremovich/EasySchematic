@@ -107,6 +107,11 @@ function SchematicCanvas() {
   // Track physical Ctrl key to distinguish real Ctrl+scroll from trackpad pinch
   const ctrlHeldRef = useRef(false);
 
+  // Sticky trackpad detection: once a trackpad gesture is detected, treat all
+  // subsequent wheel events as trackpad until 400ms of silence (gesture end).
+  const trackpadActiveRef = useRef(false);
+  const trackpadTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   // Edge reconnection state (React Flow's reconnection path)
   const reconnectingRef = useRef(false);
 
@@ -197,6 +202,14 @@ function SchematicCanvas() {
       e.preventDefault();
       e.stopPropagation();
 
+      // Detect trackpad from gesture evidence: any deltaX or synthetic ctrlKey (pinch)
+      if (e.deltaX !== 0 || (e.ctrlKey && !ctrlHeldRef.current)) {
+        trackpadActiveRef.current = true;
+      }
+      // Reset trackpad mode after gesture ends (no wheel events for 400ms)
+      clearTimeout(trackpadTimerRef.current);
+      trackpadTimerRef.current = setTimeout(() => { trackpadActiveRef.current = false; }, 400);
+
       let vp: { x: number; y: number; zoom: number };
       try { vp = rfInstance.getViewport(); } catch { return; }
 
@@ -217,8 +230,9 @@ function SchematicCanvas() {
         return;
       }
 
-      // Two-axis trackpad scroll: deltaX present without modifier keys → pan both axes
-      if (!e.ctrlKey && !e.shiftKey && e.deltaX !== 0) {
+      // Trackpad scroll: once trackpad mode is detected, pan both axes for all
+      // unmodified events (including pure-vertical scrolls that lack deltaX).
+      if (!e.ctrlKey && !e.shiftKey && trackpadActiveRef.current) {
         rfInstance.setViewport({
           x: vp.x - e.deltaX,
           y: vp.y - e.deltaY,
@@ -251,7 +265,10 @@ function SchematicCanvas() {
       }
     };
     el.addEventListener("wheel", handler, { passive: false, capture: true });
-    return () => el.removeEventListener("wheel", handler, { capture: true });
+    return () => {
+      el.removeEventListener("wheel", handler, { capture: true });
+      clearTimeout(trackpadTimerRef.current);
+    };
   }, [rfInstance]);
 
   // Click-to-connect: show preview line between first click and mouse
