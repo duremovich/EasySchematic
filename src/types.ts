@@ -7,7 +7,7 @@ export type ConnectorType =
   | "usb-a" | "usb-b" | "usb-c"
   | "db9" | "db25" | "din-5" | "phoenix" | "powercon" | "edison" | "iec"
   | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel"
-  | "dvi" | "mini-xlr" | "opticalcon"
+  | "banana" | "binding-post" | "binding-post-banana" | "dvi" | "mini-xlr" | "opticalcon"
   | "none" | "other";
 
 export interface PortNetworkConfig {
@@ -374,6 +374,9 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   rca: "RCA",
   toslink: "TOSLINK",
   barrel: "DC Barrel",
+  banana: "Banana",
+  "binding-post": "Binding Post",
+  "binding-post-banana": "Binding Post (Banana)",
   dvi: "DVI",
   "mini-xlr": "Mini XLR",
   opticalcon: "opticalCON",
