@@ -28,6 +28,10 @@ html, body, #root {
 }
 
 /* React Flow overrides */
+.react-flow {
+  overscroll-behavior: none;
+}
+
 .react-flow__background {
   background: var(--color-bg) !important;
 }
