@@ -1557,8 +1557,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     }
   },
 
-  setCloudSchematicId: (id) => set({ cloudSchematicId: id }),
-  setCloudSavedAt: (ts) => set({ cloudSavedAt: ts }),
+  setCloudSchematicId: (id) => { set({ cloudSchematicId: id }); get().saveToLocalStorage(); },
+  setCloudSavedAt: (ts) => { set({ cloudSavedAt: ts }); get().saveToLocalStorage(); },
 
   saveToLocalStorage: () => {
     if (!hydrated) return;
