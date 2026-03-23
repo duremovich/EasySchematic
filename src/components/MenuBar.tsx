@@ -16,6 +16,9 @@ import UserMenuButton from "./UserMenuButton";
 import SchematicBrowser from "./SchematicBrowser";
 import LoginDialog from "./LoginDialog";
 import { checkSession, saveSchematicToCloud, updateSchematicInCloud } from "../templateApi";
+import ViewOptionsPanel from "./ViewOptionsPanel";
+import ShowInfoPanel from "./ShowInfoPanel";
+import SignalColorPanel from "./SignalColorPanel";
 
 // ─── Menu data types ─────────────────────────────────────────────
 
@@ -125,6 +128,7 @@ export default function MenuBar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [activeMobilePanel, setActiveMobilePanel] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(schematicName);
   const [reportsTab, setReportsTab] = useState<ReportsTab | null>(null);
@@ -168,19 +172,22 @@ export default function MenuBar() {
     };
   }, [openMenu]);
 
-  // Close mobile menu on Escape + lock body scroll
+  // Close mobile menu/panel on Escape + lock body scroll
   useEffect(() => {
-    if (!mobileMenuOpen) return;
+    if (!mobileMenuOpen && !activeMobilePanel) return;
     document.body.style.overflow = "hidden";
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
+      if (e.key === "Escape") {
+        setMobileMenuOpen(false);
+        setActiveMobilePanel(null);
+      }
     };
     document.addEventListener("keydown", handleKey);
     return () => {
       document.body.style.overflow = "";
       document.removeEventListener("keydown", handleKey);
     };
-  }, [mobileMenuOpen]);
+  }, [mobileMenuOpen, activeMobilePanel]);
 
   // ─── File actions ──────────────────────────────────────
 
@@ -659,12 +666,50 @@ export default function MenuBar() {
             {menuNames.map((name) => (
               <MobileAccordionSection key={name} name={name} items={menus[name]} />
             ))}
+
+            {/* Panels section */}
+            <div className="border-b border-[var(--color-border)]">
+              <div className="px-4 py-2 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+                Panels
+              </div>
+              {[
+                { key: "viewOptions", label: "View Options" },
+                { key: "showInfo", label: "Show Info" },
+                { key: "signalColors", label: "Signal Colors" },
+              ].map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => {
+                    closeMobileMenu();
+                    setActiveMobilePanel(key);
+                  }}
+                  className="flex items-center w-full px-8 py-2.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors text-left"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Footer: user section */}
           <div className="border-t border-[var(--color-border)] px-4 py-3 shrink-0">
             <UserMenuButton />
           </div>
+        </div>
+      )}
+
+      {/* Mobile panel overlay */}
+      {activeMobilePanel && (
+        <div className="fixed inset-0 z-[100] bg-[var(--color-surface)] flex flex-col md:hidden">
+          {activeMobilePanel === "viewOptions" && (
+            <ViewOptionsPanel mobile onClose={() => setActiveMobilePanel(null)} />
+          )}
+          {activeMobilePanel === "showInfo" && (
+            <ShowInfoPanel mobile onClose={() => setActiveMobilePanel(null)} />
+          )}
+          {activeMobilePanel === "signalColors" && (
+            <SignalColorPanel mobile onClose={() => setActiveMobilePanel(null)} />
+          )}
         </div>
       )}
 

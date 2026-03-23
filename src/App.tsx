@@ -1011,7 +1011,7 @@ export default function App() {
         <div className="flex-1">
           <SchematicCanvas />
         </div>
-        <div data-print-hide className="flex">
+        <div data-print-hide className="hidden md:flex">
           <ViewOptionsPanel />
           <ShowInfoPanel />
           <SignalColorPanel />
