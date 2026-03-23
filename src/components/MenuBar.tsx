@@ -25,6 +25,7 @@ interface MenuItemDef {
   shortcut?: string;
   checked?: boolean;
   disabled?: boolean;
+  title?: string;
   onClick: () => void;
 }
 
@@ -45,18 +46,21 @@ function MenuItem({
   shortcut,
   checked,
   disabled,
+  title,
   onClick,
 }: {
   label: string;
   shortcut?: string;
   checked?: boolean;
   disabled?: boolean;
+  title?: string;
   onClick: () => void;
 }) {
   return (
     <button
       disabled={disabled}
       onClick={onClick}
+      title={title}
       className="flex items-center w-full px-2 py-1.5 text-xs rounded hover:bg-[var(--color-surface-hover)] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer text-left gap-2"
     >
       <span className="w-4 text-center shrink-0 text-[10px]">
@@ -84,6 +88,7 @@ function MenuDropdown({ items, onClose }: { items: MenuEntry[]; onClose: () => v
             shortcut={entry.shortcut}
             checked={entry.checked}
             disabled={entry.disabled}
+            title={entry.title}
             onClick={() => {
               entry.onClick();
               onClose();
@@ -127,6 +132,12 @@ export default function MenuBar() {
   const [showSchematicBrowser, setShowSchematicBrowser] = useState(false);
   const [showCloudLogin, setShowCloudLogin] = useState(false);
   const [cloudSaving, setCloudSaving] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Check login state on mount
+  useEffect(() => {
+    checkSession().then((u) => setIsLoggedIn(!!u));
+  }, []);
 
   const cloudSchematicId = useSchematicStore((s) => s.cloudSchematicId);
   const cloudSavedAt = useSchematicStore((s) => s.cloudSavedAt);
@@ -243,6 +254,7 @@ export default function MenuBar() {
         store.setCloudSchematicId(result.id);
         store.setCloudSavedAt(result.updated_at);
       }
+      setIsLoggedIn(true);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Failed to save to cloud");
     } finally {
@@ -332,7 +344,7 @@ export default function MenuBar() {
       { type: "item", label: "Open Schematic...", shortcut: "Ctrl+O", onClick: handleOpen },
       { type: "separator" },
       { type: "item", label: cloudSaving ? "Saving..." : "Save to Cloud", disabled: cloudSaving, onClick: handleCloudSave },
-      { type: "item", label: "My Schematics...", onClick: () => setShowSchematicBrowser(true) },
+      { type: "item", label: "My Schematics...", disabled: !isLoggedIn, title: isLoggedIn ? undefined : "Must be logged in", onClick: () => setShowSchematicBrowser(true) },
       { type: "separator" },
       { type: "item", label: "Save Device Archive", onClick: handleSaveArchive },
       { type: "item", label: "Import Device Archive...", onClick: handleOpenArchive },
