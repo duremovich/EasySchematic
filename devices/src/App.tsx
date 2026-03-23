@@ -41,9 +41,14 @@ export default function App() {
   const [route, setRoute] = useState(parseHash);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onHash = () => setRoute(parseHash());
+    const onHash = () => {
+      setRoute(parseHash());
+      setMenuOpen(false);
+    };
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
@@ -80,14 +85,6 @@ export default function App() {
     setUser(null);
     window.location.hash = "#/";
   };
-
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  // Close menu on route change
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [route]);
 
   // Close menu on click outside
   useEffect(() => {
