@@ -34,6 +34,19 @@ export async function fetchSearchTerms(): Promise<string[]> {
   return res.json();
 }
 
+// ==================== DRAFTS ====================
+
+export async function fetchDraft(id: string): Promise<Record<string, unknown>> {
+  const res = await fetch(`${API_URL}/drafts/${id}`, {
+    credentials: "include",
+  });
+  if (!res.ok) {
+    if (res.status === 404) throw new Error("Draft not found or expired");
+    throw new Error(`Failed to fetch draft: ${res.status}`);
+  }
+  return res.json();
+}
+
 // ==================== TEMPLATES (admin token) ====================
 
 export async function createTemplate(template: Omit<DeviceTemplate, "id" | "version">, token: string): Promise<DeviceTemplate> {

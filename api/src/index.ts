@@ -48,11 +48,26 @@ function getClientIP(c: { req: { header: (name: string) => string | undefined } 
   return c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() || "unknown";
 }
 
+const ALLOWED_ORIGINS = [
+  "https://easyschematic.live",
+  "https://www.easyschematic.live",
+  "https://devices.easyschematic.live",
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+];
+
+function isAllowedOrigin(url: string): boolean {
+  try { return ALLOWED_ORIGINS.includes(new URL(url).origin); }
+  catch { return false; }
+}
+
 // ==================== AUTH ENDPOINTS ====================
 
 app.post("/auth/login", async (c) => {
-  const body = await c.req.json<{ email?: string }>();
+  const body = await c.req.json<{ email?: string; returnTo?: string }>();
   const email = body.email?.trim().toLowerCase();
+  const returnTo = body.returnTo && isAllowedOrigin(body.returnTo) ? body.returnTo : undefined;
 
   if (!email || !email.includes("@")) {
     return c.json({ error: "Valid email is required" }, 400);
@@ -82,7 +97,9 @@ app.post("/auth/login", async (c) => {
     .run();
 
   // Send magic link email via Resend
-  const verifyUrl = `https://api.easyschematic.live/auth/verify?token=${token}`;
+  const verifyUrl = returnTo
+    ? `https://api.easyschematic.live/auth/verify?token=${token}&returnTo=${encodeURIComponent(returnTo)}`
+    : `https://api.easyschematic.live/auth/verify?token=${token}`;
 
   const emailRes = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -94,7 +111,7 @@ app.post("/auth/login", async (c) => {
       from: "EasySchematic <noreply@easyschematic.live>",
       to: email,
       subject: "Your login link",
-      html: `<p>Click below to log in to EasySchematic Devices:</p>
+      html: `<p>Click below to log in to EasySchematic:</p>
 <p><a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;background:#1e293b;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Log in to EasySchematic</a></p>
 <p style="color:#64748b;font-size:14px;">This link expires in 15 minutes. If you didn't request this, you can ignore this email.</p>`,
     }),
@@ -110,6 +127,9 @@ app.post("/auth/login", async (c) => {
 
 app.get("/auth/verify", async (c) => {
   const token = c.req.query("token");
+  const returnTo = c.req.query("returnTo");
+  const validReturnTo = returnTo && isAllowedOrigin(returnTo) ? returnTo : undefined;
+
   if (!token) {
     return c.json({ error: "Token required" }, 400);
   }
@@ -123,7 +143,10 @@ app.get("/auth/verify", async (c) => {
     .first<{ id: string; email: string }>();
 
   if (!link) {
-    return c.redirect("https://devices.easyschematic.live/#/login?error=expired");
+    const errorUrl = validReturnTo
+      ? `${new URL(validReturnTo).origin}/?error=expired`
+      : "https://devices.easyschematic.live/#/login?error=expired";
+    return c.redirect(errorUrl);
   }
 
   // Mark as used
@@ -152,11 +175,11 @@ app.get("/auth/verify", async (c) => {
     .bind(sessionId, user.id, sessionExpires)
     .run();
 
-  // Redirect to devices site with session cookie
+  // Redirect to returnTo or devices site with session cookie
   return new Response(null, {
     status: 302,
     headers: {
-      Location: "https://devices.easyschematic.live/#/",
+      Location: validReturnTo || "https://devices.easyschematic.live/#/",
       "Set-Cookie": sessionCookie(sessionId, 30 * 24 * 60 * 60),
     },
   });
@@ -223,6 +246,57 @@ app.put("/auth/me", async (c) => {
   }
 
   return c.json({ ok: true });
+});
+
+// ==================== DRAFT ENDPOINTS ====================
+
+app.post("/drafts", async (c) => {
+  const user = requireSession(c);
+  if (!user) return c.json({ error: "Not authenticated" }, 401);
+  if (user.banned) return c.json({ error: "Account suspended" }, 403);
+
+  const db = c.env.easyschematic_db;
+
+  const limit = await checkRateLimit(db, `draft:user:${user.id}`, 20);
+  if (!limit.allowed) {
+    return c.json({ error: "Too many drafts. Try again later." }, 429);
+  }
+
+  const body = await c.req.json<{ data?: unknown }>();
+  const json = JSON.stringify(body.data);
+  if (!body.data || json.length > 100_000) {
+    return c.json({ error: "Invalid or oversized draft data" }, 400);
+  }
+
+  const id = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+  await db
+    .prepare("INSERT INTO drafts (id, user_id, data, expires_at) VALUES (?, ?, ?, ?)")
+    .bind(id, user.id, json, expiresAt)
+    .run();
+
+  // Opportunistic cleanup
+  await db.prepare("DELETE FROM drafts WHERE expires_at < datetime('now')").run().catch(() => {});
+
+  return c.json({ id }, 201);
+});
+
+app.get("/drafts/:id", async (c) => {
+  const user = requireSession(c);
+  if (!user) return c.json({ error: "Not authenticated" }, 401);
+
+  const id = c.req.param("id");
+  const draft = await c.env.easyschematic_db
+    .prepare("SELECT * FROM drafts WHERE id = ? AND expires_at > datetime('now')")
+    .bind(id)
+    .first<{ user_id: string; data: string }>();
+
+  if (!draft || draft.user_id !== user.id) {
+    return c.json({ error: "Draft not found or expired" }, 404);
+  }
+
+  return c.json(JSON.parse(draft.data));
 });
 
 // ==================== SUBMISSION ENDPOINTS ====================
@@ -874,8 +948,9 @@ app.post("/support-emails/:id/reply", async (c) => {
 // ==================== HEALTH ====================
 
 app.get("/health", async (c) => {
-  // Opportunistically clean up expired rate limits
+  // Opportunistically clean up expired rate limits and drafts
   await cleanupExpiredRateLimits(c.env.easyschematic_db).catch(() => {});
+  await c.env.easyschematic_db.prepare("DELETE FROM drafts WHERE expires_at < datetime('now')").run().catch(() => {});
   return c.json({ ok: true });
 });
 

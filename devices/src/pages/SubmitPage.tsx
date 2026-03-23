@@ -4,9 +4,10 @@ import DeviceForm, { type DeviceFormData } from "../components/DeviceForm";
 
 interface Props {
   id?: string; // existing template ID for edit suggestions
+  draftId?: string; // draft from main app cross-submission
 }
 
-export default function SubmitPage({ id }: Props) {
+export default function SubmitPage({ id, draftId }: Props) {
   const [success, setSuccess] = useState(false);
   const isEdit = !!id;
 
@@ -49,6 +50,7 @@ export default function SubmitPage({ id }: Props) {
 
       <DeviceForm
         id={id}
+        draftId={draftId}
         onSubmit={handleSubmit}
         submitLabel="Submit for Review"
         cancelHref={isEdit ? `#/device/${id}` : "#/"}

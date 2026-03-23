@@ -14,21 +14,25 @@ import ProfilePage from "./pages/ProfilePage";
 import ContributorsPage from "./pages/ContributorsPage";
 import UserMenu from "./components/UserMenu";
 
-function parseHash(): { page: string; id?: string } {
+function parseHash(): { page: string; id?: string; draft?: string } {
   const hash = window.location.hash.slice(1) || "/";
-  if (hash.startsWith("/admin/edit/")) return { page: "admin-edit", id: hash.slice(12) };
-  if (hash === "/admin/edit") return { page: "admin-edit" };
-  if (hash === "/admin/users") return { page: "admin-users" };
-  if (hash === "/admin") return { page: "admin-users" };
-  if (hash.startsWith("/device/")) return { page: "device", id: hash.slice(8) };
-  if (hash === "/login") return { page: "login" };
-  if (hash.startsWith("/submit/")) return { page: "submit", id: hash.slice(8) };
-  if (hash === "/submit") return { page: "submit" };
-  if (hash === "/my-submissions") return { page: "my-submissions" };
-  if (hash === "/review") return { page: "review" };
-  if (hash.startsWith("/review/")) return { page: "review-detail", id: hash.slice(8) };
-  if (hash === "/profile") return { page: "profile" };
-  if (hash === "/contributors") return { page: "contributors" };
+  const [path, query] = hash.split("?");
+  const params = new URLSearchParams(query || "");
+  const draft = params.get("draft") || undefined;
+
+  if (path.startsWith("/admin/edit/")) return { page: "admin-edit", id: path.slice(12) };
+  if (path === "/admin/edit") return { page: "admin-edit" };
+  if (path === "/admin/users") return { page: "admin-users" };
+  if (path === "/admin") return { page: "admin-users" };
+  if (path.startsWith("/device/")) return { page: "device", id: path.slice(8) };
+  if (path === "/login") return { page: "login" };
+  if (path.startsWith("/submit/")) return { page: "submit", id: path.slice(8), draft };
+  if (path === "/submit") return { page: "submit", draft };
+  if (path === "/my-submissions") return { page: "my-submissions" };
+  if (path === "/review") return { page: "review" };
+  if (path.startsWith("/review/")) return { page: "review-detail", id: path.slice(8) };
+  if (path === "/profile") return { page: "profile" };
+  if (path === "/contributors") return { page: "contributors" };
   return { page: "browse" };
 }
 
@@ -156,7 +160,7 @@ export default function App() {
         {route.page === "device" && route.id && <DeviceDetailPage id={route.id} />}
         {route.page === "login" && <LoginPage />}
         {route.page === "submit" && (
-          user ? <SubmitPage id={route.id} /> : <LoginRedirect />
+          user ? <SubmitPage id={route.id} draftId={route.draft} /> : <LoginRedirect />
         )}
         {route.page === "my-submissions" && (
           user ? <MySubmissionsPage /> : <LoginRedirect />

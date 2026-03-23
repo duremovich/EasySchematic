@@ -16,7 +16,8 @@ import {
   type SlotDefinition,
 } from "../types";
 import { DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES } from "../connectorTypes";
-import { getBundledTemplates, getCardsByFamily } from "../templateApi";
+import { getBundledTemplates, getCardsByFamily, checkSession, createDraft } from "../templateApi";
+import LoginDialog from "./LoginDialog";
 import { isValidIpv4, isValidSubnetMask, isValidVlan, findDuplicateIps } from "../networkValidation";
 import IpInput from "./IpInput";
 
@@ -80,6 +81,9 @@ export default function DeviceEditor() {
   // Cable accessory flags
   const [isCableAccessory, setIsCableAccessory] = useState(false);
   const [integratedWithCable, setIntegratedWithCable] = useState(false);
+
+  // Login dialog for community submission
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
 
   // Drag state — which port is being dragged and where it would drop
   const [draggedPortId, setDraggedPortId] = useState<string | null>(null);
@@ -180,6 +184,56 @@ export default function DeviceEditor() {
       ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
     });
   }, [ports, label, node, addCustomTemplate]);
+
+  const handleSubmitToCommunity = useCallback(async () => {
+    const finalPorts: Port[] = ports
+      .filter((p) => p.label.trim())
+      .map((p, i) => ({
+        ...p,
+        id: `tpl-${i}`,
+        label: p.label.trim(),
+      }));
+
+    if (finalPorts.length === 0) return;
+
+    const existing = node?.data;
+    let dt = deviceType.trim() || "custom";
+    if (dt.startsWith("custom-")) dt = "";
+
+    const draftData: Record<string, unknown> = {
+      label: label.trim() || "Custom Device",
+      deviceType: dt,
+      ports: finalPorts,
+      ...(color ? { color } : {}),
+      // Carry over metadata from library devices
+      ...(existing?.manufacturer ? { manufacturer: existing.manufacturer } : {}),
+      ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
+      ...(existing?.referenceUrl ? { referenceUrl: existing.referenceUrl } : {}),
+      ...(existing?.category ? { category: existing.category } : {}),
+      ...(existing?.slots ? { slots: existing.slots } : {}),
+      ...(existing?.slotFamily ? { slotFamily: existing.slotFamily } : {}),
+    };
+
+    const devicesUrl = import.meta.env.VITE_DEVICES_URL ?? "https://devices.easyschematic.live";
+
+    const user = await checkSession();
+    if (!user) {
+      // Save to localStorage and show login dialog
+      localStorage.setItem("easyschematic-pending-submission", JSON.stringify({
+        data: draftData,
+        timestamp: Date.now(),
+      }));
+      setShowLoginDialog(true);
+      return;
+    }
+
+    try {
+      const draftId = await createDraft(draftData);
+      window.open(`${devicesUrl}/#/submit?draft=${draftId}`, "_blank");
+    } catch (e) {
+      console.error("Failed to create draft:", e);
+    }
+  }, [ports, label, deviceType, color, node]);
 
   const handleSaveAsPreset = useCallback(() => {
     if (!editingNodeId || !node?.data.templateId) return;
@@ -587,6 +641,15 @@ export default function DeviceEditor() {
           >
             Save as User Template
           </button>
+          {(!templateId || dirtyVsTemplate) && ports.some((p) => p.label.trim()) && (
+            <button
+              onClick={handleSubmitToCommunity}
+              className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
+              title="Submit this device to the community device library"
+            >
+              Submit to Community
+            </button>
+          )}
           {templateId && (
             <button
               onClick={handleSaveAsPreset}
@@ -629,6 +692,7 @@ export default function DeviceEditor() {
           </button>
         </div>
       </div>
+      <LoginDialog open={showLoginDialog} onClose={() => setShowLoginDialog(false)} />
     </div>
   );
 }

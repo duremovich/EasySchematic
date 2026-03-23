@@ -1,6 +1,6 @@
 import { useState, useEffect, type ReactNode } from "react";
 import type { Port, SlotDefinition, DeviceTemplate } from "../../../src/types";
-import { fetchTemplate, fetchDeviceTypes, fetchSearchTerms, fetchCategories, fetchTemplates } from "../api";
+import { fetchTemplate, fetchDeviceTypes, fetchSearchTerms, fetchCategories, fetchTemplates, fetchDraft } from "../api";
 import PortEditor from "./PortEditor";
 import AutocompleteInput from "./AutocompleteInput";
 import TagAutocompleteInput from "./TagAutocompleteInput";
@@ -22,6 +22,8 @@ export interface DeviceFormData {
 interface DeviceFormProps {
   /** Template ID to load for editing */
   id?: string;
+  /** Draft ID from main app cross-submission */
+  draftId?: string;
   /** Called with validated data on submit */
   onSubmit: (data: DeviceFormData) => Promise<void>;
   /** Text for the submit button */
@@ -34,7 +36,7 @@ interface DeviceFormProps {
   footer?: ReactNode;
 }
 
-export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelHref, extraFields, footer }: DeviceFormProps) {
+export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save", cancelHref, extraFields, footer }: DeviceFormProps) {
   const [label, setLabel] = useState("");
   const [deviceType, setDeviceType] = useState("");
   const [category, setCategory] = useState("");
@@ -80,6 +82,26 @@ export default function DeviceForm({ id, onSubmit, submitLabel = "Save", cancelH
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!draftId || id) return; // don't load draft if editing an existing template
+    setLoading(true);
+    fetchDraft(draftId)
+      .then((t: Record<string, unknown>) => {
+        setLabel((t.label as string) ?? "");
+        setDeviceType((t.deviceType as string) ?? "");
+        setCategory((t.category as string) ?? "");
+        setManufacturer((t.manufacturer as string) ?? "");
+        setModelNumber((t.modelNumber as string) ?? "");
+        setReferenceUrl((t.referenceUrl as string) ?? "");
+        setColor((t.color as string) ?? "");
+        setPorts((t.ports as Port[]) ?? []);
+        setSlots((t.slots as SlotDefinition[]) ?? []);
+        setSlotFamily((t.slotFamily as string) ?? "");
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [draftId, id]);
 
   const handleSubmit = async () => {
     if (!label.trim()) { setError("Label is required"); return; }

@@ -27,6 +27,7 @@ import ViewOptionsPanel from "./components/ViewOptionsPanel";
 import MenuBar from "./components/MenuBar";
 import EdgeContextMenu from "./components/EdgeContextMenu";
 import IncompatibleConnectionDialog from "./components/IncompatibleConnectionDialog";
+import PendingSubmissionBanner from "./components/PendingSubmissionBanner";
 import RoomContextMenu from "./components/RoomContextMenu";
 import RoomEditor from "./components/RoomEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
@@ -975,6 +976,7 @@ export default function App() {
         <MenuBar />
       </div>
       <DemoBanner />
+      <PendingSubmissionBanner />
       {printView && <PrintViewBar />}
       <PrintTitleBlock />
       <div className="flex flex-1 overflow-hidden">
