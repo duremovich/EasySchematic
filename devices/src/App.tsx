@@ -180,10 +180,10 @@ export default function App() {
         {route.page === "device" && route.id && <DeviceDetailPage id={route.id} />}
         {route.page === "login" && <LoginPage />}
         {route.page === "submit" && (
-          user ? <SubmitPage id={route.id} draftId={route.draft} /> : <LoginRedirect />
+          authLoading ? null : user ? <SubmitPage id={route.id} draftId={route.draft} /> : <LoginRedirect />
         )}
         {route.page === "my-submissions" && (
-          user ? <MySubmissionsPage /> : <LoginRedirect />
+          authLoading ? null : user ? <MySubmissionsPage /> : <LoginRedirect />
         )}
         {route.page === "review" && (
           isMod ? <ReviewQueuePage /> : <NoAccess />
@@ -192,7 +192,7 @@ export default function App() {
           isMod ? <ReviewDetailPage id={route.id} /> : <NoAccess />
         )}
         {route.page === "profile" && (
-          user ? <ProfilePage user={user} onUpdate={setUser} /> : <LoginRedirect />
+          authLoading ? null : user ? <ProfilePage user={user} onUpdate={setUser} /> : <LoginRedirect />
         )}
         {route.page === "contributors" && <ContributorsPage />}
         {route.page === "admin-users" && (
