@@ -44,6 +44,7 @@ api/backup-*.sql
 
 # Wrangler local state
 .wrangler/
+.dev.vars
 
 # Internal notes
 internal/
