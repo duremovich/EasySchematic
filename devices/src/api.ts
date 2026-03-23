@@ -203,18 +203,20 @@ export interface Submission {
   reviewedAt: string | null;
   submitterEmail?: string;
   submitterName?: string;
+  submitterNote?: string;
 }
 
 export async function createSubmission(
   action: "create" | "update",
   data: Omit<DeviceTemplate, "id" | "version">,
   templateId?: string,
+  submitterNote?: string,
 ): Promise<Submission> {
   const res = await fetch(`${API_URL}/submissions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ action, data, templateId }),
+    body: JSON.stringify({ action, data, templateId, ...(submitterNote && { submitterNote }) }),
   });
   if (res.status === 401) throw new Error("Not authenticated");
   if (res.status === 403) throw new Error("Account suspended");

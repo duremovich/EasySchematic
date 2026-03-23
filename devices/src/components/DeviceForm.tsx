@@ -21,6 +21,7 @@ export interface DeviceFormData {
   powerCapacityW?: number;
   voltage?: string;
   isVenueProvided?: boolean;
+  submitterNote?: string;
 }
 
 interface DeviceFormProps {
@@ -56,6 +57,7 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
   const [powerCapacityW, setPowerCapacityW] = useState<string>("");
   const [voltage, setVoltage] = useState("");
   const [isVenueProvided, setIsVenueProvided] = useState(false);
+  const [submitterNote, setSubmitterNote] = useState("");
   const [loading, setLoading] = useState(!!id);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -148,6 +150,7 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
         ...(powerCapacityW.trim() && { powerCapacityW: Number(powerCapacityW) }),
         ...(voltage.trim() && { voltage: voltage.trim() }),
         ...(isVenueProvided && { isVenueProvided: true }),
+        ...(submitterNote.trim() && { submitterNote: submitterNote.trim() }),
       });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Save failed");
@@ -235,6 +238,19 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
 
       {/* Expansion Slots */}
       <SlotEditor slots={slots} onChange={setSlots} allTemplates={allTemplates} />
+
+      <label className="block mt-8">
+        <span className="block text-sm font-medium text-slate-700 mb-1">Notes to Moderators</span>
+        <textarea
+          value={submitterNote}
+          onChange={(e) => setSubmitterNote(e.target.value)}
+          placeholder="e.g., This device has a connector type not listed, so I used the closest match…"
+          rows={3}
+          maxLength={1000}
+          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+        />
+        <span className="text-xs text-slate-400 mt-1 block">Optional — anything the reviewer should know about this submission</span>
+      </label>
 
       <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 mt-8 pt-6 border-t border-slate-200">
         <div>{footer}</div>

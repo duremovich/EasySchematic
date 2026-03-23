@@ -12,7 +12,8 @@ export default function SubmitPage({ id, draftId }: Props) {
   const isEdit = !!id;
 
   const handleSubmit = async (data: DeviceFormData) => {
-    await createSubmission(isEdit ? "update" : "create", data, id);
+    const { submitterNote, ...templateData } = data;
+    await createSubmission(isEdit ? "update" : "create", templateData, id, submitterNote);
     setSuccess(true);
   };
 

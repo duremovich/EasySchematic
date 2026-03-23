@@ -387,7 +387,7 @@ app.post("/submissions", async (c) => {
     return c.json({ error: "Too many submissions. Try again later." }, 429);
   }
 
-  const body = await c.req.json<{ action?: string; templateId?: string; data?: unknown }>();
+  const body = await c.req.json<{ action?: string; templateId?: string; data?: unknown; submitterNote?: string }>();
 
   if (!body.action || (body.action !== "create" && body.action !== "update")) {
     return c.json({ error: "action must be 'create' or 'update'" }, 400);
@@ -403,13 +403,18 @@ app.post("/submissions", async (c) => {
     return c.json({ error: validation.error }, 400);
   }
 
+  // Validate optional submitter note
+  const submitterNote = body.submitterNote && typeof body.submitterNote === "string"
+    ? body.submitterNote.trim().slice(0, 1000) || null
+    : null;
+
   const id = crypto.randomUUID();
 
   await db
     .prepare(
-      "INSERT INTO submissions (id, user_id, action, template_id, data) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO submissions (id, user_id, action, template_id, data, submitter_note) VALUES (?, ?, ?, ?, ?, ?)",
     )
-    .bind(id, user.id, body.action, body.templateId ?? null, JSON.stringify(body.data))
+    .bind(id, user.id, body.action, body.templateId ?? null, JSON.stringify(body.data), submitterNote)
     .run();
 
   const created = await db.prepare("SELECT * FROM submissions WHERE id = ?").bind(id).first();
@@ -1330,6 +1335,7 @@ interface SubmissionRow {
   status: string;
   reviewer_id: string | null;
   reviewer_note: string | null;
+  submitter_note: string | null;
   created_at: string;
   reviewed_at: string | null;
   // Joined fields (optional)
@@ -1352,5 +1358,6 @@ function formatSubmission(row: SubmissionRow) {
     reviewedAt: row.reviewed_at,
     ...(row.submitter_email && { submitterEmail: row.submitter_email }),
     ...(row.submitter_name && { submitterName: row.submitter_name }),
+    ...(row.submitter_note && { submitterNote: row.submitter_note }),
   };
 }
