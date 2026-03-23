@@ -28,6 +28,9 @@ CLAUDE.md
 *.sln
 *.sw?
 
+# Build artifacts
+*.tsbuildinfo
+
 # Debug artifacts
 canvas-screenshot*.png
 debug-capture.mjs
