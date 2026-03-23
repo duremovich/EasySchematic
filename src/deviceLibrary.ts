@@ -75,6 +75,8 @@ const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "timecode-generator": "Control",
   "midi-device": "Control",
   "cable-accessory": "Cable Accessories",
+  "wired-mic": "Audio",
+  "iem-transmitter": "Audio",
   "expansion-card": "Expansion Cards",
   "power-distribution": "Infrastructure",
   "patch-panel": "Infrastructure",

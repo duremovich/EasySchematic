@@ -617,4 +617,32 @@ export const templates: DeviceTemplate[] = [
       port("SLink", "fiber", "bidirectional"),
     ],
   },
+  // Ross Ultrix I/O Cards
+  {
+    id: "ross-ultrix-hdx-io",
+    deviceType: "expansion-card",
+    slotFamily: "ross-ultrix",
+    label: "ULTRIX-HDX-IO",
+    manufacturer: "Ross Video",
+    modelNumber: "ULTRIX-HDX-IO",
+    referenceUrl: "https://www.rossvideo.com/products/routing-systems/ultrix/ultrix-specifications/",
+    searchTerms: ["ross", "ultrix", "hdx", "sdi", "12g", "expansion", "card"],
+    ports: [
+      ...ports("SDI In", "sdi", "input", 16, "bnc"),
+      ...ports("SDI Out", "sdi", "output", 16, "bnc"),
+    ],
+  },
+  {
+    id: "ross-ultrix-ipx-io",
+    deviceType: "expansion-card",
+    slotFamily: "ross-ultrix",
+    label: "ULTRIX-IPX-IO",
+    manufacturer: "Ross Video",
+    modelNumber: "ULTRIX-IPX-IO",
+    referenceUrl: "https://www.rossvideo.com/products/routing-systems/ultrix/ultrix-specifications/",
+    searchTerms: ["ross", "ultrix", "ipx", "ip", "st2110", "qsfp28", "expansion", "card"],
+    ports: [
+      ...ports("QSFP28", "fiber", "bidirectional", 4, "sfp"),
+    ],
+  },
 ];

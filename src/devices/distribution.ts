@@ -137,4 +137,18 @@ export const templates: DeviceTemplate[] = [
       port("AC Power", "power", "input"),
     ],
   },
+  {
+    id: "c0a80101-0196-4000-8000-000000000406",
+    deviceType: "da",
+    category: "distribution",
+    label: "AJA 12GDA",
+    manufacturer: "AJA",
+    modelNumber: "12GDA",
+    referenceUrl: "https://www.aja.com/products/12gda",
+    searchTerms: ["aja", "12gda", "distribution amplifier", "da", "12g", "sdi"],
+    ports: [
+      port("12G-SDI In", "sdi", "input"),
+      ...ports("12G-SDI Out", "sdi", "output", 6),
+    ],
+  },
 ];

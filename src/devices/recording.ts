@@ -1,4 +1,4 @@
-import { port } from "./_helpers";
+import { port, ports } from "./_helpers";
 import type { DeviceTemplate } from "../types";
 
 export const templates: DeviceTemplate[] = [
@@ -305,6 +305,54 @@ export const templates: DeviceTemplate[] = [
       port("SDI Out", "sdi", "output"),
       port("Headphone", "analog-audio", "output", "trs-eighth"),
       port("USB-C", "usb", "bidirectional", "usb-c"),
+    ],
+  },
+  {
+    id: "c0a80101-0192-4000-8000-000000000402",
+    deviceType: "recorder",
+    category: "recorders",
+    label: "AJA Ki Pro GO2",
+    manufacturer: "AJA",
+    modelNumber: "Ki Pro GO2",
+    referenceUrl: "https://www.aja.com/products/ki-pro-go2",
+    searchTerms: ["aja", "ki pro", "go2", "multi-channel", "recorder", "h265", "hevc"],
+    ports: [
+      ...ports("3G-SDI In", "sdi", "input", 4),
+      ...ports("HDMI In", "hdmi", "input", 4),
+      ...ports("3G-SDI Out", "sdi", "output", 4),
+      port("SDI Monitor", "sdi", "output"),
+      port("HDMI Monitor", "hdmi", "output"),
+      port("XLR In L", "analog-audio", "input"),
+      port("XLR In R", "analog-audio", "input"),
+      port("Headphone", "analog-audio", "output", "trs-quarter"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("AC Power", "power", "input"),
+    ],
+  },
+  {
+    id: "c0a80101-0193-4000-8000-000000000403",
+    deviceType: "recorder",
+    category: "recorders",
+    label: "BMD HyperDeck Studio Pro 2",
+    manufacturer: "Blackmagic Design",
+    modelNumber: "HyperDeck Studio Pro 2",
+    referenceUrl: "https://www.blackmagicdesign.com/products/hyperdeckstudio",
+    searchTerms: ["blackmagic", "hyperdeck", "studio pro", "recorder", "4k", "6g"],
+    ports: [
+      ...ports("3G-SDI In", "sdi", "input", 3),
+      port("6G-SDI In", "sdi", "input"),
+      port("HDMI In", "hdmi", "input"),
+      port("Component In (3-BNC)", "composite", "input", "bnc"),
+      ...ports("SDI Out", "sdi", "output", 4),
+      port("SDI Monitor", "sdi", "output"),
+      port("HDMI Out", "hdmi", "output"),
+      port("Component Out (3-BNC)", "composite", "output", "bnc"),
+      port("Thunderbolt", "thunderbolt", "bidirectional"),
+      port("RS-422", "rs422", "bidirectional"),
+      port("Ref In", "genlock", "input"),
+      port("Ethernet", "ethernet", "bidirectional"),
+      port("USB-B", "usb", "bidirectional", "usb-b"),
+      port("AC Power", "power", "input"),
     ],
   },
 ];
