@@ -75,6 +75,13 @@ export async function createHandoff(): Promise<string> {
   return result.token;
 }
 
+export async function logout(): Promise<void> {
+  await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+}
+
 // ==================== TEMPLATES ====================
 
 export async function fetchTemplates(): Promise<DeviceTemplate[]> {

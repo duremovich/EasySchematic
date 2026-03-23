@@ -12,6 +12,7 @@ import TitleBlockDialog from "./TitleBlockDialog";
 import AboutDialog from "./AboutDialog";
 import PreferencesDialog from "./PreferencesDialog";
 import AlignmentMenu from "./AlignmentMenu";
+import UserMenuButton from "./UserMenuButton";
 
 // ─── Menu data types ─────────────────────────────────────────────
 
@@ -454,6 +455,8 @@ export default function MenuBar() {
         </button>
         <div className="w-px h-5 bg-[var(--color-border)] mx-1" />
         <AlignmentMenu />
+        <div className="w-px h-5 bg-[var(--color-border)] mx-1" />
+        <UserMenuButton />
       </div>
 
       {/* Hidden file input for Open Schematic */}
