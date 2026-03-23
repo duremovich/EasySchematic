@@ -31,18 +31,18 @@ export default function MobileGate() {
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 p-6">
-      <div className="max-w-sm rounded-lg bg-[var(--bg-primary)] p-8 text-center shadow-xl">
-        <h1 className="mb-4 text-xl font-bold text-[var(--text-primary)]">
+      <div className="max-w-sm rounded-lg bg-white p-8 text-center shadow-xl">
+        <h1 className="mb-4 text-xl font-bold text-gray-900">
           EasySchematic is designed for desktop browsers.
         </h1>
-        <p className="mb-6 text-sm leading-relaxed text-[var(--text-secondary)]">
+        <p className="mb-6 text-sm leading-relaxed text-gray-600">
           This tool works best with a keyboard, mouse, and a screen wide enough
           to see your signal flow. For the full experience, open this on a
           laptop or desktop.
         </p>
         <button
           onClick={dismiss}
-          className="rounded-md bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white transition-colors hover:brightness-110"
+          className="rounded-md bg-blue-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
         >
           Continue Anyway →
         </button>
