@@ -64,6 +64,11 @@ export type SignalType =
   | "composite"
   | "vga"
   | "power"
+  | "power-l1"
+  | "power-l2"
+  | "power-l3"
+  | "power-neutral"
+  | "power-ground"
   | "midi"
   | "tally"
   | "spdif"
@@ -352,6 +357,11 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   composite: "var(--color-composite)",
   vga: "var(--color-vga)",
   power: "var(--color-power)",
+  "power-l1": "var(--color-power-l1)",
+  "power-l2": "var(--color-power-l2)",
+  "power-l3": "var(--color-power-l3)",
+  "power-neutral": "var(--color-power-neutral)",
+  "power-ground": "var(--color-power-ground)",
   midi: "var(--color-midi)",
   tally: "var(--color-tally)",
   spdif: "var(--color-spdif)",
@@ -432,6 +442,11 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   composite: "Composite",
   vga: "VGA",
   power: "Power",
+  "power-l1": "L1 (Phase A)",
+  "power-l2": "L2 (Phase B)",
+  "power-l3": "L3 (Phase C)",
+  "power-neutral": "Neutral",
+  "power-ground": "Ground",
   midi: "MIDI",
   tally: "Tally",
   spdif: "S/PDIF",

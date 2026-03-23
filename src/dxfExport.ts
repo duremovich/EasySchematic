@@ -23,7 +23,12 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   thunderbolt: 174, // indigo
   composite: 40,   // yellow
   vga: 150,        // dark sky blue
-  power: 46,       // dark amber
+  power: 46,         // dark amber
+  "power-l1": 250,   // near-black
+  "power-l2": 1,     // red
+  "power-l3": 5,     // blue
+  "power-neutral": 8, // gray
+  "power-ground": 3,  // green
   dmx: 1,          // dark red
   madi: 3,         // emerald
   midi: 6,         // fuchsia

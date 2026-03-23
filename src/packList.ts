@@ -42,6 +42,11 @@ const SIGNAL_CATEGORY: Record<string, CableCategory> = {
   Thunderbolt: "Data",
   Ethernet: "Data",
   Power: "Power",
+  "L1 (Phase A)": "Power",
+  "L2 (Phase B)": "Power",
+  "L3 (Phase C)": "Power",
+  Neutral: "Power",
+  Ground: "Power",
   Custom: "Custom",
 };
 

@@ -30,6 +30,11 @@
   --color-composite: #ca8a04; /* yellow — classic yellow RCA */
   --color-vga: #0369a1;       /* dark sky blue — classic VGA blue */
   --color-power: #a16207;     /* dark amber — electrical */
+  --color-power-l1: #1a1a1a;  /* black — Phase A (L1) */
+  --color-power-l2: #cc0000;  /* red — Phase B (L2) */
+  --color-power-l3: #0066cc;  /* blue — Phase C (L3) */
+  --color-power-neutral: #888888; /* gray — neutral (white invisible on white bg) */
+  --color-power-ground: #00aa00;  /* green — safety ground */
   --color-midi: #c026d3;      /* fuchsia — musical instrument digital interface */
   --color-tally: #be185d;     /* deep rose — tally/status */
   --color-spdif: #a855f7;     /* lighter violet — digital audio (coax) */

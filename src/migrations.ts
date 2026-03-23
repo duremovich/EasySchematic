@@ -13,7 +13,7 @@
 import { createDefaultLayout } from "./titleBlockLayout";
 import { DEFAULT_CONNECTOR } from "./connectorTypes";
 
-export const CURRENT_SCHEMA_VERSION = 17;
+export const CURRENT_SCHEMA_VERSION = 18;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -159,6 +159,65 @@ const migrations: Record<number, Migration> = {
       }
     }
     data.version = 13;
+    return data;
+  },
+  17: (data) => {
+    // v17 → v18: Convert cam-lok ports from generic "power" to phase-specific signal types
+    // and rename "Cam-Lok 400A Breakout" → "Lex Hammerhead 400A Splitter"
+    const LABEL_MAP: Record<string, string> = {
+      // Company Switch 200A
+      "Cam-Lok Out A": "power-l1",
+      "Cam-Lok Out B": "power-l2",
+      "Cam-Lok Out C": "power-l3",
+      "Cam-Lok Out N": "power-neutral",
+      // Company Switch 400A
+      "Cam-Lok Out A1": "power-l1",
+      "Cam-Lok Out B1": "power-l2",
+      "Cam-Lok Out C1": "power-l3",
+      "Cam-Lok Out A2": "power-l1",
+      "Cam-Lok Out B2": "power-l2",
+      "Cam-Lok Out C2": "power-l3",
+      // Company Switch 100A Single Phase
+      "Cam-Lok Out 1": "power-l1",
+      "Cam-Lok Out 2": "power-neutral",
+      // 400A Breakout inputs
+      "Cam-Lok In A": "power-l1",
+      "Cam-Lok In B": "power-l2",
+      "Cam-Lok In C": "power-l3",
+    };
+
+    for (const node of data.nodes ?? []) {
+      if (node.type !== "device" || !node.data?.ports) continue;
+
+      // Rename 400A Breakout
+      if (node.data.label === "Cam-Lok 400A Breakout") {
+        node.data.label = "Lex Hammerhead 400A Splitter";
+        node.data.manufacturer = "Lex Products";
+        node.data.modelNumber = "DB400N1J4AJ2CC-63";
+      }
+
+      // Migrate cam-lok port signal types
+      for (const p of node.data.ports) {
+        if (p.connectorType === "cam-lok" && p.signalType === "power") {
+          const mapped = LABEL_MAP[p.label];
+          if (mapped) p.signalType = mapped;
+        }
+      }
+    }
+
+    // Update edges whose source port was migrated
+    for (const edge of data.edges ?? []) {
+      if (edge.data?.signalType !== "power") continue;
+      const srcNode = (data.nodes ?? []).find((n: any) => n.id === edge.source);
+      if (!srcNode?.data?.ports) continue;
+      const portId = edge.sourceHandle?.replace(/-(in|out)$/, "");
+      const srcPort = srcNode.data.ports.find((p: any) => p.id === portId);
+      if (srcPort && srcPort.signalType !== "power") {
+        edge.data.signalType = srcPort.signalType;
+      }
+    }
+
+    data.version = 18;
     return data;
   },
 };

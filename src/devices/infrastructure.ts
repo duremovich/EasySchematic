@@ -1,4 +1,4 @@
-import { port, ports } from "./_helpers";
+import { port, ports, camLokSet } from "./_helpers";
 import type { DeviceTemplate } from "../types";
 
 export const templates: DeviceTemplate[] = [
@@ -11,12 +11,7 @@ export const templates: DeviceTemplate[] = [
     searchTerms: ["company switch", "house power", "venue power", "tie-in", "200 amp", "3 phase", "service"],
     powerCapacityW: 72000,
     voltage: "208V 3-Phase",
-    ports: [
-      port("Cam-Lok Out A", "power", "output", "cam-lok"),
-      port("Cam-Lok Out B", "power", "output", "cam-lok"),
-      port("Cam-Lok Out C", "power", "output", "cam-lok"),
-      port("Cam-Lok Out N", "power", "output", "cam-lok"),
-    ],
+    ports: [...camLokSet("output", "Cam-Lok", "3-Phase Output")],
   },
   {
     id: "c0a80101-0301-4000-8000-000000000701",
@@ -27,12 +22,8 @@ export const templates: DeviceTemplate[] = [
     powerCapacityW: 144000,
     voltage: "208V 3-Phase",
     ports: [
-      port("Cam-Lok Out A1", "power", "output", "cam-lok"),
-      port("Cam-Lok Out B1", "power", "output", "cam-lok"),
-      port("Cam-Lok Out C1", "power", "output", "cam-lok"),
-      port("Cam-Lok Out A2", "power", "output", "cam-lok"),
-      port("Cam-Lok Out B2", "power", "output", "cam-lok"),
-      port("Cam-Lok Out C2", "power", "output", "cam-lok"),
+      ...camLokSet("output", "Feed 1", "Feed 1"),
+      ...camLokSet("output", "Feed 2", "Feed 2"),
     ],
   },
   {
@@ -44,8 +35,9 @@ export const templates: DeviceTemplate[] = [
     powerCapacityW: 12000,
     voltage: "120V",
     ports: [
-      port("Cam-Lok Out 1", "power", "output", "cam-lok"),
-      port("Cam-Lok Out 2", "power", "output", "cam-lok"),
+      port("L1", "power-l1", "output", "cam-lok"),
+      port("N", "power-neutral", "output", "cam-lok"),
+      port("G", "power-ground", "output", "cam-lok"),
     ],
   },
   {
@@ -147,7 +139,7 @@ export const templates: DeviceTemplate[] = [
     powerCapacityW: 20800,
     voltage: "208V",
     ports: [
-      port("Cam-Lok In", "power", "input", "cam-lok"),
+      ...camLokSet("input", "Cam-Lok In", "3-Phase Input"),
       port("L5-20 Out 1", "power", "output", "l5-20"),
       port("L5-20 Out 2", "power", "output", "l5-20"),
       port("L5-20 Out 3", "power", "output", "l5-20"),
@@ -172,7 +164,7 @@ export const templates: DeviceTemplate[] = [
     powerCapacityW: 41600,
     voltage: "208V",
     ports: [
-      port("Cam-Lok In", "power", "input", "cam-lok"),
+      ...camLokSet("input", "Cam-Lok In", "3-Phase Input"),
       port("L5-20 Out 1", "power", "output", "l5-20"),
       port("L5-20 Out 2", "power", "output", "l5-20"),
       port("L5-20 Out 3", "power", "output", "l5-20"),
@@ -192,18 +184,18 @@ export const templates: DeviceTemplate[] = [
   {
     id: "c0a80101-021d-4000-8000-000000000541",
     deviceType: "power-distribution",
-    label: "Cam-Lok 400A Breakout",
-    searchTerms: ["cam-lok", "400 amp", "breakout", "company switch", "power distribution"],
+    label: "Lex Hammerhead 400A Splitter",
+    manufacturer: "Lex Products",
+    modelNumber: "DB400N1J4AJ2CC-63",
+    searchTerms: ["lex", "hammerhead", "cam-lok", "400 amp", "breakout", "splitter", "power distribution"],
     powerCapacityW: 83200,
     voltage: "208V",
     ports: [
-      port("Cam-Lok In A", "power", "input", "cam-lok"),
-      port("Cam-Lok In B", "power", "input", "cam-lok"),
-      port("Cam-Lok In C", "power", "input", "cam-lok"),
-      port("100A Out 1", "power", "output", "cam-lok"),
-      port("100A Out 2", "power", "output", "cam-lok"),
-      port("100A Out 3", "power", "output", "cam-lok"),
-      port("100A Out 4", "power", "output", "cam-lok"),
+      ...camLokSet("input", "Cam-Lok In", "400A Input"),
+      ...camLokSet("output", "100A Out 1", "100A Feed 1"),
+      ...camLokSet("output", "100A Out 2", "100A Feed 2"),
+      ...camLokSet("output", "100A Out 3", "100A Feed 3"),
+      ...camLokSet("output", "100A Out 4", "100A Feed 4"),
     ],
   },
   {

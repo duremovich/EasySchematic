@@ -35,6 +35,23 @@ export function trunkPort(
   };
 }
 
+/** Generate the 5 ports for a 3-phase cam-lok set (L1/L2/L3/N/G) */
+export function camLokSet(
+  direction: "input" | "output",
+  prefix: string,
+  section?: string,
+): Port[] {
+  const ps = [
+    port(`${prefix} L1`, "power-l1", direction, "cam-lok"),
+    port(`${prefix} L2`, "power-l2", direction, "cam-lok"),
+    port(`${prefix} L3`, "power-l3", direction, "cam-lok"),
+    port(`${prefix} N`, "power-neutral", direction, "cam-lok"),
+    port(`${prefix} G`, "power-ground", direction, "cam-lok"),
+  ];
+  if (section) ps.forEach(p => (p.section = section));
+  return ps;
+}
+
 /** Generate a sequence of numbered ports (for routers, matrices, etc.) */
 export function ports(
   prefix: string,
