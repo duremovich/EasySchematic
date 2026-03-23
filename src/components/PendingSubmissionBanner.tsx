@@ -10,6 +10,7 @@ const DEVICES_URL =
 export default function PendingSubmissionBanner() {
   const [visible, setVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -21,12 +22,20 @@ export default function PendingSubmissionBanner() {
         localStorage.removeItem(STORAGE_KEY);
         return;
       }
-      // Only show if user is now logged in
-      checkSession().then((user) => {
-        if (user) {
-          setVisible(true);
-        } else {
+      checkSession().then(async (user) => {
+        if (!user) {
           localStorage.removeItem(STORAGE_KEY);
+          return;
+        }
+        // Auto-submit immediately
+        try {
+          const draftId = await createDraft(pending.data);
+          window.open(`${DEVICES_URL}/#/submit?draft=${draftId}`, "_blank");
+          localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          // Auto-submit failed — show banner as fallback
+          setError(true);
+          setVisible(true);
         }
       });
     } catch {
@@ -70,7 +79,9 @@ export default function PendingSubmissionBanner() {
       data-print-hide
     >
       <span>
-        Your device is ready to submit to the community library.
+        {error
+          ? "Auto-submit failed. Click to try again."
+          : "Your device is ready to submit to the community library."}
       </span>
       <div className="flex items-center gap-2 shrink-0">
         <button
