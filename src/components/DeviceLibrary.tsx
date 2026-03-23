@@ -19,6 +19,7 @@ const CATEGORY_ORDER: string[] = [
   "Monitoring",
   "Projection",
   "Recording",
+  "Mixing Consoles",
   "Audio",
   "Speakers & Amps",
   "Networking",

@@ -44,7 +44,7 @@ const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "tv": "Monitoring",
   "projector": "Projection",
   "recorder": "Recording",
-  "audio-mixer": "Audio",
+  "audio-mixer": "Mixing Consoles",
   "audio-embedder": "Audio",
   "audio-interface": "Audio",
   "audio-dsp": "Audio",
