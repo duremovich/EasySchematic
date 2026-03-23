@@ -208,10 +208,10 @@ const migrations: Record<number, Migration> = {
     // Update edges whose source port was migrated
     for (const edge of data.edges ?? []) {
       if (edge.data?.signalType !== "power") continue;
-      const srcNode = (data.nodes ?? []).find((n: any) => n.id === edge.source);
+      const srcNode = (data.nodes ?? []).find((n: { id: string }) => n.id === edge.source);
       if (!srcNode?.data?.ports) continue;
       const portId = edge.sourceHandle?.replace(/-(in|out)$/, "");
-      const srcPort = srcNode.data.ports.find((p: any) => p.id === portId);
+      const srcPort = srcNode.data.ports.find((p: { id: string }) => p.id === portId);
       if (srcPort && srcPort.signalType !== "power") {
         edge.data.signalType = srcPort.signalType;
       }
