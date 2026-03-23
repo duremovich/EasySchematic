@@ -27,6 +27,7 @@ import ViewOptionsPanel from "./components/ViewOptionsPanel";
 import MenuBar from "./components/MenuBar";
 import EdgeContextMenu from "./components/EdgeContextMenu";
 import IncompatibleConnectionDialog from "./components/IncompatibleConnectionDialog";
+import MobileGate from "./components/MobileGate";
 import PendingSubmissionBanner from "./components/PendingSubmissionBanner";
 import RoomContextMenu from "./components/RoomContextMenu";
 import RoomEditor from "./components/RoomEditor";
@@ -1012,6 +1013,7 @@ export default function App() {
       <EdgeContextMenu />
       <RoomContextMenu />
       <IncompatibleConnectionDialog />
+      <MobileGate />
     </div>
   );
 }
