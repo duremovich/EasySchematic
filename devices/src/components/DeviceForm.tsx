@@ -193,13 +193,6 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
           <TagAutocompleteInput value={searchTerms} onChange={setSearchTerms} suggestions={knownSearchTerms} placeholder="comma, separated, terms" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </label>
         <label>
-          <span className="block text-sm font-medium text-slate-700 mb-1">Color</span>
-          <div className="flex items-center gap-2">
-            <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="#3b82f6" className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            {color && <span className="w-8 h-8 rounded border border-slate-200" style={{ backgroundColor: color }} />}
-          </div>
-        </label>
-        <label>
           <span className="block text-sm font-medium text-slate-700 mb-1">Power Draw (W)</span>
           <input type="number" min="0" value={powerDrawW} onChange={(e) => setPowerDrawW(e.target.value)} placeholder="e.g. 150" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <span className="text-xs text-slate-400 mt-1 block">Max power consumption from spec sheet</span>
