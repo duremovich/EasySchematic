@@ -1189,7 +1189,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!prev) return;
     const state = get();
     redoStack.push({ nodes: state.nodes, edges: state.edges });
-    set({ nodes: prev.nodes, edges: prev.edges, undoSize: undoStack.length, redoSize: redoStack.length });
+    const edges = prev.edges.map(({ zIndex: _, selected: _s, ...rest }) => ({ ...rest, zIndex: 0 })) as typeof prev.edges;
+    set({ nodes: prev.nodes, edges, undoSize: undoStack.length, redoSize: redoStack.length });
     get().saveToLocalStorage();
   },
 
@@ -1198,7 +1199,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!next) return;
     const state = get();
     undoStack.push({ nodes: state.nodes, edges: state.edges });
-    set({ nodes: next.nodes, edges: next.edges, undoSize: undoStack.length, redoSize: redoStack.length });
+    const edges = next.edges.map(({ zIndex: _, selected: _s, ...rest }) => ({ ...rest, zIndex: 0 })) as typeof next.edges;
+    set({ nodes: next.nodes, edges, undoSize: undoStack.length, redoSize: redoStack.length });
     get().saveToLocalStorage();
   },
 

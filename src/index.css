@@ -88,9 +88,11 @@ html, body, #root {
   pointer-events: none;
 }
 
-/* Edge labels must sit above edges with elevated zIndex (line-jump hops) */
+/* Edge labels must sit above edges regardless of React Flow's internal z-index
+   calculations. RF elevates edges when source/target nodes have a parentId (room),
+   which can push edge z-index into the hundreds. 10000 guarantees labels stay on top. */
 .react-flow__edgelabel-renderer {
-  z-index: 5;
+  z-index: 10000;
 }
 
 .react-flow__edge-path {
