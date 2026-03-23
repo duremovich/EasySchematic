@@ -1571,7 +1571,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       version: CURRENT_SCHEMA_VERSION,
       name: state.schematicName,
       nodes: state.nodes,
-      edges: state.edges.map(({ zIndex: _, ...rest }) => rest) as ConnectionEdge[],
+      edges: state.edges.map(({ zIndex: _, selected: _s, ...rest }) => rest) as ConnectionEdge[],
       signalColors: state.signalColors,
       printPaperId: state.printPaperId,
       printOrientation: state.printOrientation,
@@ -1703,7 +1703,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       version: CURRENT_SCHEMA_VERSION,
       name: state.schematicName,
       nodes: state.nodes,
-      edges: state.edges.map(({ zIndex: _, ...rest }) => rest) as ConnectionEdge[],
+      edges: state.edges.map(({ zIndex: _, selected: _s, ...rest }) => rest) as ConnectionEdge[],
       customTemplates: state.customTemplates.length > 0 ? state.customTemplates : undefined,
       signalColors: state.signalColors,
       printPaperId: state.printPaperId,
@@ -1895,24 +1895,21 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       : state.edges;
     const results = routeAllEdges(state.nodes, visibleEdges, rfInstance, state.debugEdges);
 
-    // When line jumps are enabled, boost zIndex on edges that hop (have arc crossings)
-    // so they render on top of the edges they jump over.
-    let updatedEdges = state.edges;
+    // Always normalize edge zIndex: boost edges with line-jump hops to 1,
+    // set all others to 0. This prevents stale zIndex from selected/undo state.
+    const hopEdgeIds = new Set<string>();
     if (state.showLineJumps) {
-      const hopEdgeIds = new Set<string>();
       for (const [edgeId, routed] of Object.entries(results)) {
         if (routed.crossingPoints && routed.crossingPoints.length > 0) {
           hopEdgeIds.add(edgeId);
         }
       }
-      if (hopEdgeIds.size > 0) {
-        updatedEdges = state.edges.map((e) =>
-          hopEdgeIds.has(e.id)
-            ? { ...e, zIndex: 1 }
-            : { ...e, zIndex: 0 },
-        );
-      }
     }
+    const updatedEdges = state.edges.map((e) =>
+      hopEdgeIds.has(e.id)
+        ? { ...e, zIndex: 1 }
+        : { ...e, zIndex: 0 },
+    );
 
     set({ routedEdges: results, edges: updatedEdges });
   },

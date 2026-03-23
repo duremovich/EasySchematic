@@ -829,6 +829,7 @@ function SchematicCanvas() {
       fitView
       minZoom={minZoom}
       elevateNodesOnSelect={false}
+      elevateEdgesOnSelect={false}
       deleteKeyCode={null}
       selectionKeyCode={null}
       multiSelectionKeyCode="Shift"
