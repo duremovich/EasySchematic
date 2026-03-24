@@ -15,7 +15,8 @@ export default function DeviceLibraryPage() {
         <li><strong>Monitoring</strong> — production monitors (SmartView, SmallHD, Marshall, Atomos)</li>
         <li><strong>Recording</strong> — HyperDecks, Ki Pro, Sound Devices</li>
         <li><strong>Audio</strong> — consoles (Yamaha CL/QL/TF, A&H dLive/SQ, DiGiCo SD7), stage boxes, DSP, wireless mics, intercom</li>
-        <li><strong>Speakers & Amps</strong> — line arrays, powered speakers, subwoofers, amplifiers (Meyer, L'Acoustics, QSC, JBL)</li>
+        <li><strong>Speakers</strong> — line arrays, powered speakers, subwoofers (Meyer, L'Acoustics, QSC, JBL)</li>
+        <li><strong>Amplifiers</strong> — power amplifiers (Crown, QSC, Behringer, Lab Gruppen)</li>
         <li><strong>Networking</strong> — NDI encoders/decoders, streaming encoders, network switches, AV-over-IP</li>
         <li><strong>LED Video</strong> — LED processors (Brompton Tessera, Novastar)</li>
         <li><strong>Media Servers</strong> — Disguise d3, Dataton WATCHPAX</li>
