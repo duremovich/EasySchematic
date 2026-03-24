@@ -81,6 +81,16 @@ function ResizeSnapGuides({ dragGuides }: { dragGuides: GuideLine[] }) {
   return <SnapGuides guides={combined} />;
 }
 
+function RoutingIndicator() {
+  const isRouting = useSchematicStore((s) => s.isRouting);
+  if (!isRouting) return null;
+  return (
+    <div className="absolute bottom-12 right-3 z-50 bg-black/70 text-white text-xs px-3 py-1.5 rounded-full animate-pulse pointer-events-none">
+      Routing...
+    </div>
+  );
+}
+
 function SchematicCanvas() {
   const {
     nodes,
@@ -190,10 +200,12 @@ function SchematicCanvas() {
     if (isDragging) return;
     if (nodeCount === 0 && edgeCount === 0) return;
     // Small delay to let React Flow measure handles after changes
+    useSchematicStore.setState({ isRouting: true });
     const timer = setTimeout(() => {
       useSchematicStore.getState().recomputeRoutes(rfInstance);
+      useSchematicStore.setState({ isRouting: false });
     }, 50);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); useSchematicStore.setState({ isRouting: false }); };
   }, [isDragging, nodeDigest, edgeDigest, nodeCount, edgeCount, rfInstance, hiddenSignalTypesStr, hideAdapters, adapterVisibilityDigest]);
 
   // Recompute cable ID map when edges/nodes/naming change
@@ -995,6 +1007,7 @@ function SchematicCanvas() {
       {!printView && <CanvasOriginOverlay />}
       <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color="#d4d4d4" />
       <Controls position="bottom-right" />
+      <RoutingIndicator />
       <MiniMap
         position="bottom-left"
         pannable
