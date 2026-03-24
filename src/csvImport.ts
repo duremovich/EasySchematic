@@ -493,6 +493,12 @@ function autoLayout(
     }
   }
 
+  // Offset all positions so rooms (which add padding around children) don't go negative
+  const ORIGIN_PAD = 80; // room pad + a little breathing room from canvas origin
+  for (const [name, pos] of positions) {
+    positions.set(name, { x: pos.x + ORIGIN_PAD, y: pos.y + ORIGIN_PAD });
+  }
+
   return positions;
 }
 
