@@ -271,6 +271,7 @@ interface SchematicState {
   loadFromLocalStorage: () => boolean;
   exportToJSON: () => SchematicFile;
   importFromJSON: (data: SchematicFile) => void;
+  importCsvData: (newNodes: SchematicNode[], newEdges: ConnectionEdge[]) => void;
   newSchematic: () => void;
   setSchematicName: (name: string) => void;
 }
@@ -2001,6 +2002,23 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       // File imports and shared schematics always start as local-only
       cloudSchematicId: null,
       cloudSavedAt: null,
+    });
+    get().saveToLocalStorage();
+  },
+
+  importCsvData: (newNodes, newEdges) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+
+    const mergedNodes = [...state.nodes, ...newNodes];
+    const mergedEdges = [...state.edges, ...newEdges];
+
+    syncCounters(mergedNodes, mergedEdges);
+    snapNodesToGrid(mergedNodes);
+
+    set({
+      nodes: renumberNodes(mergedNodes),
+      edges: mergedEdges,
     });
     get().saveToLocalStorage();
   },

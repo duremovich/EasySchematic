@@ -1,0 +1,13 @@
+Source,Source Port,Destination,Destination Port,Signal Type
+Presenter Laptop,HDMI Out,Crestron DM-NVX-351,HDMI In,HDMI
+Crestron DM-NVX-351,HDMI Out,Display,HDMI In,HDMI
+Podium Microphone,XLR Out,Biamp TesiraFORTE,Mic In 1,Analog Audio
+Wireless Mic Receiver,XLR Out,Biamp TesiraFORTE,Mic In 2,Analog Audio
+Biamp TesiraFORTE,Line Out 1,Ceiling Speaker 1,Speaker In,Analog Audio
+Biamp TesiraFORTE,Line Out 2,Ceiling Speaker 2,Speaker In,Analog Audio
+Biamp TesiraFORTE,Dante,Network Switch,Port 1,Dante
+PTZ Camera,HDMI Out,Capture Card,HDMI In,HDMI
+Capture Card,USB-C Out,Conference PC,USB-C In,USB
+Conference PC,HDMI Out,Crestron DM-NVX-351,HDMI In 2,HDMI
+Crestron Control Processor,Ethernet,Network Switch,Port 2,Ethernet
+PTZ Camera,Ethernet,Network Switch,Port 3,Ethernet

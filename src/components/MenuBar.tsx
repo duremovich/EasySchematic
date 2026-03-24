@@ -18,6 +18,7 @@ import LoginDialog from "./LoginDialog";
 import { checkSession, saveSchematicToCloud, updateSchematicInCloud } from "../templateApi";
 import ViewOptionsPanel from "./ViewOptionsPanel";
 import ShowInfoPanel from "./ShowInfoPanel";
+import CsvImportWizard from "./CsvImportWizard";
 import SignalColorPanel from "./SignalColorPanel";
 
 // ─── Menu data types ─────────────────────────────────────────────
@@ -135,6 +136,7 @@ export default function MenuBar() {
   const [showTitleBlockDialog, setShowTitleBlockDialog] = useState(false);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
+  const [showCsvImport, setShowCsvImport] = useState(false);
   const [showSchematicBrowser, setShowSchematicBrowser] = useState(false);
   const [showCloudLogin, setShowCloudLogin] = useState(false);
   const [cloudSaving, setCloudSaving] = useState(false);
@@ -371,6 +373,7 @@ export default function MenuBar() {
       { type: "separator" },
       { type: "item", label: "Save Device Archive", onClick: handleSaveArchive },
       { type: "item", label: "Import Device Archive...", onClick: handleOpenArchive },
+      { type: "item", label: "Import Cable Schedule...", onClick: () => setShowCsvImport(true) },
       { type: "separator" },
       { type: "item", label: "Preferences...", onClick: () => setShowPreferences(true) },
     ],
@@ -740,6 +743,9 @@ export default function MenuBar() {
       )}
       {showPreferences && (
         <PreferencesDialog onClose={() => setShowPreferences(false)} />
+      )}
+      {showCsvImport && (
+        <CsvImportWizard onClose={() => setShowCsvImport(false)} />
       )}
       {showSchematicBrowser && (
         <SchematicBrowser onClose={() => setShowSchematicBrowser(false)} />

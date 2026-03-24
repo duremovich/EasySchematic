@@ -1,0 +1,16 @@
+Source Device,Source Port,Destination Device,Destination Port,Signal Type,Room
+Camera 1,SDI Out,ATEM 4 M/E,SDI In 1,SDI,Studio
+Camera 2,SDI Out,ATEM 4 M/E,SDI In 2,SDI,Studio
+Camera 3,SDI Out,ATEM 4 M/E,SDI In 3,SDI,Studio
+Laptop,HDMI Out,ATEM 4 M/E,HDMI In 1,HDMI,Control Room
+ATEM 4 M/E,SDI Out 1,Multiview Monitor,SDI In,SDI,Control Room
+ATEM 4 M/E,SDI Out 2,HyperDeck Studio,SDI In,SDI,Control Room
+ATEM 4 M/E,SDI Out 3,Streaming Encoder,SDI In,SDI,Control Room
+ATEM 4 M/E,SDI Out 4,Projection Switcher,SDI In 1,SDI,Control Room
+HyperDeck Studio,SDI Out,Confidence Monitor,SDI In,SDI,Studio
+Audio Mixer,XLR Out 1,ATEM 4 M/E,XLR In 1,Analog Audio,Control Room
+Audio Mixer,XLR Out 2,ATEM 4 M/E,XLR In 2,Analog Audio,Control Room
+Wireless Mic Receiver,XLR Out,Audio Mixer,XLR In 1,Analog Audio,Control Room
+Graphics Computer,HDMI Out,ATEM 4 M/E,HDMI In 2,HDMI,Control Room
+Streaming Encoder,Ethernet,Network Switch,Port 1,Ethernet,Control Room
+ATEM 4 M/E,Ethernet,Network Switch,Port 2,Ethernet,Control Room
