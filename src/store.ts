@@ -630,6 +630,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       targetPort?.connectorType,
     );
 
+    // Check if either port is direct-attach (adapter plugs directly into device)
+    const isDirectAttach = sourcePort?.directAttach || targetPort?.directAttach;
+
     const newEdge: ConnectionEdge = {
       id: nextEdgeId(),
       source: connection.source,
@@ -639,10 +642,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       data: {
         signalType: sourcePort?.signalType ?? "custom",
         ...(connectorMismatch ? { connectorMismatch: true } : {}),
+        ...(isDirectAttach ? { directAttach: true } : {}),
       },
       style: {
-        stroke: `var(--color-${sourcePort?.signalType ?? "custom"})`,
-        strokeWidth: 2,
+        stroke: isDirectAttach ? "#9ca3af" : `var(--color-${sourcePort?.signalType ?? "custom"})`,
+        strokeWidth: isDirectAttach ? 1 : 2,
       },
     };
 
@@ -1025,6 +1029,45 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return { ...n, data: { ...data, baseLabel: undefined } } as DeviceNode;
       })),
     });
+
+    // Sync directAttach flag on connected edges when port DA changes
+    const newPortMap = new Map(data.ports.map((p) => [p.id, p]));
+    const currentEdges = get().edges;
+    let edgesChanged = false;
+    const syncedEdges = currentEdges.map((e) => {
+      // Check if this edge connects to the updated device
+      let portOnThisDevice: Port | undefined;
+      if (e.source === nodeId) {
+        const portId = e.sourceHandle?.replace(/-(in|out)$/, "") ?? "";
+        portOnThisDevice = newPortMap.get(portId);
+      } else if (e.target === nodeId) {
+        const portId = e.targetHandle?.replace(/-(in|out)$/, "") ?? "";
+        portOnThisDevice = newPortMap.get(portId);
+      }
+      if (!portOnThisDevice) return e;
+
+      const shouldBeDA = portOnThisDevice.directAttach ?? false;
+      const currentlyDA = e.data?.directAttach ?? false;
+      if (shouldBeDA === currentlyDA) return e;
+
+      edgesChanged = true;
+      return {
+        ...e,
+        data: {
+          ...e.data!,
+          directAttach: shouldBeDA || undefined,
+        },
+        style: {
+          ...e.style,
+          stroke: shouldBeDA ? "#9ca3af" : `var(--color-${e.data?.signalType ?? "custom"})`,
+          strokeWidth: shouldBeDA ? 1 : 2,
+        },
+      };
+    });
+    if (edgesChanged) {
+      set({ edges: syncedEdges });
+    }
+
     get().saveToLocalStorage();
   },
 

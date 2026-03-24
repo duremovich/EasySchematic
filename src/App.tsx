@@ -199,7 +199,7 @@ function SchematicCanvas() {
   // Recompute cable ID map when edges/nodes/naming change
   const cableNamingScheme = useSchematicStore((s) => s.cableNamingScheme);
   const cableIdDigest = useSchematicStore((s) =>
-    s.edges.map((e) => `${e.id}:${e.data?.signalType ?? ""}:${e.data?.cableId ?? ""}`).join("|"),
+    s.edges.map((e) => `${e.id}:${e.data?.signalType ?? ""}:${e.data?.cableId ?? ""}:${e.data?.directAttach ? "da" : ""}`).join("|"),
   );
   const labelDigest = useSchematicStore((s) =>
     s.nodes.filter((n) => n.type === "device").map((n) => `${n.id}:${(n.data as { label?: string }).label ?? ""}`).join("|"),
