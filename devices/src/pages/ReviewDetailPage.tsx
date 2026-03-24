@@ -204,6 +204,68 @@ export default function ReviewDetailPage({ id }: { id: string }) {
             </label>
           </div>
           <PortEditor ports={editPorts} onChange={setEditPorts} />
+
+          {/* Slot Editor */}
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-slate-700">
+                Expansion Slots
+                {editSlots.length > 0 && <span className="text-xs text-slate-400 font-normal ml-1">({editSlots.length})</span>}
+              </span>
+              <button
+                onClick={() => {
+                  const id = `slot-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                  setEditSlots([...editSlots, { id, label: `Slot ${editSlots.length + 1}`, slotFamily: "" }]);
+                }}
+                className="text-xs text-blue-600 hover:text-blue-700 cursor-pointer"
+              >
+                + Add Slot
+              </button>
+            </div>
+
+            {editSlots.length === 0 && (
+              <p className="text-xs text-slate-400 mb-2">No expansion slots defined.</p>
+            )}
+
+            {editSlots.map((slot, i) => (
+              <div key={slot.id} className="border border-slate-200 rounded-lg p-3 mb-3 bg-white">
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    value={slot.label}
+                    onChange={(e) => setEditSlots(editSlots.map((s, j) => j === i ? { ...s, label: e.target.value } : s))}
+                    className="flex-1 px-2 py-1 rounded border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Slot label"
+                  />
+                  <button
+                    onClick={() => setEditSlots(editSlots.filter((_, j) => j !== i))}
+                    className="text-red-400 hover:text-red-500 text-sm cursor-pointer px-1"
+                    title="Remove slot"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <label className="block text-xs text-slate-500 mb-1">Slot Family</label>
+                <input
+                  value={slot.slotFamily}
+                  onChange={(e) => setEditSlots(editSlots.map((s, j) => j === i ? { ...s, slotFamily: e.target.value } : s))}
+                  className="w-full px-2 py-1 rounded border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. disguise-vfc"
+                />
+              </div>
+            ))}
+
+            {/* Slot Family (this device fits into slots of this family) */}
+            <label className="block mt-4">
+              <span className="block text-xs font-medium text-slate-600 mb-1">Slot Family (device fits into)</span>
+              <input
+                value={editSlotFamily}
+                onChange={(e) => setEditSlotFamily(e.target.value)}
+                placeholder="e.g. disguise-vfc"
+                className="w-full px-2 py-1 rounded border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </label>
+          </div>
+
           <div className="flex flex-wrap items-center gap-3 mt-6 pt-4 border-t border-blue-200">
             <button
               onClick={() => handleApprove(true)}

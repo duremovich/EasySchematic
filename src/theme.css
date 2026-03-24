@@ -23,6 +23,7 @@
   --color-hdbaset: #9333ea;   /* violet — HDMI-over-cat, distinct from HDMI red */
   --color-srt: #15803d;       /* forest green — streaming */
   --color-genlock: #475569;   /* slate — sync/timing */
+  --color-wordclock: #64748b;  /* cool slate — audio clock reference */
   --color-gpio: #78716c;      /* warm gray — control */
   --color-rs422: #6d28d9;     /* deep violet — machine control */
   --color-serial: #525252;    /* gray — generic serial */

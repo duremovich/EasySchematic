@@ -36,6 +36,7 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   ultranet: "#059669",
   aes50: "#7c3aed",
   stageconnect: "#ea580c",
+  wordclock: "#475569",
   custom: "#64748b",
 };
 

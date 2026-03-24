@@ -63,6 +63,7 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   ultranet: "UN",
   aes50: "A5",
   stageconnect: "SC",
+  wordclock: "WC",
   custom: "X",
 };
 

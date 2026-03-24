@@ -1681,27 +1681,34 @@ function SlotSwapSection({
     <div className="space-y-2">
       <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] font-medium">Expansion Slots</div>
       {installedSlots.map((slot) => {
-        const def = slotDefs.find((d) => d.id === slot.slotId);
-        const familyCards = def?.slotFamily ? getCardsByFamily(def.slotFamily) : [];
+        // Use slotFamily from the slot itself (works for both top-level and nested)
+        const family = slot.slotFamily ?? slotDefs.find((d) => d.id === slot.slotId)?.slotFamily;
+        const familyCards = family ? getCardsByFamily(family) : [];
+        const isNested = !!slot.parentSlotId;
 
-        // Count connections to this slot's ports
-        const slotPortSet = new Set(slot.portIds);
+        // Count connections to this slot's ports (including descendant ports for parent slots)
+        const descendantPortIds = isNested ? [] : installedSlots
+          .filter((s) => s.parentSlotId?.startsWith(slot.slotId))
+          .flatMap((s) => s.portIds);
+        const allPortIds = new Set([...slot.portIds, ...descendantPortIds]);
         const connCount = edges.filter((e) => {
-          if (e.source === nodeId && slotPortSet.has(e.sourceHandle ?? "")) return true;
-          if (e.target === nodeId && slotPortSet.has(e.targetHandle ?? "")) return true;
-          if (e.source === nodeId && slotPortSet.has((e.sourceHandle ?? "").replace(/-(in|out)$/, ""))) return true;
-          if (e.target === nodeId && slotPortSet.has((e.targetHandle ?? "").replace(/-(in|out)$/, ""))) return true;
+          if (e.source === nodeId && allPortIds.has(e.sourceHandle ?? "")) return true;
+          if (e.target === nodeId && allPortIds.has(e.targetHandle ?? "")) return true;
+          if (e.source === nodeId && allPortIds.has((e.sourceHandle ?? "").replace(/-(in|out)$/, ""))) return true;
+          if (e.target === nodeId && allPortIds.has((e.targetHandle ?? "").replace(/-(in|out)$/, ""))) return true;
           return false;
         }).length;
 
         return (
-          <div key={slot.slotId} className="bg-[var(--color-surface)] rounded px-2 py-1.5 border border-[var(--color-border)]">
+          <div
+            key={slot.slotId}
+            className={`bg-[var(--color-surface)] rounded px-2 py-1.5 border border-[var(--color-border)] ${isNested ? "ml-3 border-dashed" : ""}`}
+          >
             <div className="text-[10px] text-[var(--color-text-muted)] mb-1">{slot.label}</div>
             <select
               value={slot.cardTemplateId ?? ""}
               onChange={(e) => {
                 const newCardId = e.target.value || null;
-                // Same card type — no warning needed
                 if (newCardId === slot.cardTemplateId) return;
                 if (connCount > 0) {
                   if (!confirm(`Swapping this card will disconnect ${connCount} connection(s). Continue?`)) return;

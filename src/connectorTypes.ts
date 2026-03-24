@@ -36,6 +36,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   ultranet: "rj45",
   aes50: "ethercon",
   stageconnect: "xlr-3",
+  wordclock: "bnc",
   custom: "other",
 };
 
@@ -129,6 +130,8 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   "l6-30": "L6-30",
   "l21-30": "L21-30",
   "cam-lok": "Cam-Lok",
+  qsfp: "QSFP Fiber",
+  mpo: "MPO Fiber",
   none: "",
   other: "Other",
 };

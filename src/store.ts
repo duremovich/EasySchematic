@@ -19,6 +19,7 @@ import type {
   TitleBlockLayout,
   TemplatePreset,
   InstalledSlot,
+  SlotDefinition,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType, ScrollConfig } from "./types";
@@ -361,6 +362,61 @@ function cloneCardPorts(ports: Port[], slotId: string, slotLabel: string): Port[
   });
 }
 
+/**
+ * Recursively process template slots, including sub-slots on expansion cards.
+ * Returns a flat list of InstalledSlots (with parentSlotId for nesting) and
+ * all ports from installed cards.
+ */
+function processTemplateSlots(
+  templateSlots: SlotDefinition[],
+  parentSlotId?: string,
+  parentLabel?: string,
+): { installedSlots: InstalledSlot[]; ports: Port[] } {
+  const installedSlots: InstalledSlot[] = [];
+  const ports: Port[] = [];
+
+  for (const slotDef of templateSlots) {
+    const fullSlotId = parentSlotId ? `${parentSlotId}/${slotDef.id}` : slotDef.id;
+    const displayLabel = parentLabel ? `${parentLabel} > ${slotDef.label}` : slotDef.label;
+    const cardTpl = slotDef.defaultCardId ? getTemplateById(slotDef.defaultCardId) : undefined;
+
+    if (cardTpl) {
+      const cardPorts = cloneCardPorts(cardTpl.ports, fullSlotId, displayLabel);
+      ports.push(...cardPorts);
+
+      const slot: InstalledSlot = {
+        slotId: fullSlotId,
+        label: slotDef.label,
+        slotFamily: slotDef.slotFamily,
+        ...(parentSlotId ? { parentSlotId } : {}),
+        cardTemplateId: cardTpl.id,
+        cardLabel: cardTpl.label,
+        cardManufacturer: cardTpl.manufacturer,
+        cardModelNumber: cardTpl.modelNumber,
+        portIds: cardPorts.map((p) => p.id),
+      };
+      installedSlots.push(slot);
+
+      // Recurse into card's sub-slots (e.g. SFP cages on a network module)
+      if (cardTpl.slots && cardTpl.slots.length > 0) {
+        const nested = processTemplateSlots(cardTpl.slots, fullSlotId, displayLabel);
+        installedSlots.push(...nested.installedSlots);
+        ports.push(...nested.ports);
+      }
+    } else {
+      installedSlots.push({
+        slotId: fullSlotId,
+        label: slotDef.label,
+        slotFamily: slotDef.slotFamily,
+        ...(parentSlotId ? { parentSlotId } : {}),
+        portIds: [],
+      });
+    }
+  }
+
+  return { installedSlots, ports };
+}
+
 /** Auto-number devices that share a baseLabel. Returns a new array if anything changed. */
 function renumberNodes(nodes: SchematicNode[]): SchematicNode[] {
   // Group by baseLabel (only device nodes have this)
@@ -679,32 +735,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       ports = clonePorts(template.ports);
     }
 
-    // Initialize expansion slots from template
+    // Initialize expansion slots from template (recursively handles sub-slots)
     let installedSlots: InstalledSlot[] | undefined;
     if (template.slots && template.slots.length > 0) {
-      installedSlots = [];
-      for (const slotDef of template.slots) {
-        const cardTpl = slotDef.defaultCardId ? getTemplateById(slotDef.defaultCardId) : undefined;
-        if (cardTpl) {
-          const cardPorts = cloneCardPorts(cardTpl.ports, slotDef.id, slotDef.label);
-          ports = [...ports, ...cardPorts];
-          installedSlots.push({
-            slotId: slotDef.id,
-            label: slotDef.label,
-            cardTemplateId: cardTpl.id,
-            cardLabel: cardTpl.label,
-            cardManufacturer: cardTpl.manufacturer,
-            cardModelNumber: cardTpl.modelNumber,
-            portIds: cardPorts.map((p) => p.id),
-          });
-        } else {
-          installedSlots.push({
-            slotId: slotDef.id,
-            label: slotDef.label,
-            portIds: [],
-          });
-        }
-      }
+      const result = processTemplateSlots(template.slots);
+      installedSlots = result.installedSlots;
+      ports = [...ports, ...result.ports];
     }
 
     const newNode: DeviceNode = {
@@ -1098,50 +1134,83 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (slotIdx === -1) return;
 
     const oldSlot = slots[slotIdx];
-    const oldPortIds = new Set(oldSlot.portIds);
 
-    // Remove old card's ports
-    let newPorts = data.ports.filter((p) => !oldPortIds.has(p.id));
+    // Collect ALL port IDs from this slot and any descendant slots
+    const descendantSlots = slots.filter((s) => s.parentSlotId && s.parentSlotId.startsWith(slotId));
+    const allOldPortIds = new Set([
+      ...oldSlot.portIds,
+      ...descendantSlots.flatMap((s) => s.portIds),
+    ]);
+    const descendantSlotIds = new Set(descendantSlots.map((s) => s.slotId));
+
+    // Remove old card's ports (including descendant ports)
+    let newPorts = data.ports.filter((p) => !allOldPortIds.has(p.id));
 
     // Remove edges connected to old card's ports
-    const newEdges = oldPortIds.size > 0
+    const newEdges = allOldPortIds.size > 0
       ? state.edges.filter((e) => {
           const srcHandle = e.sourceHandle ?? "";
           const tgtHandle = e.targetHandle ?? "";
-          if (e.source === nodeId && oldPortIds.has(srcHandle)) return false;
-          if (e.target === nodeId && oldPortIds.has(tgtHandle)) return false;
-          // Also check bidirectional suffixes
-          if (e.source === nodeId && oldPortIds.has(srcHandle.replace(/-(in|out)$/, ""))) return false;
-          if (e.target === nodeId && oldPortIds.has(tgtHandle.replace(/-(in|out)$/, ""))) return false;
+          if (e.source === nodeId && allOldPortIds.has(srcHandle)) return false;
+          if (e.target === nodeId && allOldPortIds.has(tgtHandle)) return false;
+          if (e.source === nodeId && allOldPortIds.has(srcHandle.replace(/-(in|out)$/, ""))) return false;
+          if (e.target === nodeId && allOldPortIds.has(tgtHandle.replace(/-(in|out)$/, ""))) return false;
           return true;
         })
       : state.edges;
 
-    // Build new slot
+    // Remove descendant slots from the array
+    let newSlots = slots.filter((s) => !descendantSlotIds.has(s.slotId));
+
+    // Build new slot (with recursive sub-slot processing)
     let newSlot: InstalledSlot;
+    let childSlots: InstalledSlot[] = [];
     if (cardTemplateId) {
       const cardTpl = getTemplateById(cardTemplateId);
       if (!cardTpl) return;
-      const cardPorts = cloneCardPorts(cardTpl.ports, slotId, oldSlot.label);
+
+      // Determine display label for port sections
+      const parentLabel = oldSlot.parentSlotId
+        ? slots.find((s) => s.slotId === oldSlot.parentSlotId)?.label
+        : undefined;
+      const displayLabel = parentLabel ? `${parentLabel} > ${oldSlot.label}` : oldSlot.label;
+
+      const cardPorts = cloneCardPorts(cardTpl.ports, slotId, displayLabel);
       newPorts = [...newPorts, ...cardPorts];
       newSlot = {
         slotId,
         label: oldSlot.label,
+        slotFamily: oldSlot.slotFamily,
+        ...(oldSlot.parentSlotId ? { parentSlotId: oldSlot.parentSlotId } : {}),
         cardTemplateId: cardTpl.id,
         cardLabel: cardTpl.label,
         cardManufacturer: cardTpl.manufacturer,
         cardModelNumber: cardTpl.modelNumber,
         portIds: cardPorts.map((p) => p.id),
       };
+
+      // Process new card's sub-slots recursively
+      if (cardTpl.slots && cardTpl.slots.length > 0) {
+        const nested = processTemplateSlots(cardTpl.slots, slotId, displayLabel);
+        childSlots = nested.installedSlots;
+        newPorts = [...newPorts, ...nested.ports];
+      }
     } else {
       newSlot = {
         slotId,
         label: oldSlot.label,
+        slotFamily: oldSlot.slotFamily,
+        ...(oldSlot.parentSlotId ? { parentSlotId: oldSlot.parentSlotId } : {}),
         portIds: [],
       };
     }
 
-    const newSlots = slots.map((s, i) => (i === slotIdx ? newSlot : s));
+    newSlots = newSlots.map((s) => (s.slotId === slotId ? newSlot : s));
+    // Insert child slots right after the parent slot
+    if (childSlots.length > 0) {
+      const parentIdx = newSlots.findIndex((s) => s.slotId === slotId);
+      newSlots.splice(parentIdx + 1, 0, ...childSlots);
+    }
 
     const newNode = {
       ...node,

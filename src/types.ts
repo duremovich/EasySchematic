@@ -9,6 +9,7 @@ export type ConnectorType =
   | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel"
   | "banana" | "binding-post" | "binding-post-banana" | "dvi" | "mini-xlr" | "opticalcon"
   | "l5-20" | "l6-20" | "l6-30" | "l21-30" | "cam-lok"
+  | "qsfp" | "mpo"
   | "none" | "other";
 
 export interface PortNetworkConfig {
@@ -76,6 +77,7 @@ export type SignalType =
   | "ultranet"
   | "aes50"
   | "stageconnect"
+  | "wordclock"
   | "custom";
 
 export type PortDirection = "input" | "output" | "bidirectional";
@@ -107,6 +109,8 @@ export interface SlotDefinition {
 export interface InstalledSlot {
   slotId: string;
   label: string;
+  slotFamily?: string;          // denormalized for UI card lookup (especially nested slots)
+  parentSlotId?: string;        // links to parent slot for nested cards (e.g. SFP in a network module)
   cardTemplateId?: string;      // undefined = empty slot
   cardLabel?: string;           // denormalized for display/pack list
   cardManufacturer?: string;
@@ -377,6 +381,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   ultranet: "var(--color-ultranet)",
   aes50: "var(--color-aes50)",
   stageconnect: "var(--color-stageconnect)",
+  wordclock: "var(--color-wordclock)",
   custom: "var(--color-custom)",
 };
 
@@ -423,6 +428,8 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "l6-30": "NEMA L6-30",
   "l21-30": "NEMA L21-30",
   "cam-lok": "Cam-Lok",
+  qsfp: "QSFP+",
+  mpo: "MPO/MTP",
   none: "None",
   other: "Other",
 };
@@ -462,5 +469,6 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   ultranet: "Ultranet",
   aes50: "AES50",
   stageconnect: "StageConnect",
+  wordclock: "Word Clock",
   custom: "Custom",
 };
