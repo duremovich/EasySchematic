@@ -51,8 +51,8 @@ export const ROUTING_PARAMS = {
   TURN_PENALTY: 140,
   SEPARATION_PX: 24,
   CROSS_TYPE_SEPARATION: 20,
-  PROXIMITY_PENALTY: 200,
-  SAME_TYPE_PROXIMITY: 80,
+  OVERLAP_PENALTY: 400,
+  SAME_SIGNAL_GAP: 12,  // same-signal edges only need this much separation (matches EDGE_GAP)
   CROSSING_PENALTY: 350,
   EARLY_TURN_BIAS: 300,
   PAD: 20,
@@ -493,27 +493,28 @@ export function astarOrthogonal(
             if (!bucket) continue;
             for (const pz of bucket) {
               const crossType = currentSignalType && pz.signalType && pz.signalType !== currentSignalType;
-              const proxThreshold = crossType ? ROUTING_PARAMS.CROSS_TYPE_SEPARATION : ROUTING_PARAMS.SEPARATION_PX;
-              const proxPenalty = crossType ? ROUTING_PARAMS.PROXIMITY_PENALTY : ROUTING_PARAMS.SAME_TYPE_PROXIMITY;
+              // Zone width: same-signal edges need narrow gap (can cluster),
+              // different-signal edges need wider separation
+              const zoneWidth = crossType ? ROUTING_PARAMS.CROSS_TYPE_SEPARATION : ROUTING_PARAMS.SAME_SIGNAL_GAP;
               if (pz.axis === "v" && (d === 1 || d === 3)) {
                 const dist = Math.abs(nx - pz.coordinate);
-                if (dist < proxThreshold) {
+                if (dist < zoneWidth) {
                   const segMinY = Math.min(cy, ny);
                   const segMaxY = Math.max(cy, ny);
                   if (segMaxY > pz.rangeMin && segMinY < pz.rangeMax) {
-                    // Distance-scaled: on top = full penalty, at threshold edge = zero
-                    const closeness = 1 - dist / proxThreshold;
-                    g += proxPenalty * closeness * closeness;
+                    // Distance-scaled: overlapping = full OVERLAP_PENALTY, at zone edge = zero
+                    const closeness = 1 - dist / zoneWidth;
+                    g += ROUTING_PARAMS.OVERLAP_PENALTY * closeness * closeness;
                   }
                 }
               } else if (pz.axis === "h" && (d === 0 || d === 2)) {
                 const dist = Math.abs(ny - pz.coordinate);
-                if (dist < proxThreshold) {
+                if (dist < zoneWidth) {
                   const segMinX = Math.min(cx, nx);
                   const segMaxX = Math.max(cx, nx);
                   if (segMaxX > pz.rangeMin && segMinX < pz.rangeMax) {
-                    const closeness = 1 - dist / proxThreshold;
-                    g += proxPenalty * closeness * closeness;
+                    const closeness = 1 - dist / zoneWidth;
+                    g += ROUTING_PARAMS.OVERLAP_PENALTY * closeness * closeness;
                   }
                 }
               }
