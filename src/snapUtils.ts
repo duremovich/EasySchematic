@@ -29,9 +29,17 @@ interface Rect {
   centerY: number;
 }
 
+function estimateDeviceHeight(node: SchematicNode): number {
+  const ports = (node.data as DeviceData).ports ?? [];
+  const inputs = ports.filter((p) => p.direction === "input" || p.direction === "bidirectional").length;
+  const outputs = ports.filter((p) => p.direction === "output" || p.direction === "bidirectional").length;
+  const portRows = Math.max(inputs, outputs);
+  return Math.max(60, 32 + portRows * 20);
+}
+
 function nodeRect(node: SchematicNode): Rect {
   const w = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "room" ? 400 : 180);
-  const h = node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? (node.type === "room" ? 300 : 60);
+  const h = node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? (node.type === "room" ? 300 : estimateDeviceHeight(node));
   return {
     left: node.position.x,
     right: node.position.x + w,
@@ -377,72 +385,172 @@ function maxSpread(portCount: number): number {
  * for stubs to clear obstacle rects. If so, return a corrected position
  * that scoots the node to the minimum safe distance.
  *
+ * When snapResult is provided, the algorithm penalizes movement on
+ * aligned axes so nudges prefer to preserve snap alignment.
+ *
  * Returns null if no correction is needed.
  */
 export function enforceMinSpacing(
   draggedNode: SchematicNode,
   allNodes: SchematicNode[],
   hiddenNodeIds?: Set<string>,
+  snapResult?: SnapResult,
 ): { x: number; y: number } | null {
   if (draggedNode.type === "room") return null;
 
   const dragged = nodeRect(draggedNode);
-  let newX = draggedNode.position.x;
-  const newY = draggedNode.position.y;
+  const dw = dragged.right - dragged.left;
+  const dh = dragged.bottom - dragged.top;
+  const origX = draggedNode.position.x;
+  const origY = draggedNode.position.y;
+
+  // Penalize movement on axes that have active snap alignment
+  const hasXAlignment = snapResult?.guides.some((g) => g.orientation === "v") ?? false;
+  const hasYAlignment = snapResult?.guides.some((g) => g.orientation === "h") ?? false;
+  const ALIGN_PENALTY = 3;
+
+  let newX = origX;
+  let newY = origY;
   let changed = false;
 
-  for (const other of allNodes) {
-    if (other.id === draggedNode.id) continue;
-    if (other.type === "room") continue;
-    if (other.parentId !== draggedNode.parentId) continue;
-    if (hiddenNodeIds?.has(other.id)) continue;
+  const neighbors = allNodes.filter((n) => {
+    if (n.id === draggedNode.id) return false;
+    if (n.type === "room" || n.type === "note") return false;
+    if (n.parentId !== draggedNode.parentId) return false;
+    if (hiddenNodeIds?.has(n.id)) return false;
+    return true;
+  });
 
-    const or = nodeRect(other);
+  // Iterate to handle cascade (nudged into another device)
+  for (let iter = 0; iter < 3; iter++) {
+    let iterChanged = false;
 
-    // Only enforce horizontal spacing when the devices' Y ranges overlap
-    // (otherwise they're stacked vertically and stubs don't conflict)
-    const yOverlap = dragged.top < or.bottom + PAD && dragged.bottom > or.top - PAD;
-    if (!yOverlap) continue;
+    for (const other of neighbors) {
+      const or = nodeRect(other);
+      const draggedRight = newX + dw;
+      const draggedBottom = newY + dh;
 
-    // Determine which side faces which based on center positions
-    const draggedRight = newX + (dragged.right - dragged.left);
+      // Actual overlap check (strict — no PAD buffer)
+      const actualOverlap =
+        newX < or.right && draggedRight > or.left &&
+        newY < or.bottom && draggedBottom > or.top;
 
-    if (newX < or.left) {
-      // Dragged is to the LEFT of other
-      const spreadA = maxSpread(rightPortCount(draggedNode));
-      const spreadB = maxSpread(leftPortCount(other));
-      const minGap = STUB + PAD + ROUTING_GAP + Math.max(spreadA, spreadB);
-      const currentGap = or.left - draggedRight;
-      if (currentGap < minGap) {
-        newX -= (minGap - currentGap);
-        changed = true;
-      }
-    } else if (newX >= or.right) {
-      // Dragged is to the RIGHT of other
-      const spreadA = maxSpread(leftPortCount(draggedNode));
-      const spreadB = maxSpread(rightPortCount(other));
-      const minGap = STUB + PAD + ROUTING_GAP + Math.max(spreadA, spreadB);
-      const currentGap = newX - or.right;
-      if (currentGap < minGap) {
-        newX += (minGap - currentGap);
-        changed = true;
-      }
-    } else {
-      // Horizontally overlapping — push to whichever side is closer
-      const pushLeft = newX - (or.left - (dragged.right - dragged.left));
-      const pushRight = or.right - newX;
-      const spreadOut = maxSpread(rightPortCount(draggedNode));
-      const spreadIn = maxSpread(leftPortCount(draggedNode));
-      const minGap = STUB + PAD + ROUTING_GAP + Math.max(spreadOut, spreadIn);
+      if (actualOverlap) {
+        // Find bounding box of ALL devices overlapping the dragged device
+        let clusterLeft = or.left, clusterRight = or.right;
+        let clusterTop = or.top, clusterBottom = or.bottom;
+        for (const n of neighbors) {
+          if (n.id === other.id) continue;
+          const nr = nodeRect(n);
+          if (newX < nr.right && draggedRight > nr.left &&
+              newY < nr.bottom && draggedBottom > nr.top) {
+            clusterLeft = Math.min(clusterLeft, nr.left);
+            clusterRight = Math.max(clusterRight, nr.right);
+            clusterTop = Math.min(clusterTop, nr.top);
+            clusterBottom = Math.max(clusterBottom, nr.bottom);
+          }
+        }
 
-      if (pushLeft <= pushRight) {
-        newX = or.left - (dragged.right - dragged.left) - minGap;
+        const spreadDragR = maxSpread(rightPortCount(draggedNode));
+        const spreadDragL = maxSpread(leftPortCount(draggedNode));
+        const spreadOtherL = maxSpread(leftPortCount(other));
+        const spreadOtherR = maxSpread(rightPortCount(other));
+
+        const minGapLeft = STUB + PAD + ROUTING_GAP + Math.max(spreadDragR, spreadOtherL);
+        const minGapRight = STUB + PAD + ROUTING_GAP + Math.max(spreadDragL, spreadOtherR);
+
+        // Escape candidates clear the entire cluster, not just the single device
+        const candidates = [
+          { x: clusterLeft - dw - minGapLeft, y: newY },  // push left of cluster
+          { x: clusterRight + minGapRight, y: newY },      // push right of cluster
+          { x: newX, y: clusterTop - dh },                 // push above cluster (flush)
+          { x: newX, y: clusterBottom },                    // push below cluster (flush)
+        ];
+
+        let best = candidates[0];
+        let bestScore = Infinity;
+        for (const c of candidates) {
+          const dx = Math.abs(c.x - origX);
+          const dy = Math.abs(c.y - origY);
+          let score =
+            dx * (hasXAlignment ? ALIGN_PENALTY : 1) +
+            dy * (hasYAlignment ? ALIGN_PENALTY : 1);
+
+          // Penalize candidates that would land on a non-cluster device
+          for (const n of neighbors) {
+            const nr = nodeRect(n);
+            if (c.x < nr.right && c.x + dw > nr.left &&
+                c.y < nr.bottom && c.y + dh > nr.top) {
+              score += 10000;
+              break;
+            }
+          }
+
+          if (score < bestScore) {
+            bestScore = score;
+            best = c;
+          }
+        }
+
+        if (best.x !== newX || best.y !== newY) {
+          newX = best.x;
+          newY = best.y;
+          iterChanged = true;
+        }
+        break; // Escaped the whole cluster — let next iteration handle any remaining conflicts
       } else {
-        newX = or.right + minGap;
+        // No actual overlap — enforce horizontal spacing when Y ranges are close
+        // (PAD buffer ensures routing stubs have clearance)
+        const yClose = newY < or.bottom + PAD && draggedBottom > or.top - PAD;
+        if (!yClose) continue;
+
+        if (draggedRight <= or.left) {
+          // Dragged is to the LEFT of other
+          const spreadA = maxSpread(rightPortCount(draggedNode));
+          const spreadB = maxSpread(leftPortCount(other));
+          const minGap = STUB + PAD + ROUTING_GAP + Math.max(spreadA, spreadB);
+          const currentGap = or.left - draggedRight;
+          if (currentGap < minGap) {
+            newX -= minGap - currentGap;
+            iterChanged = true;
+          }
+        } else if (newX >= or.right) {
+          // Dragged is to the RIGHT of other
+          const spreadA = maxSpread(leftPortCount(draggedNode));
+          const spreadB = maxSpread(rightPortCount(other));
+          const minGap = STUB + PAD + ROUTING_GAP + Math.max(spreadA, spreadB);
+          const currentGap = newX - or.right;
+          if (currentGap < minGap) {
+            newX += minGap - currentGap;
+            iterChanged = true;
+          }
+        }
+        // else: X ranges overlap but no actual overlap — no action needed
       }
-      changed = true;
     }
+
+    if (iterChanged) changed = true;
+    else break;
   }
 
-  return changed ? { x: newX, y: newY } : null;
+  if (!changed) return null;
+
+  // Snap corrected position to grid
+  newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
+  newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+
+  return { x: newX, y: newY };
+}
+
+/**
+ * Check whether a node conflicts with any neighbor (same logic as
+ * enforceMinSpacing but returns a simple boolean). Used for the
+ * red overlap indicator during drag.
+ */
+export function detectOverlap(
+  draggedNode: SchematicNode,
+  allNodes: SchematicNode[],
+  hiddenNodeIds?: Set<string>,
+): boolean {
+  return enforceMinSpacing(draggedNode, allNodes, hiddenNodeIds) !== null;
 }

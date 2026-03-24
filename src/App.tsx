@@ -33,7 +33,7 @@ import RoomContextMenu from "./components/RoomContextMenu";
 import RoomEditor from "./components/RoomEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
 import RouterCreator from "./components/RouterCreator";
-import { computeSnap, enforceMinSpacing, type GuideLine } from "./snapUtils";
+import { computeSnap, enforceMinSpacing, detectOverlap, type GuideLine } from "./snapUtils";
 import type { DeviceData, DeviceTemplate, SchematicFile, SchematicNode } from "./types";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
@@ -415,13 +415,42 @@ function SchematicCanvas() {
 
       addDevice(template, position);
 
-      // After adding, check if dropped onto a room
+      // After adding, check if dropped onto a room + enforce spacing
       // Use setTimeout so the node exists in the store first
       setTimeout(() => {
         const state = useSchematicStore.getState();
         const lastDevice = state.nodes.filter((n) => n.type === "device").at(-1);
         if (lastDevice) {
           reparentNode(lastDevice.id, position);
+
+          // Enforce spacing so new device doesn't land on top of another
+          const updated = useSchematicStore.getState();
+          const device = updated.nodes.find((n) => n.id === lastDevice.id);
+          if (device) {
+            const spacing = enforceMinSpacing(
+              device as SchematicNode,
+              updated.nodes,
+              updated.hiddenAdapterNodeIds,
+            );
+            if (spacing) {
+              useSchematicStore.setState({
+                nodes: updated.nodes.map((n) =>
+                  n.id === device.id ? { ...n, position: { x: spacing.x, y: spacing.y } } : n,
+                ) as SchematicNode[],
+              });
+              // Re-reparent so the device stays in its room after nudge
+              let absX = spacing.x;
+              let absY = spacing.y;
+              if (device.parentId) {
+                const parent = updated.nodes.find((n) => n.id === device.parentId);
+                if (parent) {
+                  absX += parent.position.x;
+                  absY += parent.position.y;
+                }
+              }
+              reparentNode(device.id, { x: absX, y: absY });
+            }
+          }
         }
       }, 0);
     },
@@ -698,10 +727,19 @@ function SchematicCanvas() {
 
       // Apply snapped position if it differs
       if (snap.x !== draggedNode.position.x || snap.y !== draggedNode.position.y) {
+        const snappedNode = { ...draggedNode, position: { x: snap.x, y: snap.y } } as SchematicNode;
         const updated = state.nodes.map((n) =>
-          n.id === draggedNode.id ? { ...n, position: { x: snap.x, y: snap.y } } : n,
+          n.id === draggedNode.id ? snappedNode : n,
         );
-        useSchematicStore.setState({ nodes: updated as SchematicNode[] });
+        // Show red overlap indicator when device conflicts with a neighbor
+        const overlap = detectOverlap(snappedNode, updated as SchematicNode[], state.hiddenAdapterNodeIds);
+        useSchematicStore.setState({
+          nodes: updated as SchematicNode[],
+          overlapNodeId: overlap ? draggedNode.id : null,
+        });
+      } else {
+        const overlap = detectOverlap(draggedNode as SchematicNode, state.nodes, state.hiddenAdapterNodeIds);
+        useSchematicStore.setState({ overlapNodeId: overlap ? draggedNode.id : null });
       }
     },
     [],
@@ -718,8 +756,9 @@ function SchematicCanvas() {
       let finalY = snap.y;
 
       // Enforce minimum spacing so stubs don't land inside neighbor obstacle rects
+      // Pass snap result so the nudge preserves active alignment
       const snappedNode = { ...draggedNode, position: { x: finalX, y: finalY } } as SchematicNode;
-      const spacing = enforceMinSpacing(snappedNode, state.nodes, state.hiddenAdapterNodeIds);
+      const spacing = enforceMinSpacing(snappedNode, state.nodes, state.hiddenAdapterNodeIds, snap);
       if (spacing) {
         finalX = spacing.x;
         finalY = spacing.y;
@@ -729,9 +768,9 @@ function SchematicCanvas() {
         const updated = state.nodes.map((n) =>
           n.id === draggedNode.id ? { ...n, position: { x: finalX, y: finalY } } : n,
         );
-        useSchematicStore.setState({ nodes: updated as SchematicNode[], isDragging: false });
+        useSchematicStore.setState({ nodes: updated as SchematicNode[], isDragging: false, overlapNodeId: null });
       } else {
-        useSchematicStore.setState({ isDragging: false });
+        useSchematicStore.setState({ isDragging: false, overlapNodeId: null });
       }
 
       if (draggedNode.type === "room") return;

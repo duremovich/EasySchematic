@@ -166,6 +166,7 @@ interface SchematicState {
 
   // Drag state — edges freeze during drag and recalculate on drop
   isDragging: boolean;
+  overlapNodeId: string | null;
 
   // Print view (printView toggle is ephemeral; paper/orientation/scale are persisted)
   printView: boolean;
@@ -469,6 +470,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   resizeGuides: [],
   isDemo: false,
   isDragging: false,
+  overlapNodeId: null,
   undoSize: 0,
   redoSize: 0,
   printView: false,

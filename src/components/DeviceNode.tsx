@@ -27,6 +27,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
   const hiddenSignalTypesStr = useSchematicStore((s) => s.hiddenSignalTypes);
   const hideDeviceTypes = useSchematicStore((s) => s.hideDeviceTypes);
   const isHiddenAdapter = useSchematicStore((s) => s.hiddenAdapterNodeIds.has(id));
+  const isOverlapping = useSchematicStore((s) => s.overlapNodeId === id);
 
   const hiddenSignalTypes = useMemo(
     () => (hiddenSignalTypesStr ? new Set(hiddenSignalTypesStr.split(",")) : null),
@@ -124,7 +125,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       onDoubleClick={() => setEditingNodeId(id)}
       className={`
         relative rounded-lg border bg-white min-w-[180px]
-        ${selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]"}
+        ${isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]"}
       `}
     >
       {/* Header */}
