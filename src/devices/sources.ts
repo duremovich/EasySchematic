@@ -306,13 +306,15 @@ export const templates: DeviceTemplate[] = [
     
       port("3G-SDI Out 2", "sdi", "output"),
     
-      port("SFP+", "fiber", "bidirectional", "sfp"),
-    
+
       port("XLR In 1", "analog-audio", "input"),
-    
+
       port("XLR In 2", "analog-audio", "input"),
-    
+
       port("RS-422", "rs422", "bidirectional", "rj45"),
+    ],
+    slots: [
+      { id: "ue160-sfp-1", label: "SFP+", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
   },
   {
@@ -337,11 +339,13 @@ export const templates: DeviceTemplate[] = [
     
       port("SDI Monitor", "sdi", "output"),
     
-      port("SFP+", "fiber", "output", "sfp"),
-    
+
       port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
-    
+
       port("RS-422", "rs422", "bidirectional", "rj45"),
+    ],
+    slots: [
+      { id: "ue150-sfp-1", label: "SFP+", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
   },
   {

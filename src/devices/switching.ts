@@ -878,11 +878,12 @@ export const templates: DeviceTemplate[] = [
       { id: "ufr2-slot-1", label: "Slot 1", slotFamily: "ross-ultrix" },
       { id: "ufr2-slot-2", label: "Slot 2", slotFamily: "ross-ultrix" },
       { id: "ufr2-slot-3", label: "Slot 3", slotFamily: "ross-ultrix" },
+      { id: "ufr2-sfp-1", label: "AUX SFP 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "ufr2-sfp-2", label: "AUX SFP 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
     ports: [
       ...ports("SDI In", "sdi", "input", 16, "bnc"),
       ...ports("SDI Out", "sdi", "output", 16, "bnc"),
-      ...ports("AUX SFP", "fiber", "bidirectional", 2, "sfp"),
       ...ports("Ethernet", "ethernet", "bidirectional", 2, "ethercon"),
       port("Ref In", "genlock", "input", "bnc"),
       port("AC Power", "power", "input"),
@@ -900,11 +901,12 @@ export const templates: DeviceTemplate[] = [
     powerDrawW: 200, // typical
     slots: [
       { id: "ufr1-slot-1", label: "Slot 1", slotFamily: "ross-ultrix" },
+      { id: "ufr1-sfp-1", label: "AUX SFP 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "ufr1-sfp-2", label: "AUX SFP 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
     ports: [
       ...ports("SDI In", "sdi", "input", 16, "bnc"),
       ...ports("SDI Out", "sdi", "output", 16, "bnc"),
-      ...ports("AUX SFP", "fiber", "bidirectional", 2, "sfp"),
       ...ports("Ethernet", "ethernet", "bidirectional", 2, "ethercon"),
       port("Ref In", "genlock", "input", "bnc"),
       port("AC Power", "power", "input"),

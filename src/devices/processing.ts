@@ -386,11 +386,13 @@ export const templates: DeviceTemplate[] = [
       port("12G-SDI In", "sdi", "input"),
       port("SDI Loop", "sdi", "output"),
       port("HDMI 2.0 Out", "hdmi", "output"),
-      port("Fiber In", "fiber", "input", "sfp"),
-    
+
       port("Analog Out L", "analog-audio", "output", "rca"),
     
       port("Analog Out R", "analog-audio", "output", "rca"),
+    ],
+    slots: [
+      { id: "hi5-12g-sfp-1", label: "SFP+", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
   },
   {
@@ -406,11 +408,13 @@ export const templates: DeviceTemplate[] = [
       port("HDMI 2.0 In", "hdmi", "input"),
       port("12G-SDI Out 1", "sdi", "output"),
       port("12G-SDI Out 2", "sdi", "output"),
-      port("Fiber Out", "fiber", "output", "sfp"),
-    
+
       port("Analog In L", "analog-audio", "input", "rca"),
     
       port("Analog In R", "analog-audio", "input", "rca"),
+    ],
+    slots: [
+      { id: "ha5-12g-sfp-1", label: "SFP+", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
   },
   {

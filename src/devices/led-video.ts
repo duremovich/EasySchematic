@@ -189,10 +189,12 @@ export const templates: DeviceTemplate[] = [
     powerDrawW: 80, // typical
     ports: [
       port("10G Copper In", "ethernet", "input", "rj45"),
-      port("10G Fiber In", "fiber", "input", "sfp"),
-      port("10G Thru", "ethernet", "output", "sfp"),
       ...ports("LED Out", "ethernet", "output", 10, "rj45"),
       port("AC Power", "power", "input"),
+    ],
+    slots: [
+      { id: "sfp-1", label: "10G Fiber In", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-2", label: "10G Thru", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
   },
   {
@@ -206,13 +208,25 @@ export const templates: DeviceTemplate[] = [
     searchTerms: ["megapixel", "helios", "led processor", "led wall", "virtual production"],
     powerDrawW: 500, // typical
     ports: [
-      port("QSFP Fiber In", "fiber", "input", "other"),
       port("HDMI In", "hdmi", "input"),
       port("DP In", "displayport", "input"),
-      ...ports("SFP+ Slot", "fiber", "bidirectional", 4, "sfp"),
-      ...ports("10G Fiber Out", "fiber", "output", 8, "sfp"),
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
+    ],
+    slots: [
+      { id: "qsfp-1", label: "QSFP Fiber In", slotFamily: "qsfp", defaultCardId: "qsfp-40g-sr4" },
+      { id: "sfp-1", label: "SFP+ Slot 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-2", label: "SFP+ Slot 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-3", label: "SFP+ Slot 3", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-4", label: "SFP+ Slot 4", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-5", label: "10G Fiber Out 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-6", label: "10G Fiber Out 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-7", label: "10G Fiber Out 3", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-8", label: "10G Fiber Out 4", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-9", label: "10G Fiber Out 5", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-10", label: "10G Fiber Out 6", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-11", label: "10G Fiber Out 7", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-12", label: "10G Fiber Out 8", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
   },
 ];

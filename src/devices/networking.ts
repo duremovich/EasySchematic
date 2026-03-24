@@ -107,11 +107,13 @@ export const templates: DeviceTemplate[] = [
       port("HDMI Out", "hdmi", "output"),
       port("Ethernet 1", "ethernet", "bidirectional"),
       port("Ethernet 2", "ethernet", "bidirectional"),
-      port("SFP", "fiber", "bidirectional", "sfp"),
       port("Analog Audio", "analog-audio", "bidirectional"),
       port("USB Host", "usb", "bidirectional"),
       port("USB Device", "usb", "bidirectional"),
       port("AC Power", "power", "input"),
+    ],
+    slots: [
+      { id: "nvx351-sfp-1", label: "SFP", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
   },
   {

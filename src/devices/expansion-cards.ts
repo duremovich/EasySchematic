@@ -77,9 +77,13 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "IP-VFC",
     referenceUrl: "https://www.disguise.one/en/products/vfc-cards/",
     searchTerms: ["vfc", "ip", "sfp28", "output", "disguise"],
-    ports: [
-      ...ports("SFP28 Out", "fiber", "output", 4, "sfp"),
+    slots: [
+      { id: "vfc-ip-sfp-1", label: "SFP28 1", slotFamily: "sfp", defaultCardId: "sfp-25g-sr" },
+      { id: "vfc-ip-sfp-2", label: "SFP28 2", slotFamily: "sfp", defaultCardId: "sfp-25g-sr" },
+      { id: "vfc-ip-sfp-3", label: "SFP28 3", slotFamily: "sfp", defaultCardId: "sfp-25g-sr" },
+      { id: "vfc-ip-sfp-4", label: "SFP28 4", slotFamily: "sfp", defaultCardId: "sfp-25g-sr" },
     ],
+    ports: [],
   },
   // Barco Event Master I/O Cards
   {
@@ -641,8 +645,12 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "ULTRIX-IPX-IO",
     referenceUrl: "https://www.rossvideo.com/products/routing-systems/ultrix/ultrix-specifications/",
     searchTerms: ["ross", "ultrix", "ipx", "ip", "st2110", "qsfp28", "expansion", "card"],
-    ports: [
-      ...ports("QSFP28", "fiber", "bidirectional", 4, "sfp"),
+    slots: [
+      { id: "ultrix-ipx-qsfp-1", label: "QSFP28 1", slotFamily: "qsfp", defaultCardId: "qsfp-40g-sr4" },
+      { id: "ultrix-ipx-qsfp-2", label: "QSFP28 2", slotFamily: "qsfp", defaultCardId: "qsfp-40g-sr4" },
+      { id: "ultrix-ipx-qsfp-3", label: "QSFP28 3", slotFamily: "qsfp", defaultCardId: "qsfp-40g-sr4" },
+      { id: "ultrix-ipx-qsfp-4", label: "QSFP28 4", slotFamily: "qsfp", defaultCardId: "qsfp-40g-sr4" },
     ],
+    ports: [],
   },
 ];
