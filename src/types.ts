@@ -18,7 +18,6 @@ export interface PortNetworkConfig {
   gateway?: string;
   vlan?: number;
   dhcp?: boolean;
-  hostname?: string;
 }
 
 export interface DhcpServerConfig {
@@ -128,6 +127,7 @@ export interface InstalledSlot {
 export interface DeviceData {
   [key: string]: unknown;
   label: string;
+  hostname?: string;
   deviceType: string;
   ports: Port[];
   color?: string;
@@ -225,6 +225,7 @@ export interface DeviceTemplate {
   deviceType: string;
   category?: string;
   label: string;
+  hostname?: string;
   ports: Port[];
   color?: string;
   searchTerms?: string[];

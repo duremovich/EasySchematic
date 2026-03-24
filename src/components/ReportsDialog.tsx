@@ -353,6 +353,11 @@ function NetworkReportTab() {
       const node = nodes.find((n) => n.id === row.nodeId);
       if (!node || node.type !== "device") return;
       const data = node.data as DeviceData;
+      // "hostname" lives on DeviceData, not on port
+      if (field === "hostname") {
+        patchDeviceData(row.nodeId, { hostname: (value as string) || undefined });
+        return;
+      }
       const newPorts = data.ports.map((p) => {
         if (p.id !== row.portId) return p;
         // "notes" lives directly on Port, everything else on networkConfig

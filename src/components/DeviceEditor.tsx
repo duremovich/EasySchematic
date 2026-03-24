@@ -69,6 +69,7 @@ export default function DeviceEditor() {
   const node = nodes.find((n) => n.id === editingNodeId && n.type === "device") as DeviceNode | undefined;
 
   const [label, setLabel] = useState("");
+  const [hostname, setHostname] = useState("");
   const [deviceType, setDeviceType] = useState("");
   const [color, setColor] = useState<string | undefined>(undefined);
   const [headerColor, setHeaderColor] = useState<string | undefined>(undefined);
@@ -105,6 +106,7 @@ export default function DeviceEditor() {
   useEffect(() => {
     if (!node) return;
     setLabel(node.data.label);
+    setHostname(node.data.hostname ?? "");
     setDeviceType(node.data.deviceType);
     setColor(node.data.color);
     setHeaderColor(node.data.headerColor);
@@ -166,6 +168,7 @@ export default function DeviceEditor() {
     const existing = node?.data;
     const data: DeviceData = {
       label: label.trim() || "Untitled",
+      ...(hostname.trim() ? { hostname: hostname.trim() } : {}),
       deviceType: deviceType.trim() || "custom",
       ports: finalPorts,
       ...(existing?.manufacturer ? { manufacturer: existing.manufacturer } : {}),
@@ -192,7 +195,7 @@ export default function DeviceEditor() {
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
+  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
 
   const handleSaveAsTemplate = useCallback(() => {
     const finalPorts: Port[] = ports
@@ -210,9 +213,10 @@ export default function DeviceEditor() {
       ports: finalPorts,
       ...(existing?.manufacturer ? { manufacturer: existing.manufacturer } : {}),
       ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
+      ...(hostname.trim() ? { hostname: hostname.trim() } : {}),
       ...(poeBudgetW != null ? { poeBudgetW } : {}),
     });
-  }, [ports, label, node, addCustomTemplate, poeBudgetW]);
+  }, [ports, label, hostname, node, addCustomTemplate, poeBudgetW]);
 
   const handleSubmitToCommunity = useCallback(async () => {
     const finalPorts: Port[] = ports
@@ -241,6 +245,7 @@ export default function DeviceEditor() {
       ...(existing?.category ? { category: existing.category } : {}),
       ...(existing?.slots ? { slots: existing.slots } : {}),
       ...(existing?.slotFamily ? { slotFamily: existing.slotFamily } : {}),
+      ...(hostname.trim() ? { hostname: hostname.trim() } : {}),
       ...(poeBudgetW != null ? { poeBudgetW } : {}),
     };
 
@@ -493,6 +498,18 @@ export default function DeviceEditor() {
                 value={deviceType}
                 onChange={(e) => setDeviceType(e.target.value)}
                 placeholder="e.g. camera"
+              />
+            </Field>
+          </div>
+
+          {/* Hostname */}
+          <div className="-mt-1">
+            <Field label="Hostname">
+              <input
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                value={hostname}
+                onChange={(e) => setHostname(e.target.value)}
+                placeholder="e.g. nvx-room101"
               />
             </Field>
           </div>
@@ -1578,7 +1595,7 @@ function PortNetworkSection({
 }) {
   const [open, setOpen] = useState(false);
   const c = config ?? {};
-  const hasData = c.ip || c.subnetMask || c.gateway || c.vlan || c.dhcp || c.hostname;
+  const hasData = c.ip || c.subnetMask || c.gateway || c.vlan || c.dhcp;
 
   // Duplicate IP detection
   const nodes = useSchematicStore((s) => s.nodes);
@@ -1608,13 +1625,6 @@ function PortNetworkSection({
       </button>
       {open && (
         <div className="grid grid-cols-2 gap-1 mt-1">
-          <input
-            className="col-span-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
-            value={c.hostname ?? ""}
-            onChange={(e) => onChange({ ...c, hostname: e.target.value || undefined })}
-            placeholder="Hostname"
-            onKeyDown={(e) => e.stopPropagation()}
-          />
           <label className="flex items-center gap-1 col-span-2 text-[9px] text-[var(--color-text-muted)]">
             <input
               type="checkbox"

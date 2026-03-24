@@ -27,6 +27,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
   const [editPorts, setEditPorts] = useState<Port[]>([]);
   const [editSlots, setEditSlots] = useState<SlotDefinition[]>([]);
   const [editSlotFamily, setEditSlotFamily] = useState("");
+  const [editHostname, setEditHostname] = useState("");
   const [editPowerDrawW, setEditPowerDrawW] = useState("");
   const [editPowerCapacityW, setEditPowerCapacityW] = useState("");
   const [editVoltage, setEditVoltage] = useState("");
@@ -62,6 +63,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
     setEditPorts((d.ports ?? []) as Port[]);
     setEditSlots((d.slots ?? []) as SlotDefinition[]);
     setEditSlotFamily((d as Record<string, unknown>).slotFamily as string ?? "");
+    setEditHostname((d as Record<string, unknown>).hostname as string ?? "");
     setEditPowerDrawW((d as Record<string, unknown>).powerDrawW != null ? String((d as Record<string, unknown>).powerDrawW) : "");
     setEditPowerCapacityW((d as Record<string, unknown>).powerCapacityW != null ? String((d as Record<string, unknown>).powerCapacityW) : "");
     setEditVoltage((d as Record<string, unknown>).voltage as string ?? "");
@@ -85,6 +87,7 @@ export default function ReviewDetailPage({ id }: { id: string }) {
           ...(editSearchTerms.trim() && { searchTerms: editSearchTerms.split(",").map((s) => s.trim()).filter(Boolean) }),
           ...(editSlots.length > 0 && { slots: editSlots }),
           ...(editSlotFamily.trim() && { slotFamily: editSlotFamily.trim() }),
+          ...(editHostname.trim() && { hostname: editHostname.trim() }),
           ...(editPowerDrawW.trim() && { powerDrawW: Number(editPowerDrawW) }),
           ...(editPowerCapacityW.trim() && { powerCapacityW: Number(editPowerCapacityW) }),
           ...(editVoltage.trim() && { voltage: editVoltage.trim() }),
@@ -342,9 +345,11 @@ export default function ReviewDetailPage({ id }: { id: string }) {
 }
 
 function DeviceInfo({ data }: { data: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily" | "powerDrawW" | "powerCapacityW" | "voltage"> }) {
+  const extra = data as Record<string, unknown>;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-4">
       <div><span className="text-slate-500">Label:</span> <span className="font-medium">{data.label}</span></div>
+      {extra.hostname ? <div><span className="text-slate-500">Hostname:</span> {String(extra.hostname)}</div> : null}
       <div><span className="text-slate-500">Type:</span> {data.deviceType}</div>
       {data.manufacturer && <div><span className="text-slate-500">Manufacturer:</span> {data.manufacturer}</div>}
       {data.modelNumber && <div><span className="text-slate-500">Model:</span> {data.modelNumber}</div>}
@@ -373,8 +378,8 @@ function DeviceInfo({ data }: { data: Pick<DeviceTemplate, "label" | "deviceType
       {data.powerCapacityW != null && (
         <div><span className="text-slate-500">Power Capacity:</span> {data.powerCapacityW}W</div>
       )}
-      {(data as Record<string, unknown>).poeBudgetW != null && (
-        <div><span className="text-slate-500">PoE Budget:</span> {String((data as Record<string, unknown>).poeBudgetW)}W</div>
+      {extra.poeBudgetW != null && (
+        <div><span className="text-slate-500">PoE Budget:</span> {String(extra.poeBudgetW)}W</div>
       )}
       {data.voltage && (
         <div><span className="text-slate-500">Voltage:</span> {data.voltage}</div>

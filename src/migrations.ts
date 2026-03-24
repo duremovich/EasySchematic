@@ -226,7 +226,17 @@ const migrations: Record<number, Migration> = {
     return data;
   },
   19: (data) => {
-    // v19 → v20: hostname on PortNetworkConfig, notes on Port — all optional, no transform needed
+    // v19 → v20: hostname moved from PortNetworkConfig to DeviceData, notes on Port
+    // Migrate any port-level hostname to device-level
+    for (const node of data.nodes ?? []) {
+      if (node.type !== "device" || !node.data?.ports) continue;
+      for (const p of node.data.ports) {
+        if (p.networkConfig?.hostname) {
+          if (!node.data.hostname) node.data.hostname = p.networkConfig.hostname;
+          delete p.networkConfig.hostname;
+        }
+      }
+    }
     data.version = 20;
     return data;
   },

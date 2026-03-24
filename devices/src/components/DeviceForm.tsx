@@ -7,6 +7,7 @@ import TagAutocompleteInput from "./TagAutocompleteInput";
 
 export interface DeviceFormData {
   label: string;
+  hostname?: string;
   deviceType: string;
   category: string;
   ports: Port[];
@@ -44,6 +45,7 @@ interface DeviceFormProps {
 
 export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save", cancelHref, extraFields, footer }: DeviceFormProps) {
   const [label, setLabel] = useState("");
+  const [hostname, setHostname] = useState("");
   const [deviceType, setDeviceType] = useState("");
   const [category, setCategory] = useState("");
   const [manufacturer, setManufacturer] = useState("");
@@ -80,6 +82,7 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
     fetchTemplate(id)
       .then((t) => {
         setLabel(t.label);
+        setHostname((t as unknown as Record<string, unknown>).hostname as string ?? "");
         setDeviceType(t.deviceType);
         setCategory(t.category ?? "");
         setManufacturer(t.manufacturer ?? "");
@@ -106,6 +109,7 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
     fetchDraft(draftId)
       .then((t: Record<string, unknown>) => {
         setLabel((t.label as string) ?? "");
+        setHostname((t.hostname as string) ?? "");
         setDeviceType((t.deviceType as string) ?? "");
         setCategory((t.category as string) ?? "");
         setManufacturer((t.manufacturer as string) ?? "");
@@ -140,6 +144,7 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
     try {
       await onSubmit({
         label: label.trim(),
+        ...(hostname.trim() && { hostname: hostname.trim() }),
         deviceType: deviceType.trim(),
         category: category.trim(),
         ports,
@@ -175,9 +180,13 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <label className="sm:col-span-2">
+        <label>
           <span className="block text-sm font-medium text-slate-700 mb-1">Label *</span>
           <input value={label} onChange={(e) => setLabel(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </label>
+        <label>
+          <span className="block text-sm font-medium text-slate-700 mb-1">Hostname</span>
+          <input value={hostname} onChange={(e) => setHostname(e.target.value)} placeholder="e.g. nvx-room101" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </label>
         <label>
           <span className="block text-sm font-medium text-slate-700 mb-1">Device Type *</span>

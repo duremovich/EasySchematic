@@ -62,7 +62,7 @@ export function computeNetworkReport(nodes: SchematicNode[], edges: ConnectionEd
         portLabel: port.label,
         room,
         signalType: SIGNAL_LABELS[port.signalType] ?? port.signalType,
-        hostname: nc?.hostname ?? "",
+        hostname: data.hostname ?? "",
         ip: nc?.ip ?? "",
         subnetMask: nc?.subnetMask ?? "",
         gateway: nc?.gateway ?? "",
