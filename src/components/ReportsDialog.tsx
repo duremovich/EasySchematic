@@ -1,7 +1,7 @@
 import React, { memo, useMemo, useState, useCallback, useEffect } from "react";
 import { useSchematicStore } from "../store";
-import { computeNetworkReport, computeDhcpServerSummary, type NetworkReportRow } from "../networkReport";
-import { isValidIpv4, isValidSubnetMask, isValidVlan, findDuplicateIps, computeDhcpWarnings, type DhcpWarning } from "../networkValidation";
+import { computeNetworkReport, computeDhcpServerSummary, computePoeBudget, type NetworkReportRow } from "../networkReport";
+import { isValidIpv4, isValidSubnetMask, isValidVlan, findDuplicateIps, computeDhcpWarnings, computeSubnetConflicts, type DhcpWarning } from "../networkValidation";
 import {
   computePackList,
   mergeDevicesByModel,
@@ -255,17 +255,25 @@ const networkColumns: SpreadsheetColumn<NetworkReportRow>[] = [
   { id: "portLabel", header: "Port", getValue: (r) => r.portLabel },
   { id: "room", header: "Room", getValue: (r) => r.room },
   { id: "signalType", header: "Signal", getValue: (r) => r.signalType },
+  { id: "hostname", header: "Hostname", getValue: (r) => r.hostname, editable: true, fillType: "name" },
   { id: "ip", header: "IP", getValue: (r) => r.ip, editable: (r) => !r.dhcp, fillType: "ip" },
   { id: "subnetMask", header: "Subnet", getValue: (r) => r.subnetMask, editable: (r) => !r.dhcp, fillType: "subnet" },
   { id: "gateway", header: "Gateway", getValue: (r) => r.gateway, editable: (r) => !r.dhcp, fillType: "gateway" },
   { id: "vlan", header: "VLAN", getValue: (r) => r.vlan, editable: (r) => !r.dhcp, fillType: "vlan" },
+  { id: "linkSpeed", header: "Speed", getValue: (r) => r.linkSpeed },
+  { id: "poeDrawW", header: "PoE (W)", getValue: (r) => r.poeDrawW },
+  { id: "notes", header: "Notes", getValue: (r) => r.notes, editable: true },
 ];
 
 const COLUMN_LABELS: Record<string, string> = {
+  hostname: "Hostname",
   ip: "IP",
   subnetMask: "Subnet",
   gateway: "Gateway",
   vlan: "VLAN",
+  linkSpeed: "Speed",
+  poeDrawW: "PoE (W)",
+  notes: "Notes",
 };
 
 function NetworkReportTab() {
@@ -280,8 +288,17 @@ function NetworkReportTab() {
   const rows = useMemo(() => computeNetworkReport(nodes, edges), [nodes, edges]);
   const duplicateIps = useMemo(() => findDuplicateIps(nodes), [nodes]);
   const dhcpServers = useMemo(() => computeDhcpServerSummary(nodes), [nodes]);
+  const poeBudgets = useMemo(() => computePoeBudget(nodes, edges), [nodes, edges]);
   const dhcpWarnings = useMemo(() => {
-    const warnings = computeDhcpWarnings(rows, nodes, edges);
+    const warnings: DhcpWarning[] = [
+      ...computeDhcpWarnings(rows, nodes, edges),
+      ...computeSubnetConflicts(nodes, edges).map((c) => ({
+        nodeId: c.nodeId,
+        portId: c.portId,
+        type: "subnet-conflict" as const,
+        message: c.message,
+      })),
+    ];
     const map = new Map<string, DhcpWarning>();
     for (const w of warnings) map.set(`${w.nodeId}:${w.portId}`, w);
     return map;
@@ -295,10 +312,12 @@ function NetworkReportTab() {
         r.deviceLabel.toLowerCase().includes(q) ||
         r.portLabel.toLowerCase().includes(q) ||
         r.room.toLowerCase().includes(q) ||
+        r.hostname.toLowerCase().includes(q) ||
         r.ip.includes(q) ||
         r.subnetMask.includes(q) ||
         r.gateway.includes(q) ||
-        r.vlan.includes(q),
+        r.vlan.includes(q) ||
+        r.notes.toLowerCase().includes(q),
     );
   }, [rows, filter]);
 
@@ -336,6 +355,10 @@ function NetworkReportTab() {
       const data = node.data as DeviceData;
       const newPorts = data.ports.map((p) => {
         if (p.id !== row.portId) return p;
+        // "notes" lives directly on Port, everything else on networkConfig
+        if (field === "notes") {
+          return { ...p, notes: (value as string) || undefined };
+        }
         const nc = { ...p.networkConfig, [field]: value };
         if (field === "ip" && typeof value === "string" && isValidIpv4(value) && !p.networkConfig?.subnetMask) {
           nc.subnetMask = "255.255.255.0";
@@ -490,6 +513,41 @@ function NetworkReportTab() {
                   <td className={tdClass}>{srv.rangeEnd || "—"}</td>
                   <td className={tdClass}>{srv.subnetMask || "—"}</td>
                   <td className={tdClass}>{srv.gateway || "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* PoE Budget summary */}
+      {poeBudgets.length > 0 && (
+        <div className="mb-4 border border-[var(--color-border)] rounded overflow-hidden">
+          <div className="px-3 py-1.5 bg-[var(--color-surface)] border-b border-[var(--color-border)]">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)]">PoE Budget</span>
+          </div>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                <th className={thClass}>Switch</th>
+                <th className={thClass}>Room</th>
+                <th className={thClass}>Budget (W)</th>
+                <th className={thClass}>Load (W)</th>
+                <th className={thClass}>Remaining (W)</th>
+                <th className={thClass}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {poeBudgets.map((poe, i) => (
+                <tr key={poe.nodeId} className={rowClass(i)}>
+                  <td className={tdClass}>{poe.deviceLabel}</td>
+                  <td className={tdClass}>{poe.room}</td>
+                  <td className={tdClass}>{poe.budgetW}</td>
+                  <td className={tdClass}>{poe.loadW}</td>
+                  <td className={tdClass}>{poe.remainingW}</td>
+                  <td className={`${tdClass} ${poe.overBudget ? "text-red-600 font-semibold" : "text-green-600"}`}>
+                    {poe.overBudget ? "OVER BUDGET" : "OK"}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -1776,7 +1834,7 @@ function renderGroupedDevices(devices: PackListDevice[]) {
 
 function exportNetworkCsv(nodes: SchematicNode[], edges: import("../types").ConnectionEdge[], schematicName: string) {
   const rows = computeNetworkReport(nodes, edges);
-  const header = ["Device", "Port", "Room", "Signal", "IP", "Subnet Mask", "Gateway", "VLAN", "DHCP", "DHCP Server"];
+  const header = ["Device", "Port", "Room", "Signal", "Hostname", "IP", "Subnet Mask", "Gateway", "VLAN", "Speed", "PoE (W)", "DHCP", "DHCP Server", "Notes"];
   const lines = [
     header.join(","),
     ...rows.map((r) =>
@@ -1785,12 +1843,16 @@ function exportNetworkCsv(nodes: SchematicNode[], edges: import("../types").Conn
         csvEscape(r.portLabel),
         csvEscape(r.room),
         csvEscape(r.signalType),
+        csvEscape(r.hostname),
         r.ip,
         r.subnetMask,
         r.gateway,
         r.vlan,
+        r.linkSpeed,
+        r.poeDrawW,
         r.dhcp ? "Yes" : "No",
         csvEscape(r.dhcpServerLabel),
+        csvEscape(r.notes),
       ].join(","),
     ),
   ];

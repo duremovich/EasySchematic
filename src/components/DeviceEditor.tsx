@@ -37,6 +37,9 @@ interface PortDraft {
   isMulticable?: boolean;
   channelCount?: number;
   directAttach?: boolean;
+  notes?: string;
+  poeDrawW?: number;
+  linkSpeed?: string;
 }
 
 function newPortDraft(direction: PortDirection): PortDraft {
@@ -83,6 +86,7 @@ export default function DeviceEditor() {
   const [powerDrawW, setPowerDrawW] = useState<number | undefined>(undefined);
   const [powerCapacityW, setPowerCapacityW] = useState<number | undefined>(undefined);
   const [voltage, setVoltage] = useState<string | undefined>(undefined);
+  const [poeBudgetW, setPoeBudgetW] = useState<number | undefined>(undefined);
 
   // Cable accessory flags
   const [isCableAccessory, setIsCableAccessory] = useState(false);
@@ -117,6 +121,9 @@ export default function DeviceEditor() {
         isMulticable: p.isMulticable,
         channelCount: p.channelCount,
         directAttach: p.directAttach,
+        notes: p.notes,
+        poeDrawW: p.poeDrawW,
+        linkSpeed: p.linkSpeed,
       })),
     );
     setShowAllPorts(node.data.showAllPorts ?? false);
@@ -126,6 +133,7 @@ export default function DeviceEditor() {
     setPowerDrawW(node.data.powerDrawW);
     setPowerCapacityW(node.data.powerCapacityW);
     setVoltage(node.data.voltage);
+    setPoeBudgetW(node.data.poeBudgetW);
     setIsCableAccessory(node.data.isCableAccessory ?? false);
     setIntegratedWithCable(node.data.integratedWithCable ?? false);
     setIsVenueProvided(node.data.isVenueProvided ?? false);
@@ -173,6 +181,7 @@ export default function DeviceEditor() {
       ...(dhcpServer ? { dhcpServer } : {}),
       ...(powerDrawW != null ? { powerDrawW } : {}),
       ...(powerCapacityW != null ? { powerCapacityW } : {}),
+      ...(poeBudgetW != null ? { poeBudgetW } : {}),
       ...(voltage ? { voltage } : {}),
       ...(isCableAccessory ? { isCableAccessory: true } : {}),
       ...(integratedWithCable ? { integratedWithCable: true } : {}),
@@ -183,7 +192,7 @@ export default function DeviceEditor() {
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
+  }, [editingNodeId, ports, label, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
 
   const handleSaveAsTemplate = useCallback(() => {
     const finalPorts: Port[] = ports
@@ -304,6 +313,9 @@ export default function DeviceEditor() {
       networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
       capabilities: p.capabilities ? { ...p.capabilities } : undefined,
       directAttach: p.directAttach,
+      notes: p.notes,
+      poeDrawW: p.poeDrawW,
+      linkSpeed: p.linkSpeed,
     })));
     setHiddenPorts([]);
     setColor(tpl.color);
@@ -324,6 +336,9 @@ export default function DeviceEditor() {
       networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
       capabilities: p.capabilities ? { ...p.capabilities } : undefined,
       directAttach: p.directAttach,
+      notes: p.notes,
+      poeDrawW: p.poeDrawW,
+      linkSpeed: p.linkSpeed,
     })));
     setHiddenPorts(preset.hiddenPorts ?? []);
     setColor(preset.color);
@@ -610,7 +625,21 @@ export default function DeviceEditor() {
           />
 
           {ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
-            <DhcpServerSection dhcpServer={dhcpServer} onChange={setDhcpServer} />
+            <>
+              <DhcpServerSection dhcpServer={dhcpServer} onChange={setDhcpServer} />
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[10px] text-[var(--color-text-muted)]">PoE Budget (W):</span>
+                <input
+                  className="w-20 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:border-blue-500"
+                  type="number"
+                  value={poeBudgetW ?? ""}
+                  onChange={(e) => setPoeBudgetW(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="e.g. 370"
+                  min={0}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+              </div>
+            </>
           )}
 
           {/* Expansion Slots */}
@@ -1222,6 +1251,7 @@ function PortRow({
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const [showSection, setShowSection] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
 
   const handleDragStart = (e: DragEvent) => {
     e.dataTransfer.setData(MIME, port.id);
@@ -1406,6 +1436,19 @@ function PortRow({
           {port.section || "§"}
         </button>
 
+        {/* Notes badge */}
+        <button
+          onClick={() => setShowNotes(!showNotes)}
+          className={`text-[9px] px-1 py-0.5 rounded cursor-pointer transition-colors shrink-0 ${
+            port.notes
+              ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+              : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] opacity-0 group-hover:opacity-100"
+          }`}
+          title={port.notes || "Add note"}
+        >
+          {port.notes ? "N" : "N"}
+        </button>
+
         <button
           onClick={onRemove}
           className="text-red-400/60 hover:text-red-500 text-sm cursor-pointer px-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1438,6 +1481,29 @@ function PortRow({
         </div>
       )}
 
+      {showNotes && (
+        <div className="flex items-center gap-1.5 pl-6 pb-1">
+          <span className="text-[9px] text-[var(--color-text-muted)]">Note:</span>
+          <input
+            className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            value={port.notes || ""}
+            onChange={(e) => onUpdate({ notes: e.target.value || undefined })}
+            placeholder="e.g. East wall plate, Drop 3"
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") setShowNotes(false);
+            }}
+            autoFocus
+          />
+          <button
+            onClick={() => setShowNotes(false)}
+            className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+          >
+            Done
+          </button>
+        </div>
+      )}
+
       {/* Network Config (collapsible, only for addressable network signal types) */}
       {NETWORK_SIGNAL_TYPES.has(port.signalType) && (
         <>
@@ -1455,6 +1521,10 @@ function PortRow({
               config={port.networkConfig}
               onChange={(nc) => onUpdate({ networkConfig: nc })}
               portId={port.id}
+              poeDrawW={port.poeDrawW}
+              onPoeDrawChange={(v) => onUpdate({ poeDrawW: v })}
+              linkSpeed={port.linkSpeed}
+              onLinkSpeedChange={(v) => onUpdate({ linkSpeed: v })}
             />
           )}
         </>
@@ -1475,18 +1545,28 @@ function PortRow({
   );
 }
 
+const LINK_SPEED_OPTIONS = ["", "100M", "1G", "2.5G", "5G", "10G", "25G", "40G", "100G"];
+
 function PortNetworkSection({
   config,
   onChange,
   portId,
+  poeDrawW,
+  onPoeDrawChange,
+  linkSpeed,
+  onLinkSpeedChange,
 }: {
   config?: PortNetworkConfig;
   onChange: (config: PortNetworkConfig) => void;
   portId: string;
+  poeDrawW?: number;
+  onPoeDrawChange: (v: number | undefined) => void;
+  linkSpeed?: string;
+  onLinkSpeedChange: (v: string | undefined) => void;
 }) {
   const [open, setOpen] = useState(false);
   const c = config ?? {};
-  const hasData = c.ip || c.subnetMask || c.gateway || c.vlan || c.dhcp;
+  const hasData = c.ip || c.subnetMask || c.gateway || c.vlan || c.dhcp || c.hostname;
 
   // Duplicate IP detection
   const nodes = useSchematicStore((s) => s.nodes);
@@ -1516,6 +1596,13 @@ function PortNetworkSection({
       </button>
       {open && (
         <div className="grid grid-cols-2 gap-1 mt-1">
+          <input
+            className="col-span-2 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            value={c.hostname ?? ""}
+            onChange={(e) => onChange({ ...c, hostname: e.target.value || undefined })}
+            placeholder="Hostname"
+            onKeyDown={(e) => e.stopPropagation()}
+          />
           <label className="flex items-center gap-1 col-span-2 text-[9px] text-[var(--color-text-muted)]">
             <input
               type="checkbox"
@@ -1558,6 +1645,24 @@ function PortNetworkSection({
             onChange={(e) => onChange({ ...c, vlan: e.target.value ? Number(e.target.value) : undefined })}
             placeholder="VLAN"
             title={vlanInvalid ? "VLAN must be 1-4094" : undefined}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <select
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500 cursor-pointer"
+            value={linkSpeed ?? ""}
+            onChange={(e) => onLinkSpeedChange(e.target.value || undefined)}
+          >
+            {LINK_SPEED_OPTIONS.map((s) => (
+              <option key={s} value={s}>{s || "Speed"}</option>
+            ))}
+          </select>
+          <input
+            className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            type="number"
+            value={poeDrawW ?? ""}
+            onChange={(e) => onPoeDrawChange(e.target.value ? Number(e.target.value) : undefined)}
+            placeholder="PoE (W)"
+            min={0}
             onKeyDown={(e) => e.stopPropagation()}
           />
         </div>

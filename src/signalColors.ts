@@ -37,6 +37,7 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   aes50: "#7c3aed",
   stageconnect: "#ea580c",
   wordclock: "#475569",
+  aes67: "#3730a3",
   custom: "#64748b",
 };
 

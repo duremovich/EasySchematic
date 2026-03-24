@@ -37,6 +37,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   aes50: "ethercon",
   stageconnect: "xlr-3",
   wordclock: "bnc",
+  aes67: "rj45",
   custom: "other",
 };
 
@@ -206,7 +207,7 @@ export function findAdaptersForConnectorBridge(
 
 /** Signal types that can have network configuration */
 export const NETWORK_SIGNAL_TYPES: Set<SignalType> = new Set([
-  "ethernet", "ndi", "dante", "srt", "hdbaset",
+  "ethernet", "ndi", "dante", "srt", "hdbaset", "aes67",
 ]);
 
 /** Signal types that can have video capabilities */

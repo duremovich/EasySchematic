@@ -18,6 +18,7 @@ export interface PortNetworkConfig {
   gateway?: string;
   vlan?: number;
   dhcp?: boolean;
+  hostname?: string;
 }
 
 export interface DhcpServerConfig {
@@ -78,6 +79,7 @@ export type SignalType =
   | "aes50"
   | "stageconnect"
   | "wordclock"
+  | "aes67"
   | "custom";
 
 export type PortDirection = "input" | "output" | "bidirectional";
@@ -97,6 +99,11 @@ export interface Port {
   channelCount?: number;
   /** When true, this port attaches directly to the connected device (no separate cable needed in pack list) */
   directAttach?: boolean;
+  notes?: string;
+  /** PoE power draw in watts for this port (consumed when powered by switch) */
+  poeDrawW?: number;
+  /** Link speed for network ports */
+  linkSpeed?: string;
 }
 
 export interface SlotDefinition {
@@ -145,6 +152,8 @@ export interface DeviceData {
   powerDrawW?: number;
   powerCapacityW?: number;
   voltage?: string;
+  /** PoE budget in watts (for network switches) */
+  poeBudgetW?: number;
   isVenueProvided?: boolean;
   /** Adapter visibility override — only meaningful for deviceType "adapter" */
   adapterVisibility?: "default" | "force-show" | "force-hide";
@@ -229,6 +238,7 @@ export interface DeviceTemplate {
   powerCapacityW?: number;       // Total supply capacity in watts (distros only)
   voltage?: string;              // Informational: "100-240V", "208V", "120V"
   isVenueProvided?: boolean;     // Venue-owned gear — excluded from pack list
+  poeBudgetW?: number;           // PoE budget in watts (switches only)
 }
 
 export interface TemplatePreset {
@@ -382,6 +392,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   aes50: "var(--color-aes50)",
   stageconnect: "var(--color-stageconnect)",
   wordclock: "var(--color-wordclock)",
+  aes67: "var(--color-aes67)",
   custom: "var(--color-custom)",
 };
 
@@ -471,5 +482,6 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   aes50: "AES50",
   stageconnect: "StageConnect",
   wordclock: "Word Clock",
+  aes67: "AES67",
   custom: "Custom",
 };

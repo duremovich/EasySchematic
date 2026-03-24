@@ -13,7 +13,7 @@
 import { createDefaultLayout } from "./titleBlockLayout";
 import { DEFAULT_CONNECTOR } from "./connectorTypes";
 
-export const CURRENT_SCHEMA_VERSION = 19;
+export const CURRENT_SCHEMA_VERSION = 21;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -223,6 +223,16 @@ const migrations: Record<number, Migration> = {
   18: (data) => {
     // v18 → v19: adapter visibility fields — all optional, no transform needed
     data.version = 19;
+    return data;
+  },
+  19: (data) => {
+    // v19 → v20: hostname on PortNetworkConfig, notes on Port — all optional, no transform needed
+    data.version = 20;
+    return data;
+  },
+  20: (data) => {
+    // v20 → v21: poeDrawW/linkSpeed on Port, poeBudgetW on DeviceData, aes67 signal type — all optional
+    data.version = 21;
     return data;
   },
 };

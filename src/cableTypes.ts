@@ -39,6 +39,7 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   aes50: "AES50",
   stageconnect: "StageConnect",
   wordclock: "Word Clock",
+  aes67: "Ethernet",
   custom: "Other",
 };
 

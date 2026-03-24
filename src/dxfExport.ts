@@ -39,6 +39,7 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   aes50: 171,      // blue-violet
   stageconnect: 30, // orange
   wordclock: 8,    // slate
+  aes67: 174,      // deep indigo
   custom: 9,       // cool gray
 };
 

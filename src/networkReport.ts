@@ -12,6 +12,7 @@ export interface NetworkReportRow {
   portLabel: string;
   room: string;
   signalType: string;
+  hostname: string;
   ip: string;
   subnetMask: string;
   gateway: string;
@@ -19,6 +20,9 @@ export interface NetworkReportRow {
   dhcp: boolean;
   dhcpServerLabel: string;
   dhcpCovered: boolean;
+  notes: string;
+  linkSpeed: string;
+  poeDrawW: string;
 }
 
 function getRoomLabel(
@@ -58,6 +62,7 @@ export function computeNetworkReport(nodes: SchematicNode[], edges: ConnectionEd
         portLabel: port.label,
         room,
         signalType: SIGNAL_LABELS[port.signalType] ?? port.signalType,
+        hostname: nc?.hostname ?? "",
         ip: nc?.ip ?? "",
         subnetMask: nc?.subnetMask ?? "",
         gateway: nc?.gateway ?? "",
@@ -65,6 +70,9 @@ export function computeNetworkReport(nodes: SchematicNode[], edges: ConnectionEd
         dhcp: nc?.dhcp ?? false,
         dhcpServerLabel: "",
         dhcpCovered: false,
+        notes: port.notes ?? "",
+        linkSpeed: port.linkSpeed ?? "",
+        poeDrawW: port.poeDrawW != null ? String(port.poeDrawW) : "",
       });
     }
   }
@@ -115,6 +123,68 @@ export function computeDhcpServerSummary(nodes: SchematicNode[]): DhcpServerSumm
   return rows;
 }
 
+export interface PoeBudgetRow {
+  nodeId: string;
+  deviceLabel: string;
+  room: string;
+  budgetW: number;
+  loadW: number;
+  remainingW: number;
+  overBudget: boolean;
+}
+
+/**
+ * Compute PoE budget summary for switches: walks edges from each switch that has
+ * poeBudgetW set, sums poeDrawW from directly connected device ports.
+ */
+export function computePoeBudget(nodes: SchematicNode[], edges: ConnectionEdge[]): PoeBudgetRow[] {
+  const rows: PoeBudgetRow[] = [];
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+
+  for (const node of nodes) {
+    if (node.type !== "device") continue;
+    const data = node.data as DeviceData;
+    if (!data.poeBudgetW) continue;
+
+    const room = getRoomLabel(nodes, node.parentId);
+    let loadW = 0;
+
+    // Sum poeDrawW from ports of devices connected to this switch
+    for (const edge of edges) {
+      if (!edge.data || !NETWORK_SIGNAL_TYPES.has(edge.data.signalType)) continue;
+      let connectedNodeId: string | undefined;
+      let connectedHandle: string | null | undefined;
+      if (edge.source === node.id) {
+        connectedNodeId = edge.target;
+        connectedHandle = edge.targetHandle;
+      } else if (edge.target === node.id) {
+        connectedNodeId = edge.source;
+        connectedHandle = edge.sourceHandle;
+      }
+      if (!connectedNodeId || !connectedHandle) continue;
+
+      const connectedNode = nodeMap.get(connectedNodeId);
+      if (!connectedNode || connectedNode.type !== "device") continue;
+      const connData = connectedNode.data as DeviceData;
+      const portId = connectedHandle.replace(/-(in|out)$/, "");
+      const port = connData.ports.find((p) => p.id === portId);
+      if (port?.poeDrawW) loadW += port.poeDrawW;
+    }
+
+    rows.push({
+      nodeId: node.id,
+      deviceLabel: data.label,
+      room,
+      budgetW: data.poeBudgetW,
+      loadW,
+      remainingW: data.poeBudgetW - loadW,
+      overBudget: loadW > data.poeBudgetW,
+    });
+  }
+
+  return rows;
+}
+
 export function getNetworkReportTableData(
   rows: NetworkReportRow[],
   layout: ReportLayout,
@@ -126,12 +196,16 @@ export function getNetworkReportTableData(
     portLabel:      r.portLabel,
     room:           r.room,
     signalType:     r.signalType,
+    hostname:       r.hostname,
     ip:             r.ip,
     subnetMask:     r.subnetMask,
     gateway:        r.gateway,
     vlan:           r.vlan,
     dhcp:           r.dhcp ? "Yes" : "",
     dhcpServer:     r.dhcpServerLabel || "",
+    notes:          r.notes,
+    linkSpeed:      r.linkSpeed,
+    poeDrawW:       r.poeDrawW,
   }));
 
   const sortBy  = tableDef?.sortBy ?? null;

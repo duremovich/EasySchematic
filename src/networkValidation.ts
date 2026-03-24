@@ -149,30 +149,48 @@ export interface ReachableDhcpServer {
   config: DhcpServerConfig;
 }
 
+/** Resolve handleId to a Port on a device node. */
+function resolvePort(node: SchematicNode | undefined, handleId: string | null | undefined) {
+  if (!handleId || !node || node.type !== "device") return undefined;
+  const data = node.data as DeviceData;
+  const portId = handleId.replace(/-(in|out)$/, "");
+  return data.ports.find((p) => p.id === portId);
+}
+
 /**
  * BFS from startNodeId across network-type edges only, collecting all reachable
  * device nodes that have dhcpServer.enabled === true.
  *
- * NOTE: VLAN-aware traversal is deferred to v2 — AV installs are mostly flat /24 networks.
+ * VLAN-aware: if both endpoint ports of an edge have VLANs set and they differ,
+ * the edge is not traversed (different broadcast domains).
  */
 export function findReachableDhcpServers(
   startNodeId: string,
   nodes: SchematicNode[],
   edges: ConnectionEdge[],
 ): ReachableDhcpServer[] {
-  // Build adjacency map from network-type edges only
+  const nodeMap = new Map<string, SchematicNode>(nodes.map((n) => [n.id, n]));
+
+  // Build adjacency map from network-type edges, filtering by VLAN compatibility
   const adj = new Map<string, Set<string>>();
   for (const edge of edges) {
     if (!edge.data || !NETWORK_SIGNAL_TYPES.has(edge.data.signalType)) continue;
     const s = edge.source;
     const t = edge.target;
+
+    // Check VLAN compatibility: if both ports have VLANs and they differ, skip
+    const srcPort = resolvePort(nodeMap.get(s), edge.sourceHandle);
+    const tgtPort = resolvePort(nodeMap.get(t), edge.targetHandle);
+    const srcVlan = srcPort?.networkConfig?.vlan;
+    const tgtVlan = tgtPort?.networkConfig?.vlan;
+    if (srcVlan != null && tgtVlan != null && srcVlan !== tgtVlan) continue;
+
     if (!adj.has(s)) adj.set(s, new Set());
     if (!adj.has(t)) adj.set(t, new Set());
     adj.get(s)!.add(t);
     adj.get(t)!.add(s);
   }
 
-  const nodeMap = new Map<string, SchematicNode>(nodes.map((n) => [n.id, n]));
   const visited = new Set<string>();
   const queue: string[] = [startNodeId];
   const results: ReachableDhcpServer[] = [];
@@ -201,7 +219,7 @@ export function findReachableDhcpServers(
 export interface DhcpWarning {
   nodeId: string;
   portId: string;
-  type: "no-server" | "ip-in-range";
+  type: "no-server" | "ip-in-range" | "subnet-conflict";
   message: string;
 }
 
@@ -250,4 +268,82 @@ export function computeDhcpWarnings(
   }
 
   return warnings;
+}
+
+/** Compute the network address from an IP and subnet mask (IP & mask). */
+function computeNetworkAddress(ip: string, mask: string): number | null {
+  const ipNum = ipToNumber(ip);
+  const maskNum = ipToNumber(mask);
+  if (ipNum === null || maskNum === null) return null;
+  return (ipNum & maskNum) >>> 0;
+}
+
+export interface SubnetConflict {
+  nodeId: string;
+  portId: string;
+  message: string;
+}
+
+/**
+ * For each network edge, if both endpoint ports have IP + subnet configured,
+ * check that they're on the same network. Different network addresses across
+ * a direct connection is almost always a misconfiguration.
+ */
+export function computeSubnetConflicts(
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+): SubnetConflict[] {
+  const nodeMap = new Map<string, SchematicNode>(nodes.map((n) => [n.id, n]));
+  const conflicts: SubnetConflict[] = [];
+  const seen = new Set<string>();
+
+  for (const edge of edges) {
+    if (!edge.data || !NETWORK_SIGNAL_TYPES.has(edge.data.signalType)) continue;
+
+    const srcPort = resolvePort(nodeMap.get(edge.source), edge.sourceHandle);
+    const tgtPort = resolvePort(nodeMap.get(edge.target), edge.targetHandle);
+    if (!srcPort?.networkConfig || !tgtPort?.networkConfig) continue;
+
+    const srcIp = srcPort.networkConfig.ip;
+    const srcMask = srcPort.networkConfig.subnetMask;
+    const tgtIp = tgtPort.networkConfig.ip;
+    const tgtMask = tgtPort.networkConfig.subnetMask;
+
+    if (!srcIp || !srcMask || !tgtIp || !tgtMask) continue;
+    if (!isValidIpv4(srcIp) || !isValidSubnetMask(srcMask)) continue;
+    if (!isValidIpv4(tgtIp) || !isValidSubnetMask(tgtMask)) continue;
+
+    const srcNet = computeNetworkAddress(srcIp, srcMask);
+    const tgtNet = computeNetworkAddress(tgtIp, tgtMask);
+    if (srcNet === null || tgtNet === null) continue;
+    if (srcNet === tgtNet && srcMask === tgtMask) continue;
+
+    const srcNode = nodeMap.get(edge.source);
+    const tgtNode = nodeMap.get(edge.target);
+    const srcLabel = srcNode?.type === "device" ? (srcNode.data as DeviceData).label : "?";
+    const tgtLabel = tgtNode?.type === "device" ? (tgtNode.data as DeviceData).label : "?";
+
+    // Warn on source port (deduplicate)
+    const srcKey = `${edge.source}:${srcPort.id}`;
+    if (!seen.has(srcKey)) {
+      seen.add(srcKey);
+      conflicts.push({
+        nodeId: edge.source,
+        portId: srcPort.id,
+        message: `Subnet mismatch with ${tgtLabel} (${tgtPort.label}) — ${srcIp}/${srcMask} vs ${tgtIp}/${tgtMask}`,
+      });
+    }
+    // Warn on target port (deduplicate)
+    const tgtKey = `${edge.target}:${tgtPort.id}`;
+    if (!seen.has(tgtKey)) {
+      seen.add(tgtKey);
+      conflicts.push({
+        nodeId: edge.target,
+        portId: tgtPort.id,
+        message: `Subnet mismatch with ${srcLabel} (${srcPort.label}) — ${tgtIp}/${tgtMask} vs ${srcIp}/${srcMask}`,
+      });
+    }
+  }
+
+  return conflicts;
 }
