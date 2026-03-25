@@ -1,10 +1,12 @@
 import { useEffect, useCallback } from "react";
+import { useUpdateNodeInternals } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import type { DeviceData } from "../types";
 import { portSide } from "../types";
 
 export default function PortContextMenu() {
   const menu = useSchematicStore((s) => s.portContextMenu);
+  const updateNodeInternals = useUpdateNodeInternals();
 
   // Close on click anywhere or Escape
   useEffect(() => {
@@ -36,8 +38,10 @@ export default function PortContextMenu() {
       p.id === menu.portId ? { ...p, flipped: !p.flipped || undefined } : p,
     );
     patchDeviceData(menu.nodeId, { ports: newPorts });
+    // Force React Flow to re-measure handle positions after the flip
+    updateNodeInternals(menu.nodeId);
     useSchematicStore.setState({ portContextMenu: null });
-  }, [menu]);
+  }, [menu, updateNodeInternals]);
 
   const editDevice = useCallback(() => {
     if (!menu) return;

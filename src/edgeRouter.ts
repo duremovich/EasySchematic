@@ -341,6 +341,10 @@ interface EdgeEndpoints {
   targetX: number;
   targetY: number;
   stubSpread: number;
+  /** True if source handle exits to the right (normal), false if to the left (flipped) */
+  sourceExitsRight: boolean;
+  /** True if target handle enters from the left (normal), false if from the right (flipped) */
+  targetEntersLeft: boolean;
 }
 
 interface RouteState {
@@ -685,6 +689,15 @@ export function routeAllEdges(
 
     const stubSpread = computeStubSpread(edge.id, edge.source, edges, nodes);
 
+    // Determine handle exit directions by comparing handle X to node center X.
+    // Handles on the right half of their device exit rightward, left half exit leftward.
+    const srcNode = nodes.find((n) => n.id === edge.source);
+    const tgtNode = nodes.find((n) => n.id === edge.target);
+    const srcPos = srcNode ? getAbsPos(srcNode, nodes) : { x: 0, y: 0 };
+    const tgtPos = tgtNode ? getAbsPos(tgtNode, nodes) : { x: 0, y: 0 };
+    const srcCenterX = srcPos.x + (srcNode?.measured?.width ?? 180) / 2;
+    const tgtCenterX = tgtPos.x + (tgtNode?.measured?.width ?? 180) / 2;
+
     edgeEndpoints.push({
       edge,
       sourceX: srcHandle.absX,
@@ -692,6 +705,8 @@ export function routeAllEdges(
       targetX: tgtHandle.absX,
       targetY: tgtHandle.absY,
       stubSpread,
+      sourceExitsRight: srcHandle.absX >= srcCenterX,
+      targetEntersLeft: tgtHandle.absX <= tgtCenterX,
     });
   }
 
@@ -929,6 +944,9 @@ export function routeAllEdges(
       ep.stubSpread,
       penalties.length > 0 ? penalties : undefined,
       sigType,
+      undefined, undefined, undefined, undefined, undefined,
+      ep.sourceExitsRight,
+      ep.targetEntersLeft,
     );
 
     // If A* fails (often because endpoint devices' padded rects block the corridor),
@@ -947,6 +965,9 @@ export function routeAllEdges(
         ep.stubSpread,
         penalties.length > 0 ? penalties : undefined,
         sigType,
+        undefined, undefined, undefined, undefined, undefined,
+        ep.sourceExitsRight,
+        ep.targetEntersLeft,
       );
     }
 
@@ -1016,6 +1037,8 @@ export function routeAllEdges(
     let result = computeEdgePath(
       ep.sourceX, ep.sourceY, ep.targetX, ep.targetY,
       obs.rects, 0, ep.stubSpread, penalties, sigType,
+      undefined, undefined, undefined, undefined, undefined,
+      ep.sourceExitsRight, ep.targetEntersLeft,
     );
 
     if (!result) {
@@ -1024,6 +1047,8 @@ export function routeAllEdges(
       result = computeEdgePath(
         ep.sourceX, ep.sourceY, ep.targetX, ep.targetY,
         relaxedRects3, 0, ep.stubSpread, penalties, sigType,
+        undefined, undefined, undefined, undefined, undefined,
+        ep.sourceExitsRight, ep.targetEntersLeft,
       );
     }
 

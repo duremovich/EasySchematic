@@ -453,7 +453,7 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
 export function portSide(p: Port): "left" | "right" {
   if (p.direction === "input") return p.flipped ? "right" : "left";
   if (p.direction === "output") return p.flipped ? "left" : "right";
-  return "left"; // bidirectional handled separately
+  return p.flipped ? "right" : "left"; // bidirectional: flipped swaps default side when collapsed
 }
 
 export const SIGNAL_LABELS: Record<SignalType, string> = {

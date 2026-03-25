@@ -1483,9 +1483,8 @@ function PortRow({
         </button>
 
         {/* Flip badge */}
-        {port.direction !== "bidirectional" && (
-          <button
-            onClick={() => onUpdate({ flipped: !port.flipped || undefined })}
+        <button
+          onClick={() => onUpdate({ flipped: !port.flipped || undefined })}
             className={`text-[9px] px-1 py-0.5 rounded cursor-pointer transition-colors shrink-0 ${
               port.flipped
                 ? "bg-purple-100 text-purple-700 hover:bg-purple-200"
@@ -1494,8 +1493,7 @@ function PortRow({
             title="Flip port to opposite side"
           >
             ⇄
-          </button>
-        )}
+        </button>
 
         <button
           onClick={onRemove}

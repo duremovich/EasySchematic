@@ -80,7 +80,6 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       hiddenSignalTypes, templateHiddenStr, hideUnconnectedPorts, connectedHandles]);
 
   const openPortMenu = useCallback((e: React.MouseEvent, port: Port) => {
-    if (port.direction === "bidirectional") return;
     e.preventDefault();
     e.stopPropagation();
     useSchematicStore.setState({
@@ -91,7 +90,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
   // Split ports by visual side (respects flip), not semantic direction.
   // When hideUnconnectedPorts is on, bidir ports with only one side connected
   // collapse into the appropriate column so the device gets smaller.
-  const collapsedBidir = new Set<string>(); // port IDs of collapsed bidir ports
+  const collapsedBidir = new Map<string, "in" | "out">(); // port ID → which side is connected
   const leftPorts: Port[] = [];
   const rightPorts: Port[] = [];
   const bidirectional: Port[] = [];
@@ -101,13 +100,13 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
         const inConn = connectedHandles.has(`${p.id}-in`);
         const outConn = connectedHandles.has(`${p.id}-out`);
         if (inConn && !outConn) {
-          leftPorts.push(p);
-          collapsedBidir.add(p.id);
+          (p.flipped ? rightPorts : leftPorts).push(p);
+          collapsedBidir.set(p.id, "in");
           continue;
         }
         if (outConn && !inConn) {
-          rightPorts.push(p);
-          collapsedBidir.add(p.id);
+          (p.flipped ? leftPorts : rightPorts).push(p);
+          collapsedBidir.set(p.id, "out");
           continue;
         }
       }
@@ -120,9 +119,10 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
   }
 
   /** Get handle ID and type for a port in a column, accounting for collapsed bidir ports. */
-  const handleProps = (port: Port, side: "left" | "right") => {
-    if (collapsedBidir.has(port.id)) {
-      return side === "left"
+  const handleProps = (port: Port, _side: "left" | "right") => {
+    const connSide = collapsedBidir.get(port.id);
+    if (connSide) {
+      return connSide === "in"
         ? { handleId: `${port.id}-in`, handleType: "target" as const }
         : { handleId: `${port.id}-out`, handleType: "source" as const };
     }

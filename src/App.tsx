@@ -183,7 +183,12 @@ function SchematicCanvas() {
   const edgeCount = useSchematicStore((s) => s.edges.length);
   // Digest of node positions + sizes to detect moves
   const nodeDigest = useSchematicStore((s) =>
-    s.nodes.map((n) => `${n.id}:${Math.round(n.position.x)},${Math.round(n.position.y)},${n.measured?.width ?? 0},${n.measured?.height ?? 0}`).join("|"),
+    s.nodes.map((n) => {
+      const base = `${n.id}:${Math.round(n.position.x)},${Math.round(n.position.y)},${n.measured?.width ?? 0},${n.measured?.height ?? 0}`;
+      if (n.type !== "device") return base;
+      const flipped = (n.data as DeviceData).ports.filter((p) => p.flipped).map((p) => p.id).join(",");
+      return flipped ? `${base}:F${flipped}` : base;
+    }).join("|"),
   );
   // Digest of edge connectivity
   const edgeDigest = useSchematicStore((s) =>

@@ -285,6 +285,8 @@ export function astarOrthogonal(
   excludeEndDir?: number,
   /** Historical congestion costs (PathFinder-style). Keys are "x,y" grid coords. */
   congestion?: Map<string, number>,
+  /** Source exits right (true/default) or left (false, flipped port). */
+  sourceExitsRight?: boolean,
 ): { path: Point[]; arrivalDir: number } | null {
   const { xs, ys, blocked } = grid;
 
@@ -403,8 +405,8 @@ export function astarOrthogonal(
       open.push({ xi: sxi, yi: syi, g, f: g + heuristic(sxi, syi, d), dir: d, parent: null });
     }
   } else {
-    // Start direction is RIGHT (0) — source handles exit rightward
-    const startDir = 0;
+    // Start direction: RIGHT (0) for normal source handles, LEFT (2) for flipped
+    const startDir = (sourceExitsRight ?? true) ? 0 : 2;
     const startSK = stateKey(sxi, syi, startDir);
     bestG.set(startSK, 0);
     open.push({ xi: sxi, yi: syi, g: 0, f: heuristic(sxi, syi, startDir), dir: startDir, parent: null });
@@ -961,6 +963,10 @@ export function computeEdgePath(
   excludeEndDir?: number,
   /** Historical congestion costs (PathFinder-style). */
   congestion?: Map<string, number>,
+  /** Source handle exits right (true, default) or left (false, flipped port). */
+  sourceExitsRight?: boolean,
+  /** Target handle enters from left (true, default) or right (false, flipped port). */
+  targetEntersLeft?: boolean,
 ): { path: string; labelX: number; labelY: number; turns: string; waypoints: Point[]; arrivalDir: number } | null {
   // Short-circuit: if source and target are at (nearly) the same Y and the direct
   // horizontal path is unobstructed, just draw a straight line — no stubs, no offset.
@@ -1007,14 +1013,24 @@ export function computeEdgePath(
   // Stub lengths:
   // - stubSpread: small per-port spread from same-device sibling counting (prevents stub overlaps)
   // - noStubs: skip stubs entirely (for handle-to-handle legs in manual routing)
-  let stubSX = noSourceStub ? sourceX : sourceX + ROUTING_PARAMS.STUB + stubSpread;
-  let stubTX = noTargetStub ? targetX : targetX - ROUTING_PARAMS.STUB - stubSpread;
+  // - sourceExitsRight/targetEntersLeft: determines stub direction (flipped ports exit the other way)
+  const srcRight = sourceExitsRight ?? true;
+  const tgtLeft = targetEntersLeft ?? true;
+  const stubLen = ROUTING_PARAMS.STUB + stubSpread;
+  let stubSX = noSourceStub ? sourceX : sourceX + (srcRight ? stubLen : -stubLen);
+  let stubTX = noTargetStub ? targetX : targetX + (tgtLeft ? -stubLen : stubLen);
 
   // If stubs cross (source/target close in X with large spread), clamp to midpoint.
-  if (!noSourceStub && !noTargetStub && sourceX < targetX && stubSX >= stubTX) {
-    const mid = (sourceX + targetX) / 2;
-    stubSX = mid - 1;
-    stubTX = mid + 1;
+  if (!noSourceStub && !noTargetStub) {
+    if (srcRight && tgtLeft && sourceX < targetX && stubSX >= stubTX) {
+      const mid = (sourceX + targetX) / 2;
+      stubSX = mid - 1;
+      stubTX = mid + 1;
+    } else if (!srcRight && !tgtLeft && sourceX > targetX && stubSX <= stubTX) {
+      const mid = (sourceX + targetX) / 2;
+      stubSX = mid + 1;
+      stubTX = mid - 1;
+    }
   }
 
   // Route A* at handle Y positions — the actual source/target coordinates.
@@ -1026,7 +1042,7 @@ export function computeEdgePath(
   ];
   const grid = buildSparseGrid(stubSX, sourceY, stubTX, targetY, obstacles, forceOpen, penalties, currentSignalType);
 
-  const astarResult = astarOrthogonal(grid, stubSX, sourceY, stubTX, targetY, obstacles, penalties, currentSignalType, noSourceStub, noTargetStub, excludeStartDir, excludeEndDir, congestion);
+  const astarResult = astarOrthogonal(grid, stubSX, sourceY, stubTX, targetY, obstacles, penalties, currentSignalType, noSourceStub, noTargetStub, excludeStartDir, excludeEndDir, congestion, sourceExitsRight);
   if (!astarResult) {
     return null;
   }
