@@ -83,6 +83,7 @@ const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "patch-panel": "Infrastructure",
   "presentation-system": "Switching",
   "cloud-service": "Cloud Services",
+  "expansion-chassis": "Infrastructure",
 };
 
 export const DEVICE_TEMPLATES: DeviceTemplate[] = [

@@ -65,6 +65,9 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   stageconnect: "SC",
   wordclock: "WC",
   aes67: "A7",
+  ydif: "YD",
+  rf: "RF",
+  st2110: "21",
   custom: "X",
 };
 

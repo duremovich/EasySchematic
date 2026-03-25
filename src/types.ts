@@ -5,7 +5,7 @@ export type ConnectorType =
   | "xlr-3" | "xlr-5" | "trs-quarter" | "trs-eighth" | "combo-xlr-trs"
   | "rj45" | "ethercon" | "sfp" | "lc" | "sc"
   | "usb-a" | "usb-b" | "usb-c"
-  | "db7w2" | "db9" | "db25" | "din-5" | "phoenix" | "terminal-block" | "powercon" | "edison" | "iec"
+  | "db7w2" | "db9" | "db15" | "db25" | "din-5" | "phoenix" | "terminal-block" | "powercon" | "edison" | "iec"
   | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel"
   | "banana" | "binding-post" | "binding-post-banana" | "dvi" | "mini-xlr" | "opticalcon"
   | "l5-20" | "l6-20" | "l6-30" | "l21-30" | "cam-lok"
@@ -79,6 +79,9 @@ export type SignalType =
   | "stageconnect"
   | "wordclock"
   | "aes67"
+  | "ydif"
+  | "rf"
+  | "st2110"
   | "custom";
 
 export type PortDirection = "input" | "output" | "bidirectional";
@@ -402,6 +405,9 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   stageconnect: "var(--color-stageconnect)",
   wordclock: "var(--color-wordclock)",
   aes67: "var(--color-aes67)",
+  ydif: "var(--color-ydif)",
+  rf: "var(--color-rf)",
+  st2110: "var(--color-st2110)",
   custom: "var(--color-custom)",
 };
 
@@ -425,6 +431,7 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "usb-c": "USB-C",
   db7w2: "D-Sub 7W2",
   db9: "DB9",
+  db15: "DB15",
   db25: "DB25",
   "din-5": "DIN-5",
   phoenix: "Phoenix",
@@ -499,5 +506,8 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   stageconnect: "StageConnect",
   wordclock: "Word Clock",
   aes67: "AES67",
+  ydif: "YDIF",
+  rf: "RF",
+  st2110: "ST 2110",
   custom: "Custom",
 };

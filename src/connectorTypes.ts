@@ -38,6 +38,9 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   stageconnect: "xlr-3",
   wordclock: "bnc",
   aes67: "rj45",
+  ydif: "rj45",
+  rf: "bnc",
+  st2110: "rj45",
   custom: "other",
 };
 
@@ -108,6 +111,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   "usb-c": "USB-C",
   db7w2: "D-Sub 7W2",
   db9: "DB9",
+  db15: "DB15",
   db25: "DB25",
   "din-5": "DIN-5",
   phoenix: "Phoenix",
@@ -207,10 +211,10 @@ export function findAdaptersForConnectorBridge(
 
 /** Signal types that can have network configuration */
 export const NETWORK_SIGNAL_TYPES: Set<SignalType> = new Set([
-  "ethernet", "ndi", "dante", "srt", "hdbaset", "aes67",
+  "ethernet", "ndi", "dante", "srt", "hdbaset", "aes67", "st2110",
 ]);
 
 /** Signal types that can have video capabilities */
 export const VIDEO_SIGNAL_TYPES: Set<SignalType> = new Set([
-  "sdi", "hdmi", "ndi", "displayport", "hdbaset", "fiber", "thunderbolt", "composite", "vga", "srt",
+  "sdi", "hdmi", "ndi", "displayport", "hdbaset", "fiber", "thunderbolt", "composite", "vga", "srt", "st2110",
 ]);
