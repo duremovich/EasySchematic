@@ -502,18 +502,6 @@ export default function DeviceEditor() {
             </Field>
           </div>
 
-          {/* Hostname */}
-          <div className="-mt-1">
-            <Field label="Hostname">
-              <input
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
-                value={hostname}
-                onChange={(e) => setHostname(e.target.value)}
-                placeholder="e.g. nvx-room101"
-              />
-            </Field>
-          </div>
-
           {/* Header color picker */}
           <div className="flex items-center gap-2 -mt-1">
             <span className="text-[10px] text-[var(--color-text-muted)]">Header Color</span>
@@ -642,6 +630,18 @@ export default function DeviceEditor() {
             hiddenPorts={hiddenPorts}
             setHiddenPorts={setHiddenPorts}
           />
+
+          {/* Hostname */}
+          <div className="flex items-center gap-2 mt-2">
+            <span className="text-[10px] text-[var(--color-text-muted)]">Hostname:</span>
+            <input
+              className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:border-blue-500"
+              value={hostname}
+              onChange={(e) => setHostname(e.target.value)}
+              placeholder="e.g. nvx-room101"
+              onKeyDown={(e) => e.stopPropagation()}
+            />
+          </div>
 
           {ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
             <>
