@@ -281,7 +281,7 @@ export default function MenuBar() {
       }
       setIsLoggedIn(true);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to save to cloud");
+      useSchematicStore.getState().addToast(e instanceof Error ? e.message : "Failed to save to cloud", "error");
     } finally {
       setCloudSaving(false);
     }
@@ -299,7 +299,9 @@ export default function MenuBar() {
           const data = store.exportToJSON();
           updateSchematicInCloud(store.cloudSchematicId!, data)
             .then((result) => store.setCloudSavedAt(result.updated_at))
-            .catch(() => {}); // fire-and-forget
+            .catch((e: unknown) => {
+              useSchematicStore.getState().addToast(e instanceof Error ? e.message : "Cloud save failed", "error");
+            });
         });
       }
     };

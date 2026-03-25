@@ -81,6 +81,12 @@ function applyRoomLockState(nodes: SchematicNode[]): void {
   }
 }
 
+export interface Toast {
+  id: string;
+  message: string;
+  type: "error" | "success" | "info";
+}
+
 interface Clipboard {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
@@ -276,6 +282,11 @@ interface SchematicState {
   cloudSavedAt: string | null;
   setCloudSchematicId: (id: string | null) => void;
   setCloudSavedAt: (ts: string | null) => void;
+
+  // Toasts
+  toasts: Toast[];
+  addToast: (message: string, type: Toast["type"], durationMs?: number) => void;
+  removeToast: (id: string) => void;
 
   // Persistence
   saveToLocalStorage: () => void;
@@ -1798,6 +1809,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   setCloudSchematicId: (id) => { set({ cloudSchematicId: id }); get().saveToLocalStorage(); },
   setCloudSavedAt: (ts) => { set({ cloudSavedAt: ts }); get().saveToLocalStorage(); },
+
+  // Toasts
+  toasts: [],
+  addToast: (message, type, durationMs) => {
+    const id = crypto.randomUUID();
+    set((s) => ({ toasts: [...s.toasts, { id, message, type }] }));
+    const duration = durationMs ?? (type === "error" ? 8000 : 5000);
+    setTimeout(() => {
+      set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
+    }, duration);
+  },
+  removeToast: (id) => {
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
+  },
 
   saveToLocalStorage: () => {
     if (!hydrated) return;

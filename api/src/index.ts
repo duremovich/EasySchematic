@@ -1051,6 +1051,53 @@ app.post("/support-emails/:id/reply", async (c) => {
 
 const MAX_SCHEMATIC_SIZE = 10 * 1024 * 1024; // 10 MB
 const MAX_SCHEMATICS_PER_USER = 10;
+const MAX_NODES = 1000;
+const MAX_EDGES = 5000;
+const MAX_LOGO_BYTES = 500_000; // 500 KB — resized 400×200 PNG is typically 20-50 KB
+const MAX_CUSTOM_TEMPLATES = 100;
+const MAX_STRING_FIELD = 10_000;
+
+function validateSchematicStructure(
+  body: Record<string, unknown>
+): { ok: true } | { ok: false; error: string } {
+  const { nodes, edges, titleBlock, customTemplates, name } = body as {
+    nodes?: unknown;
+    edges?: unknown;
+    titleBlock?: { logo?: string };
+    customTemplates?: unknown;
+    name?: unknown;
+  };
+
+  if (typeof name === "string" && name.length > 200) {
+    return { ok: false, error: "Schematic name is too long — maximum 200 characters" };
+  }
+
+  if (Array.isArray(nodes) && nodes.length > MAX_NODES) {
+    return { ok: false, error: `Too many devices — maximum ${MAX_NODES.toLocaleString()} allowed` };
+  }
+
+  if (Array.isArray(edges) && edges.length > MAX_EDGES) {
+    return { ok: false, error: `Too many connections — maximum ${MAX_EDGES.toLocaleString()} allowed` };
+  }
+
+  if (titleBlock && typeof titleBlock.logo === "string" && titleBlock.logo.length > MAX_LOGO_BYTES) {
+    return { ok: false, error: "Logo image is too large — please use a smaller image" };
+  }
+
+  if (Array.isArray(customTemplates) && customTemplates.length > MAX_CUSTOM_TEMPLATES) {
+    return { ok: false, error: `Too many custom device templates — maximum ${MAX_CUSTOM_TEMPLATES} allowed` };
+  }
+
+  // Shallow check: flag any top-level string value that's unreasonably large
+  for (const key of Object.keys(body)) {
+    const val = body[key];
+    if (typeof val === "string" && val.length > MAX_STRING_FIELD && key !== "nodes" && key !== "edges") {
+      return { ok: false, error: `Field "${key}" is too large` };
+    }
+  }
+
+  return { ok: true };
+}
 
 app.post("/schematics", async (c) => {
   const user = requireSession(c);
@@ -1074,15 +1121,21 @@ app.post("/schematics", async (c) => {
   }
 
   const raw = await c.req.text();
-  if (raw.length > MAX_SCHEMATIC_SIZE) {
+  const sizeBytes = new TextEncoder().encode(raw).length;
+  if (sizeBytes > MAX_SCHEMATIC_SIZE) {
     return c.json({ error: "Schematic too large (max 10 MB)" }, 400);
   }
 
-  let body: { name?: string; version?: number };
+  let body: Record<string, unknown>;
   try {
     body = JSON.parse(raw);
   } catch {
     return c.json({ error: "Invalid JSON" }, 400);
+  }
+
+  const structureCheck = validateSchematicStructure(body);
+  if (!structureCheck.ok) {
+    return c.json({ error: structureCheck.error }, 400);
   }
 
   if (!body.name || !body.version) {
@@ -1090,7 +1143,6 @@ app.post("/schematics", async (c) => {
   }
 
   const id = crypto.randomUUID();
-  const sizeBytes = new TextEncoder().encode(raw).length;
 
   await c.env.SCHEMATIC_STORAGE.put(`schematics/${id}.json`, raw, {
     httpMetadata: { contentType: "application/json" },
@@ -1158,22 +1210,26 @@ app.put("/schematics/:id", async (c) => {
   if (!existing) return c.json({ error: "Schematic not found" }, 404);
 
   const raw = await c.req.text();
-  if (raw.length > MAX_SCHEMATIC_SIZE) {
+  const sizeBytes = new TextEncoder().encode(raw).length;
+  if (sizeBytes > MAX_SCHEMATIC_SIZE) {
     return c.json({ error: "Schematic too large (max 10 MB)" }, 400);
   }
 
-  let body: { name?: string; version?: number };
+  let body: Record<string, unknown>;
   try {
     body = JSON.parse(raw);
   } catch {
     return c.json({ error: "Invalid JSON" }, 400);
   }
 
+  const structureCheck = validateSchematicStructure(body);
+  if (!structureCheck.ok) {
+    return c.json({ error: structureCheck.error }, 400);
+  }
+
   if (!body.name || !body.version) {
     return c.json({ error: "Schematic must have name and version fields" }, 400);
   }
-
-  const sizeBytes = new TextEncoder().encode(raw).length;
 
   await c.env.SCHEMATIC_STORAGE.put(`schematics/${id}.json`, raw, {
     httpMetadata: { contentType: "application/json" },
@@ -1254,8 +1310,15 @@ app.post("/schematics/:id/share", async (c) => {
 
 app.get("/shared/:token", async (c) => {
   const token = c.req.param("token");
+  const db = c.env.easyschematic_db;
 
-  const row = await c.env.easyschematic_db
+  const ip = getClientIP(c);
+  const limit = await checkRateLimit(db, `shared:ip:${ip}`, 60);
+  if (!limit.allowed) {
+    return c.json({ error: "Too many requests. Try again later." }, 429);
+  }
+
+  const row = await db
     .prepare("SELECT id FROM schematics WHERE share_token = ? AND shared = 1")
     .bind(token)
     .first<{ id: string }>();

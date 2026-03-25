@@ -28,6 +28,7 @@ import MenuBar from "./components/MenuBar";
 import EdgeContextMenu from "./components/EdgeContextMenu";
 import IncompatibleConnectionDialog from "./components/IncompatibleConnectionDialog";
 import MobileGate from "./components/MobileGate";
+import ToastContainer from "./components/ToastContainer";
 import PendingSubmissionBanner from "./components/PendingSubmissionBanner";
 import PortContextMenu from "./components/PortContextMenu";
 import RoomContextMenu from "./components/RoomContextMenu";
@@ -1161,6 +1162,7 @@ export default function App() {
       <PortContextMenu />
       <IncompatibleConnectionDialog />
       <MobileGate />
+      <ToastContainer />
     </div>
   );
 }
