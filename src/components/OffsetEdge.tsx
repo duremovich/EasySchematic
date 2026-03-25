@@ -205,7 +205,7 @@ function OffsetEdgeComponent({
     useSchematicStore.setState({
       edges: store.edges.map((edge) =>
         edge.id === id
-          ? { ...edge, data: { ...edge.data!, manualWaypoints: newManualWps } }
+          ? { ...edge, data: { ...edge.data!, manualWaypoints: newManualWps, autoRouteWaypoints: undefined } }
           : edge,
       ),
       routedEdges: {

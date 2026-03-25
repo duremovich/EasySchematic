@@ -27,7 +27,8 @@ import { DEFAULT_SCROLL_CONFIG } from "./types";
 import type { Orientation } from "./printConfig";
 import { computeAlignment, type AlignOperation } from "./alignUtils";
 import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
-import { routeAllEdges, type RoutedEdge } from "./edgeRouter";
+import { routeAllEdges, orthogonalize, type RoutedEdge } from "./edgeRouter";
+import { simplifyWaypoints, waypointsToSvgPath } from "./pathfinding";
 import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
@@ -154,6 +155,11 @@ interface SchematicState {
   // Centralized edge routing
   routedEdges: Record<string, RoutedEdge>;
   recomputeRoutes: (rfInstance: ReactFlowInstance) => void;
+  computeSimpleRoutes: (rfInstance: ReactFlowInstance) => void;
+
+  // Auto-route toggle
+  autoRoute: boolean;
+  toggleAutoRoute: () => void;
 
   // Debug
   debugEdges: boolean;
@@ -526,6 +532,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   edgeContextMenu: null,
   roomContextMenu: null,
   portContextMenu: null,
+  autoRoute: true,
   debugEdges: false,
   resizeGuides: [],
   isDemo: false,
@@ -1810,6 +1817,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showLineJumps: !state.showLineJumps ? false : undefined,
       showConnectionLabels: !state.showConnectionLabels ? false : undefined,
       hideAdapters: state.hideAdapters || undefined,
+      autoRoute: state.autoRoute === false ? false : undefined,
     };
     // Persist cloud identity alongside autosave (not part of SchematicFile export)
     const blob: Record<string, unknown> = { ...data };
@@ -1864,6 +1872,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             scrollConfig: resolveScrollConfig(data),
             cableNamingScheme: data.cableNamingScheme ?? "type-prefix",
             showLineJumps: data.showLineJumps ?? true,
+            autoRoute: data.autoRoute ?? true,
             showConnectionLabels: data.showConnectionLabels ?? true,
             hideAdapters: data.hideAdapters ?? false,
           });
@@ -2127,6 +2136,66 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  computeSimpleRoutes: (rfInstance) => {
+    // Simple orthogonal L-shapes — no A*, no penalties, instant.
+    // Used when autoRoute is off for lag-free editing.
+    const state = get();
+    const results: Record<string, RoutedEdge> = {};
+    for (const edge of state.edges) {
+      const srcInternal = rfInstance.getInternalNode(edge.source);
+      const tgtInternal = rfInstance.getInternalNode(edge.target);
+      if (!srcInternal || !tgtInternal) continue;
+
+      const srcBounds = srcInternal.internals.handleBounds;
+      const tgtBounds = tgtInternal.internals.handleBounds;
+      const srcAbs = srcInternal.internals.positionAbsolute;
+      const tgtAbs = tgtInternal.internals.positionAbsolute;
+
+      // Find the handle positions
+      const srcHandle = [...(srcBounds?.source ?? []), ...(srcBounds?.target ?? [])].find((h) => h.id === edge.sourceHandle);
+      const tgtHandle = [...(tgtBounds?.source ?? []), ...(tgtBounds?.target ?? [])].find((h) => h.id === edge.targetHandle);
+      if (!srcHandle || !tgtHandle) continue;
+
+      const sx = Math.round(srcAbs.x + srcHandle.x + srcHandle.width / 2);
+      const sy = Math.round(srcAbs.y + srcHandle.y + srcHandle.height / 2);
+      const tx = Math.round(tgtAbs.x + tgtHandle.x + tgtHandle.width / 2);
+      const ty = Math.round(tgtAbs.y + tgtHandle.y + tgtHandle.height / 2);
+
+      // Use manual waypoints if present (frozen from A* or user-placed), otherwise L-shape
+      let simplified: { x: number; y: number }[];
+      const manualWp = edge.data?.manualWaypoints;
+      if (manualWp && manualWp.length > 0) {
+        const raw = [{ x: sx, y: sy }, ...manualWp, { x: tx, y: ty }];
+        simplified = simplifyWaypoints(orthogonalize(raw));
+      } else if (Math.abs(sy - ty) < 2) {
+        simplified = [{ x: sx, y: sy }, { x: tx, y: ty }];
+      } else {
+        const midX = Math.round((sx + tx) / 2);
+        simplified = [
+          { x: sx, y: sy },
+          { x: midX, y: sy },
+          { x: midX, y: ty },
+          { x: tx, y: ty },
+        ];
+      }
+
+      const svgPath = waypointsToSvgPath(simplified);
+
+      const midPt = simplified[Math.floor(simplified.length / 2)];
+      results[edge.id] = {
+        edgeId: edge.id,
+        svgPath,
+        waypoints: simplified,
+        segments: [],
+        labelX: midPt.x,
+        labelY: midPt.y,
+        turns: "simple",
+        crossingPoints: [],
+      };
+    }
+    set({ routedEdges: results });
+  },
+
   recomputeRoutes: (rfInstance) => {
     const state = get();
     const hiddenSet = state.hiddenSignalTypes ? new Set(state.hiddenSignalTypes.split(",")) : null;
@@ -2246,6 +2315,38 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       hiddenVirtualEdgeIds,
       virtualEdgeGradients,
     });
+  },
+
+  toggleAutoRoute: () => {
+    const state = get();
+    const newAutoRoute = !state.autoRoute;
+
+    if (!newAutoRoute) {
+      // Toggling OFF — freeze current routed paths as temporary manual waypoints
+      const updatedEdges = state.edges.map((e) => {
+        const route = state.routedEdges[e.id];
+        if (!route || route.waypoints.length <= 2) return e;
+        // Already has user-placed manual waypoints — don't overwrite
+        if (e.data?.manualWaypoints?.length && !e.data.autoRouteWaypoints) return e;
+        // Extract interior waypoints (skip first/last = handle endpoints)
+        const interior = route.waypoints.slice(1, -1);
+        if (interior.length === 0) return e;
+        return {
+          ...e,
+          data: { ...e.data!, manualWaypoints: interior, autoRouteWaypoints: true },
+        };
+      });
+      set({ autoRoute: false, edges: updatedEdges as typeof state.edges });
+    } else {
+      // Toggling ON — clear auto-generated waypoints, keep user-placed ones
+      const updatedEdges = state.edges.map((e) => {
+        if (!e.data?.autoRouteWaypoints) return e;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { manualWaypoints, autoRouteWaypoints, ...restData } = e.data;
+        return { ...e, data: restData };
+      });
+      set({ autoRoute: true, edges: updatedEdges as typeof state.edges });
+    }
   },
 
   toggleDebugEdges: () => {

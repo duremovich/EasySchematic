@@ -203,6 +203,8 @@ export interface ConnectionData {
   [key: string]: unknown;
   signalType: SignalType;
   manualWaypoints?: { x: number; y: number }[];
+  /** When true, manualWaypoints were auto-generated from A* route and can be overwritten on re-route */
+  autoRouteWaypoints?: boolean;
   connectorMismatch?: boolean;
   cableId?: string;
   cableLength?: string;
@@ -331,6 +333,8 @@ export interface SchematicFile {
   showConnectionLabels?: boolean;
   /** Global toggle: when true, all adapters default to hidden on schematic */
   hideAdapters?: boolean;
+  /** When false, edges use simple orthogonal L-shapes instead of A* routing */
+  autoRoute?: boolean;
 }
 
 export type ScrollAction = "zoom" | "pan-x" | "pan-y";

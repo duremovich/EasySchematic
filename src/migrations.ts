@@ -13,7 +13,7 @@
 import { createDefaultLayout } from "./titleBlockLayout";
 import { DEFAULT_CONNECTOR } from "./connectorTypes";
 
-export const CURRENT_SCHEMA_VERSION = 22;
+export const CURRENT_SCHEMA_VERSION = 23;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -248,6 +248,11 @@ const migrations: Record<number, Migration> = {
   21: (data) => {
     // v21 → v22: flipped on Port — optional, no transform needed
     data.version = 22;
+    return data;
+  },
+  22: (data) => {
+    // v22 → v23: autoRoute on SchematicFile — optional, defaults to true
+    data.version = 23;
     return data;
   },
 };

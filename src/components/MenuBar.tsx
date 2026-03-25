@@ -408,6 +408,12 @@ export default function MenuBar() {
           s.setHideUnconnectedPorts(!s.hideUnconnectedPorts);
         },
       },
+      {
+        type: "item",
+        label: "Auto-Route Edges",
+        checked: useSchematicStore.getState().autoRoute,
+        onClick: () => useSchematicStore.getState().toggleAutoRoute(),
+      },
       { type: "separator" },
       {
         type: "item",
