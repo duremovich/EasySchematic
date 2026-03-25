@@ -2324,7 +2324,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       ? state.nodes.filter((n) => !hiddenAdapterNodeIds.has(n.id))
       : state.nodes;
 
-    const results = routeAllEdges(routingNodes, visibleEdges, rfInstance, state.debugEdges);
+    const { routes: results, overBudget } = routeAllEdges(routingNodes, visibleEdges, rfInstance, state.debugEdges);
 
     // Map virtual edge routes back to primary real edge IDs
     for (const [virtualId, mapping] of virtualEdgeSources) {
@@ -2333,6 +2333,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         results[mapping.primaryEdgeId] = { ...route, edgeId: mapping.primaryEdgeId };
         delete results[virtualId];
       }
+    }
+
+    // If routing exceeded the time budget, auto-disable and notify user
+    if (overBudget) {
+      get().addToast("Auto-routing disabled — schematic is too large for real-time routing", "info");
     }
 
     // Always normalize edge zIndex: boost edges with line-jump hops to 1,
@@ -2357,6 +2362,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       hiddenAdapterNodeIds,
       hiddenVirtualEdgeIds,
       virtualEdgeGradients,
+      ...(overBudget ? { autoRoute: false } : {}),
     });
   },
 

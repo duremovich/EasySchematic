@@ -649,13 +649,23 @@ function buildTitleBlockObstacles(
 
 // ---------- Main routing function ----------
 
+export interface RouteAllResult {
+  routes: Record<string, RoutedEdge>;
+  overBudget: boolean;
+}
+
+const DEFAULT_TIME_BUDGET_MS = 3000;
+
 export function routeAllEdges(
   nodes: SchematicNode[],
   edges: ConnectionEdge[],
   rfInstance: ReactFlowInstance,
   debug?: boolean,
   printConfig?: PrintConfig,
-): Record<string, RoutedEdge> {
+  timeBudgetMs: number = DEFAULT_TIME_BUDGET_MS,
+): RouteAllResult {
+  const startTime = performance.now();
+  let overBudget = false;
   // Build handle position map
   const handleMap = new Map<string, HandlePos>();
   for (const node of nodes) {
@@ -1010,9 +1020,46 @@ export function routeAllEdges(
         signalType: sigType,
       });
     }
+
+    // Time budget check: bail out of Phase 1 early if over budget
+    if (performance.now() - startTime > timeBudgetMs) {
+      overBudget = true;
+      break;
+    }
   }
 
-  // PHASE 2 — Violation detection
+  // If we bailed early, fill remaining edges with L-shape fallbacks
+  if (overBudget) {
+    const routedIds = new Set(routeStates.map((rs) => rs.edgeId));
+    for (const ep of edgeEndpoints) {
+      if (routedIds.has(ep.edge.id)) continue;
+      const sigType = ep.edge.data?.signalType;
+      const midX = Math.max(ep.sourceX, ep.targetX) + 40;
+      const wp: Point[] = [
+        { x: ep.sourceX, y: ep.sourceY },
+        { x: midX, y: ep.sourceY },
+        { x: midX, y: ep.targetY },
+        { x: ep.targetX, y: ep.targetY },
+      ];
+      const svgPath = wp.map((p, i) =>
+        i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`
+      ).join(" ");
+      routeStates.push({
+        edgeId: ep.edge.id,
+        waypoints: wp,
+        segments: extractSegments(wp),
+        svgPath,
+        labelX: midX,
+        labelY: (ep.sourceY + ep.targetY) / 2,
+        turns: "fallback",
+        status: "good",
+        signalType: sigType,
+      });
+    }
+  }
+
+  // PHASE 2 — Violation detection (skip if over budget)
+  if (!overBudget) {
   const badIds = findViolations(
     routeStates.map((rs) => ({ edgeId: rs.edgeId, segments: rs.segments, signalType: rs.signalType })),
   );
@@ -1078,6 +1125,7 @@ export function routeAllEdges(
   };
 
   for (let iter = 0; iter < ROUTER_PARAMS.MAX_ITERATIONS; iter++) {
+    if (performance.now() - startTime > timeBudgetMs) { overBudget = true; break; }
     const badEdges = routeStates.filter((rs) => rs.status === "bad");
     if (badEdges.length === 0) break;
 
@@ -1105,34 +1153,35 @@ export function routeAllEdges(
       if (!unstuck) break;
     }
   }
+  } // end if (!overBudget) — skip Phase 2/3
 
-  // Detect crossing points between all edge pairs.
+  // Detect crossing points between all edge pairs (skip if over budget — cosmetic only).
   // Horizontal edge at a crossing gets an arc (hop over);
   // vertical edge at the same crossing gets a gap (moveTo cut).
   const arcCrossingMap = new Map<string, CrossingPoint[]>();
   const gapCrossingMap = new Map<string, CrossingPoint[]>();
-  for (const rs of routeStates) {
-    arcCrossingMap.set(rs.edgeId, []);
-    gapCrossingMap.set(rs.edgeId, []);
-  }
-  for (let i = 0; i < routeStates.length; i++) {
-    for (let j = i + 1; j < routeStates.length; j++) {
-      const a = routeStates[i];
-      const b = routeStates[j];
-      for (const sa of a.segments) {
-        for (const sb of b.segments) {
-          if (segmentsCross(sa, sb)) {
-            const h = sa.axis === "h" ? sa : sb;
-            const v = sa.axis === "v" ? sa : sb;
-            const pt: CrossingPoint = { x: v.x1, y: h.y1 };
-            // Horizontal segment's edge gets the arc
-            // Vertical segment's edge gets the gap
-            if (sa.axis === "h") {
-              arcCrossingMap.get(a.edgeId)!.push(pt);
-              gapCrossingMap.get(b.edgeId)!.push(pt);
-            } else {
-              arcCrossingMap.get(b.edgeId)!.push(pt);
-              gapCrossingMap.get(a.edgeId)!.push(pt);
+  if (!overBudget) {
+    for (const rs of routeStates) {
+      arcCrossingMap.set(rs.edgeId, []);
+      gapCrossingMap.set(rs.edgeId, []);
+    }
+    for (let i = 0; i < routeStates.length; i++) {
+      for (let j = i + 1; j < routeStates.length; j++) {
+        const a = routeStates[i];
+        const b = routeStates[j];
+        for (const sa of a.segments) {
+          for (const sb of b.segments) {
+            if (segmentsCross(sa, sb)) {
+              const h = sa.axis === "h" ? sa : sb;
+              const v = sa.axis === "v" ? sa : sb;
+              const pt: CrossingPoint = { x: v.x1, y: h.y1 };
+              if (sa.axis === "h") {
+                arcCrossingMap.get(a.edgeId)!.push(pt);
+                gapCrossingMap.get(b.edgeId)!.push(pt);
+              } else {
+                arcCrossingMap.get(b.edgeId)!.push(pt);
+                gapCrossingMap.get(a.edgeId)!.push(pt);
+              }
             }
           }
         }
@@ -1164,5 +1213,5 @@ export function routeAllEdges(
     logRoutingReport(routeStates, edgeEndpoints);
   }
 
-  return results;
+  return { routes: results, overBudget };
 }
