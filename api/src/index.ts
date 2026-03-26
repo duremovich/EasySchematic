@@ -55,6 +55,11 @@ function sessionCookie(sessionId: string, maxAge: number): string {
   return `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${maxAge}`;
 }
 
+/** Expire the legacy domain-scoped cookie from before cd89a31.
+ *  Browsers treat host-only and domain-scoped cookies as separate entries,
+ *  so the old one lingers and shadows the new one until explicitly cleared. */
+const LEGACY_COOKIE_CLEAR = "session=; Path=/; HttpOnly; SameSite=Lax; Secure; Domain=easyschematic.live; Max-Age=0";
+
 function getClientIP(c: { req: { header: (name: string) => string | undefined } }): string {
   return c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For")?.split(",")[0]?.trim() || "unknown";
 }
@@ -81,8 +86,9 @@ function sqliteDatetime(offsetMs: number): string {
 /** Return a 200 HTML page that sets the cookie and redirects via JS + meta-refresh.
  *  Firefox blocks Set-Cookie on 302 redirects (Bug 1465402); a 200 page avoids this.
  *  Small delay (1s meta-refresh, 500ms JS) gives browsers time to commit the cookie. */
-function cookieRedirect(c: { header: (k: string, v: string) => void; html: (h: string) => Response | Promise<Response> }, cookie: string, dest: string): Response | Promise<Response> {
+function cookieRedirect(c: { header: (k: string, v: string, options?: { append?: boolean }) => void; html: (h: string) => Response | Promise<Response> }, cookie: string, dest: string): Response | Promise<Response> {
   c.header("Set-Cookie", cookie);
+  c.header("Set-Cookie", LEGACY_COOKIE_CLEAR, { append: true });
   const safe = dest.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
   return c.html(
     `<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="1;url=${safe}">` +
@@ -317,6 +323,7 @@ app.post("/auth/logout", async (c) => {
   }
 
   c.header("Set-Cookie", sessionCookie("", 0));
+  c.header("Set-Cookie", LEGACY_COOKIE_CLEAR, { append: true });
   return c.json({ ok: true });
 });
 
@@ -591,6 +598,7 @@ app.post("/auth/claim", async (c) => {
     .run();
 
   c.header("Set-Cookie", sessionCookie(sessionId, 30 * 24 * 60 * 60));
+  c.header("Set-Cookie", LEGACY_COOKIE_CLEAR, { append: true });
   return c.json({ id: user.id, email: user.email, name: user.name, role: user.role });
 });
 
