@@ -92,11 +92,11 @@ app.post("/auth/login", async (c) => {
 
   // Rate limit: 3 per email per hour, 10 per IP per hour
   const ip = getClientIP(c);
-  const emailLimit = await checkRateLimit(db, `login:email:${email}`, 3);
+  const emailLimit = await checkRateLimit(db, `login:email:${email}`, 20);
   if (!emailLimit.allowed) {
     return c.json({ error: "Too many login attempts for this email. Try again later." }, 429);
   }
-  const ipLimit = await checkRateLimit(db, `login:ip:${ip}`, 10);
+  const ipLimit = await checkRateLimit(db, `login:ip:${ip}`, 50);
   if (!ipLimit.allowed) {
     return c.json({ error: "Too many login attempts. Try again later." }, 429);
   }
