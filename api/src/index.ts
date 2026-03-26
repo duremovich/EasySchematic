@@ -48,10 +48,11 @@ const NO_CACHE_HEADERS = {
   "Cache-Control": "no-cache",
 };
 
-function sessionCookie(sessionId: string, maxAge: number, requestUrl?: string): string {
-  const isLocalhost = requestUrl ? new URL(requestUrl).hostname === "localhost" : false;
-  const domain = isLocalhost ? "" : "; Domain=easyschematic.live";
-  return `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${maxAge}${domain}`;
+function sessionCookie(sessionId: string, maxAge: number): string {
+  // No Domain attribute — host-only cookie for api.easyschematic.live.
+  // Both frontends fetch from api.easyschematic.live directly, so domain scoping is unnecessary.
+  // Omitting Domain also avoids a Firefox bug where domain-scoped cookies aren't sent.
+  return `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=${maxAge}`;
 }
 
 function getClientIP(c: { req: { header: (name: string) => string | undefined } }): string {
@@ -212,7 +213,7 @@ app.get("/auth/verify", async (c) => {
     .run();
 
   const dest = validReturnTo || "https://devices.easyschematic.live/#/";
-  return cookieRedirect(c, sessionCookie(sessionId, 30 * 24 * 60 * 60, c.req.url), dest);
+  return cookieRedirect(c, sessionCookie(sessionId, 30 * 24 * 60 * 60), dest);
 });
 
 app.post("/auth/logout", async (c) => {
@@ -223,7 +224,7 @@ app.post("/auth/logout", async (c) => {
     await c.env.easyschematic_db.prepare("DELETE FROM sessions WHERE id = ?").bind(match[1]).run();
   }
 
-  c.header("Set-Cookie", sessionCookie("", 0, c.req.url));
+  c.header("Set-Cookie", sessionCookie("", 0));
   return c.json({ ok: true });
 });
 
@@ -385,7 +386,7 @@ app.get("/auth/google/callback", async (c) => {
     .run();
 
   const dest = stateRow.return_to || "https://devices.easyschematic.live/#/";
-  return cookieRedirect(c, sessionCookie(sessionId, 30 * 24 * 60 * 60, c.req.url), dest);
+  return cookieRedirect(c, sessionCookie(sessionId, 30 * 24 * 60 * 60), dest);
 });
 
 app.get("/auth/me", async (c) => {
@@ -493,7 +494,7 @@ app.post("/auth/claim", async (c) => {
     .bind(sessionId, user.id, sessionExpires)
     .run();
 
-  c.header("Set-Cookie", sessionCookie(sessionId, 30 * 24 * 60 * 60, c.req.url));
+  c.header("Set-Cookie", sessionCookie(sessionId, 30 * 24 * 60 * 60));
   return c.json({ id: user.id, email: user.email, name: user.name, role: user.role });
 });
 
