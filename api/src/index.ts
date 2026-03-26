@@ -217,6 +217,167 @@ app.post("/auth/logout", async (c) => {
   return c.json({ ok: true });
 });
 
+// ==================== GOOGLE OAUTH ENDPOINTS ====================
+
+app.get("/auth/google/start", async (c) => {
+  const returnTo = c.req.query("returnTo");
+  const validReturnTo = returnTo && isAllowedOrigin(returnTo) ? returnTo : undefined;
+
+  const db = c.env.easyschematic_db;
+
+  // Rate limit by IP
+  const ip = getClientIP(c);
+  const ipLimit = await checkRateLimit(db, `login:ip:${ip}`, 10);
+  if (!ipLimit.allowed) {
+    return c.json({ error: "Too many login attempts. Try again later." }, 429);
+  }
+
+  // Generate CSRF state, store with 10-min TTL
+  const state = crypto.randomUUID();
+  const expiresAt = sqliteDatetime(10 * 60 * 1000);
+  await db
+    .prepare("INSERT INTO oauth_states (id, return_to, expires_at) VALUES (?, ?, ?)")
+    .bind(state, validReturnTo ?? null, expiresAt)
+    .run();
+
+  const isLocalhost = new URL(c.req.url).hostname === "localhost";
+  const redirectUri = isLocalhost
+    ? "http://localhost:8787/auth/google/callback"
+    : "https://api.easyschematic.live/auth/google/callback";
+
+  const params = new URLSearchParams({
+    client_id: c.env.GOOGLE_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: "openid email profile",
+    state,
+    prompt: "select_account",
+  });
+
+  return c.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+});
+
+app.get("/auth/google/callback", async (c) => {
+  const db = c.env.easyschematic_db;
+  const code = c.req.query("code");
+  const state = c.req.query("state");
+  const error = c.req.query("error");
+
+  // Look up state first to get returnTo for error redirects
+  const stateRow = state
+    ? await db
+        .prepare("SELECT return_to, expires_at FROM oauth_states WHERE id = ?")
+        .bind(state)
+        .first<{ return_to: string | null; expires_at: string }>()
+    : null;
+
+  // Delete state regardless (one-time use)
+  if (state) {
+    await db.prepare("DELETE FROM oauth_states WHERE id = ?").bind(state).run();
+  }
+
+  const returnOrigin = stateRow?.return_to
+    ? new URL(stateRow.return_to).origin
+    : null;
+
+  const redirectWithError = (err: string) => {
+    if (returnOrigin) {
+      return c.redirect(`${returnOrigin}/?error=${err}`);
+    }
+    return c.redirect(`https://devices.easyschematic.live/#/login?error=${err}`);
+  };
+
+  // User denied consent
+  if (error) return redirectWithError("oauth_denied");
+
+  // Validate state exists and isn't expired
+  if (!stateRow) return redirectWithError("expired");
+  const now = sqliteDatetime(0);
+  if (stateRow.expires_at <= now) return redirectWithError("expired");
+  if (!code) return redirectWithError("expired");
+
+  // Exchange code for tokens
+  const isLocalhost = new URL(c.req.url).hostname === "localhost";
+  const redirectUri = isLocalhost
+    ? "http://localhost:8787/auth/google/callback"
+    : "https://api.easyschematic.live/auth/google/callback";
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: c.env.GOOGLE_CLIENT_ID,
+      client_secret: c.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    }),
+  });
+
+  if (!tokenRes.ok) {
+    console.error("Google token exchange failed:", await tokenRes.text());
+    return redirectWithError("oauth_failed");
+  }
+
+  const tokenData = await tokenRes.json<{ id_token?: string }>();
+  if (!tokenData.id_token) return redirectWithError("oauth_failed");
+
+  // Decode id_token payload (trusted — direct from Google over HTTPS)
+  const payload = JSON.parse(atob(tokenData.id_token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+  const { sub, email, email_verified, name } = payload as {
+    sub: string; email: string; email_verified: boolean; name?: string;
+  };
+
+  if (!email_verified) return redirectWithError("email_not_verified");
+
+  const normalizedEmail = email.toLowerCase();
+
+  // Account resolution: google_id first, then email
+  let user = await db
+    .prepare("SELECT id FROM users WHERE google_id = ?")
+    .bind(sub)
+    .first<{ id: string }>();
+
+  if (!user) {
+    const existing = await db
+      .prepare("SELECT id, google_id FROM users WHERE email = ?")
+      .bind(normalizedEmail)
+      .first<{ id: string; google_id: string | null }>();
+
+    if (existing) {
+      if (existing.google_id && existing.google_id !== sub) {
+        return redirectWithError("account_conflict");
+      }
+      // Link Google account to existing magic-link user
+      if (!existing.google_id) {
+        await db.prepare("UPDATE users SET google_id = ? WHERE id = ?").bind(sub, existing.id).run();
+      }
+      user = { id: existing.id };
+    } else {
+      // Create new user
+      const userId = crypto.randomUUID();
+      await db
+        .prepare("INSERT INTO users (id, email, name, google_id, last_login_at) VALUES (?, ?, ?, ?, datetime('now'))")
+        .bind(userId, normalizedEmail, name ?? null, sub)
+        .run();
+      user = { id: userId };
+    }
+  }
+
+  await db.prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?").bind(user.id).run();
+
+  // Create session (same as magic link verify)
+  const sessionId = crypto.randomUUID();
+  const sessionExpires = sqliteDatetime(30 * 24 * 60 * 60 * 1000);
+  await db
+    .prepare("INSERT INTO sessions (id, user_id, expires_at) VALUES (?, ?, ?)")
+    .bind(sessionId, user.id, sessionExpires)
+    .run();
+
+  c.header("Set-Cookie", sessionCookie(sessionId, 30 * 24 * 60 * 60, c.req.url));
+  return c.redirect(stateRow.return_to || "https://devices.easyschematic.live/#/");
+});
+
 app.get("/auth/me", async (c) => {
   const user = requireSession(c);
   if (!user) return c.json({ error: "Not authenticated" }, 401);
@@ -1376,6 +1537,7 @@ app.get("/health", async (c) => {
   await c.env.easyschematic_db.prepare("DELETE FROM drafts WHERE expires_at < datetime('now')").run().catch(() => {});
   await c.env.easyschematic_db.prepare("DELETE FROM sessions WHERE expires_at < datetime('now')").run().catch(() => {});
   await c.env.easyschematic_db.prepare("DELETE FROM magic_links WHERE expires_at < datetime('now')").run().catch(() => {});
+  await c.env.easyschematic_db.prepare("DELETE FROM oauth_states WHERE expires_at < datetime('now')").run().catch(() => {});
   return c.json({ ok: true });
 });
 

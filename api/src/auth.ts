@@ -16,6 +16,8 @@ export type Env = {
     ADMIN_TOKEN: string;
     RESEND_API_KEY: string;
     SUPPORT_FORWARD_EMAIL: string;
+    GOOGLE_CLIENT_ID: string;
+    GOOGLE_CLIENT_SECRET: string;
   };
   Variables: {
     user?: SessionUser;
