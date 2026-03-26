@@ -63,7 +63,7 @@ const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "kvm-extender": "KVM / Extenders",
   "hdbaset-extender": "KVM / Extenders",
   "wireless-video": "Wireless",
-  "intercom": "Wireless",
+  "intercom": "Intercom",
   "led-processor": "LED Video",
   "media-server": "Media Servers",
   "lighting-console": "Lighting",

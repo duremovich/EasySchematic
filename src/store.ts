@@ -20,6 +20,8 @@ import type {
   TemplatePreset,
   InstalledSlot,
   SlotDefinition,
+  CustomTemplateGroup,
+  CustomTemplateMeta,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType, ScrollConfig } from "./types";
@@ -39,6 +41,33 @@ import { computeCableSchedule } from "./cableSchedule";
 
 const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
+const TEMPLATE_META_KEY = "easyschematic-custom-template-meta";
+const CATEGORY_ORDER_KEY = "easyschematic-category-order";
+
+export const CATEGORY_ORDER_DEFAULT: string[] = [
+  "Sources",
+  "Peripherals",
+  "Switching",
+  "Processing",
+  "Distribution",
+  "Monitoring",
+  "Projection",
+  "Recording",
+  "Mixing Consoles",
+  "Audio",
+  "Speakers",
+  "Amplifiers",
+  "Networking",
+  "Codecs",
+  "KVM / Extenders",
+  "Wireless",
+  "LED Video",
+  "Media Servers",
+  "Lighting",
+  "Control",
+  "Infrastructure",
+  "Cable Accessories",
+];
 
 /** Migrate legacy scrollBehavior to ScrollConfig, or use provided scrollConfig */
 function resolveScrollConfig(data: { scrollBehavior?: string; scrollConfig?: Partial<ScrollConfig> }): ScrollConfig {
@@ -146,6 +175,23 @@ interface SchematicState {
   // Custom templates
   addCustomTemplate: (template: DeviceTemplate) => void;
   removeCustomTemplate: (deviceType: string) => void;
+
+  // Custom template organization (#62)
+  customTemplateGroups: CustomTemplateGroup[];
+  customTemplateOrder: string[];
+  customTemplateGroupAssignments: Record<string, string>;
+  reorderCustomTemplate: (deviceType: string, targetIndex: number) => void;
+  moveCustomTemplateToGroup: (deviceType: string, groupId: string | null) => void;
+  addCustomTemplateGroup: (label: string) => string;
+  removeCustomTemplateGroup: (groupId: string) => void;
+  renameCustomTemplateGroup: (groupId: string, label: string) => void;
+  reorderCustomTemplateGroup: (groupId: string, newIndex: number) => void;
+  toggleCustomGroupCollapsed: (groupId: string) => void;
+
+  // Category order (#62)
+  categoryOrder: string[] | null;  // null = use default CATEGORY_ORDER
+  reorderCategory: (category: string, targetIndex: number) => void;
+  resetCategoryOrder: () => void;
 
   // Edge data
   patchEdgeData: (edgeId: string, patch: Partial<import("./types").ConnectionData>) => void;
@@ -541,12 +587,50 @@ function saveCustomTemplates(templates: DeviceTemplate[]) {
   }
 }
 
+function loadCustomTemplateMeta(templates: DeviceTemplate[]): CustomTemplateMeta {
+  try {
+    const raw = localStorage.getItem(TEMPLATE_META_KEY);
+    if (raw) return JSON.parse(raw) as CustomTemplateMeta;
+  } catch { /* fall through */ }
+  // First load: initialize from current template order
+  return { groups: [], order: templates.map((t) => t.deviceType), groupAssignments: {} };
+}
+
+function saveCustomTemplateMeta(meta: CustomTemplateMeta) {
+  try {
+    localStorage.setItem(TEMPLATE_META_KEY, JSON.stringify(meta));
+  } catch {
+    // silently fail
+  }
+}
+
+function loadCategoryOrder(): string[] | null {
+  try {
+    const raw = localStorage.getItem(CATEGORY_ORDER_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : null;
+  } catch { return null; }
+}
+
+function saveCategoryOrder(order: string[] | null) {
+  try {
+    if (order) localStorage.setItem(CATEGORY_ORDER_KEY, JSON.stringify(order));
+    else localStorage.removeItem(CATEGORY_ORDER_KEY);
+  } catch { /* silently fail */ }
+}
+
+const _initCustomTemplates = loadCustomTemplates();
+const _initCustomMeta = loadCustomTemplateMeta(_initCustomTemplates);
+
 export const useSchematicStore = create<SchematicState>((set, get) => ({
   nodes: [],
   edges: [],
   schematicName: "Untitled Schematic",
   editingNodeId: null,
-  customTemplates: loadCustomTemplates(),
+  customTemplates: _initCustomTemplates,
+  customTemplateGroups: _initCustomMeta.groups,
+  customTemplateOrder: _initCustomMeta.order,
+  customTemplateGroupAssignments: _initCustomMeta.groupAssignments,
+  categoryOrder: loadCategoryOrder(),
   routedEdges: {},
   edgeContextMenu: null,
   roomContextMenu: null,
@@ -1460,14 +1544,97 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   addCustomTemplate: (template) => {
     const updated = [...get().customTemplates, template];
-    set({ customTemplates: updated });
+    const order = [...get().customTemplateOrder, template.deviceType];
+    set({ customTemplates: updated, customTemplateOrder: order });
     saveCustomTemplates(updated);
+    saveCustomTemplateMeta({ groups: get().customTemplateGroups, order, groupAssignments: get().customTemplateGroupAssignments });
   },
 
   removeCustomTemplate: (deviceType) => {
     const updated = get().customTemplates.filter((t) => t.deviceType !== deviceType);
-    set({ customTemplates: updated });
+    const order = get().customTemplateOrder.filter((dt) => dt !== deviceType);
+    const { [deviceType]: _, ...groupAssignments } = get().customTemplateGroupAssignments;
+    set({ customTemplates: updated, customTemplateOrder: order, customTemplateGroupAssignments: groupAssignments });
     saveCustomTemplates(updated);
+    saveCustomTemplateMeta({ groups: get().customTemplateGroups, order, groupAssignments });
+  },
+
+  // Custom template organization (#62)
+  reorderCustomTemplate: (deviceType, targetIndex) => {
+    const order = get().customTemplateOrder.filter((dt) => dt !== deviceType);
+    order.splice(targetIndex, 0, deviceType);
+    set({ customTemplateOrder: order });
+    saveCustomTemplateMeta({ groups: get().customTemplateGroups, order, groupAssignments: get().customTemplateGroupAssignments });
+  },
+
+  moveCustomTemplateToGroup: (deviceType, groupId) => {
+    const groupAssignments = { ...get().customTemplateGroupAssignments };
+    if (groupId) {
+      groupAssignments[deviceType] = groupId;
+    } else {
+      delete groupAssignments[deviceType];
+    }
+    set({ customTemplateGroupAssignments: groupAssignments });
+    saveCustomTemplateMeta({ groups: get().customTemplateGroups, order: get().customTemplateOrder, groupAssignments });
+  },
+
+  addCustomTemplateGroup: (label) => {
+    const id = `group-${Date.now()}`;
+    const groups = [...get().customTemplateGroups, { id, label }];
+    set({ customTemplateGroups: groups });
+    saveCustomTemplateMeta({ groups, order: get().customTemplateOrder, groupAssignments: get().customTemplateGroupAssignments });
+    return id;
+  },
+
+  removeCustomTemplateGroup: (groupId) => {
+    const groups = get().customTemplateGroups.filter((g) => g.id !== groupId);
+    const groupAssignments = { ...get().customTemplateGroupAssignments };
+    for (const [dt, gid] of Object.entries(groupAssignments)) {
+      if (gid === groupId) delete groupAssignments[dt];
+    }
+    set({ customTemplateGroups: groups, customTemplateGroupAssignments: groupAssignments });
+    saveCustomTemplateMeta({ groups, order: get().customTemplateOrder, groupAssignments });
+  },
+
+  renameCustomTemplateGroup: (groupId, label) => {
+    const groups = get().customTemplateGroups.map((g) => g.id === groupId ? { ...g, label } : g);
+    set({ customTemplateGroups: groups });
+    saveCustomTemplateMeta({ groups, order: get().customTemplateOrder, groupAssignments: get().customTemplateGroupAssignments });
+  },
+
+  reorderCustomTemplateGroup: (groupId, newIndex) => {
+    const groups = get().customTemplateGroups.filter((g) => g.id !== groupId);
+    const group = get().customTemplateGroups.find((g) => g.id === groupId);
+    if (!group) return;
+    groups.splice(newIndex, 0, group);
+    set({ customTemplateGroups: groups });
+    saveCustomTemplateMeta({ groups, order: get().customTemplateOrder, groupAssignments: get().customTemplateGroupAssignments });
+  },
+
+  toggleCustomGroupCollapsed: (groupId) => {
+    const groups = get().customTemplateGroups.map((g) =>
+      g.id === groupId ? { ...g, collapsed: !g.collapsed } : g,
+    );
+    set({ customTemplateGroups: groups });
+    saveCustomTemplateMeta({ groups, order: get().customTemplateOrder, groupAssignments: get().customTemplateGroupAssignments });
+  },
+
+  // Category order (#62)
+  reorderCategory: (category, targetIndex) => {
+    // Build from current order or default
+    const current = get().categoryOrder;
+    const arr = current ? [...current] : [...CATEGORY_ORDER_DEFAULT];
+    const fromIndex = arr.indexOf(category);
+    if (fromIndex === -1) return;
+    arr.splice(fromIndex, 1);
+    arr.splice(targetIndex, 0, category);
+    set({ categoryOrder: arr });
+    saveCategoryOrder(arr);
+  },
+
+  resetCategoryOrder: () => {
+    set({ categoryOrder: null });
+    saveCategoryOrder(null);
   },
 
   dismissIncompatibleDialog: () => {
@@ -1810,8 +1977,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const newTemplates = templates.filter((t) => !existingTypes.has(t.deviceType));
     if (newTemplates.length > 0) {
       const merged = [...existing, ...newTemplates];
-      set({ customTemplates: merged });
+      const order = [...get().customTemplateOrder, ...newTemplates.map((t) => t.deviceType)];
+      set({ customTemplates: merged, customTemplateOrder: order });
       saveCustomTemplates(merged);
+      saveCustomTemplateMeta({ groups: get().customTemplateGroups, order, groupAssignments: get().customTemplateGroupAssignments });
     }
   },
 
@@ -1864,6 +2033,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       hideAdapters: state.hideAdapters || undefined,
       autoRoute: state.autoRoute === false ? false : undefined,
       edgeHitboxSize: state.edgeHitboxSize !== 10 ? state.edgeHitboxSize : undefined,
+      categoryOrder: state.categoryOrder ?? undefined,
     };
     // Persist cloud identity alongside autosave (not part of SchematicFile export)
     const blob: Record<string, unknown> = { ...data };
@@ -1924,6 +2094,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             edgeHitboxSize: data.edgeHitboxSize ?? 10,
             showConnectionLabels: data.showConnectionLabels ?? true,
             hideAdapters: data.hideAdapters ?? false,
+            categoryOrder: data.categoryOrder ?? null,
           });
           hydrated = true;
           get().saveToLocalStorage();
@@ -1968,6 +2139,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         hideAdapters: data.hideAdapters ?? false,
         autoRoute: data.autoRoute ?? true,
         edgeHitboxSize: data.edgeHitboxSize ?? 10,
+        categoryOrder: data.categoryOrder ?? null,
         // Restore cloud identity from autosave (not part of SchematicFile)
         cloudSchematicId: parsed.cloudSchematicId ?? null,
         cloudSavedAt: parsed.cloudSavedAt ?? null,
@@ -2010,6 +2182,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showLineJumps: !state.showLineJumps ? false : undefined,
       showConnectionLabels: !state.showConnectionLabels ? false : undefined,
       hideAdapters: state.hideAdapters || undefined,
+      categoryOrder: state.categoryOrder ?? undefined,
     };
   },
 
@@ -2071,10 +2244,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       hideAdapters: data.hideAdapters ?? false,
       autoRoute: data.autoRoute ?? true,
       edgeHitboxSize: data.edgeHitboxSize ?? 10,
+      categoryOrder: data.categoryOrder ?? null,
       // File imports and shared schematics always start as local-only
       cloudSchematicId: null,
       cloudSavedAt: null,
     });
+    saveCategoryOrder(data.categoryOrder ?? null);
     get().saveToLocalStorage();
   },
 

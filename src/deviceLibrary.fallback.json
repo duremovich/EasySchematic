@@ -30079,7 +30079,7 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Wireless"
+    "category": "Intercom"
   },
   {
     "id": "c0a80101-007a-4000-8000-000000000122",
@@ -30261,7 +30261,7 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Wireless"
+    "category": "Intercom"
   },
   {
     "id": "c0a80101-00a4-4000-8000-000000000164",
@@ -30335,7 +30335,7 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Wireless"
+    "category": "Intercom"
   },
   {
     "id": "c0a80101-00a5-4000-8000-000000000165",
@@ -30409,7 +30409,7 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Wireless"
+    "category": "Intercom"
   },
   {
     "id": "c0a80101-00a6-4000-8000-000000000166",
@@ -30505,7 +30505,7 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Wireless"
+    "category": "Intercom"
   },
   {
     "id": "c0a80101-0038-4000-8000-000000000056",

@@ -2,7 +2,7 @@ import type { Node, Edge } from "@xyflow/react";
 
 export type ConnectorType =
   | "bnc" | "hdmi" | "displayport" | "vga"
-  | "xlr-3" | "xlr-5" | "trs-quarter" | "trs-eighth" | "combo-xlr-trs"
+  | "xlr-3" | "xlr-4" | "xlr-5" | "trs-quarter" | "trs-eighth" | "combo-xlr-trs"
   | "rj45" | "ethercon" | "sfp" | "lc" | "sc"
   | "usb-a" | "usb-b" | "usb-c"
   | "db7w2" | "db9" | "db15" | "db25" | "din-5" | "phoenix" | "terminal-block" | "powercon" | "edison" | "iec"
@@ -249,6 +249,18 @@ export interface DeviceTemplate {
   poeBudgetW?: number;           // PoE budget in watts (switches only)
 }
 
+export interface CustomTemplateGroup {
+  id: string;
+  label: string;
+  collapsed?: boolean;
+}
+
+export interface CustomTemplateMeta {
+  groups: CustomTemplateGroup[];
+  order: string[];                          // deviceType[] in display order
+  groupAssignments: Record<string, string>; // deviceType -> groupId
+}
+
 export interface TemplatePreset {
   ports: Port[];
   hiddenPorts?: string[];
@@ -342,6 +354,8 @@ export interface SchematicFile {
   autoRoute?: boolean;
   /** Edge interaction hitbox width in pixels (default 10, React Flow default is 20) */
   edgeHitboxSize?: number;
+  /** User-preferred device category display order (#62) */
+  categoryOrder?: string[];
 }
 
 export type ScrollAction = "zoom" | "pan-x" | "pan-y";
@@ -419,6 +433,7 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   displayport: "DisplayPort",
   vga: "VGA (DB15)",
   "xlr-3": "XLR-3",
+  "xlr-4": "XLR-4",
   "xlr-5": "XLR-5",
   "trs-quarter": '1/4" TRS',
   "trs-eighth": '3.5mm TRS',
