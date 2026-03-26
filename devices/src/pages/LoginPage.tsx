@@ -45,7 +45,7 @@ export default function LoginPage() {
           <p className="text-sm text-slate-500">
             We sent a login link to <strong className="text-slate-700">{email}</strong>. Click it to sign in.
           </p>
-          <p className="text-xs text-slate-400 mt-3">The link expires in 15 minutes.</p>
+          <p className="text-xs text-slate-400 mt-3">The link expires in 30 minutes.</p>
           <button
             onClick={() => { setSent(false); setEmail(""); }}
             className="mt-4 text-sm text-blue-600 hover:text-blue-800"

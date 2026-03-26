@@ -99,7 +99,8 @@ app.post("/auth/login", async (c) => {
   // Generate magic link token
   const token = crypto.randomUUID() + "-" + crypto.randomUUID();
   const id = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000)
+    .toISOString().replace("T", " ").replace(/\.\d{3}Z$/, "");
 
   await db
     .prepare("INSERT INTO magic_links (id, email, token, expires_at) VALUES (?, ?, ?, ?)")
@@ -123,7 +124,7 @@ app.post("/auth/login", async (c) => {
       subject: "Your login link",
       html: `<p>Click below to log in to EasySchematic:</p>
 <p><a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;background:#1e293b;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Log in to EasySchematic</a></p>
-<p style="color:#64748b;font-size:14px;">This link expires in 15 minutes. If you didn't request this, you can ignore this email.</p>`,
+<p style="color:#64748b;font-size:14px;">This link expires in 30 minutes. If you didn't request this, you can ignore this email.</p>`,
     }),
   });
 
