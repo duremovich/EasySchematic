@@ -37,22 +37,20 @@ function parseRoute(): { page: string; id?: string; draft?: string; auth?: strin
   return { page: "browse", auth };
 }
 
+// Redirect legacy hash URLs to path equivalents (before React mounts)
+{
+  const hash = window.location.hash;
+  if (hash && hash.startsWith("#/")) {
+    window.history.replaceState({}, "", hash.slice(1));
+  }
+}
+
 export default function App() {
   const [route, setRoute] = useState(parseRoute);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  // Redirect legacy hash URLs to path equivalents
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash && hash.startsWith("#/")) {
-      const newUrl = hash.slice(1); // strip leading #
-      window.history.replaceState({}, "", newUrl);
-      setRoute(parseRoute());
-    }
-  }, []);
 
   useEffect(() => {
     const onPopState = () => {

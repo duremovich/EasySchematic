@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', '**/.wrangler']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -25,6 +25,12 @@ export default defineConfig([
         varsIgnorePattern: '^_',
         destructuredArrayIgnorePattern: '^_',
       }],
+    },
+  },
+  {
+    files: ['**/main.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])

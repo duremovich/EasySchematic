@@ -204,7 +204,7 @@ SIGNAL_REVERSE.set("dmx512", "dmx");
 
 export function parseSignalType(raw: string): SignalType {
   if (!raw) return "custom";
-  const normalized = raw.toLowerCase().trim().replace(/[_\-\/]/g, " ").replace(/\s+/g, " ");
+  const normalized = raw.toLowerCase().trim().replace(/[_\-/]/g, " ").replace(/\s+/g, " ");
   const direct = SIGNAL_REVERSE.get(normalized);
   if (direct) return direct;
   // Try without spaces/hyphens

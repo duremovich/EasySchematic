@@ -275,7 +275,7 @@ export default function DeviceEditor() {
     } catch (e) {
       console.error("Failed to create draft:", e);
     }
-  }, [ports, label, deviceType, color, node]);
+  }, [ports, label, deviceType, color, node, hostname, poeBudgetW]);
 
   const handleSaveAsPreset = useCallback(() => {
     if (!editingNodeId || !node?.data.templateId) return;
