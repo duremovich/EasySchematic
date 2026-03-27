@@ -150,6 +150,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   "l6-30": "L6-30",
   "l21-30": "L21-30",
   "cam-lok": "Cam-Lok",
+  "powercon-true1": "powerCON TRUE1",
   qsfp: "QSFP Fiber",
   mpo: "MPO Fiber",
   none: "",

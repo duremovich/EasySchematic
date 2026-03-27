@@ -8,7 +8,7 @@ export type ConnectorType =
   | "db7w2" | "db9" | "db15" | "db25" | "din-5" | "phoenix" | "terminal-block" | "powercon" | "edison" | "iec"
   | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel"
   | "banana" | "binding-post" | "binding-post-banana" | "dvi" | "mini-xlr" | "opticalcon"
-  | "l5-20" | "l6-20" | "l6-30" | "l21-30" | "cam-lok"
+  | "l5-20" | "l6-20" | "l6-30" | "l21-30" | "cam-lok" | "powercon-true1"
   | "qsfp" | "mpo"
   | "mini-din-4" | "mini-din-7"
   | "mini-hdmi" | "mini-displayport"
@@ -505,6 +505,7 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "l6-30": "NEMA L6-30",
   "l21-30": "NEMA L21-30",
   "cam-lok": "Cam-Lok",
+  "powercon-true1": "powerCON TRUE1",
   rj11: "RJ11",
   qsfp: "QSFP+",
   mpo: "MPO/MTP",
