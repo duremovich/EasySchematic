@@ -44,6 +44,8 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   ydif: 30,        // dark cyan
   rf: 13,          // magenta
   st2110: 174,     // deep indigo
+  artnet: 40,      // amber — lighting network
+  sacn: 50,        // yellow — streaming ACN
   custom: 9,       // cool gray
 };
 

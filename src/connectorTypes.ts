@@ -42,6 +42,8 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   ydif: "rj45",
   rf: "bnc",
   st2110: "rj45",
+  artnet: "rj45",
+  sacn: "rj45",
   custom: "other",
 };
 

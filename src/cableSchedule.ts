@@ -69,6 +69,8 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   ydif: "YD",
   rf: "RF",
   st2110: "21",
+  artnet: "AN",
+  sacn: "SC",
   custom: "X",
 };
 

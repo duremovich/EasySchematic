@@ -44,6 +44,8 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   ydif: "Ethernet",
   rf: "BNC",
   st2110: "Ethernet",
+  artnet: "Ethernet",
+  sacn: "Ethernet",
   custom: "Other",
 };
 

@@ -86,6 +86,8 @@ export type SignalType =
   | "ydif"
   | "rf"
   | "st2110"
+  | "artnet"
+  | "sacn"
   | "custom";
 
 export type PortDirection = "input" | "output" | "bidirectional";
@@ -429,6 +431,8 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   ydif: "var(--color-ydif)",
   rf: "var(--color-rf)",
   st2110: "var(--color-st2110)",
+  artnet: "var(--color-artnet)",
+  sacn: "var(--color-sacn)",
   custom: "var(--color-custom)",
 };
 
@@ -539,5 +543,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   ydif: "YDIF",
   rf: "RF",
   st2110: "ST 2110",
+  artnet: "Art-Net",
+  sacn: "sACN",
   custom: "Custom",
 };

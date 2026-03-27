@@ -42,6 +42,8 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   ydif: "#0e7490",
   rf: "#a21caf",
   st2110: "#3730a3",
+  artnet: "#f59e0b",
+  sacn: "#eab308",
   custom: "#64748b",
 };
 
