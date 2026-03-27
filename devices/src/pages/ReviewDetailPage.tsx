@@ -150,18 +150,25 @@ export default function ReviewDetailPage({ id }: { id: string }) {
         <span className="text-xs text-slate-400 capitalize">{submission.action}</span>
       </div>
 
+      {submission.submitterNote && (
+        <div className="mb-6 border border-amber-200 rounded-lg p-4 bg-amber-50">
+          <div className="text-xs font-semibold text-amber-700 mb-1">Submitter Note</div>
+          <p className="text-sm text-amber-900 whitespace-pre-wrap">{submission.submitterNote}</p>
+        </div>
+      )}
+
       {existing && submission.action === "update" ? (
         // Side-by-side diff for edits
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div>
             <h2 className="text-lg font-semibold text-slate-700 mb-3">Current</h2>
-            <DeviceInfo data={existing} />
-            <PortTable ports={existing.ports} />
+            <DeviceInfo data={existing} compare={proposed as DeviceTemplate} side="current" />
+            <PortTable ports={existing.ports} comparePorts={(proposed.ports ?? []) as Port[]} side="current" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-blue-700 mb-3">Proposed</h2>
-            <DeviceInfo data={proposed as DeviceTemplate} />
-            <PortTable ports={(proposed.ports ?? []) as Port[]} />
+            <DeviceInfo data={proposed as DeviceTemplate} compare={existing} side="proposed" />
+            <PortTable ports={(proposed.ports ?? []) as Port[]} comparePorts={existing.ports} side="proposed" />
           </div>
         </div>
       ) : (
@@ -345,23 +352,41 @@ export default function ReviewDetailPage({ id }: { id: string }) {
   );
 }
 
-function DeviceInfo({ data }: { data: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily" | "powerDrawW" | "powerCapacityW" | "voltage"> }) {
+function fieldChanged(a: unknown, b: unknown): boolean {
+  return String(a ?? "") !== String(b ?? "");
+}
+
+function diffCls(changed: boolean, side?: "current" | "proposed"): string {
+  if (!changed || !side) return "";
+  return side === "proposed" ? "bg-green-50 rounded px-1 -mx-1" : "bg-red-50 rounded px-1 -mx-1";
+}
+
+type DeviceInfoProps = {
+  data: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily" | "powerDrawW" | "powerCapacityW" | "voltage">;
+  compare?: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily" | "powerDrawW" | "powerCapacityW" | "voltage">;
+  side?: "current" | "proposed";
+};
+
+function DeviceInfo({ data, compare, side }: DeviceInfoProps) {
   const extra = data as Record<string, unknown>;
+  const cExtra = compare as Record<string, unknown> | undefined;
+  const d = (field: keyof typeof data) => compare ? diffCls(fieldChanged(data[field], compare[field]), side) : "";
+  const dExtra = (field: string) => cExtra ? diffCls(fieldChanged(extra[field], cExtra[field]), side) : "";
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-4">
-      <div><span className="text-slate-500">Label:</span> <span className="font-medium">{data.label}</span></div>
-      {extra.hostname ? <div><span className="text-slate-500">Hostname:</span> {String(extra.hostname)}</div> : null}
-      <div><span className="text-slate-500">Type:</span> {data.deviceType}</div>
-      {data.manufacturer && <div><span className="text-slate-500">Manufacturer:</span> {data.manufacturer}</div>}
-      {data.modelNumber && <div><span className="text-slate-500">Model:</span> {data.modelNumber}</div>}
+      <div className={d("label")}><span className="text-slate-500">Label:</span> <span className="font-medium">{data.label}</span></div>
+      {extra.hostname ? <div className={dExtra("hostname")}><span className="text-slate-500">Hostname:</span> {String(extra.hostname)}</div> : null}
+      <div className={d("deviceType")}><span className="text-slate-500">Type:</span> {data.deviceType}</div>
+      {data.manufacturer && <div className={d("manufacturer")}><span className="text-slate-500">Manufacturer:</span> {data.manufacturer}</div>}
+      {data.modelNumber && <div className={d("modelNumber")}><span className="text-slate-500">Model:</span> {data.modelNumber}</div>}
       {data.referenceUrl && (
-        <div className="sm:col-span-2">
+        <div className={`sm:col-span-2 ${d("referenceUrl")}`}>
           <span className="text-slate-500">Reference:</span>{" "}
           <a href={data.referenceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 break-all">{data.referenceUrl}</a>
         </div>
       )}
       {data.color && (
-        <div className="flex items-center gap-1">
+        <div className={`flex items-center gap-1 ${d("color")}`}>
           <span className="text-slate-500">Color:</span>
           <span className="w-4 h-4 rounded border border-slate-200 inline-block" style={{ backgroundColor: data.color }} />
           <span>{data.color}</span>
@@ -371,26 +396,63 @@ function DeviceInfo({ data }: { data: Pick<DeviceTemplate, "label" | "deviceType
         <div><span className="text-slate-500">Slots:</span> {data.slots.length} ({[...new Set(data.slots.map((s) => s.slotFamily))].join(", ")})</div>
       )}
       {data.slotFamily && (
-        <div><span className="text-slate-500">Slot Family:</span> {data.slotFamily}</div>
+        <div className={d("slotFamily")}><span className="text-slate-500">Slot Family:</span> {data.slotFamily}</div>
       )}
       {data.powerDrawW != null && (
-        <div><span className="text-slate-500">Power Draw:</span> {data.powerDrawW}W</div>
+        <div className={d("powerDrawW")}><span className="text-slate-500">Power Draw:</span> {data.powerDrawW}W</div>
       )}
       {data.powerCapacityW != null && (
-        <div><span className="text-slate-500">Power Capacity:</span> {data.powerCapacityW}W</div>
+        <div className={d("powerCapacityW")}><span className="text-slate-500">Power Capacity:</span> {data.powerCapacityW}W</div>
       )}
       {extra.poeBudgetW != null && (
-        <div><span className="text-slate-500">PoE Budget:</span> {String(extra.poeBudgetW)}W</div>
+        <div className={dExtra("poeBudgetW")}><span className="text-slate-500">PoE Budget:</span> {String(extra.poeBudgetW)}W</div>
       )}
       {data.voltage && (
-        <div><span className="text-slate-500">Voltage:</span> {data.voltage}</div>
+        <div className={d("voltage")}><span className="text-slate-500">Voltage:</span> {data.voltage}</div>
       )}
     </div>
   );
 }
 
-function PortTable({ ports }: { ports: Port[] }) {
+function getPortDiffMap(ports: Port[], comparePorts: Port[], side: "current" | "proposed"): Map<string, "added" | "removed" | "changed" | "unchanged"> {
+  const map = new Map<string, "added" | "removed" | "changed" | "unchanged">();
+  const compareById = new Map(comparePorts.map((p) => [p.id, p]));
+  const portIds = new Set(ports.map((p) => p.id));
+
+  for (const p of ports) {
+    const other = compareById.get(p.id);
+    if (!other) {
+      // Port exists in this list but not the other
+      map.set(p.id, side === "proposed" ? "added" : "removed");
+    } else {
+      const changed = p.label !== other.label || p.direction !== other.direction || p.signalType !== other.signalType || (p.connectorType ?? "") !== (other.connectorType ?? "") || (p.section ?? "") !== (other.section ?? "");
+      map.set(p.id, changed ? "changed" : "unchanged");
+    }
+  }
+
+  // For current side, also mark ports that exist in compare but not here (they were added in proposed)
+  if (side === "current") {
+    for (const cp of comparePorts) {
+      if (!portIds.has(cp.id)) {
+        // This port was added in proposed — nothing to mark on current side
+      }
+    }
+  }
+
+  return map;
+}
+
+const PORT_DIFF_STYLES: Record<string, string> = {
+  added: "bg-green-50 border-l-2 border-l-green-400",
+  removed: "bg-red-50 border-l-2 border-l-red-400",
+  changed: "bg-amber-50 border-l-2 border-l-amber-400",
+  unchanged: "",
+};
+
+function PortTable({ ports, comparePorts, side }: { ports: Port[]; comparePorts?: Port[]; side?: "current" | "proposed" }) {
   if (!ports.length) return <p className="text-sm text-slate-400">No ports</p>;
+
+  const diffMap = comparePorts && side ? getPortDiffMap(ports, comparePorts, side) : null;
 
   return (
     <div className="overflow-x-auto">
@@ -404,14 +466,18 @@ function PortTable({ ports }: { ports: Port[] }) {
         </tr>
       </thead>
       <tbody>
-        {ports.map((p, i) => (
-          <tr key={i} className="border-b border-slate-100">
-            <td className="py-1">{p.label}</td>
-            <td className="py-1">{p.direction}</td>
-            <td className="py-1"><SignalBadge signalType={p.signalType} /></td>
-            <td className="py-1 text-slate-500">{p.connectorType ? (CONNECTOR_LABELS[p.connectorType] ?? p.connectorType) : "—"}</td>
-          </tr>
-        ))}
+        {ports.map((p, i) => {
+          const status = diffMap?.get(p.id);
+          const rowCls = status ? PORT_DIFF_STYLES[status] : "";
+          return (
+            <tr key={i} className={`border-b border-slate-100 ${rowCls}`}>
+              <td className="py-1 pl-1">{p.label}</td>
+              <td className="py-1">{p.direction}</td>
+              <td className="py-1"><SignalBadge signalType={p.signalType} /></td>
+              <td className="py-1 text-slate-500">{p.connectorType ? (CONNECTOR_LABELS[p.connectorType] ?? p.connectorType) : "—"}</td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
     </div>
