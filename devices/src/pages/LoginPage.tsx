@@ -57,6 +57,14 @@ export default function LoginPage() {
             We sent a login link to <strong className="text-slate-700">{email}</strong>. Click it to sign in.
           </p>
           <p className="text-xs text-slate-400 mt-3">The link expires in 30 minutes.</p>
+          <p className="text-xs text-slate-400 mt-2">
+            Don't see it? Check your spam folder. Some corporate email systems may block it
+            — <button
+              type="button"
+              onClick={() => { window.location.href = `${API_URL}/auth/google/start?returnTo=${encodeURIComponent(window.location.href)}`; }}
+              className="underline text-blue-500 hover:text-blue-700"
+            >try Google sign-in instead</button>.
+          </p>
           <button
             onClick={() => { setSent(false); setEmail(""); }}
             className="mt-4 text-sm text-blue-600 hover:text-blue-800"

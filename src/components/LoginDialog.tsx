@@ -74,6 +74,18 @@ export default function LoginDialog({ open, onClose }: Props) {
               <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
                 We sent a login link to <strong>{sentEmail}</strong>. Click it to log in, then come back here.
               </p>
+              <p className="text-xs mt-2" style={{ color: "var(--color-text-muted)", opacity: 0.8 }}>
+                Don't see it? Check your spam folder. Some corporate email systems may block it
+                — <button
+                  type="button"
+                  onClick={() => {
+                    const returnTo = encodeURIComponent(window.location.href);
+                    window.location.href = `${API_URL}/auth/google/start?returnTo=${returnTo}`;
+                  }}
+                  className="underline cursor-pointer"
+                  style={{ color: "var(--color-text-muted)" }}
+                >try Google sign-in instead</button>.
+              </p>
             </div>
           ) : (
             <>

@@ -143,12 +143,33 @@ app.post("/auth/login", async (c) => {
       Authorization: `Bearer ${c.env.RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: "EasySchematic <noreply@easyschematic.live>",
+      from: "EasySchematic <login@easyschematic.live>",
       to: email,
-      subject: "Your login link",
-      html: `<p>Click below to log in to EasySchematic:</p>
-<p><a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;background:#1e293b;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Log in to EasySchematic</a></p>
-<p style="color:#64748b;font-size:14px;">This link expires in 30 minutes. If you didn't request this, you can ignore this email.</p>`,
+      reply_to: "support@easyschematic.live",
+      subject: "EasySchematic — Log in to your account",
+      headers: { "X-Entity-Ref-ID": id },
+      text: [
+        "Log in to EasySchematic",
+        "",
+        `We received a login request for ${email}. Visit the link below to sign in:`,
+        "",
+        verifyUrl,
+        "",
+        "This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.",
+        "",
+        "— EasySchematic · AV System Design Tool · https://easyschematic.live",
+      ].join("\n"),
+      html: `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:24px">
+<h2 style="font-size:18px;color:#0f172a;margin:0 0 16px">Log in to EasySchematic</h2>
+<p style="color:#334155;font-size:14px;line-height:1.6;margin:0 0 8px">We received a login request for <strong>${email}</strong>.</p>
+<p style="color:#334155;font-size:14px;line-height:1.6;margin:0 0 24px">Click the button below to sign in:</p>
+<p style="margin:0 0 24px"><a href="${verifyUrl}" style="display:inline-block;padding:12px 24px;background:#1e293b;color:white;text-decoration:none;border-radius:8px;font-weight:600;">Log in to EasySchematic</a></p>
+<p style="color:#64748b;font-size:13px;line-height:1.6;margin:0 0 4px">Or copy and paste this URL into your browser:</p>
+<p style="color:#64748b;font-size:12px;word-break:break-all;margin:0 0 16px">${verifyUrl}</p>
+<p style="color:#64748b;font-size:13px;line-height:1.6;margin:0 0 24px">This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.</p>
+<hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 16px">
+<p style="color:#94a3b8;font-size:12px;margin:0">EasySchematic · AV System Design Tool<br><a href="https://easyschematic.live" style="color:#94a3b8">easyschematic.live</a></p>
+</div>`,
     }),
   });
 
