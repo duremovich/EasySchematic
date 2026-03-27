@@ -99,7 +99,6 @@ Responses are JSON, cached for 5 minutes. See the [full API reference](https://d
 
 ### Save & Export
 
-- **Install as app** — install EasySchematic as a standalone desktop app from your browser (Chrome: address bar install icon, or Menu → Install; Edge: Menu → Apps → Install; Safari: Share → Add to Home Screen). Works offline after installation
 - **Auto-save** to browser localStorage
 - **Cloud storage** — create a free account to save up to 10 schematics to the cloud and access them from any browser
 - **Sharing** — generate a shareable link for any cloud-saved schematic
@@ -136,6 +135,17 @@ npm run build
 ```
 
 Output goes to `dist/` — deploy as a static site anywhere.
+
+## Install as Desktop App
+
+EasySchematic can be installed as a standalone app that works offline — no download page, no account, no app store. Just visit [easyschematic.live](https://easyschematic.live) and install from your browser:
+
+- **Chrome / Edge** — click the install icon in the address bar, or Menu → "Install EasySchematic"
+- **Safari (macOS Sonoma+)** — File → Add to Dock
+- **Safari (iOS / iPadOS)** — Share → Add to Home Screen
+- **Android** — the browser will prompt you automatically, or Menu → "Install app"
+
+The installed app opens in its own window without browser chrome, works fully offline, and updates automatically when you're back online. All your schematics are saved locally — nothing is lost if you lose your connection.
 
 ## Design Principles
 
