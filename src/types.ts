@@ -10,7 +10,9 @@ export type ConnectorType =
   | "banana" | "binding-post" | "binding-post-banana" | "dvi" | "mini-xlr" | "opticalcon"
   | "l5-20" | "l6-20" | "l6-30" | "l21-30" | "cam-lok"
   | "qsfp" | "mpo"
+  | "mini-din-4" | "mini-din-7"
   | "mini-hdmi" | "mini-displayport"
+  | "rj11" | "usb-mini"
   | "none" | "other";
 
 export interface PortNetworkConfig {
@@ -64,6 +66,7 @@ export type SignalType =
   | "serial"
   | "thunderbolt"
   | "composite"
+  | "s-video"
   | "vga"
   | "power"
   | "power-l1"
@@ -406,6 +409,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   serial: "var(--color-serial)",
   thunderbolt: "var(--color-thunderbolt)",
   composite: "var(--color-composite)",
+  "s-video": "var(--color-s-video)",
   vga: "var(--color-vga)",
   power: "var(--color-power)",
   "power-l1": "var(--color-power-l1)",
@@ -467,6 +471,8 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "binding-post": "Binding Post",
   "binding-post-banana": "Binding Post (Banana)",
   dvi: "DVI",
+  "mini-din-4": "Mini-DIN 4-pin",
+  "mini-din-7": "Mini-DIN 7-pin",
   "mini-hdmi": "Mini HDMI",
   "mini-displayport": "Mini DisplayPort",
   "mini-xlr": "Mini XLR",
@@ -476,8 +482,10 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "l6-30": "NEMA L6-30",
   "l21-30": "NEMA L21-30",
   "cam-lok": "Cam-Lok",
+  rj11: "RJ11",
   qsfp: "QSFP+",
   mpo: "MPO/MTP",
+  "usb-mini": "Mini USB",
   none: "None",
   other: "Other",
 };
@@ -510,6 +518,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   serial: "Serial",
   thunderbolt: "Thunderbolt",
   composite: "Composite",
+  "s-video": "S-Video",
   vga: "VGA",
   power: "Power",
   "power-l1": "L1 (Phase A)",

@@ -7,6 +7,7 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   sdi: "SDI",
   genlock: "SDI",
   composite: "Composite",
+  "s-video": "S-Video",
   ndi: "Ethernet",
   dante: "Ethernet",
   ethernet: "Ethernet",

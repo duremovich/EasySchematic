@@ -29,6 +29,7 @@
   --color-serial: #525252;    /* gray — generic serial */
   --color-thunderbolt: #4f46e5; /* indigo — high-speed */
   --color-composite: #ca8a04; /* yellow — classic yellow RCA */
+  --color-s-video: #b45309;   /* amber — S-Video Y/C */
   --color-vga: #0369a1;       /* dark sky blue — classic VGA blue */
   --color-power: #a16207;     /* dark amber — electrical */
   --color-power-l1: #1a1a1a;  /* black — Phase A (L1) */
