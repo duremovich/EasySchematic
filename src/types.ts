@@ -90,6 +90,22 @@ export type SignalType =
   | "sacn"
   | "custom";
 
+export type LineStyle = "solid" | "dashed" | "dotted" | "dash-dot";
+
+export const LINE_STYLE_LABELS: Record<LineStyle, string> = {
+  solid: "Solid",
+  dashed: "Dashed",
+  dotted: "Dotted",
+  "dash-dot": "Dash-Dot",
+};
+
+export const LINE_STYLE_DASHARRAY: Record<LineStyle, string | undefined> = {
+  solid: undefined,
+  dashed: "8 4",
+  dotted: "2 4",
+  "dash-dot": "8 4 2 4",
+};
+
 export type PortDirection = "input" | "output" | "bidirectional";
 
 export interface Port {
@@ -228,6 +244,8 @@ export interface ConnectionData {
   hideLabel?: boolean;
   /** Edge represents a direct physical attachment, not a separate cable */
   directAttach?: boolean;
+  /** Visual line style — solid (default), dashed, dotted, or dash-dot */
+  lineStyle?: LineStyle;
 }
 
 export type ConnectionEdge = Edge<ConnectionData>;
@@ -327,6 +345,7 @@ export interface SchematicFile {
   edges: ConnectionEdge[];
   customTemplates?: DeviceTemplate[];
   signalColors?: Partial<Record<SignalType, string>>;
+  signalLineStyles?: Partial<Record<SignalType, LineStyle>>;
   printPaperId?: string;
   printOrientation?: "landscape" | "portrait";
   printScale?: number;

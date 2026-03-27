@@ -7,7 +7,7 @@ import {
 } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import { GRID_SIZE } from "../store";
-import type { ConnectionEdge } from "../types";
+import { LINE_STYLE_DASHARRAY, type ConnectionEdge, type LineStyle } from "../types";
 import { extractSegments, orthogonalize } from "../edgeRouter";
 import { waypointsToSvgPath, simplifyWaypoints } from "../pathfinding";
 
@@ -126,6 +126,15 @@ function OffsetEdgeComponent({
     return edge?.data?.stubbed === true;
   });
 
+  // Read effective line style: per-connection override > per-signal-type default > solid
+  const lineStyle = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    if (edge?.data?.lineStyle) return edge.data.lineStyle as LineStyle;
+    const signalType = edge?.data?.signalType;
+    if (signalType && s.signalLineStyles?.[signalType]) return s.signalLineStyles[signalType]!;
+    return "solid" as LineStyle;
+  });
+
   // Read routed waypoints (serialized for stability)
   const routeWpStr = useSchematicStore((s) => {
     const r = s.routedEdges[id];
@@ -196,7 +205,11 @@ function OffsetEdgeComponent({
         ...(directAttach
           ? { stroke: "#9ca3af", strokeWidth: selected ? 2 : 1 }
           : { strokeWidth: selected ? 3 : 2 }),
-        ...(connectorMismatch && !allowIncompatible ? { strokeDasharray: "6 3" } : {}),
+        ...(connectorMismatch && !allowIncompatible
+          ? { strokeDasharray: "6 3" }
+          : LINE_STYLE_DASHARRAY[lineStyle]
+            ? { strokeDasharray: LINE_STYLE_DASHARRAY[lineStyle] }
+            : {}),
         ...(hasGradient ? { stroke: `url(#${gradientId})` } : {}),
       }
     : { ...style, strokeWidth: 0, opacity: 0 };

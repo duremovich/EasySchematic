@@ -24,7 +24,7 @@ import type {
   CustomTemplateMeta,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
-import type { SignalType, ScrollConfig } from "./types";
+import type { SignalType, ScrollConfig, LineStyle } from "./types";
 import { DEFAULT_SCROLL_CONFIG } from "./types";
 import type { Orientation } from "./printConfig";
 import { computeAlignment, type AlignOperation } from "./alignUtils";
@@ -253,9 +253,11 @@ interface SchematicState {
   titleBlockLayout: TitleBlockLayout;
   setTitleBlockLayout: (layout: TitleBlockLayout) => void;
 
-  // Signal colors
+  // Signal colors & line styles
   signalColors: Partial<Record<SignalType, string>> | undefined;
   setSignalColors: (colors: Record<SignalType, string>) => void;
+  signalLineStyles: Partial<Record<SignalType, LineStyle>> | undefined;
+  setSignalLineStyles: (styles: Partial<Record<SignalType, LineStyle>>) => void;
 
   // Report layouts (pack list PDF settings, etc.)
   reportLayouts: Record<string, unknown>;
@@ -658,6 +660,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   titleBlock: { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
   titleBlockLayout: createDefaultLayout(),
   signalColors: undefined,
+  signalLineStyles: undefined,
   reportLayouts: {},
   globalReportHeaderLayout: null,
   globalReportFooterLayout: null,
@@ -1869,6 +1872,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  setSignalLineStyles: (styles) => {
+    // Only store non-solid entries
+    const clean: Partial<Record<SignalType, LineStyle>> = {};
+    for (const [k, v] of Object.entries(styles)) {
+      if (v && v !== "solid") clean[k as SignalType] = v;
+    }
+    set({ signalLineStyles: Object.keys(clean).length > 0 ? clean : undefined });
+    get().saveToLocalStorage();
+  },
+
   toggleSignalTypeVisibility: (type) => {
     const current = get().hiddenSignalTypes;
     const set_ = new Set(current ? current.split(",").filter(Boolean) : []);
@@ -2017,6 +2030,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       nodes: state.nodes,
       edges: state.edges.map(({ zIndex: _, selected: _s, ...rest }) => rest) as ConnectionEdge[],
       signalColors: state.signalColors,
+      signalLineStyles: state.signalLineStyles,
       printPaperId: state.printPaperId,
       printOrientation: state.printOrientation,
       printScale: state.printScale,
@@ -2078,6 +2092,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             isDemo: true,
             schematicName: data.name ?? "Demo Schematic",
             signalColors: data.signalColors,
+            signalLineStyles: data.signalLineStyles,
             printPaperId: data.printPaperId ?? "arch-d",
             printOrientation: data.printOrientation ?? "landscape",
             printScale: data.printScale ?? 1.0,
@@ -2123,6 +2138,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         edges: data.edges,
         schematicName: data.name ?? "Untitled Schematic",
         signalColors: data.signalColors,
+        signalLineStyles: data.signalLineStyles,
         printPaperId: data.printPaperId ?? "arch-d",
         printOrientation: data.printOrientation ?? "landscape",
         printScale: data.printScale ?? 1.0,
@@ -2168,6 +2184,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       edges: state.edges.map(({ zIndex: _, selected: _s, ...rest }) => rest) as ConnectionEdge[],
       customTemplates: state.customTemplates.length > 0 ? state.customTemplates : undefined,
       signalColors: state.signalColors,
+      signalLineStyles: state.signalLineStyles,
       printPaperId: state.printPaperId,
       printOrientation: state.printOrientation,
       printScale: state.printScale,
@@ -2228,6 +2245,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       schematicName: data.name ?? "Imported Schematic",
       isDemo: false,
       signalColors: data.signalColors,
+      signalLineStyles: data.signalLineStyles,
       printPaperId: data.printPaperId ?? "arch-d",
       printOrientation: data.printOrientation ?? "landscape",
       printScale: data.printScale ?? 1.0,

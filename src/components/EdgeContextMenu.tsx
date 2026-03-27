@@ -2,7 +2,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import { resolvePort } from "../packList";
-import type { DeviceData } from "../types";
+import { LINE_STYLE_LABELS, LINE_STYLE_DASHARRAY, type DeviceData, type LineStyle } from "../types";
 
 /** Project a point onto the nearest segment and return the projected point. */
 function projectOntoSegments(
@@ -250,6 +250,13 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
+  const setLineStyle = useCallback((ls: LineStyle) => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    store.patchEdgeData(menu.edgeId, { lineStyle: ls === "solid" ? undefined : ls });
+    useSchematicStore.setState({ edgeContextMenu: null });
+  }, [menu]);
+
   const goToNode = useCallback((nodeId: string | undefined) => {
     if (!menu || !nodeId) return;
     const internal = getInternalNode(nodeId);
@@ -268,6 +275,7 @@ export default function EdgeContextMenu() {
   const hasManual = !!(edge?.data?.manualWaypoints?.length);
   const isStubbed = edge?.data?.stubbed === true;
   const isLabelHidden = edge?.data?.hideLabel === true;
+  const currentLineStyle: LineStyle = (edge?.data?.lineStyle as LineStyle) ?? "solid";
   const hasMismatch = edge?.data?.connectorMismatch === true;
   const allowIncompatible = edge?.data?.allowIncompatible === true;
 
@@ -383,6 +391,29 @@ export default function EdgeContextMenu() {
           onClick={toggleAdapterVisibility}
         />
       )}
+      <div className="h-px bg-gray-200 my-1" />
+      <div className="px-3 py-1 text-[10px] text-gray-400 uppercase tracking-wider">Line Style</div>
+      {(["solid", "dashed", "dotted", "dash-dot"] as LineStyle[]).map((ls) => (
+        <button
+          key={ls}
+          className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 cursor-pointer ${
+            currentLineStyle === ls
+              ? "text-blue-700 bg-blue-50"
+              : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+          }`}
+          onClick={() => setLineStyle(ls)}
+        >
+          <svg width="24" height="8" className="shrink-0">
+            <line
+              x1="0" y1="4" x2="24" y2="4"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeDasharray={LINE_STYLE_DASHARRAY[ls] ?? "none"}
+            />
+          </svg>
+          <span>{LINE_STYLE_LABELS[ls]}</span>
+        </button>
+      ))}
       <div className="h-px bg-gray-200 my-1" />
       <MenuItem label="Go to Source" onClick={() => goToNode(edge?.source)} />
       <MenuItem label="Go to Destination" onClick={() => goToNode(edge?.target)} />
