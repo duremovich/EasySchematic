@@ -196,6 +196,14 @@ function OffsetEdgeComponent({
     const p = edge?.data?.stubSourceEnd;
     return p ? `${p.x},${p.y}` : "";
   });
+  const stubSrcWpStr = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.stubSourceWaypoints?.map((p) => `${p.x},${p.y}`).join("|") ?? "";
+  });
+  const stubTgtWpStr = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.stubTargetWaypoints?.map((p) => `${p.x},${p.y}`).join("|") ?? "";
+  });
   const stubTargetEndStr = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
     const p = edge?.data?.stubTargetEnd;
@@ -557,52 +565,49 @@ function OffsetEdgeComponent({
   // Source exits right (or left if flipped), target exits left (or right if flipped).
   // If a custom endpoint is set, the line goes horizontal to the endpoint X, then vertical
   // to the endpoint Y, always entering the label horizontally.
-  let stubPaths: { srcPath: string; tgtPath: string; srcEnd: {x:number;y:number;dx:number;dy:number}; tgtEnd: {x:number;y:number;dx:number;dy:number} } | null = null;
+  let stubPaths: { srcPath: string; tgtPath: string; srcEnd: {x:number;y:number;dx:number;dy:number}; tgtEnd: {x:number;y:number;dx:number;dy:number}; srcIntermediates: {x:number;y:number}[]; tgtIntermediates: {x:number;y:number}[] } | null = null;
   if (stubbed) {
     const STUB_LEN = 40;
     // Exit direction: use routed direction if available, else assume right for source, left for target
     const srcExitDx = srcDx !== 0 ? srcDx : 1;
     const tgtExitDx = tgtDx !== 0 ? -tgtDx : -1; // tgtDx points INTO the handle, we want OUT
 
-    const buildStub = (hx: number, hy: number, exitDx: number, customEnd: string) => {
-      if (customEnd) {
-        const [ex, ey] = customEnd.split(",").map(Number);
-        // Orthogonal path: horizontal from handle, vertical to target Y, horizontal into label
-        const pts: {x:number;y:number}[] = [{ x: hx, y: hy }];
-        if (hy !== ey) {
-          // Z-shaped: horizontal, then vertical (one grid unit before endpoint), then horizontal into label
-          const inset = GRID_SIZE * exitDx; // one grid unit back from endpoint in exit direction
-          pts.push({ x: ex - inset, y: hy });
-          pts.push({ x: ex - inset, y: ey });
-          pts.push({ x: ex, y: ey });
-        } else {
-          // Straight horizontal
-          pts.push({ x: ex, y: ey });
-        }
-        return { path: pts, dx: exitDx, dy: 0 };
-      }
-      // Default: straight horizontal line of STUB_LEN
-      const endX = hx + exitDx * STUB_LEN;
-      return {
-        path: [{ x: hx, y: hy }, { x: endX, y: hy }],
-        dx: exitDx, dy: 0,
-      };
+    const buildStub = (hx: number, hy: number, exitDx: number, customEnd: string, wpStr: string) => {
+      const endX = customEnd ? Number(customEnd.split(",")[0]) : hx + exitDx * STUB_LEN;
+      const endY = customEnd ? Number(customEnd.split(",")[1]) : hy;
+      const intermediates = wpStr
+        ? wpStr.split("|").map((s) => { const [x, y] = s.split(","); return { x: Number(x), y: Number(y) }; })
+        : [];
+
+      // Build raw points: handle → intermediates → runway → endpoint
+      // The runway ensures a horizontal entry into the label (one grid unit back)
+      const runwayX = endX - exitDx * GRID_SIZE;
+      const needsRunway = endY !== hy || intermediates.length > 0;
+      const rawPts = [
+        { x: hx, y: hy },
+        ...intermediates,
+        ...(needsRunway ? [{ x: runwayX, y: endY }] : []),
+        { x: endX, y: endY },
+      ];
+      // Orthogonalize to ensure clean right-angle paths with proper routing
+      const pts = simplifyWaypoints(orthogonalize(rawPts));
+
+      return { path: pts, dx: exitDx, dy: 0, intermediates };
     };
 
-    const toPath = (pts: {x:number;y:number}[]) =>
-      pts.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-
-    const srcStub = buildStub(sourceX, sourceY, srcExitDx, stubSourceEndStr);
-    const tgtStub = buildStub(targetX, targetY, tgtExitDx, stubTargetEndStr);
+    const srcStub = buildStub(sourceX, sourceY, srcExitDx, stubSourceEndStr, stubSrcWpStr);
+    const tgtStub = buildStub(targetX, targetY, tgtExitDx, stubTargetEndStr, stubTgtWpStr);
 
     const srcEndPt = srcStub.path[srcStub.path.length - 1];
     const tgtEndPt = tgtStub.path[tgtStub.path.length - 1];
 
     stubPaths = {
-      srcPath: toPath(srcStub.path),
-      tgtPath: toPath(tgtStub.path),
+      srcPath: waypointsToSvgPath(srcStub.path),
+      tgtPath: waypointsToSvgPath(tgtStub.path),
       srcEnd: { ...srcEndPt, dx: srcStub.dx, dy: srcStub.dy },
       tgtEnd: { ...tgtEndPt, dx: tgtStub.dx, dy: tgtStub.dy },
+      srcIntermediates: srcStub.intermediates,
+      tgtIntermediates: tgtStub.intermediates,
     };
   }
 
@@ -777,11 +782,36 @@ function OffsetEdgeComponent({
       </EdgeLabelRenderer>
     );
 
+    // Draggable intermediate waypoint handles on stub paths
+    const makeStubWpHandles = (intermediates: {x:number;y:number}[], field: "stubSourceWaypoints" | "stubTargetWaypoints") =>
+      selected && intermediates.length > 0 ? intermediates.map((wp, i) => (
+        <g key={`${field}-${i}`}>
+          <circle cx={wp.x} cy={wp.y} r={5} fill="white" stroke="#1a73e8" strokeWidth={2} style={{ pointerEvents: "none" }} />
+          <circle cx={wp.x} cy={wp.y} r={10} fill="rgba(0,0,0,0.001)" stroke="rgba(0,0,0,0.001)" strokeWidth={4}
+            style={{ cursor: "grab", pointerEvents: "all" }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              const onMove = (me: MouseEvent) => {
+                const fp = rfInstance.screenToFlowPosition({ x: me.clientX, y: me.clientY });
+                const newWps = intermediates.map((w, j) => j === i ? { x: snapToGrid(fp.x), y: snapToGrid(fp.y) } : w);
+                useSchematicStore.getState().patchEdgeData(id, { [field]: newWps });
+              };
+              const onUp = () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+              window.addEventListener("mousemove", onMove);
+              window.addEventListener("mouseup", onUp);
+            }}
+          />
+        </g>
+      )) : null;
+
     return (
       <>
         {gradientDef}
         <path d={stubPaths.srcPath} fill="none" style={edgeStyle} markerEnd={undefined} />
         <path d={stubPaths.tgtPath} fill="none" style={edgeStyle} markerEnd={undefined} />
+        {makeStubWpHandles(stubPaths.srcIntermediates, "stubSourceWaypoints")}
+        {makeStubWpHandles(stubPaths.tgtIntermediates, "stubTargetWaypoints")}
         {stubLabelsPortal}
         {debugLabel}
       </>

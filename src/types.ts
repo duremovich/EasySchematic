@@ -242,6 +242,10 @@ export interface ConnectionData {
   stubSourceEnd?: { x: number; y: number };
   /** Custom position for target stub endpoint (absolute canvas coords) */
   stubTargetEnd?: { x: number; y: number };
+  /** Intermediate waypoints for source stub path */
+  stubSourceWaypoints?: { x: number; y: number }[];
+  /** Intermediate waypoints for target stub path */
+  stubTargetWaypoints?: { x: number; y: number }[];
   /** Allow connection between incompatible connector types (#6) */
   allowIncompatible?: boolean;
   /** When true, hide cable ID labels on this specific connection (#5) */

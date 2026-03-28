@@ -67,6 +67,33 @@ export default function EdgeContextMenu() {
     if (!edge) return;
 
     store.pushSnapshot();
+    const GRID = 20;
+    const newPtSnapped = {
+      x: Math.round(menu.flowX / GRID) * GRID,
+      y: Math.round(menu.flowY / GRID) * GRID,
+    };
+
+    // For stubbed edges, add waypoint to the closer stub (source or target)
+    if (edge.data?.stubbed) {
+      const srcNode = store.nodes.find((n) => n.id === edge.source);
+      const tgtNode = store.nodes.find((n) => n.id === edge.target);
+      const srcX = srcNode?.position.x ?? 0;
+      const tgtX = tgtNode?.position.x ?? 0;
+      const distToSrc = Math.abs(menu.flowX - srcX);
+      const distToTgt = Math.abs(menu.flowX - tgtX);
+      const field = distToSrc <= distToTgt ? "stubSourceWaypoints" : "stubTargetWaypoints";
+      const existing = (field === "stubSourceWaypoints" ? edge.data.stubSourceWaypoints : edge.data.stubTargetWaypoints) ?? [];
+      store.patchEdgeData(menu.edgeId, { [field]: [...existing, newPtSnapped] });
+
+      useSchematicStore.setState({
+        edgeContextMenu: null,
+        edges: useSchematicStore.getState().edges.map((e) => ({
+          ...e,
+          selected: e.id === menu.edgeId,
+        })),
+      });
+      return;
+    }
 
     // Get existing manual waypoints (just user-placed handles, not auto-route copies)
     const manualWps: { x: number; y: number }[] =
@@ -78,22 +105,16 @@ export default function EdgeContextMenu() {
 
     // Project click position onto nearest segment of the current path
     const projected = projectOntoSegments(menu.flowX, menu.flowY, route.waypoints);
-    const GRID = 20;
 
     // For orthogonal segments, lock the fixed axis and snap only the free axis.
-    // Horizontal segment (same Y): lock Y, snap X.
-    // Vertical segment (same X): lock X, snap Y.
     const segStart = route.waypoints[projected.segIdx];
     const segEnd = route.waypoints[projected.segIdx + 1];
     let newPt: { x: number; y: number };
     if (segStart && segEnd && Math.abs(segStart.y - segEnd.y) < 1) {
-      // Horizontal segment — keep Y exactly on the segment
       newPt = { x: Math.round(projected.x / GRID) * GRID, y: segStart.y };
     } else if (segStart && segEnd && Math.abs(segStart.x - segEnd.x) < 1) {
-      // Vertical segment — keep X exactly on the segment
       newPt = { x: segStart.x, y: Math.round(projected.y / GRID) * GRID };
     } else {
-      // Diagonal or other — snap both
       newPt = {
         x: Math.round(projected.x / GRID) * GRID,
         y: Math.round(projected.y / GRID) * GRID,
@@ -101,26 +122,14 @@ export default function EdgeContextMenu() {
     }
 
     if (manualWps.length === 0) {
-      // First handle — just add it
       manualWps.push(newPt);
     } else {
-      // Find insertion position: the projected segment index tells us where
-      // in the full path [source, ...manual, target] the click landed.
-      // segIdx 0 = before manual[0], segIdx 1 = between manual[0] and manual[1], etc.
-      // But the full path waypoints may differ from manual waypoints after simplification.
-      // Simpler approach: insert in order along the path by finding which pair of
-      // existing manual points (or endpoints) the new point falls between.
-      // Use the projected segment index relative to the full path.
-      // Full path = [source, m0, m1, ..., mN, target]
-      // segIdx in full path: 0 = src→m0, 1 = m0→m1, ..., N = mN-1→mN, N+1 = mN→tgt
-      // So insert at manual index = segIdx (clamped to [0, len])
       const insertIdx = Math.max(0, Math.min(projected.segIdx, manualWps.length));
       manualWps.splice(insertIdx, 0, newPt);
     }
 
     store.setManualWaypoints(menu.edgeId, manualWps);
 
-    // Select the edge so the handle is immediately visible
     useSchematicStore.setState({
       edgeContextMenu: null,
       edges: useSchematicStore.getState().edges.map((e) => ({
@@ -134,7 +143,36 @@ export default function EdgeContextMenu() {
     if (!menu) return;
     const store = useSchematicStore.getState();
     const edge = store.edges.find((e) => e.id === menu.edgeId);
-    if (!edge?.data?.manualWaypoints?.length) return;
+    if (!edge) return;
+
+    // For stubbed edges, find closest waypoint across both stubs
+    if (edge.data?.stubbed) {
+      const srcWps = edge.data.stubSourceWaypoints ?? [];
+      const tgtWps = edge.data.stubTargetWaypoints ?? [];
+      let bestField: "stubSourceWaypoints" | "stubTargetWaypoints" | null = null;
+      let bestIdx = 0;
+      let bestDist = Infinity;
+      for (let i = 0; i < srcWps.length; i++) {
+        const d = Math.abs(srcWps[i].x - menu.flowX) + Math.abs(srcWps[i].y - menu.flowY);
+        if (d < bestDist) { bestDist = d; bestIdx = i; bestField = "stubSourceWaypoints"; }
+      }
+      for (let i = 0; i < tgtWps.length; i++) {
+        const d = Math.abs(tgtWps[i].x - menu.flowX) + Math.abs(tgtWps[i].y - menu.flowY);
+        if (d < bestDist) { bestDist = d; bestIdx = i; bestField = "stubTargetWaypoints"; }
+      }
+      if (!bestField || bestDist > 60) {
+        useSchematicStore.setState({ edgeContextMenu: null });
+        return;
+      }
+      store.pushSnapshot();
+      const existing = bestField === "stubSourceWaypoints" ? srcWps : tgtWps;
+      const newWps = existing.filter((_, i) => i !== bestIdx);
+      store.patchEdgeData(menu.edgeId, { [bestField]: newWps.length > 0 ? newWps : undefined });
+      useSchematicStore.setState({ edgeContextMenu: null });
+      return;
+    }
+
+    if (!edge.data?.manualWaypoints?.length) return;
 
     const wps = edge.data.manualWaypoints;
     let bestIdx = 0;
@@ -297,14 +335,15 @@ export default function EdgeContextMenu() {
   const adapterIsHidden = adapterVisibility === "force-hide" || (adapterVisibility === "default" && store.hideAdapters);
 
   let nearWaypoint = false;
-  if (hasManual) {
-    const wps = edge!.data!.manualWaypoints!;
+  const checkNear = (wps: { x: number; y: number }[]) => {
     for (const wp of wps) {
-      if (Math.abs(wp.x - menu.flowX) + Math.abs(wp.y - menu.flowY) < 60) {
-        nearWaypoint = true;
-        break;
-      }
+      if (Math.abs(wp.x - menu.flowX) + Math.abs(wp.y - menu.flowY) < 60) return true;
     }
+    return false;
+  };
+  if (hasManual) nearWaypoint = checkNear(edge!.data!.manualWaypoints!);
+  if (isStubbed) {
+    nearWaypoint = nearWaypoint || checkNear(edge?.data?.stubSourceWaypoints ?? []) || checkNear(edge?.data?.stubTargetWaypoints ?? []);
   }
 
   if (editingLabel) {
