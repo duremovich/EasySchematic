@@ -51,6 +51,7 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   composite: "CO",
   "s-video": "SV",
   vga: "V",
+  dvi: "D",
   power: "P",
   "power-l1": "PL1",
   "power-l2": "PL2",

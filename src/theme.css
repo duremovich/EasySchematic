@@ -31,6 +31,7 @@
   --color-composite: #ca8a04; /* yellow — classic yellow RCA */
   --color-s-video: #b45309;   /* amber — S-Video Y/C */
   --color-vga: #0369a1;       /* dark sky blue — classic VGA blue */
+  --color-dvi: #1e40af;       /* deep blue — DVI video */
   --color-power: #a16207;     /* dark amber — electrical */
   --color-power-l1: #1a1a1a;  /* black — Phase A (L1) */
   --color-power-l2: #cc0000;  /* red — Phase B (L2) */

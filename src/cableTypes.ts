@@ -23,6 +23,7 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   fiber: "Fiber",
   thunderbolt: "Thunderbolt",
   vga: "VGA",
+  dvi: "DVI",
   power: "Power",
   "power-l1": "Cam-Lok",
   "power-l2": "Cam-Lok",

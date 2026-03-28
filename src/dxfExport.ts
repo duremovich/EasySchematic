@@ -24,6 +24,7 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   composite: 40,   // yellow
   "s-video": 40,   // yellow (analog video)
   vga: 150,        // dark sky blue
+  dvi: 171,         // deep blue
   power: 46,         // dark amber
   "power-l1": 250,   // near-black
   "power-l2": 1,     // red

@@ -24,6 +24,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   composite: "bnc",
   "s-video": "mini-din-4",
   vga: "vga",
+  dvi: "dvi",
   power: "iec",
   "power-l1": "cam-lok",
   "power-l2": "cam-lok",
@@ -236,5 +237,5 @@ export const NETWORK_SIGNAL_TYPES: Set<SignalType> = new Set([
 
 /** Signal types that can have video capabilities */
 export const VIDEO_SIGNAL_TYPES: Set<SignalType> = new Set([
-  "sdi", "hdmi", "ndi", "displayport", "hdbaset", "fiber", "thunderbolt", "composite", "vga", "srt", "st2110",
+  "sdi", "hdmi", "ndi", "displayport", "hdbaset", "fiber", "thunderbolt", "composite", "vga", "dvi", "srt", "st2110",
 ]);

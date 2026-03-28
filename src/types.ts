@@ -68,6 +68,7 @@ export type SignalType =
   | "composite"
   | "s-video"
   | "vga"
+  | "dvi"
   | "power"
   | "power-l1"
   | "power-l2"
@@ -440,6 +441,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   composite: "var(--color-composite)",
   "s-video": "var(--color-s-video)",
   vga: "var(--color-vga)",
+  dvi: "var(--color-dvi)",
   power: "var(--color-power)",
   "power-l1": "var(--color-power-l1)",
   "power-l2": "var(--color-power-l2)",
@@ -553,6 +555,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   composite: "Composite",
   "s-video": "S-Video",
   vga: "VGA",
+  dvi: "DVI",
   power: "Power",
   "power-l1": "L1 (Phase A)",
   "power-l2": "L2 (Phase B)",

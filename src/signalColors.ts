@@ -24,6 +24,7 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   composite: "#ca8a04",
   "s-video": "#b45309",
   vga: "#0369a1",
+  dvi: "#1e40af",
   power: "#a16207",
   "power-l1": "#1a1a1a",
   "power-l2": "#cc0000",
