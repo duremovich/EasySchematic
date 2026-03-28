@@ -10,6 +10,8 @@ import type { SchematicNode, ConnectionEdge } from "./types";
 import {
   buildObstacles,
   computeEdgePath,
+  g2px,
+  pixelRectsToGrid,
   px2g,
   simplifyWaypoints,
   waypointsToSvgPath,
@@ -961,6 +963,184 @@ export function routeAllEdges(
   // Stubbed edges should be excluded from crossing detection —
   // their invisible middle sections shouldn't affect other edges.
   const stubbedIds = new Set(edgeEndpoints.filter((ep) => ep.edge.data?.stubbed).map((ep) => ep.edge.id));
+
+  // PHASE 2 — Fan-group track assignment (VLSI channel routing approach)
+  // A* can't solve multi-edge nesting because it routes edges sequentially.
+  // After Phase 1, detect fan groups (edges sharing a target device) and
+  // reassign corridor positions so they nest cleanly: topmost target →
+  // outermost corridor (highest X), bottommost → innermost (lowest X).
+  if (!overBudget) {
+    const g = px2g;
+
+    // Build edge info for fan group detection
+    type FanEdge = { id: string; srcX: number; srcY: number; tgtX: number; tgtY: number; corridorX: number | null; rs: RouteState; ep: EdgeEndpoints };
+    const fanEdges: FanEdge[] = [];
+    for (const rs of routeStates) {
+      const ep = edgeEndpoints.find((e) => e.edge.id === rs.edgeId);
+      if (!ep) continue;
+      if (stubbedIds.has(rs.edgeId)) continue;
+      if (ep.edge.data?.manualWaypoints?.length) continue;
+      const vSegs = rs.segments.filter((s) => s.axis === "v");
+      let corridorX: number | null = null;
+      if (vSegs.length > 0) {
+        const longest = vSegs.reduce((a, b) => Math.abs(a.y2 - a.y1) > Math.abs(b.y2 - b.y1) ? a : b);
+        corridorX = g(longest.x1);
+      }
+      fanEdges.push({ id: rs.edgeId, srcX: g(ep.sourceX), srcY: g(ep.sourceY), tgtX: g(ep.targetX), tgtY: g(ep.targetY), corridorX, rs, ep });
+    }
+
+    // Group by target device (tgtX proximity ≤ 5 grid cells)
+    type FanGroup = { tgtX: number; edges: FanEdge[] };
+    const fanGroups: FanGroup[] = [];
+    for (const fe of fanEdges) {
+      if (fe.corridorX === null) continue;
+      let placed = false;
+      for (const fg of fanGroups) {
+        if (Math.abs(fe.tgtX - fg.tgtX) <= 5) {
+          fg.edges.push(fe);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        fanGroups.push({ tgtX: fe.tgtX, edges: [fe] });
+      }
+    }
+
+    // Process each fan group with 2+ edges
+    const gridRects = pixelRectsToGrid(obs.rects);
+    const isColumnClear = (gx: number, gyMin: number, gyMax: number): boolean => {
+      for (const r of gridRects) {
+        // Skip turn-point obstacles (they'll be removed during rip-up)
+        if (r.nodeId?.startsWith("turn-")) continue;
+        if (gx >= r.left && gx <= r.right && gyMax >= r.top && gyMin <= r.bottom) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    console.log(`[Phase 2] ${fanGroups.length} fan groups detected, sizes: ${fanGroups.map((fg) => fg.edges.length).join(", ")}`);
+
+    for (const fg of fanGroups) {
+      if (fg.edges.length < 2) continue;
+
+      // Sort by target Y ascending → assign corridors from highest X to lowest
+      const sorted = [...fg.edges].sort((a, b) => a.tgtY - b.tgtY);
+
+      // Check if already correctly nested (corridors monotonically decreasing)
+      let alreadyNested = true;
+      for (let i = 1; i < sorted.length; i++) {
+        if (sorted[i].corridorX !== null && sorted[i - 1].corridorX !== null &&
+            sorted[i].corridorX! >= sorted[i - 1].corridorX!) {
+          alreadyNested = false;
+          break;
+        }
+      }
+      console.log(`[Phase 2] Group tgtX=${fg.tgtX}: ${sorted.length} edges, nested=${alreadyNested}, corridors=[${sorted.map((e) => e.corridorX).join(",")}]`);
+      if (alreadyNested) continue;
+
+      // Determine group direction: up-right vs down-right
+      // For down-right: topmost target → highest X (outer near target)
+      // For up-right: topmost target → lowest X (inner near source)
+      const upCount = sorted.filter((e) => e.srcY > e.tgtY).length;
+      const goingUp = upCount > sorted.length / 2;
+
+      const maxTgtX = Math.max(...sorted.map((e) => e.tgtX));
+      const minSrcX = Math.min(...sorted.map((e) => e.srcX));
+
+      const assignments = new Map<string, number>(); // edgeId → assigned corridor X
+
+      if (goingUp) {
+        // Up-right: assign from source side outward (lowest X first)
+        let nextX = minSrcX + 2; // Start just past source device
+        for (const fe of sorted) {
+          const yMin = Math.min(fe.srcY, fe.tgtY);
+          const yMax = Math.max(fe.srcY, fe.tgtY);
+          let assignedX: number | null = null;
+          for (let gx = nextX; gx < maxTgtX - 1; gx++) {
+            if (isColumnClear(gx, yMin, yMax)) {
+              assignedX = gx;
+              break;
+            }
+          }
+          if (assignedX !== null) {
+            assignments.set(fe.id, assignedX);
+            nextX = assignedX + 1;
+          }
+        }
+      } else {
+        // Down-right: assign from target side inward (highest X first)
+        let nextX = maxTgtX - 2;
+        for (const fe of sorted) {
+          const yMin = Math.min(fe.srcY, fe.tgtY);
+          const yMax = Math.max(fe.srcY, fe.tgtY);
+          let assignedX: number | null = null;
+          for (let gx = nextX; gx > minSrcX + 2; gx--) {
+            if (isColumnClear(gx, yMin, yMax)) {
+              assignedX = gx;
+              break;
+            }
+          }
+          if (assignedX !== null) {
+            assignments.set(fe.id, assignedX);
+            nextX = assignedX - 1;
+          }
+        }
+      }
+
+      console.log(`[Phase 2] Assignments: ${[...assignments.entries()].map(([id, x]) => `${id.slice(0, 12)}→x${x}`).join(", ")}`);
+      if (assignments.size === 0) continue;
+
+      // Rip up assigned edges: remove from routeStates and clear turn-point obstacles
+      const assignedIds = new Set(assignments.keys());
+      for (const rs of routeStates) {
+        if (!assignedIds.has(rs.edgeId)) continue;
+        for (let wi = 1; wi < rs.waypoints.length - 1; wi++) {
+          const prev = rs.waypoints[wi - 1];
+          const curr = rs.waypoints[wi];
+          const next = rs.waypoints[wi + 1];
+          if ((prev.x !== next.x) && (prev.y !== next.y)) {
+            const turnId = `turn-${curr.x}-${curr.y}`;
+            for (let oi = obs.rects.length - 1; oi >= 0; oi--) {
+              if (obs.rects[oi].nodeId === turnId) { obs.rects.splice(oi, 1); break; }
+            }
+          }
+        }
+      }
+      const keptStates = routeStates.filter((rs) => !assignedIds.has(rs.edgeId));
+      routeStates.length = 0;
+      routeStates.push(...keptStates);
+
+      // Rebuild L-shapes at assigned positions
+      for (const fe of sorted) {
+        const assignedX = assignments.get(fe.id);
+        if (assignedX === undefined) continue;
+
+        const turnPx = g2px(assignedX);
+        const wp: Point[] = [
+          { x: fe.ep.sourceX, y: fe.ep.sourceY },
+          { x: turnPx, y: fe.ep.sourceY },
+          { x: turnPx, y: fe.ep.targetY },
+          { x: fe.ep.targetX, y: fe.ep.targetY },
+        ];
+        const svgPath = waypointsToSvgPath(wp);
+        const sigType = fe.ep.edge.data?.signalType;
+        routeStates.push({
+          edgeId: fe.id,
+          waypoints: wp,
+          segments: extractSegments(wp),
+          svgPath,
+          labelX: turnPx,
+          labelY: (fe.ep.sourceY + fe.ep.targetY) / 2,
+          turns: `${turnPx},${fe.ep.sourceY} → ${turnPx},${fe.ep.targetY}`,
+          status: "good",
+          signalType: sigType,
+        });
+        blockTurnPoints(wp, obs.rects);
+      }
+    }
+  }
 
   // Detect crossing points between all edge pairs (skip if over budget — cosmetic only).
   // Horizontal edge at a crossing gets an arc (hop over);
