@@ -204,6 +204,15 @@ export default function DeviceEditor() {
     close();
   }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
 
+  // Ctrl+Enter anywhere in the editor → Apply & Close
+  const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
+      handleSave();
+    }
+  }, [handleSave]);
+
   const handleSaveAsTemplate = useCallback(() => {
     const finalPorts: Port[] = ports
       .filter((p) => p.label.trim())
@@ -472,7 +481,7 @@ export default function DeviceEditor() {
   const bidir = ports.filter((p) => p.direction === "bidirectional");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }} onKeyDownCapture={onCtrlEnter}>
       <div
         className="bg-white border border-[var(--color-border)] rounded-lg shadow-2xl w-[560px] max-h-[85vh] flex flex-col"
       >
