@@ -570,8 +570,10 @@ function OffsetEdgeComponent({
         // Orthogonal path: horizontal from handle, vertical to target Y, horizontal into label
         const pts: {x:number;y:number}[] = [{ x: hx, y: hy }];
         if (hy !== ey) {
-          // L-shaped: horizontal to ex, then vertical to ey
-          pts.push({ x: ex, y: hy });
+          // Z-shaped: horizontal, then vertical (one grid unit before endpoint), then horizontal into label
+          const inset = GRID_SIZE * exitDx; // one grid unit back from endpoint in exit direction
+          pts.push({ x: ex - inset, y: hy });
+          pts.push({ x: ex - inset, y: ey });
           pts.push({ x: ex, y: ey });
         } else {
           // Straight horizontal
