@@ -77,10 +77,14 @@ export const CONNECTOR_ACCEPTS: Partial<Record<ConnectorType, ConnectorAcceptanc
   "edison":        { adapter: ["iec", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
 };
 
+/** Bare-wire connectors (no physical connector — cable goes straight in) are compatible with anything */
+const BARE_WIRE_CONNECTORS: Set<ConnectorType> = new Set(["phoenix", "terminal-block"]);
+
 /** Check if two connector types are compatible (same type or one accepts the other) */
 export function areConnectorsCompatible(a: ConnectorType | undefined, b: ConnectorType | undefined): boolean {
   if (!a || !b) return true; // missing connector info = no mismatch
   if (a === b) return true;
+  if (BARE_WIRE_CONNECTORS.has(a) || BARE_WIRE_CONNECTORS.has(b)) return true;
   const aAccepts = CONNECTOR_ACCEPTS[a];
   if (aAccepts?.native?.includes(b) || aAccepts?.adapter?.includes(b)) return true;
   const bAccepts = CONNECTOR_ACCEPTS[b];
@@ -91,6 +95,7 @@ export function areConnectorsCompatible(a: ConnectorType | undefined, b: Connect
 /** Check if a connection between two connector types requires an adapter cable */
 export function needsAdapter(a: ConnectorType | undefined, b: ConnectorType | undefined): boolean {
   if (!a || !b || a === b) return false;
+  if (BARE_WIRE_CONNECTORS.has(a) || BARE_WIRE_CONNECTORS.has(b)) return false;
   if (CONNECTOR_ACCEPTS[a]?.adapter?.includes(b)) return true;
   if (CONNECTOR_ACCEPTS[b]?.adapter?.includes(a)) return true;
   return false;
