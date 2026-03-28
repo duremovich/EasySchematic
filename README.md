@@ -29,6 +29,7 @@
 
 - **Click-to-connect** — click a source handle, preview line follows cursor, snaps to nearby valid targets (green = valid, red = incompatible signal type), click target to connect or click device body to auto-connect first compatible port
 - **Drag-to-connect** with the same preview/snap/validity behavior
+- **Network ports connect in any direction** — Ethernet, Dante, NDI, and other network signal types allow input-to-input and output-to-output connections
 - **Smart edge routing** — A\* pathfinding avoids device crossings with automatic parallel edge nesting
 - **Auto-route toggle** — disable A\* routing for lag-free editing on large schematics; click the status chip in the top-right corner
 - **Manual route editing** — right-click a connection to add draggable waypoints; A\* routes each leg between waypoints while other connections yield
@@ -36,9 +37,10 @@
 - **Multicable support** — cable accessory templates (snakes, socapex), trunk ports, break-in/break-out devices
 - **Cable ID labels** — auto-assigned with type-prefix naming (e.g. "SDI-1", "HDMI-2") or sequential ("Cable 1", "Cable 2")
 - **Line jump arcs** at connection crossings
-- **Stubbed connections** — render as short stubs instead of full routed lines
+- **Stubbed connections** — render as short stubs with destination labels (device name, room, page) instead of full routed lines; drag labels to reposition, add intermediate waypoints via right-click
 - **Connector mismatch override** — force-connect ports with incompatible connectors
-- **40 signal types**, all color-coded (see below)
+- **Bare wire compatibility** — Phoenix and Terminal Block connectors connect to any connector type without adapter warnings
+- **42 signal types**, all color-coded (see below)
 
 ### Ports
 
@@ -60,7 +62,7 @@
 
 ### Signal Types
 
-SDI · HDMI · NDI · Dante · Analog Audio · AES · AES67 · DMX · MADI · USB · Ethernet · Fiber · DisplayPort · HDBaseT · SRT · ST 2110 · Genlock · Word Clock · GPIO · RS-422 · Serial · Thunderbolt · Composite · VGA · RF · Power · L1 · L2 · L3 · Neutral · Ground · MIDI · Tally · S/PDIF · ADAT · YDIF · Ultranet · AES50 · StageConnect · Custom
+SDI · HDMI · NDI · Dante · Analog Audio · AES · AES67 · DMX · MADI · USB · Ethernet · Fiber · DisplayPort · HDBaseT · SRT · ST 2110 · Genlock · Word Clock · GPIO · RS-422 · Serial · Thunderbolt · Composite · VGA · RF · Power · L1 · L2 · L3 · Neutral · Ground · MIDI · Tally · S/PDIF · ADAT · YDIF · Ultranet · AES50 · StageConnect · Art-Net · sACN · Custom
 
 **Signal color panel** — collapsible right sidebar with per-signal color pickers. Custom colors are saved in schematic files and persist across sessions. Reset to defaults anytime.
 
@@ -101,6 +103,7 @@ Responses are JSON, cached for 5 minutes. See the [full API reference](https://d
 
 - **Auto-save** to browser localStorage
 - **Cloud storage** — create a free account to save up to 10 schematics to the cloud and access them from any browser
+- **New file template** — designate any cloud save as your new-file template; File → New loads it with all devices, title block, and settings pre-filled
 - **Sharing** — generate a shareable link for any cloud-saved schematic
 - **JSON import/export** with schema versioning and automatic migrations
 - **CSV cable schedule import** — import cable schedule spreadsheets to auto-generate schematics with device matching
@@ -114,7 +117,7 @@ Responses are JSON, cached for 5 minutes. See the [full API reference](https://d
 
 - **Undo/redo** — full history
 - **Copy/paste** with offset positioning
-- **Double-click device** to open device editor (label, type, ports, presets)
+- **Double-click device** to open device editor (label, type, ports, presets); **Ctrl+Enter** applies and closes from any field
 - **Double-click canvas** to quick-add a device via search dialog
 - **Preferences** — scroll wheel configuration, trackpad support with sensitivity sliders, via Edit menu
 - **Right-click room** for context menu — edit properties (label, colors, border style) or lock/unlock the room

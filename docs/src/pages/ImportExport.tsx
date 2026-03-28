@@ -15,6 +15,20 @@ export default function ImportExportPage() {
         <li>Toggle sharing on any saved schematic in My Schematics to generate a link anyone can open</li>
       </ul>
 
+      <h3>New file template</h3>
+      <p>
+        You can designate any cloud-saved schematic as your <strong>new file template</strong>. When you
+        click <strong>File → New</strong>, the template is loaded with all its devices, title block settings,
+        print layout, and custom devices pre-filled — so you don't have to re-enter the same information every time.
+      </p>
+      <ul>
+        <li>Open <strong>File → My Schematics</strong> and click the <strong>star icon</strong> on any schematic to set it as your template</li>
+        <li>Click the star again to remove the template designation</li>
+        <li>Only one template can be active at a time — setting a new one replaces the old one</li>
+        <li>The template schematic itself is not affected — it stays in your file list as a normal save</li>
+        <li>If no template is set, <strong>File → New</strong> creates a blank schematic as usual</li>
+      </ul>
+
       <h2>JSON (native format)</h2>
       <p>
         The JSON format is EasySchematic's native file format. It contains the complete schematic — all devices,

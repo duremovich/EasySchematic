@@ -30,6 +30,10 @@ export default function ConnectionsPage() {
         <li>
           <strong>Bidirectional</strong> ports connect on one side at a time — connecting one side disables the other
         </li>
+        <li>
+          <strong>Network signal types</strong> (Ethernet, Dante, NDI, SRT, HDBaseT, AES67, ST 2110) can connect
+          in <strong>any direction</strong> — input-to-input, output-to-output, or any combination
+        </li>
       </ul>
 
       <h2>Reconnecting</h2>
@@ -211,6 +215,17 @@ export default function ConnectionsPage() {
         is useful for reducing visual clutter on busy schematics where the routing itself isn't important. Right-click
         a connection and select <strong>Stub Connection</strong> to toggle between stubbed and fully routed display.
       </p>
+      <p>
+        Each stub end displays a <strong>label</strong> showing where the connection goes — the destination device
+        name, room (if applicable), and page number (in print view). Labels are <strong>draggable</strong> — grab
+        and move them to reposition the stub endpoint.
+      </p>
+      <ul>
+        <li>Stub lines follow <strong>orthogonal routing</strong> with curved corners, matching normal connections</li>
+        <li>Right-click a stub to <strong>Add Handle</strong> for intermediate waypoints, just like normal connections</li>
+        <li>Stubbed connections are excluded from <strong>line jump</strong> detection — they won't cause arc markers on other connections</li>
+        <li>Stubbed connections don't generate <strong>page-break crossing labels</strong></li>
+      </ul>
 
       <h2>Connector compatibility</h2>
       <p>
@@ -226,6 +241,10 @@ export default function ConnectionsPage() {
           <strong>Adapter required</strong> — when two ports have the same signal type but different connectors
           (e.g., IEC to Edison, USB-C to USB-A), EasySchematic will prompt you to insert an adapter device
           or auto-insert one if there's a single match.
+        </li>
+        <li>
+          <strong>Bare wire connectors</strong> — Phoenix and Terminal Block connectors are universally compatible
+          with any other connector type, since there's no physical connector — the cable goes straight into the block.
         </li>
       </ul>
 

@@ -197,6 +197,7 @@ export default function DevicesAndPortsPage() {
         <li>Set a custom body color, or use the separate <strong>header color picker</strong> to set the header bar color independently</li>
         <li>Save as a reusable user template, or set it as a project preset</li>
         <li>Revert to the original template defaults or the active preset</li>
+        <li>Press <strong>Ctrl+Enter</strong> (or <strong>Cmd+Enter</strong> on Mac) from any field to apply changes and close the editor</li>
       </ul>
 
       <h2>Port flipping</h2>
