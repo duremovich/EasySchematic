@@ -71,6 +71,7 @@ export const ROUTING_DEFAULTS = {
   OVERLAP_PENALTY: 20,    // full cost for overlapping an existing edge corridor
   SAME_SIGNAL_GAP: 0,
   CROSSING_PENALTY: 12,
+  NESTING_BIAS: 0.05,      // discount per (span × progress) at turns — larger span edges turn further from source
   EARLY_TURN_BIAS: 0,
   PAD: 1,                 // 1 grid cell rim around devices
   GAP: 0,
@@ -370,10 +371,22 @@ export function astarOrthogonal(
       // Distance is always 1 (one grid cell step)
       let g = current.g + 1;
 
-      // Turn penalty
+      // Turn penalty with nesting bias: longer-span edges get a discount
+      // for turning later (further from source), producing correct nesting
+      // where outer edges claim outer corridors.
       if (d !== current.dir && current.dir >= 0) {
         const isUturn = d === ((current.dir + 2) % 4);
-        g += isUturn ? ROUTING_PARAMS.TURN_PENALTY * 5 : ROUTING_PARAMS.TURN_PENALTY;
+        let turnCost = isUturn ? ROUTING_PARAMS.TURN_PENALTY * 5 : ROUTING_PARAMS.TURN_PENALTY;
+        // Nesting discount: larger vertical span → bigger discount for turning
+        // later (further from source). Uses absolute grid coords (startRow/endRow)
+        // so the discount is consistent across edges regardless of per-edge grid size.
+        const hSpan = Math.abs(eci - sci);
+        if (hSpan > 0 && ROUTING_PARAMS.NESTING_BIAS > 0) {
+          const progress = Math.abs(nci - sci) / hSpan; // 0 at source, 1 at target
+          const vSpan = Math.abs(endRow - startRow);
+          turnCost -= ROUTING_PARAMS.NESTING_BIAS * vSpan * progress;
+        }
+        g += turnCost;
       }
 
       // Overlap penalty (grid coordinates)

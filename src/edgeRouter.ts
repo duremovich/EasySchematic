@@ -1062,9 +1062,7 @@ export function routeAllEdges(
     }
   }
 
-  // PHASE 2+3 — Violation detection and re-routing disabled for clean-slate tuning.
-
-  // Stubbed edges should be excluded from crossing/violation detection —
+  // Stubbed edges should be excluded from crossing detection —
   // their invisible middle sections shouldn't affect other edges.
   const stubbedIds = new Set(edgeEndpoints.filter((ep) => ep.edge.data?.stubbed).map((ep) => ep.edge.id));
 

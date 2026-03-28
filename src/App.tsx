@@ -1070,14 +1070,17 @@ function SchematicCanvas() {
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex gap-2">
           <button
             className="bg-blue-600 text-white text-xs px-3 py-1.5 rounded shadow-lg hover:bg-blue-700 font-mono"
-            onClick={() => {
+            onClick={(e) => {
+              const btn = e.currentTarget;
               const report = (window as unknown as Record<string, unknown>).__routingReport;
               if (report) {
                 navigator.clipboard.writeText(JSON.stringify(report, null, 2)).then(() => {
-                  console.log("📋 Routing report copied to clipboard");
+                  btn.textContent = "✓ Copied!";
+                  setTimeout(() => { btn.textContent = "📋 Copy Routing Report"; }, 1500);
                 });
               } else {
-                console.log("No routing report — move a node to trigger routing");
+                btn.textContent = "⚠ No report yet";
+                setTimeout(() => { btn.textContent = "📋 Copy Routing Report"; }, 1500);
               }
             }}
           >

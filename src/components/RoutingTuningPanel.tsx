@@ -19,6 +19,7 @@ const PATHFINDING_PARAMS: ParamDef[] = [
   { key: "CROSSING_PENALTY", label: "Crossing Penalty", min: 0, max: 100, step: 1, defaultValue: PATHFINDING_DEFAULTS.CROSSING_PENALTY, description: "Cost added when a path crosses an existing edge perpendicularly. Accumulates per crossing — 1 crossing costs 1x, 8 crossings costs 8x. Discourages unnecessary crossings without preventing necessary ones like highway intersections." },
   { key: "PAD", label: "Device Padding", min: 0, max: 5, step: 1, defaultValue: PATHFINDING_DEFAULTS.PAD, description: "How many grid cells of blocked space to add around each device. At 1, edges must route at least 20px away from any device border. At 0, edges can hug device edges." },
   { key: "ESCAPE_MARGIN", label: "Escape Margin", min: 0, max: 10, step: 1, defaultValue: PATHFINDING_DEFAULTS.ESCAPE_MARGIN, description: "Extra grid cells added beyond the bounding box of all devices. Gives A* room to route around the outside. Too small = edges get trapped, too large = wasted grid and slower routing." },
+  { key: "NESTING_BIAS", label: "Nesting Bias", min: 0, max: 0.5, step: 0.01, defaultValue: PATHFINDING_DEFAULTS.NESTING_BIAS, description: "Discount at turns proportional to vertical span × horizontal progress. Larger-span edges get more discount for turning later, claiming outer corridors. At 0.05, a span-60 edge gets ~2.7 discount per turn (vs 7 turn penalty). Too high will override crossing penalties." },
 ];
 
 const ORCHESTRATION_PARAMS: ParamDef[] = [
