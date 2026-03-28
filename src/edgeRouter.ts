@@ -375,247 +375,143 @@ function logRoutingReport(
   routeStates: RouteState[],
   edgeEndpoints: EdgeEndpoints[],
 ) {
-  // All coordinates in this report are GRID units (1 unit = 20px cell)
-  const g = px2g; // shorthand
+  // All coordinates in GRID units (1 unit = 20px cell)
+  const g = px2g;
 
-  const allEdges = routeStates.map((rs) => ({
-    edgeId: rs.edgeId,
-    segments: rs.segments,
-  }));
-
-  // Build full crossing matrix
-  const crossings: {
-    edgeA: string;
-    edgeB: string;
-    count: number;
-    points: string[];
-  }[] = [];
-
-  for (let i = 0; i < allEdges.length; i++) {
-    for (let j = i + 1; j < allEdges.length; j++) {
-      const a = allEdges[i];
-      const b = allEdges[j];
-      let crossCount = 0;
-      const crossPts: string[] = [];
-      for (const sa of a.segments) {
-        for (const sb of b.segments) {
-          if (segmentsCross(sa, sb)) {
-            crossCount++;
-            const h = sa.axis === "h" ? sa : sb;
-            const v = sa.axis === "v" ? sa : sb;
-            crossPts.push(`(${g(v.x1)}, ${g(h.y1)})`);
-          }
-        }
-      }
-      if (crossCount > 0) {
-        crossings.push({
-          edgeA: a.edgeId,
-          edgeB: b.edgeId,
-          count: crossCount,
-          points: crossPts,
-        });
-      }
-    }
-  }
-
-  // Build overlap list
-  const overlaps: { edgeA: string; edgeB: string; axis: string }[] = [];
-  for (let i = 0; i < allEdges.length; i++) {
-    for (let j = i + 1; j < allEdges.length; j++) {
-      for (const sa of allEdges[i].segments) {
-        for (const sb of allEdges[j].segments) {
-          if (segmentsOverlap(sa, sb)) {
-            overlaps.push({
-              edgeA: allEdges[i].edgeId,
-              edgeB: allEdges[j].edgeId,
-              axis: sa.axis,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  // Per-edge crossing summary
-  const edgeCrossingSummary = new Map<
-    string,
-    { total: number; pairs: Map<string, number> }
-  >();
+  // --- Build edge info with corridor X ---
+  type EdgeInfo = {
+    id: string;
+    srcX: number; srcY: number;
+    tgtX: number; tgtY: number;
+    corridorX: number | null; // primary vertical corridor, null if straight
+    dir: "down" | "up" | "flat";
+    vSpan: number; // absolute vertical span in grid cells
+    crossings: number;
+  };
+  const edgeInfos: EdgeInfo[] = [];
   for (const rs of routeStates) {
-    edgeCrossingSummary.set(rs.edgeId, { total: 0, pairs: new Map() });
-  }
-  for (const c of crossings) {
-    const a = edgeCrossingSummary.get(c.edgeA)!;
-    const b = edgeCrossingSummary.get(c.edgeB)!;
-    a.total += c.count;
-    a.pairs.set(c.edgeB, c.count);
-    b.total += c.count;
-    b.pairs.set(c.edgeA, c.count);
-  }
-
-  // Sort edges by total crossings (worst offenders first)
-  const sorted = [...edgeCrossingSummary.entries()].sort(
-    (a, b) => b[1].total - a[1].total,
-  );
-
-  // Double-crossings (weaving) — edges that cross the SAME edge 2+ times
-  const weaves = crossings.filter((c) => c.count >= 2);
-
-  console.group(
-    `%c🔀 Edge Routing Report — ${routeStates.length} edges (grid coords, 1 unit = 20px)`,
-    "font-weight:bold; font-size:14px; color:#4fc3f7",
-  );
-
-  // Routing order table
-  const orderData = edgeEndpoints.map((ep, i) => ({
-    "#": i,
-    edge: ep.edge.id,
-    src: `(${g(ep.sourceX)}, ${g(ep.sourceY)})`,
-    tgt: `(${g(ep.targetX)}, ${g(ep.targetY)})`,
-    gSpan: Math.abs(g(ep.targetX) - g(ep.sourceX)),
-    stub: ep.stubSpread,
-  }));
-  console.log("%cRouting order:", "font-weight:bold; color:#81c784");
-  console.table(orderData);
-
-  // Vertical segments per edge (the key diagnostic)
-  console.log(
-    "%cVertical segments (X corridors):",
-    "font-weight:bold; color:#81c784",
-  );
-  for (const rs of routeStates) {
+    const ep = edgeEndpoints.find((e) => e.edge.id === rs.edgeId);
+    if (!ep) continue;
+    const srcX = g(ep.sourceX), srcY = g(ep.sourceY);
+    const tgtX = g(ep.targetX), tgtY = g(ep.targetY);
+    // Primary corridor = longest vertical segment
     const vSegs = rs.segments.filter((s) => s.axis === "v");
-    if (vSegs.length === 0) continue;
-    const desc = vSegs
-      .map(
-        (s) =>
-          `x=${g(s.x1)} y=[${g(Math.min(s.y1, s.y2))}..${g(Math.max(s.y1, s.y2))}]`,
-      )
-      .join(", ");
-    console.log(`  ${rs.edgeId}: ${desc}`);
-  }
-
-  // Crossing summary
-  if (crossings.length > 0) {
-    console.log(
-      "%cCrossings:",
-      "font-weight:bold; color:#ffb74d",
-    );
-    for (const c of crossings) {
-      const icon = c.count >= 2 ? "⚠️ WEAVE" : "✕";
-      console.log(
-        `  ${icon} ${c.edgeA} × ${c.edgeB}: ${c.count}x at ${c.points.join(", ")}`,
+    let corridorX: number | null = null;
+    if (vSegs.length > 0) {
+      const longest = vSegs.reduce((a, b) =>
+        Math.abs(a.y2 - a.y1) > Math.abs(b.y2 - b.y1) ? a : b
       );
+      corridorX = g(longest.x1);
     }
-  } else {
-    console.log("%c✓ No crossings!", "font-weight:bold; color:#66bb6a");
+    const dir = tgtY > srcY ? "down" : tgtY < srcY ? "up" : "flat";
+    edgeInfos.push({ id: rs.edgeId, srcX, srcY, tgtX, tgtY, corridorX, dir, vSpan: Math.abs(tgtY - srcY), crossings: 0 });
   }
 
-  // Overlaps
-  if (overlaps.length > 0) {
-    console.log(
-      "%cOverlaps (shared segments):",
-      "font-weight:bold; color:#ef5350",
-    );
-    for (const o of overlaps) {
-      console.log(`  ${o.edgeA} ↔ ${o.edgeB} (${o.axis})`);
+  // --- Crossing detection ---
+  const weaves: { a: string; b: string; count: number }[] = [];
+  const allSegments = routeStates.map((rs) => ({ id: rs.edgeId, segments: rs.segments }));
+  let totalCrossings = 0;
+  let totalWeaves = 0;
+  for (let i = 0; i < allSegments.length; i++) {
+    for (let j = i + 1; j < allSegments.length; j++) {
+      let count = 0;
+      for (const sa of allSegments[i].segments) {
+        for (const sb of allSegments[j].segments) {
+          if (segmentsCross(sa, sb)) count++;
+        }
+      }
+      if (count > 0) {
+        totalCrossings += count;
+        const ai = edgeInfos.find((e) => e.id === allSegments[i].id);
+        const bi = edgeInfos.find((e) => e.id === allSegments[j].id);
+        if (ai) ai.crossings += count;
+        if (bi) bi.crossings += count;
+        if (count >= 2) {
+          totalWeaves += count;
+          weaves.push({ a: allSegments[i].id, b: allSegments[j].id, count });
+        }
+      }
     }
   }
 
-  // Weaving (the worst kind of violation)
+  // --- Fan group detection ---
+  // Group edges by (srcX, tgtX) proximity — edges within 5 grid cells of each other's src/tgt X
+  type FanGroup = { srcXRange: [number, number]; tgtXRange: [number, number]; edges: EdgeInfo[] };
+  const fanGroups: FanGroup[] = [];
+  for (const ei of edgeInfos) {
+    if (ei.corridorX === null) continue; // skip straight lines
+    let placed = false;
+    for (const fg of fanGroups) {
+      if (Math.abs(ei.srcX - fg.srcXRange[0]) <= 15 && Math.abs(ei.tgtX - fg.tgtXRange[0]) <= 5) {
+        fg.edges.push(ei);
+        fg.srcXRange[0] = Math.min(fg.srcXRange[0], ei.srcX);
+        fg.srcXRange[1] = Math.max(fg.srcXRange[1], ei.srcX);
+        fg.tgtXRange[0] = Math.min(fg.tgtXRange[0], ei.tgtX);
+        fg.tgtXRange[1] = Math.max(fg.tgtXRange[1], ei.tgtX);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      fanGroups.push({ srcXRange: [ei.srcX, ei.srcX], tgtXRange: [ei.tgtX, ei.tgtX], edges: [ei] });
+    }
+  }
+
+  // --- Console output ---
+  console.group(`%c🔀 Routing Report — ${routeStates.length} edges`, "font-weight:bold; font-size:14px; color:#4fc3f7");
+
+  for (const fg of fanGroups) {
+    if (fg.edges.length < 2) continue;
+    const srcDesc = fg.srcXRange[0] === fg.srcXRange[1] ? `x=${fg.srcXRange[0]}` : `x=${fg.srcXRange[0]}..${fg.srcXRange[1]}`;
+    const tgtDesc = fg.tgtXRange[0] === fg.tgtXRange[1] ? `x=${fg.tgtXRange[0]}` : `x=${fg.tgtXRange[0]}..${fg.tgtXRange[1]}`;
+    console.log(`%cFan: ${srcDesc} → ${tgtDesc} (${fg.edges.length} edges)`, "font-weight:bold; color:#81c784");
+    // Sort by target Y for display
+    const sorted = [...fg.edges].sort((a, b) => a.tgtY - b.tgtY);
+    for (const e of sorted) {
+      const cx = e.crossings > 0 ? ` ✗ ${e.crossings}cx` : " ✓";
+      console.log(`  src=(${e.srcX},${e.srcY}) tgt=(${e.tgtX},${e.tgtY}) corridor=x${e.corridorX} ${e.dir} span=${e.vSpan}${cx}`);
+    }
+  }
+
   if (weaves.length > 0) {
-    console.log(
-      "%c⚠️ Double-crossings (weaving):",
-      "font-weight:bold; color:#ef5350; font-size:13px",
-    );
+    console.log(`%cWeaves: ${weaves.length} pairs`, "font-weight:bold; color:#ef5350");
     for (const w of weaves) {
-      const epA = edgeEndpoints.find((e) => e.edge.id === w.edgeA);
-      const epB = edgeEndpoints.find((e) => e.edge.id === w.edgeB);
-      console.log(
-        `  ${w.edgeA} ↔ ${w.edgeB}: ${w.count} crossings at ${w.points.join(", ")}`,
-      );
-      if (epA) {
-        const rsA = routeStates.find((r) => r.edgeId === w.edgeA);
-        console.log(
-          `    ${w.edgeA}: src=(${g(epA.sourceX)},${g(epA.sourceY)}) tgt=(${g(epA.targetX)},${g(epA.targetY)}) turns=[${rsA?.turns}]`,
-        );
-      }
-      if (epB) {
-        const rsB = routeStates.find((r) => r.edgeId === w.edgeB);
-        console.log(
-          `    ${w.edgeB}: src=(${g(epB.sourceX)},${g(epB.sourceY)}) tgt=(${g(epB.targetX)},${g(epB.targetY)}) turns=[${rsB?.turns}]`,
-        );
-      }
+      console.log(`  ${w.a} ↔ ${w.b}: ${w.count}x`);
     }
   }
 
-  // Worst offenders
-  const worstOffenders = sorted.filter(([, v]) => v.total > 0);
-  if (worstOffenders.length > 0) {
-    console.log(
-      "%cWorst offenders (by total crossings):",
-      "font-weight:bold; color:#ffb74d",
-    );
-    for (const [edgeId, summary] of worstOffenders.slice(0, 10)) {
-      const pairStr = [...summary.pairs.entries()]
-        .sort((a, b) => b[1] - a[1])
-        .map(([id, n]) => `${id}(${n}x)`)
-        .join(", ");
-      console.log(`  ${edgeId}: ${summary.total} crossings — ${pairStr}`);
-    }
-  }
-
-  const totalCrossings = crossings.reduce((sum, c) => sum + c.count, 0);
-  const totalWeaves = weaves.reduce((sum, w) => sum + w.count, 0);
   console.log(
-    `%cSummary: ${totalCrossings} total crossings, ${totalWeaves} weave crossings, ${overlaps.length} overlaps`,
+    `%cSummary: ${totalCrossings} crossings, ${totalWeaves} weave crossings`,
     `font-weight:bold; color:${totalWeaves > 0 ? "#ef5350" : totalCrossings > 0 ? "#ffb74d" : "#66bb6a"}`,
   );
-
   console.groupEnd();
 
-  // Stash compact report on window for clipboard copy
+  // --- Clipboard report (compact, fan-group focused) ---
   const report = {
     edgeCount: routeStates.length,
-    coordSystem: "grid (1 unit = 20px)",
-    routingOrder: orderData,
-    verticalSegments: routeStates
-      .map((rs) => {
-        const vSegs = rs.segments.filter((s) => s.axis === "v");
-        if (vSegs.length === 0) return null;
-        return {
-          edge: rs.edgeId,
-          corridors: vSegs.map((s) => ({
-            x: g(s.x1),
-            yMin: g(Math.min(s.y1, s.y2)),
-            yMax: g(Math.max(s.y1, s.y2)),
-          })),
-        };
-      })
-      .filter(Boolean),
-    crossings: crossings.map((c) => ({
-      edges: [c.edgeA, c.edgeB],
-      count: c.count,
-      at: c.points,
-      weave: c.count >= 2,
+    grid: "1 unit = 20px",
+    summary: { crossings: totalCrossings, weaves: totalWeaves },
+    fanGroups: fanGroups.filter((fg) => fg.edges.length >= 2).map((fg) => ({
+      src: fg.srcXRange[0] === fg.srcXRange[1] ? fg.srcXRange[0] : fg.srcXRange,
+      tgt: fg.tgtXRange[0] === fg.tgtXRange[1] ? fg.tgtXRange[0] : fg.tgtXRange,
+      edges: [...fg.edges].sort((a, b) => a.tgtY - b.tgtY).map((e) => ({
+        id: e.id,
+        srcY: e.srcY,
+        tgtY: e.tgtY,
+        corridor: e.corridorX,
+        dir: e.dir,
+        span: e.vSpan,
+        crossings: e.crossings,
+      })),
     })),
-    overlaps,
-    worstOffenders: worstOffenders.slice(0, 10).map(([edgeId, summary]) => ({
-      edge: edgeId,
-      totalCrossings: summary.total,
-      pairs: Object.fromEntries(summary.pairs),
+    weaves: weaves.map((w) => ({ edges: [w.a, w.b], count: w.count })),
+    soloEdges: edgeInfos.filter((e) => e.corridorX !== null && !fanGroups.some((fg) => fg.edges.length >= 2 && fg.edges.includes(e))).map((e) => ({
+      id: e.id,
+      src: { x: e.srcX, y: e.srcY },
+      tgt: { x: e.tgtX, y: e.tgtY },
+      corridor: e.corridorX,
+      crossings: e.crossings,
     })),
-    summary: { totalCrossings, weaves: totalWeaves, overlaps: overlaps.length },
-    edges: routeStates.map((rs) => {
-      const ep = edgeEndpoints.find((e) => e.edge.id === rs.edgeId);
-      return {
-        id: rs.edgeId,
-        src: ep ? { x: g(ep.sourceX), y: g(ep.sourceY) } : null,
-        tgt: ep ? { x: g(ep.targetX), y: g(ep.targetY) } : null,
-        turns: rs.turns,
-        waypoints: rs.waypoints.map((p) => ({ x: g(p.x), y: g(p.y) })),
-      };
-    }),
   };
   (window as unknown as Record<string, unknown>).__routingReport = report;
 }

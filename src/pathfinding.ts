@@ -71,7 +71,7 @@ export const ROUTING_DEFAULTS = {
   OVERLAP_PENALTY: 20,    // full cost for overlapping an existing edge corridor
   SAME_SIGNAL_GAP: 0,
   CROSSING_PENALTY: 12,
-  NESTING_BIAS: 0.05,      // discount per (span × progress) at turns — larger span edges turn further from source
+  NESTING_BIAS: 0,         // disabled — needs topology-aware direction, revisiting later
   EARLY_TURN_BIAS: 0,
   PAD: 1,                 // 1 grid cell rim around devices
   GAP: 0,
