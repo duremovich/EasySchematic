@@ -10,6 +10,7 @@ import type { SchematicNode, ConnectionEdge } from "./types";
 import {
   buildObstacles,
   computeEdgePath,
+  px2g,
   simplifyWaypoints,
   waypointsToSvgPath,
   waypointsToSvgPathWithHops,
@@ -108,7 +109,7 @@ export const ROUTER_DEFAULTS = {
   Y_GAP_THRESHOLD: 50,
   STUB_GAP: 0,          // no stub spread — start simple
   /** Edge sort strategy: 0=default(signal-type→shortest→position), 1=longest-first, 2=most-connected-first */
-  SORT_STRATEGY: 0 as number,
+  SORT_STRATEGY: 1 as number,
 };
 
 /** Live-overridable via window.__routingParams for debug tuning. */
@@ -324,17 +325,17 @@ export function buildPenaltyZones(
       if (seg.axis === "v") {
         zones.push({
           axis: "v",
-          coordinate: seg.x1,
-          rangeMin: Math.min(seg.y1, seg.y2),
-          rangeMax: Math.max(seg.y1, seg.y2),
+          coordinate: px2g(seg.x1),
+          rangeMin: px2g(Math.min(seg.y1, seg.y2)),
+          rangeMax: px2g(Math.max(seg.y1, seg.y2)),
           signalType: edge.signalType,
         });
       } else {
         zones.push({
           axis: "h",
-          coordinate: seg.y1,
-          rangeMin: Math.min(seg.x1, seg.x2),
-          rangeMax: Math.max(seg.x1, seg.x2),
+          coordinate: px2g(seg.y1),
+          rangeMin: px2g(Math.min(seg.x1, seg.x2)),
+          rangeMax: px2g(Math.max(seg.x1, seg.x2)),
           signalType: edge.signalType,
         });
       }
@@ -374,6 +375,9 @@ function logRoutingReport(
   routeStates: RouteState[],
   edgeEndpoints: EdgeEndpoints[],
 ) {
+  // All coordinates in this report are GRID units (1 unit = 20px cell)
+  const g = px2g; // shorthand
+
   const allEdges = routeStates.map((rs) => ({
     edgeId: rs.edgeId,
     segments: rs.segments,
@@ -397,10 +401,9 @@ function logRoutingReport(
         for (const sb of b.segments) {
           if (segmentsCross(sa, sb)) {
             crossCount++;
-            // Find intersection point
             const h = sa.axis === "h" ? sa : sb;
             const v = sa.axis === "v" ? sa : sb;
-            crossPts.push(`(${v.x1}, ${h.y1})`);
+            crossPts.push(`(${g(v.x1)}, ${g(h.y1)})`);
           }
         }
       }
@@ -459,7 +462,7 @@ function logRoutingReport(
   const weaves = crossings.filter((c) => c.count >= 2);
 
   console.group(
-    `%c🔀 Edge Routing Report — ${routeStates.length} edges`,
+    `%c🔀 Edge Routing Report — ${routeStates.length} edges (grid coords, 1 unit = 20px)`,
     "font-weight:bold; font-size:14px; color:#4fc3f7",
   );
 
@@ -467,9 +470,9 @@ function logRoutingReport(
   const orderData = edgeEndpoints.map((ep, i) => ({
     "#": i,
     edge: ep.edge.id,
-    src: `(${Math.round(ep.sourceX)}, ${Math.round(ep.sourceY)})`,
-    tgt: `(${Math.round(ep.targetX)}, ${Math.round(ep.targetY)})`,
-    xSpan: Math.round(Math.abs(ep.targetX - ep.sourceX)),
+    src: `(${g(ep.sourceX)}, ${g(ep.sourceY)})`,
+    tgt: `(${g(ep.targetX)}, ${g(ep.targetY)})`,
+    gSpan: Math.abs(g(ep.targetX) - g(ep.sourceX)),
     stub: ep.stubSpread,
   }));
   console.log("%cRouting order:", "font-weight:bold; color:#81c784");
@@ -486,7 +489,7 @@ function logRoutingReport(
     const desc = vSegs
       .map(
         (s) =>
-          `x=${Math.round(s.x1)} y=[${Math.round(Math.min(s.y1, s.y2))}..${Math.round(Math.max(s.y1, s.y2))}]`,
+          `x=${g(s.x1)} y=[${g(Math.min(s.y1, s.y2))}..${g(Math.max(s.y1, s.y2))}]`,
       )
       .join(", ");
     console.log(`  ${rs.edgeId}: ${desc}`);
@@ -534,13 +537,13 @@ function logRoutingReport(
       if (epA) {
         const rsA = routeStates.find((r) => r.edgeId === w.edgeA);
         console.log(
-          `    ${w.edgeA}: src=(${Math.round(epA.sourceX)},${Math.round(epA.sourceY)}) tgt=(${Math.round(epA.targetX)},${Math.round(epA.targetY)}) turns=[${rsA?.turns}]`,
+          `    ${w.edgeA}: src=(${g(epA.sourceX)},${g(epA.sourceY)}) tgt=(${g(epA.targetX)},${g(epA.targetY)}) turns=[${rsA?.turns}]`,
         );
       }
       if (epB) {
         const rsB = routeStates.find((r) => r.edgeId === w.edgeB);
         console.log(
-          `    ${w.edgeB}: src=(${Math.round(epB.sourceX)},${Math.round(epB.sourceY)}) tgt=(${Math.round(epB.targetX)},${Math.round(epB.targetY)}) turns=[${rsB?.turns}]`,
+          `    ${w.edgeB}: src=(${g(epB.sourceX)},${g(epB.sourceY)}) tgt=(${g(epB.targetX)},${g(epB.targetY)}) turns=[${rsB?.turns}]`,
         );
       }
     }
@@ -571,9 +574,10 @@ function logRoutingReport(
 
   console.groupEnd();
 
-  // Stash compact report on window for Ctrl+Shift+B clipboard copy
+  // Stash compact report on window for clipboard copy
   const report = {
     edgeCount: routeStates.length,
+    coordSystem: "grid (1 unit = 20px)",
     routingOrder: orderData,
     verticalSegments: routeStates
       .map((rs) => {
@@ -582,9 +586,9 @@ function logRoutingReport(
         return {
           edge: rs.edgeId,
           corridors: vSegs.map((s) => ({
-            x: Math.round(s.x1),
-            yMin: Math.round(Math.min(s.y1, s.y2)),
-            yMax: Math.round(Math.max(s.y1, s.y2)),
+            x: g(s.x1),
+            yMin: g(Math.min(s.y1, s.y2)),
+            yMax: g(Math.max(s.y1, s.y2)),
           })),
         };
       })
@@ -606,17 +610,10 @@ function logRoutingReport(
       const ep = edgeEndpoints.find((e) => e.edge.id === rs.edgeId);
       return {
         id: rs.edgeId,
-        src: ep
-          ? { x: Math.round(ep.sourceX), y: Math.round(ep.sourceY) }
-          : null,
-        tgt: ep
-          ? { x: Math.round(ep.targetX), y: Math.round(ep.targetY) }
-          : null,
+        src: ep ? { x: g(ep.sourceX), y: g(ep.sourceY) } : null,
+        tgt: ep ? { x: g(ep.targetX), y: g(ep.targetY) } : null,
         turns: rs.turns,
-        waypoints: rs.waypoints.map((p) => ({
-          x: Math.round(p.x),
-          y: Math.round(p.y),
-        })),
+        waypoints: rs.waypoints.map((p) => ({ x: g(p.x), y: g(p.y) })),
       };
     }),
   };

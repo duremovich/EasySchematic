@@ -70,7 +70,7 @@ export const ROUTING_DEFAULTS = {
   CROSS_TYPE_SEPARATION: 0,
   OVERLAP_PENALTY: 20,    // full cost for overlapping an existing edge corridor
   SAME_SIGNAL_GAP: 0,
-  CROSSING_PENALTY: 0,
+  CROSSING_PENALTY: 12,
   EARLY_TURN_BIAS: 0,
   PAD: 1,                 // 1 grid cell rim around devices
   GAP: 0,
@@ -405,6 +405,31 @@ export function astarOrthogonal(
                 if (segMax > pz.rangeMin && segMin < pz.rangeMax) {
                   const closeness = 1 - dist / ROUTING_PARAMS.SEPARATION_PX;
                   g += ROUTING_PARAMS.OVERLAP_PENALTY * closeness * closeness;
+                }
+              }
+            }
+
+            // Crossing penalty — perpendicular movement across an existing edge segment
+            if (ROUTING_PARAMS.CROSSING_PENALTY > 0) {
+              if (pz.axis === "v" && (d === 0 || d === 2)) {
+                // Moving horizontally, check if we step across a vertical segment
+                const minX = Math.min(cgx, ngx);
+                const maxX = Math.max(cgx, ngx);
+                if (pz.coordinate >= minX && pz.coordinate <= maxX) {
+                  // Our Y must be within the segment's Y range
+                  if (ngy >= pz.rangeMin && ngy <= pz.rangeMax) {
+                    g += ROUTING_PARAMS.CROSSING_PENALTY;
+                  }
+                }
+              } else if (pz.axis === "h" && (d === 1 || d === 3)) {
+                // Moving vertically, check if we step across a horizontal segment
+                const minY = Math.min(cgy, ngy);
+                const maxY = Math.max(cgy, ngy);
+                if (pz.coordinate >= minY && pz.coordinate <= maxY) {
+                  // Our X must be within the segment's X range
+                  if (ngx >= pz.rangeMin && ngx <= pz.rangeMax) {
+                    g += ROUTING_PARAMS.CROSSING_PENALTY;
+                  }
                 }
               }
             }

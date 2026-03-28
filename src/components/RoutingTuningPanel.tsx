@@ -16,6 +16,7 @@ interface ParamDef {
 
 const PATHFINDING_PARAMS: ParamDef[] = [
   { key: "TURN_PENALTY", label: "Turn Penalty", min: 0, max: 50, step: 1, defaultValue: PATHFINDING_DEFAULTS.TURN_PENALTY, description: "Extra cost added each time A* makes a 90° turn. Higher = straighter paths with fewer bends. Lower = shorter paths that bend freely. Also affects U-turns at 5x and the heuristic." },
+  { key: "CROSSING_PENALTY", label: "Crossing Penalty", min: 0, max: 100, step: 1, defaultValue: PATHFINDING_DEFAULTS.CROSSING_PENALTY, description: "Cost added when a path crosses an existing edge perpendicularly. Accumulates per crossing — 1 crossing costs 1x, 8 crossings costs 8x. Discourages unnecessary crossings without preventing necessary ones like highway intersections." },
   { key: "PAD", label: "Device Padding", min: 0, max: 5, step: 1, defaultValue: PATHFINDING_DEFAULTS.PAD, description: "How many grid cells of blocked space to add around each device. At 1, edges must route at least 20px away from any device border. At 0, edges can hug device edges." },
   { key: "ESCAPE_MARGIN", label: "Escape Margin", min: 0, max: 10, step: 1, defaultValue: PATHFINDING_DEFAULTS.ESCAPE_MARGIN, description: "Extra grid cells added beyond the bounding box of all devices. Gives A* room to route around the outside. Too small = edges get trapped, too large = wasted grid and slower routing." },
 ];
