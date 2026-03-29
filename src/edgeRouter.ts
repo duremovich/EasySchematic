@@ -552,29 +552,6 @@ function buildTitleBlockObstacles(
   return rects;
 }
 
-/**
- * After routing an edge, add its turn points as obstacle rects so
- * subsequent edges can't use those grid points. Each turn point becomes
- * a single-pixel obstacle that covers the exact grid cell.
- */
-function blockTurnPoints(waypoints: Point[], obstacleRects: Rect[]) {
-  for (let i = 1; i < waypoints.length - 1; i++) {
-    const prev = waypoints[i - 1];
-    const curr = waypoints[i];
-    const next = waypoints[i + 1];
-    const isTurn = (prev.x !== next.x) && (prev.y !== next.y);
-    if (isTurn) {
-      // Create a rect that exactly covers the grid cell at this pixel position
-      obstacleRects.push({
-        left: curr.x,
-        top: curr.y,
-        right: curr.x,
-        bottom: curr.y,
-        nodeId: `turn-${curr.x}-${curr.y}`,
-      });
-    }
-  }
-}
 
 // ---------- Main routing function ----------
 
@@ -591,10 +568,9 @@ export function routeAllEdges(
   rfInstance: ReactFlowInstance,
   debug?: boolean,
   printConfig?: PrintConfig,
-  timeBudgetMs: number = DEFAULT_TIME_BUDGET_MS,
+  _timeBudgetMs: number = DEFAULT_TIME_BUDGET_MS,
 ): RouteAllResult {
-  const startTime = performance.now();
-  let overBudget = false;
+  const overBudget = false;
   // Build handle position map
   const handleMap = new Map<string, HandlePos>();
   for (const node of nodes) {
@@ -716,218 +692,549 @@ export function routeAllEdges(
   });
 
   const results: Record<string, RoutedEdge> = {};
-
-  // PHASE 1 — Incremental routing (each edge aware of previously routed edges)
-  // Edges are sorted top-to-bottom so upper edges claim corridors first,
-  // and subsequent edges route around them via penalty zones.
   const routeStates: RouteState[] = [];
 
+  // Stubbed edges should be excluded from crossing detection —
+  // their invisible middle sections shouldn't affect other edges.
+  const stubbedIds = new Set(edgeEndpoints.filter((ep) => ep.edge.data?.stubbed).map((ep) => ep.edge.id));
+
+  // ---------- Route manual edges first (unchanged — they get a clean slate) ----------
+  const manualEndpoints: EdgeEndpoints[] = [];
+  const autoEndpoints: EdgeEndpoints[] = [];
   for (const ep of edgeEndpoints) {
+    if (ep.edge.data?.manualWaypoints?.length) {
+      manualEndpoints.push(ep);
+    } else {
+      autoEndpoints.push(ep);
+    }
+  }
+
+  for (const ep of manualEndpoints) {
     const sigType = ep.edge.data?.signalType;
-
-    // Build penalties from all edges routed so far
     const penalties = buildPenaltyZones(routeStates);
+    const manualWps = ep.edge.data?.manualWaypoints!;
 
-    // Manual waypoints — A* route each leg between user-placed handles
-    const manualWps = ep.edge.data?.manualWaypoints;
-    if (manualWps && manualWps.length >= 1) {
-      // Build legs: source→h1, h1→h2, ..., hN→target
-      const allPoints = [
-        { x: ep.sourceX, y: ep.sourceY },
-        ...manualWps,
-        { x: ep.targetX, y: ep.targetY },
-      ];
+    const allPoints = [
+      { x: ep.sourceX, y: ep.sourceY },
+      ...manualWps,
+      { x: ep.targetX, y: ep.targetY },
+    ];
 
-      const allWaypoints: Point[] = [];
-      let allFailed = false;
-      let prevArrivalDir: number | undefined;
+    const allWaypoints: Point[] = [];
+    let allFailed = false;
+    let prevArrivalDir: number | undefined;
 
-      // Pre-compute the ideal exit direction at each handle by looking ahead
-      // to the next point. This direction is "reserved" for the outgoing leg,
-      // so the incoming leg must arrive from a different side.
-      // Index i corresponds to allPoints[i] (handles are indices 1..N-1).
-      const reservedExitDir: (number | undefined)[] = new Array(allPoints.length).fill(undefined);
-      for (let i = 1; i < allPoints.length - 1; i++) {
-        const handle = allPoints[i];
-        const next = allPoints[i + 1];
-        const dx = next.x - handle.x;
-        const dy = next.y - handle.y;
-        // Pick the dominant axis direction toward the next point
-        if (Math.abs(dx) >= Math.abs(dy)) {
-          reservedExitDir[i] = dx >= 0 ? 0 : 2; // RIGHT or LEFT
-        } else {
-          reservedExitDir[i] = dy >= 0 ? 1 : 3; // DOWN or UP
-        }
+    const reservedExitDir: (number | undefined)[] = new Array(allPoints.length).fill(undefined);
+    for (let i = 1; i < allPoints.length - 1; i++) {
+      const handle = allPoints[i];
+      const next = allPoints[i + 1];
+      const dx = next.x - handle.x;
+      const dy = next.y - handle.y;
+      if (Math.abs(dx) >= Math.abs(dy)) {
+        reservedExitDir[i] = dx >= 0 ? 0 : 2;
+      } else {
+        reservedExitDir[i] = dy >= 0 ? 1 : 3;
       }
+    }
 
-      const lastLeg = allPoints.length - 2;
-      for (let leg = 0; leg < allPoints.length - 1; leg++) {
-        const from = allPoints[leg];
-        const to = allPoints[leg + 1];
+    const lastLeg = allPoints.length - 2;
+    for (let leg = 0; leg < allPoints.length - 1; leg++) {
+      const from = allPoints[leg];
+      const to = allPoints[leg + 1];
+      const isFirstLeg = leg === 0;
+      const isLastLeg = leg === lastLeg;
+      const spread = isFirstLeg ? ep.stubSpread : 0;
+      const noSourceStub = !isFirstLeg;
+      const noTargetStub = !isLastLeg;
 
-        const isFirstLeg = leg === 0;
-        const isLastLeg = leg === lastLeg;
+      const excludeDir = prevArrivalDir !== undefined ? (prevArrivalDir + 2) % 4 : undefined;
+      const reserved = reservedExitDir[leg + 1];
+      const reservedAtTarget = reserved !== undefined ? (reserved + 2) % 4 : undefined;
 
-        const spread = isFirstLeg ? ep.stubSpread : 0;
-        const noSourceStub = !isFirstLeg;
-        const noTargetStub = !isLastLeg;
+      let legResult = computeEdgePath(
+        from.x, from.y, to.x, to.y,
+        obs.rects, 0, spread,
+        penalties.length > 0 ? penalties : undefined,
+        sigType, noSourceStub, noTargetStub, excludeDir, reservedAtTarget,
+      );
 
-        // Two constraints prevent doubling back at handles:
-        // 1. Don't START in the reverse of the previous leg's arrival direction
-        const excludeDir = prevArrivalDir !== undefined
-          ? (prevArrivalDir + 2) % 4
-          : undefined;
-        // 2. Don't ARRIVE from the opposite of the reserved exit direction.
-        //    If the reserved exit is RIGHT(0), arriving LEFT(2) would cause
-        //    the next leg's U-turn prevention to block RIGHT — the exact
-        //    direction it needs. So exclude arriving in (reservedExit+2)%4.
-        const reserved = reservedExitDir[leg + 1];
-        const reservedAtTarget = reserved !== undefined
-          ? (reserved + 2) % 4
-          : undefined;
-
-        // Manual edges route first in the sort order, so penalties here
-        // are empty or only from other manual edges — giving them a clean slate.
-        // Auto edges route later and see the manual edge penalty zones.
-        let legResult = computeEdgePath(
+      if (!legResult) {
+        const excludeSet = new Set([ep.edge.source, ep.edge.target]);
+        const relaxedRects = obs.rects.filter((r) => !r.nodeId || !excludeSet.has(r.nodeId));
+        legResult = computeEdgePath(
           from.x, from.y, to.x, to.y,
-          obs.rects, 0, spread,
+          relaxedRects, 0, spread,
           penalties.length > 0 ? penalties : undefined,
-          sigType,
-          noSourceStub,
-          noTargetStub,
-          excludeDir,
-          reservedAtTarget,
+          sigType, noSourceStub, noTargetStub, excludeDir, reservedAtTarget,
         );
+      }
 
-        // Retry with relaxed obstacles if A* fails (filter cached list instead of rebuilding)
-        if (!legResult) {
-          const excludeSet = new Set([ep.edge.source, ep.edge.target]);
-          const relaxedRects = obs.rects.filter((r) => !r.nodeId || !excludeSet.has(r.nodeId));
-          legResult = computeEdgePath(
-            from.x, from.y, to.x, to.y,
-            relaxedRects, 0, spread,
-            penalties.length > 0 ? penalties : undefined,
-            sigType,
-            noSourceStub,
-            noTargetStub,
-            excludeDir,
-            reservedAtTarget,
-          );
-        }
-
-        if (legResult) {
-          prevArrivalDir = legResult.arrivalDir;
-          // Concatenate waypoints, skip first point of subsequent legs (it's the
-          // same as the last point of the previous leg)
-          if (allWaypoints.length > 0) {
-            allWaypoints.push(...legResult.waypoints.slice(1));
-          } else {
-            allWaypoints.push(...legResult.waypoints);
-          }
+      if (legResult) {
+        prevArrivalDir = legResult.arrivalDir;
+        if (allWaypoints.length > 0) {
+          allWaypoints.push(...legResult.waypoints.slice(1));
         } else {
-          allFailed = true;
-          break;
+          allWaypoints.push(...legResult.waypoints);
         }
+      } else {
+        allFailed = true;
+        break;
       }
+    }
 
-      if (!allFailed && allWaypoints.length >= 2) {
-        // Don't simplify the concatenated path — simplifyWaypoints removes collinear
-        // points, which can eliminate the manual handle positions when they happen
-        // to be collinear with adjacent A* waypoints. Each leg is already simplified
-        // internally by computeEdgePath.
-        const svgPath = waypointsToSvgPath(allWaypoints);
-        const segments = extractSegments(allWaypoints);
-        const midIdx = Math.floor(allWaypoints.length / 2);
-
-        routeStates.push({
-          edgeId: ep.edge.id,
-          waypoints: allWaypoints,
-          segments,
-          svgPath,
-          labelX: allWaypoints[midIdx]?.x ?? ep.sourceX,
-          labelY: allWaypoints[midIdx]?.y ?? ep.sourceY,
-          turns: "manual",
-          status: "good",
-          signalType: sigType,
-        });
-        continue;
-      }
-
-      // Fallback: orthogonalize if A* failed on any leg
-      const fallbackWp = simplifyWaypoints(orthogonalize(allPoints));
-      const fbSvg = waypointsToSvgPath(fallbackWp);
-      const fbSegs = extractSegments(fallbackWp);
-      const fbMid = Math.floor(fallbackWp.length / 2);
+    if (!allFailed && allWaypoints.length >= 2) {
+      const svgPath = waypointsToSvgPath(allWaypoints);
+      const segments = extractSegments(allWaypoints);
+      const midIdx = Math.floor(allWaypoints.length / 2);
       routeStates.push({
-        edgeId: ep.edge.id,
-        waypoints: fallbackWp,
-        segments: fbSegs,
-        svgPath: fbSvg,
-        labelX: fallbackWp[fbMid]?.x ?? ep.sourceX,
-        labelY: fallbackWp[fbMid]?.y ?? ep.sourceY,
-        turns: "manual-fallback",
-        status: "good",
-        signalType: sigType,
+        edgeId: ep.edge.id, waypoints: allWaypoints, segments, svgPath,
+        labelX: allWaypoints[midIdx]?.x ?? ep.sourceX,
+        labelY: allWaypoints[midIdx]?.y ?? ep.sourceY,
+        turns: "manual", status: "good", signalType: sigType,
       });
       continue;
     }
 
-    let result = computeEdgePath(
-      ep.sourceX,
-      ep.sourceY,
-      ep.targetX,
-      ep.targetY,
-      obs.rects,
-      0,
-      ep.stubSpread,
-      penalties.length > 0 ? penalties : undefined,
-      sigType,
-      undefined, undefined, undefined, undefined, undefined,
-      ep.sourceExitsRight,
-      ep.targetEntersLeft,
-    );
+    const fallbackWp = simplifyWaypoints(orthogonalize(allPoints));
+    const fbSvg = waypointsToSvgPath(fallbackWp);
+    const fbSegs = extractSegments(fallbackWp);
+    const fbMid = Math.floor(fallbackWp.length / 2);
+    routeStates.push({
+      edgeId: ep.edge.id, waypoints: fallbackWp, segments: fbSegs, svgPath: fbSvg,
+      labelX: fallbackWp[fbMid]?.x ?? ep.sourceX,
+      labelY: fallbackWp[fbMid]?.y ?? ep.sourceY,
+      turns: "manual-fallback", status: "good", signalType: sigType,
+    });
+  }
 
-    // If A* fails (often because endpoint devices' padded rects block the corridor),
-    // retry with endpoint devices excluded from obstacles so the edge can route
-    // through the visible gap between the devices it connects.
-    if (!result) {
-      const excludeSet2 = new Set([ep.edge.source, ep.edge.target]);
-      const relaxedRects2 = obs.rects.filter((r) => !r.nodeId || !excludeSet2.has(r.nodeId));
-      result = computeEdgePath(
-        ep.sourceX,
-        ep.sourceY,
-        ep.targetX,
-        ep.targetY,
-        relaxedRects2,
-        0,
-        ep.stubSpread,
-        penalties.length > 0 ? penalties : undefined,
-        sigType,
-        undefined, undefined, undefined, undefined, undefined,
-        ep.sourceExitsRight,
-        ep.targetEntersLeft,
-      );
+  // ---------- PHASE 0: Column-First Allocation ----------
+  // Instead of sequential A* where each edge fights for space, assign vertical
+  // corridor columns globally so no two edges share the same X. This guarantees
+  // no shared verticals and produces consistent, evenly-spaced lanes.
+  //
+  // Key insight: fan groups (edges sharing source/target devices) must be allocated
+  // as contiguous blocks in a single channel. Otherwise they scatter across channels
+  // and weave with each other.
+
+  const gridRects = pixelRectsToGrid(obs.rects);
+
+  // Check if a vertical column is clear of device obstacles over a Y range.
+  // excludeNodeIds: skip the edge's own endpoint devices.
+  const isColumnClear = (gx: number, gyMin: number, gyMax: number, excludeNodeIds?: Set<string>): boolean => {
+    for (const r of gridRects) {
+      if (excludeNodeIds && r.nodeId && excludeNodeIds.has(r.nodeId)) continue;
+      if (gx >= r.left && gx <= r.right && gyMax >= r.top && gyMin <= r.bottom) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Check if a horizontal segment is clear of device obstacles.
+  // excludeNodeIds: skip the edge's own source/target devices — a horizontal
+  // segment naturally exits through the source device's obstacle rect.
+  const isHSegmentClear = (gy: number, gxMin: number, gxMax: number, excludeNodeIds?: Set<string>): boolean => {
+    for (const r of gridRects) {
+      if (excludeNodeIds && r.nodeId && excludeNodeIds.has(r.nodeId)) continue;
+      if (gy >= r.top && gy <= r.bottom && gxMax >= r.left && gxMin <= r.right) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Build edge info in grid coordinates for column allocation
+  type ColumnEdge = {
+    ep: EdgeEndpoints;
+    srcGX: number; srcGY: number;
+    tgtGX: number; tgtGY: number;
+    signalType: string;
+    assignedCol: number | null;
+    isBackward: boolean; // target is left of source
+    fanGroupId: number;  // -1 = solo edge
+  };
+  const columnEdges: ColumnEdge[] = [];
+  for (const ep of autoEndpoints) {
+    if (stubbedIds.has(ep.edge.id)) continue;
+    const srcGX = px2g(ep.sourceX);
+    const srcGY = px2g(ep.sourceY);
+    const tgtGX = px2g(ep.targetX);
+    const tgtGY = px2g(ep.targetY);
+    columnEdges.push({
+      ep,
+      srcGX, srcGY, tgtGX, tgtGY,
+      signalType: ep.edge.data?.signalType ?? "",
+      assignedCol: null,
+      isBackward: tgtGX <= srcGX,
+      fanGroupId: -1,
+    });
+  }
+
+  // ---------- Fan group detection ----------
+  // Group forward edges by source/target device proximity.
+  // Edges in the same fan group get allocated as a contiguous block.
+  type FanGroup = {
+    id: number;
+    srcXMin: number; srcXMax: number;
+    tgtXMin: number; tgtXMax: number;
+    edges: ColumnEdge[];
+  };
+  const fanGroups: FanGroup[] = [];
+  let nextFanId = 0;
+
+  for (const ce of columnEdges) {
+    if (ce.isBackward) continue;
+    let placed = false;
+    for (const fg of fanGroups) {
+      if (Math.abs(ce.tgtGX - fg.tgtXMin) <= 5 && Math.abs(ce.srcGX - fg.srcXMin) <= 15) {
+        fg.edges.push(ce);
+        fg.srcXMin = Math.min(fg.srcXMin, ce.srcGX);
+        fg.srcXMax = Math.max(fg.srcXMax, ce.srcGX);
+        fg.tgtXMin = Math.min(fg.tgtXMin, ce.tgtGX);
+        fg.tgtXMax = Math.max(fg.tgtXMax, ce.tgtGX);
+        ce.fanGroupId = fg.id;
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      const id = nextFanId++;
+      ce.fanGroupId = id;
+      fanGroups.push({
+        id,
+        srcXMin: ce.srcGX, srcXMax: ce.srcGX,
+        tgtXMin: ce.tgtGX, tgtXMax: ce.tgtGX,
+        edges: [ce],
+      });
+    }
+  }
+
+  // ---------- Find the best corridor region for each fan group ----------
+  // For each fan group, split into direction subgroups (DOWN vs UP), sort each
+  // subgroup with the geometrically correct order, then allocate contiguous columns.
+  //
+  // Why direction splitting is necessary (not a patch — it's geometry):
+  //   DOWN edges (tgtY > srcY): second horizontal passes through higher corridors.
+  //     → Sort by tgtY ascending → highest corridor. Zero second-horizontal crossings.
+  //   UP edges (srcY > tgtY): first horizontal passes through higher corridors.
+  //     → Sort by srcY descending → highest corridor. Zero first-horizontal crossings.
+  //   These are OPPOSITE orderings. No single sort works for both.
+
+  const takenColumns = new Set<number>();
+
+  // Process fan groups largest first (more edges = more constrained = allocate first)
+  const sortedFanGroups = [...fanGroups].sort((a, b) => b.edges.length - a.edges.length);
+
+  /** Allocate a contiguous block of columns for a sorted list of edges.
+   *  excludeNodeIds: endpoint device IDs to skip in obstacle checks (an edge's
+   *  corridor can overlap its own source/target device's obstacle rect). */
+  const allocateBlock = (
+    edges: ColumnEdge[],
+    searchStart: number,
+    searchEnd: number,
+    excludeNodeIds: Set<string>,
+  ) => {
+    const n = edges.length;
+    if (n === 0) return;
+
+    // Try to find a contiguous block of N clear columns
+    let blockStart = -1;
+    for (let baseX = searchStart; baseX - (n - 1) >= searchEnd; baseX--) {
+      let allClear = true;
+      for (let i = 0; i < n; i++) {
+        const candidateX = baseX - i;
+        if (takenColumns.has(candidateX)) { allClear = false; break; }
+        const ce = edges[i];
+        const yMin = Math.min(ce.srcGY, ce.tgtGY);
+        const yMax = Math.max(ce.srcGY, ce.tgtGY);
+        if (!isColumnClear(candidateX, yMin, yMax, excludeNodeIds)) { allClear = false; break; }
+      }
+      if (allClear) {
+        blockStart = baseX;
+        break;
+      }
     }
 
-    if (result) {
-      const segments = extractSegments(result.waypoints);
-      routeStates.push({
-        edgeId: ep.edge.id,
-        waypoints: result.waypoints,
-        segments,
-        svgPath: result.path,
-        labelX: result.labelX,
-        labelY: result.labelY,
-        turns: result.turns,
-        status: "good",
-        signalType: sigType,
-      });
-      // Block turn points for subsequent edges — interior waypoints where direction changes
-      blockTurnPoints(result.waypoints, obs.rects);
+    if (blockStart >= 0) {
+      for (let i = 0; i < n; i++) {
+        const colX = blockStart - i;
+        edges[i].assignedCol = colX;
+        takenColumns.add(colX);
+      }
     } else {
-      // Fallback: orthogonal L-shape (never draw a diagonal)
-      // Go right from source, then vertical to target Y, then into target
+      // Fallback: per-edge scan (non-contiguous but still unique columns)
+      let nextX = searchStart;
+      for (const ce of edges) {
+        const yMin = Math.min(ce.srcGY, ce.tgtGY);
+        const yMax = Math.max(ce.srcGY, ce.tgtGY);
+        let found = false;
+        for (let gx = nextX; gx >= searchEnd; gx--) {
+          if (takenColumns.has(gx)) continue;
+          if (isColumnClear(gx, yMin, yMax, excludeNodeIds)) {
+            ce.assignedCol = gx;
+            takenColumns.add(gx);
+            nextX = gx - 1;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          for (let gx = searchStart + 1; gx <= searchStart + 20; gx++) {
+            if (takenColumns.has(gx)) continue;
+            if (isColumnClear(gx, yMin, yMax, excludeNodeIds)) {
+              ce.assignedCol = gx;
+              takenColumns.add(gx);
+              found = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+  };
+
+  for (const fg of sortedFanGroups) {
+    const searchStart = fg.tgtXMin - 2;
+    const searchEnd = fg.srcXMax + 2;
+
+    // Split into direction subgroups
+    const downEdges: ColumnEdge[] = [];
+    const upEdges: ColumnEdge[] = [];
+    for (const ce of fg.edges) {
+      if (ce.tgtGY >= ce.srcGY) {
+        downEdges.push(ce);
+      } else {
+        upEdges.push(ce);
+      }
+    }
+
+    // DOWN: sort by tgtY ascending → highest corridor to lowest tgtY.
+    // The edge with the lowest tgtY gets the highest corridor. Its second horizontal
+    // is above all other verticals' endpoints → zero second-horizontal crossings.
+    // Its first horizontal is at the topmost srcY → above all other verticals' starts
+    // → zero first-horizontal crossings.
+    downEdges.sort((a, b) => a.tgtGY - b.tgtGY);
+
+    // UP: sort by srcY descending → highest corridor to highest srcY.
+    // The edge with the highest srcY gets the highest corridor. Its first horizontal
+    // is below all other verticals' endpoints → zero first-horizontal crossings.
+    upEdges.sort((a, b) => b.srcGY - a.srcGY);
+
+    // Collect all endpoint device IDs for this fan group — corridors may overlap
+    // these devices' obstacle rects, which is expected (edges exit through them).
+    const fanEndpointIds = new Set<string>();
+    for (const ce of fg.edges) {
+      fanEndpointIds.add(ce.ep.edge.source);
+      fanEndpointIds.add(ce.ep.edge.target);
+    }
+
+    // Allocate DOWN subgroup first (gets higher corridors, closer to target),
+    // then UP subgroup (gets lower corridors). The two subgroups occupy different
+    // Y bands so cross-direction crossings are geometrically impossible.
+    allocateBlock(downEdges, searchStart, searchEnd, fanEndpointIds);
+    allocateBlock(upEdges, searchStart, searchEnd, fanEndpointIds);
+  }
+
+  // ---------- PHASE 2: Path Construction ----------
+  // Build paths from column assignments. For edges with assigned corridors,
+  // route via the corridor as a mandatory waypoint using multi-leg A*.
+  // This ensures the path uses the assigned column even when intermediate
+  // devices block a simple L-shape.
+
+  /** Route a single A* leg, retrying with relaxed obstacles on failure. */
+  const routeLeg = (
+    fromX: number, fromY: number, toX: number, toY: number,
+    rects: Rect[], spread: number, penalties: PenaltyZone[] | undefined,
+    sigType: string | undefined,
+    noSrcStub: boolean, noTgtStub: boolean,
+    excludeStartDir?: number, excludeEndDir?: number,
+    srcNodeId?: string, tgtNodeId?: string,
+  ) => {
+    let result = computeEdgePath(
+      fromX, fromY, toX, toY, rects, 0, spread,
+      penalties, sigType, noSrcStub, noTgtStub,
+      excludeStartDir, excludeEndDir,
+    );
+    if (!result) {
+      const excludeSet = new Set<string>();
+      if (srcNodeId) excludeSet.add(srcNodeId);
+      if (tgtNodeId) excludeSet.add(tgtNodeId);
+      if (excludeSet.size > 0) {
+        const relaxed = rects.filter((r) => !r.nodeId || !excludeSet.has(r.nodeId));
+        result = computeEdgePath(
+          fromX, fromY, toX, toY, relaxed, 0, spread,
+          penalties, sigType, noSrcStub, noTgtStub,
+          excludeStartDir, excludeEndDir,
+        );
+      }
+    }
+    return result;
+  };
+
+  for (const ce of columnEdges) {
+    const ep = ce.ep;
+    const sigType = ep.edge.data?.signalType;
+
+    // Backward edges or edges without column assignment → unconstrained A* fallback
+    if (ce.isBackward || ce.assignedCol === null) {
+      const penalties = buildPenaltyZones(routeStates);
+      const result = routeLeg(
+        ep.sourceX, ep.sourceY, ep.targetX, ep.targetY,
+        obs.rects, ep.stubSpread, penalties.length > 0 ? penalties : undefined,
+        sigType, false, false, undefined, undefined,
+        ep.edge.source, ep.edge.target,
+      );
+      if (result) {
+        routeStates.push({
+          edgeId: ep.edge.id, waypoints: result.waypoints,
+          segments: extractSegments(result.waypoints), svgPath: result.path,
+          labelX: result.labelX, labelY: result.labelY,
+          turns: result.turns, status: "good", signalType: sigType,
+        });
+      } else {
+        const midX = Math.max(ep.sourceX, ep.targetX) + 40;
+        const wp: Point[] = [
+          { x: ep.sourceX, y: ep.sourceY },
+          { x: midX, y: ep.sourceY },
+          { x: midX, y: ep.targetY },
+          { x: ep.targetX, y: ep.targetY },
+        ];
+        routeStates.push({
+          edgeId: ep.edge.id, waypoints: wp,
+          segments: extractSegments(wp),
+          svgPath: wp.map((p, i) => i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`).join(" "),
+          labelX: midX, labelY: (ep.sourceY + ep.targetY) / 2,
+          turns: "fallback", status: "bad", signalType: sigType,
+        });
+      }
+      continue;
+    }
+
+    // Forward edge with assigned column → route via corridor as waypoint
+    const corridorPx = g2px(ce.assignedCol);
+
+    // Check if a clean L-shape works (no INTERMEDIATE obstacles on horizontal segments).
+    // Exclude the edge's own source/target devices — the horizontal naturally exits/enters them.
+    const endpointIds = new Set([ep.edge.source, ep.edge.target]);
+    const hSeg1Clear = isHSegmentClear(ce.srcGY, Math.min(ce.srcGX, ce.assignedCol), Math.max(ce.srcGX, ce.assignedCol), endpointIds);
+    const hSeg2Clear = isHSegmentClear(ce.tgtGY, Math.min(ce.tgtGX, ce.assignedCol), Math.max(ce.tgtGX, ce.assignedCol), endpointIds);
+
+    if (hSeg1Clear && hSeg2Clear) {
+      // Clean L-shape: source → corridor → target
+      const wp: Point[] = [
+        { x: ep.sourceX, y: ep.sourceY },
+        { x: corridorPx, y: ep.sourceY },
+        { x: corridorPx, y: ep.targetY },
+        { x: ep.targetX, y: ep.targetY },
+      ];
+      const cleaned = simplifyWaypoints(wp);
+      const svgPath = waypointsToSvgPath(cleaned);
+      routeStates.push({
+        edgeId: ep.edge.id, waypoints: cleaned,
+        segments: extractSegments(cleaned), svgPath,
+        labelX: corridorPx, labelY: (ep.sourceY + ep.targetY) / 2,
+        turns: cleaned.length > 2
+          ? cleaned.slice(1, -1).map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" → ")
+          : "straight",
+        status: "good", signalType: sigType,
+      });
+      continue;
+    }
+
+    // L-shape obstructed by intermediate devices → route via corridor as mandatory waypoint.
+    // Split into legs: source → (corridor, srcY) → (corridor, tgtY) → target.
+    // Each leg uses A* to navigate around obstacles while respecting the corridor.
+    const penalties = buildPenaltyZones(routeStates);
+    const pens = penalties.length > 0 ? penalties : undefined;
+
+    // Corridor waypoints (the vertical segment endpoints)
+    const cwp1 = { x: corridorPx, y: ep.sourceY }; // top of vertical
+    const cwp2 = { x: corridorPx, y: ep.targetY }; // bottom of vertical
+
+    // Leg 1: source → corridor top (horizontal-ish, navigates around intermediate devices)
+    const leg1 = routeLeg(
+      ep.sourceX, ep.sourceY, cwp1.x, cwp1.y,
+      obs.rects, ep.stubSpread, pens, sigType,
+      false, true, // has source stub, no target stub (it's a waypoint)
+      undefined, undefined, ep.edge.source, undefined,
+    );
+
+    // Leg 3: corridor bottom → target (horizontal-ish, navigates around intermediate devices)
+    const leg3 = routeLeg(
+      cwp2.x, cwp2.y, ep.targetX, ep.targetY,
+      obs.rects, 0, pens, sigType,
+      true, false, // no source stub (waypoint), has target stub
+      undefined, undefined, undefined, ep.edge.target,
+    );
+
+    if (leg1 && leg3) {
+      // Assemble: leg1 waypoints + vertical segment + leg3 waypoints
+      const allWaypoints: Point[] = [
+        ...leg1.waypoints,
+        cwp2, // bottom of vertical (leg1 ends at cwp1, add cwp2 for vertical segment)
+        ...leg3.waypoints.slice(1), // skip first point (it's cwp2)
+      ];
+      const cleaned = simplifyWaypoints(allWaypoints);
+      const svgPath = waypointsToSvgPath(cleaned);
+      routeStates.push({
+        edgeId: ep.edge.id, waypoints: cleaned,
+        segments: extractSegments(cleaned), svgPath,
+        labelX: corridorPx, labelY: (ep.sourceY + ep.targetY) / 2,
+        turns: cleaned.length > 2
+          ? cleaned.slice(1, -1).map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" → ")
+          : "straight",
+        status: "good", signalType: sigType,
+      });
+    } else {
+      // Multi-leg failed → force L-shape at corridor (may cross obstacles visually,
+      // but at least uses the assigned corridor for consistent nesting)
+      const wp: Point[] = [
+        { x: ep.sourceX, y: ep.sourceY },
+        { x: corridorPx, y: ep.sourceY },
+        { x: corridorPx, y: ep.targetY },
+        { x: ep.targetX, y: ep.targetY },
+      ];
+      const cleaned = simplifyWaypoints(wp);
+      routeStates.push({
+        edgeId: ep.edge.id, waypoints: cleaned,
+        segments: extractSegments(cleaned), svgPath: waypointsToSvgPath(cleaned),
+        labelX: corridorPx, labelY: (ep.sourceY + ep.targetY) / 2,
+        turns: "corridor-forced", status: "bad", signalType: sigType,
+      });
+    }
+  }
+
+  // Route any stubbed auto edges that were skipped from column allocation
+  for (const ep of autoEndpoints) {
+    if (!stubbedIds.has(ep.edge.id)) continue;
+    const sigType = ep.edge.data?.signalType;
+    const penalties = buildPenaltyZones(routeStates);
+    let result = computeEdgePath(
+      ep.sourceX, ep.sourceY, ep.targetX, ep.targetY,
+      obs.rects, 0, ep.stubSpread,
+      penalties.length > 0 ? penalties : undefined,
+      sigType, undefined, undefined, undefined, undefined, undefined,
+      ep.sourceExitsRight, ep.targetEntersLeft,
+    );
+    if (!result) {
+      const excludeSet = new Set([ep.edge.source, ep.edge.target]);
+      const relaxedRects = obs.rects.filter((r) => !r.nodeId || !excludeSet.has(r.nodeId));
+      result = computeEdgePath(
+        ep.sourceX, ep.sourceY, ep.targetX, ep.targetY,
+        relaxedRects, 0, ep.stubSpread,
+        penalties.length > 0 ? penalties : undefined,
+        sigType, undefined, undefined, undefined, undefined, undefined,
+        ep.sourceExitsRight, ep.targetEntersLeft,
+      );
+    }
+    if (result) {
+      routeStates.push({
+        edgeId: ep.edge.id, waypoints: result.waypoints,
+        segments: extractSegments(result.waypoints), svgPath: result.path,
+        labelX: result.labelX, labelY: result.labelY,
+        turns: result.turns, status: "good", signalType: sigType,
+      });
+    } else {
       const midX = Math.max(ep.sourceX, ep.targetX) + 40;
       const wp: Point[] = [
         { x: ep.sourceX, y: ep.sourceY },
@@ -935,370 +1242,13 @@ export function routeAllEdges(
         { x: midX, y: ep.targetY },
         { x: ep.targetX, y: ep.targetY },
       ];
-      const simplified = wp; // Already minimal waypoints
-      const svgPath = simplified.map((p, i) =>
-        i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`
-      ).join(" ");
       routeStates.push({
-        edgeId: ep.edge.id,
-        waypoints: simplified,
-        segments: extractSegments(simplified),
-        svgPath,
-        labelX: midX,
-        labelY: (ep.sourceY + ep.targetY) / 2,
-        turns: "fallback",
-        status: "bad",
-        signalType: sigType,
+        edgeId: ep.edge.id, waypoints: wp,
+        segments: extractSegments(wp),
+        svgPath: wp.map((p, i) => i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`).join(" "),
+        labelX: midX, labelY: (ep.sourceY + ep.targetY) / 2,
+        turns: "fallback", status: "bad", signalType: sigType,
       });
-      blockTurnPoints(wp, obs.rects);
-    }
-
-    // Time budget check: bail out of Phase 1 early if over budget
-    if (performance.now() - startTime > timeBudgetMs) {
-      overBudget = true;
-      break;
-    }
-  }
-
-  // Stubbed edges should be excluded from crossing detection —
-  // their invisible middle sections shouldn't affect other edges.
-  const stubbedIds = new Set(edgeEndpoints.filter((ep) => ep.edge.data?.stubbed).map((ep) => ep.edge.id));
-
-  // PHASE 2 — Fan-group track assignment (VLSI channel routing approach)
-  // A* can't solve multi-edge nesting because it routes edges sequentially.
-  // After Phase 1, detect fan groups (edges sharing a target device) and
-  // reassign corridor positions so they nest cleanly: topmost target →
-  // outermost corridor (highest X), bottommost → innermost (lowest X).
-  if (!overBudget) {
-    const g = px2g;
-
-    // Build edge info for fan group detection
-    type FanEdge = { id: string; srcX: number; srcY: number; tgtX: number; tgtY: number; corridorX: number | null; rs: RouteState; ep: EdgeEndpoints };
-    const fanEdges: FanEdge[] = [];
-    for (const rs of routeStates) {
-      const ep = edgeEndpoints.find((e) => e.edge.id === rs.edgeId);
-      if (!ep) continue;
-      if (stubbedIds.has(rs.edgeId)) continue;
-      if (ep.edge.data?.manualWaypoints?.length) continue;
-      const vSegs = rs.segments.filter((s) => s.axis === "v");
-      let corridorX: number | null = null;
-      if (vSegs.length > 0) {
-        const longest = vSegs.reduce((a, b) => Math.abs(a.y2 - a.y1) > Math.abs(b.y2 - b.y1) ? a : b);
-        corridorX = g(longest.x1);
-      }
-      fanEdges.push({ id: rs.edgeId, srcX: g(ep.sourceX), srcY: g(ep.sourceY), tgtX: g(ep.targetX), tgtY: g(ep.targetY), corridorX, rs, ep });
-    }
-
-    // Group by target device (tgtX proximity ≤ 5 grid cells)
-    type FanGroup = { srcX: number; tgtX: number; edges: FanEdge[] };
-    const fanGroups: FanGroup[] = [];
-    for (const fe of fanEdges) {
-      if (fe.corridorX === null) continue;
-      let placed = false;
-      for (const fg of fanGroups) {
-        if (Math.abs(fe.tgtX - fg.tgtX) <= 5 && Math.abs(fe.srcX - fg.srcX) <= 15) {
-          fg.edges.push(fe);
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        fanGroups.push({ srcX: fe.srcX, tgtX: fe.tgtX, edges: [fe] });
-      }
-    }
-
-    // Process each fan group with 2+ edges
-    const gridRects = pixelRectsToGrid(obs.rects);
-    const isColumnClear = (gx: number, gyMin: number, gyMax: number): boolean => {
-      for (const r of gridRects) {
-        // Skip turn-point obstacles (they'll be removed during rip-up)
-        if (r.nodeId?.startsWith("turn-")) continue;
-        if (gx >= r.left && gx <= r.right && gyMax >= r.top && gyMin <= r.bottom) {
-          return false;
-        }
-      }
-      return true;
-    };
-
-    // Cluster fan groups that share the same target device — their corridor
-    // ranges must not overlap or they'll weave with each other.
-    type CoTargetCluster = { groups: FanGroup[] };
-    const coTargetClusters: CoTargetCluster[] = [];
-    for (const fg of fanGroups) {
-      if (fg.edges.length < 2) continue;
-      let placed = false;
-      for (const cluster of coTargetClusters) {
-        if (Math.abs(fg.tgtX - cluster.groups[0].tgtX) <= 5) {
-          cluster.groups.push(fg);
-          placed = true;
-          break;
-        }
-      }
-      if (!placed) {
-        coTargetClusters.push({ groups: [fg] });
-      }
-    }
-    // Sort each cluster: closest source first → gets high-X corridors near target
-    for (const cluster of coTargetClusters) {
-      cluster.groups.sort((a, b) => Math.abs(a.tgtX - a.srcX) - Math.abs(b.tgtX - b.srcX));
-    }
-
-    console.log(`[Phase 2] ${coTargetClusters.length} co-target clusters, sizes: ${coTargetClusters.map((c) => c.groups.map((g) => g.edges.length).join("+")).join(", ")}`);
-
-    for (const cluster of coTargetClusters) {
-      let corridorFloor: number | undefined;
-
-      for (const fg of cluster.groups) {
-
-      // Sort by target Y ascending → assign corridors from highest X to lowest
-      const sorted = [...fg.edges].sort((a, b) => a.tgtY - b.tgtY);
-
-      const maxTgtX = Math.max(...sorted.map((e) => e.tgtX));
-      const minSrcX = Math.min(...sorted.map((e) => e.srcX));
-
-      // Split into direction subgroups (consecutive runs of same direction)
-      type SubGroup = { dir: "up" | "down"; edges: FanEdge[] };
-      const subGroups: SubGroup[] = [];
-      for (const fe of sorted) {
-        const dir = fe.srcY > fe.tgtY ? "up" : "down";
-        if (subGroups.length > 0 && subGroups[subGroups.length - 1].dir === dir) {
-          subGroups[subGroups.length - 1].edges.push(fe);
-        } else {
-          subGroups.push({ dir, edges: [fe] });
-        }
-      }
-
-      // Check if already correctly nested AND tightly packed within each subgroup
-      let alreadyNested = true;
-      for (const sg of subGroups) {
-        if (sg.edges.length < 2) continue;
-        for (let i = 1; i < sg.edges.length; i++) {
-          const prev = sg.edges[i - 1].corridorX;
-          const curr = sg.edges[i].corridorX;
-          if (prev === null || curr === null) continue;
-          // Check order
-          if (sg.dir === "down" && curr >= prev) { alreadyNested = false; break; }
-          if (sg.dir === "up" && curr <= prev) { alreadyNested = false; break; }
-          // Check spacing — gaps > 2 cells are too spread out
-          if (Math.abs(curr - prev) > 2) { alreadyNested = false; break; }
-        }
-        if (!alreadyNested) break;
-      }
-      // Override nested check if corridors interleave with a sibling group's range
-      if (alreadyNested && corridorFloor !== undefined) {
-        const floor = corridorFloor;
-        const groupCorridors = sorted.map((e) => e.corridorX).filter((x): x is number => x !== null);
-        if (groupCorridors.some((cx) => cx >= floor)) {
-          alreadyNested = false;
-        }
-      }
-      console.log(`[Phase 2] Group srcX=${fg.srcX} tgtX=${fg.tgtX}: ${sorted.length} edges, ${subGroups.length} subgroups (${subGroups.map((sg) => `${sg.edges.length}${sg.dir[0]}`).join("+")}), nested=${alreadyNested}, floor=${corridorFloor ?? "none"}`);
-      if (alreadyNested) continue;
-
-      // Assign tracks per subgroup with correct direction
-      const assignments = new Map<string, number>();
-
-      for (const sg of subGroups) {
-        const n = sg.edges.length;
-        const takenCols = new Set(assignments.values());
-
-        if (sg.dir === "down") {
-          // Down-right: find a contiguous block of N clear columns near target
-          let startX = corridorFloor !== undefined ? corridorFloor - 1 : maxTgtX - 2;
-          let blockFound = false;
-          for (let baseX = startX; baseX - (n - 1) > minSrcX + 2; baseX--) {
-            let allClear = true;
-            for (let i = 0; i < n; i++) {
-              const gx = baseX - i;
-              if (takenCols.has(gx)) { allClear = false; break; }
-              const fe = sg.edges[i];
-              if (!isColumnClear(gx, Math.min(fe.srcY, fe.tgtY), Math.max(fe.srcY, fe.tgtY))) { allClear = false; break; }
-            }
-            if (allClear) {
-              for (let i = 0; i < n; i++) {
-                assignments.set(sg.edges[i].id, baseX - i);
-              }
-              blockFound = true;
-              break;
-            }
-          }
-          // Fallback: per-edge scan if no contiguous block found
-          if (!blockFound) {
-            let nextX = startX;
-            while (nextX > minSrcX + 2 && takenCols.has(nextX)) nextX--;
-            for (const fe of sg.edges) {
-              const yMin = Math.min(fe.srcY, fe.tgtY);
-              const yMax = Math.max(fe.srcY, fe.tgtY);
-              let assignedX: number | null = null;
-              for (let gx = nextX; gx > minSrcX + 2; gx--) {
-                if (takenCols.has(gx) || [...assignments.values()].includes(gx)) continue;
-                if (isColumnClear(gx, yMin, yMax)) { assignedX = gx; break; }
-              }
-              if (assignedX !== null) {
-                assignments.set(fe.id, assignedX);
-                nextX = assignedX - 1;
-              }
-            }
-          }
-        } else {
-          // Up-right: find a contiguous block of N clear columns near source
-          const upperBound = corridorFloor !== undefined ? corridorFloor - 1 : maxTgtX - 1;
-          let blockFound = false;
-          for (let baseX = minSrcX + 2; baseX + (n - 1) < upperBound; baseX++) {
-            let allClear = true;
-            for (let i = 0; i < n; i++) {
-              const gx = baseX + i;
-              if (takenCols.has(gx)) { allClear = false; break; }
-              const fe = sg.edges[i];
-              if (!isColumnClear(gx, Math.min(fe.srcY, fe.tgtY), Math.max(fe.srcY, fe.tgtY))) { allClear = false; break; }
-            }
-            if (allClear) {
-              for (let i = 0; i < n; i++) {
-                assignments.set(sg.edges[i].id, baseX + i);
-              }
-              blockFound = true;
-              break;
-            }
-          }
-          // Fallback: per-edge scan
-          if (!blockFound) {
-            let nextX = minSrcX + 2;
-            while (nextX < upperBound && takenCols.has(nextX)) nextX++;
-            for (const fe of sg.edges) {
-              const yMin = Math.min(fe.srcY, fe.tgtY);
-              const yMax = Math.max(fe.srcY, fe.tgtY);
-              let assignedX: number | null = null;
-              for (let gx = nextX; gx < upperBound; gx++) {
-                if (takenCols.has(gx) || [...assignments.values()].includes(gx)) continue;
-                if (isColumnClear(gx, yMin, yMax)) { assignedX = gx; break; }
-              }
-              if (assignedX !== null) {
-                assignments.set(fe.id, assignedX);
-                nextX = assignedX + 1;
-              }
-            }
-          }
-        }
-      }
-
-      console.log(`[Phase 2] Assignments: ${[...assignments.entries()].map(([id, x]) => `${id.slice(0, 12)}→x${x}`).join(", ")}`);
-      if (assignments.size === 0) continue;
-
-      // Rip up assigned edges: remove from routeStates and clear turn-point obstacles
-      const assignedIds = new Set(assignments.keys());
-      for (const rs of routeStates) {
-        if (!assignedIds.has(rs.edgeId)) continue;
-        for (let wi = 1; wi < rs.waypoints.length - 1; wi++) {
-          const prev = rs.waypoints[wi - 1];
-          const curr = rs.waypoints[wi];
-          const next = rs.waypoints[wi + 1];
-          if ((prev.x !== next.x) && (prev.y !== next.y)) {
-            const turnId = `turn-${curr.x}-${curr.y}`;
-            for (let oi = obs.rects.length - 1; oi >= 0; oi--) {
-              if (obs.rects[oi].nodeId === turnId) { obs.rects.splice(oi, 1); break; }
-            }
-          }
-        }
-      }
-      const keptStates = routeStates.filter((rs) => !assignedIds.has(rs.edgeId));
-      routeStates.length = 0;
-      routeStates.push(...keptStates);
-
-
-      // Check if a horizontal segment is clear of device obstacles
-      const isHSegmentClear = (gy: number, gxMin: number, gxMax: number): boolean => {
-        for (const r of gridRects) {
-          if (r.nodeId?.startsWith("turn-")) continue;
-          if (gy >= r.top && gy <= r.bottom && gxMax >= r.left && gxMin <= r.right) {
-            return false;
-          }
-        }
-        return true;
-      };
-
-      // Rebuild L-shapes at assigned positions, falling back to A* if path hits obstacles
-      for (const fe of sorted) {
-        const assignedX = assignments.get(fe.id);
-        if (assignedX === undefined) continue;
-        const sigType = fe.ep.edge.data?.signalType;
-
-        // Check if the L-shape's horizontal segments are obstacle-free
-        const srcGY = fe.srcY;
-        const tgtGY = fe.tgtY;
-        const srcGX = fe.srcX;
-        const tgtGX = fe.tgtX;
-        const hSeg1Clear = isHSegmentClear(srcGY, Math.min(srcGX, assignedX), Math.max(srcGX, assignedX));
-        const hSeg2Clear = isHSegmentClear(tgtGY, Math.min(tgtGX, assignedX), Math.max(tgtGX, assignedX));
-
-        if (!hSeg1Clear || !hSeg2Clear) {
-          // L-shape blocked by obstacle — fall back to A*
-          const penalties = buildPenaltyZones(routeStates);
-          let result = computeEdgePath(
-            fe.ep.sourceX, fe.ep.sourceY, fe.ep.targetX, fe.ep.targetY,
-            obs.rects, 0, fe.ep.stubSpread,
-            penalties.length > 0 ? penalties : undefined,
-            sigType,
-            undefined, undefined, undefined, undefined, undefined,
-            fe.ep.sourceExitsRight, fe.ep.targetEntersLeft,
-          );
-          if (!result) {
-            const excludeSet = new Set([fe.ep.edge.source, fe.ep.edge.target]);
-            const relaxedRects = obs.rects.filter((r) => !r.nodeId || !excludeSet.has(r.nodeId));
-            result = computeEdgePath(
-              fe.ep.sourceX, fe.ep.sourceY, fe.ep.targetX, fe.ep.targetY,
-              relaxedRects, 0, fe.ep.stubSpread,
-              penalties.length > 0 ? penalties : undefined,
-              sigType,
-              undefined, undefined, undefined, undefined, undefined,
-              fe.ep.sourceExitsRight, fe.ep.targetEntersLeft,
-            );
-          }
-          if (result) {
-            routeStates.push({
-              edgeId: fe.id,
-              waypoints: result.waypoints,
-              segments: extractSegments(result.waypoints),
-              svgPath: result.path,
-              labelX: result.labelX,
-              labelY: result.labelY,
-              turns: result.turns,
-              status: "good",
-              signalType: sigType,
-            });
-            blockTurnPoints(result.waypoints, obs.rects);
-          }
-          continue;
-        }
-
-        const turnPx = g2px(assignedX);
-        const wp: Point[] = [
-          { x: fe.ep.sourceX, y: fe.ep.sourceY },
-          { x: turnPx, y: fe.ep.sourceY },
-          { x: turnPx, y: fe.ep.targetY },
-          { x: fe.ep.targetX, y: fe.ep.targetY },
-        ];
-        const svgPath = waypointsToSvgPath(wp);
-        routeStates.push({
-          edgeId: fe.id,
-          waypoints: wp,
-          segments: extractSegments(wp),
-          svgPath,
-          labelX: turnPx,
-          labelY: (fe.ep.sourceY + fe.ep.targetY) / 2,
-          turns: `${turnPx},${fe.ep.sourceY} → ${turnPx},${fe.ep.targetY}`,
-          status: "good",
-          signalType: sigType,
-        });
-        blockTurnPoints(wp, obs.rects);
-      }
-
-      // Update corridor floor for the next group in this co-target cluster
-      const assignedXValues = [...assignments.values()];
-      if (assignedXValues.length > 0) {
-        const groupMin = Math.min(...assignedXValues);
-        corridorFloor = corridorFloor !== undefined ? Math.min(corridorFloor, groupMin) : groupMin;
-      }
-    }
     }
   }
 
