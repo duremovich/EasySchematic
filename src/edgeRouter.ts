@@ -990,20 +990,20 @@ export function routeAllEdges(
     }
 
     // Group by target device (tgtX proximity ≤ 5 grid cells)
-    type FanGroup = { tgtX: number; edges: FanEdge[] };
+    type FanGroup = { srcX: number; tgtX: number; edges: FanEdge[] };
     const fanGroups: FanGroup[] = [];
     for (const fe of fanEdges) {
       if (fe.corridorX === null) continue;
       let placed = false;
       for (const fg of fanGroups) {
-        if (Math.abs(fe.tgtX - fg.tgtX) <= 5) {
+        if (Math.abs(fe.tgtX - fg.tgtX) <= 5 && Math.abs(fe.srcX - fg.srcX) <= 15) {
           fg.edges.push(fe);
           placed = true;
           break;
         }
       }
       if (!placed) {
-        fanGroups.push({ tgtX: fe.tgtX, edges: [fe] });
+        fanGroups.push({ srcX: fe.srcX, tgtX: fe.tgtX, edges: [fe] });
       }
     }
 
@@ -1020,71 +1020,122 @@ export function routeAllEdges(
       return true;
     };
 
-    console.log(`[Phase 2] ${fanGroups.length} fan groups detected, sizes: ${fanGroups.map((fg) => fg.edges.length).join(", ")}`);
-
+    // Cluster fan groups that share the same target device — their corridor
+    // ranges must not overlap or they'll weave with each other.
+    type CoTargetCluster = { groups: FanGroup[] };
+    const coTargetClusters: CoTargetCluster[] = [];
     for (const fg of fanGroups) {
       if (fg.edges.length < 2) continue;
+      let placed = false;
+      for (const cluster of coTargetClusters) {
+        if (Math.abs(fg.tgtX - cluster.groups[0].tgtX) <= 5) {
+          cluster.groups.push(fg);
+          placed = true;
+          break;
+        }
+      }
+      if (!placed) {
+        coTargetClusters.push({ groups: [fg] });
+      }
+    }
+    // Sort each cluster: closest source first → gets high-X corridors near target
+    for (const cluster of coTargetClusters) {
+      cluster.groups.sort((a, b) => Math.abs(a.tgtX - a.srcX) - Math.abs(b.tgtX - b.srcX));
+    }
+
+    console.log(`[Phase 2] ${coTargetClusters.length} co-target clusters, sizes: ${coTargetClusters.map((c) => c.groups.map((g) => g.edges.length).join("+")).join(", ")}`);
+
+    for (const cluster of coTargetClusters) {
+      let corridorFloor: number | undefined;
+
+      for (const fg of cluster.groups) {
 
       // Sort by target Y ascending → assign corridors from highest X to lowest
       const sorted = [...fg.edges].sort((a, b) => a.tgtY - b.tgtY);
 
-      // Check if already correctly nested (corridors monotonically decreasing)
-      let alreadyNested = true;
-      for (let i = 1; i < sorted.length; i++) {
-        if (sorted[i].corridorX !== null && sorted[i - 1].corridorX !== null &&
-            sorted[i].corridorX! >= sorted[i - 1].corridorX!) {
-          alreadyNested = false;
-          break;
-        }
-      }
-      console.log(`[Phase 2] Group tgtX=${fg.tgtX}: ${sorted.length} edges, nested=${alreadyNested}, corridors=[${sorted.map((e) => e.corridorX).join(",")}]`);
-      if (alreadyNested) continue;
-
-      // Determine group direction: up-right vs down-right
-      // For down-right: topmost target → highest X (outer near target)
-      // For up-right: topmost target → lowest X (inner near source)
-      const upCount = sorted.filter((e) => e.srcY > e.tgtY).length;
-      const goingUp = upCount > sorted.length / 2;
-
       const maxTgtX = Math.max(...sorted.map((e) => e.tgtX));
       const minSrcX = Math.min(...sorted.map((e) => e.srcX));
 
-      const assignments = new Map<string, number>(); // edgeId → assigned corridor X
-
-      if (goingUp) {
-        // Up-right: assign from source side outward (lowest X first)
-        let nextX = minSrcX + 2; // Start just past source device
-        for (const fe of sorted) {
-          const yMin = Math.min(fe.srcY, fe.tgtY);
-          const yMax = Math.max(fe.srcY, fe.tgtY);
-          let assignedX: number | null = null;
-          for (let gx = nextX; gx < maxTgtX - 1; gx++) {
-            if (isColumnClear(gx, yMin, yMax)) {
-              assignedX = gx;
-              break;
-            }
-          }
-          if (assignedX !== null) {
-            assignments.set(fe.id, assignedX);
-            nextX = assignedX + 1;
-          }
+      // Split into direction subgroups (consecutive runs of same direction)
+      type SubGroup = { dir: "up" | "down"; edges: FanEdge[] };
+      const subGroups: SubGroup[] = [];
+      for (const fe of sorted) {
+        const dir = fe.srcY > fe.tgtY ? "up" : "down";
+        if (subGroups.length > 0 && subGroups[subGroups.length - 1].dir === dir) {
+          subGroups[subGroups.length - 1].edges.push(fe);
+        } else {
+          subGroups.push({ dir, edges: [fe] });
         }
-      } else {
-        // Down-right: assign from target side inward (highest X first)
-        let nextX = maxTgtX - 2;
-        for (const fe of sorted) {
-          const yMin = Math.min(fe.srcY, fe.tgtY);
-          const yMax = Math.max(fe.srcY, fe.tgtY);
-          let assignedX: number | null = null;
-          for (let gx = nextX; gx > minSrcX + 2; gx--) {
-            if (isColumnClear(gx, yMin, yMax)) {
-              assignedX = gx;
-              break;
+      }
+
+      // Check if already correctly nested within each subgroup
+      let alreadyNested = true;
+      for (const sg of subGroups) {
+        if (sg.edges.length < 2) continue;
+        for (let i = 1; i < sg.edges.length; i++) {
+          const prev = sg.edges[i - 1].corridorX;
+          const curr = sg.edges[i].corridorX;
+          if (prev === null || curr === null) continue;
+          if (sg.dir === "down" && curr >= prev) { alreadyNested = false; break; }
+          if (sg.dir === "up" && curr <= prev) { alreadyNested = false; break; }
+        }
+        if (!alreadyNested) break;
+      }
+      // Override nested check if corridors interleave with a sibling group's range
+      if (alreadyNested && corridorFloor !== undefined) {
+        const floor = corridorFloor;
+        const groupCorridors = sorted.map((e) => e.corridorX).filter((x): x is number => x !== null);
+        if (groupCorridors.some((cx) => cx >= floor)) {
+          alreadyNested = false;
+        }
+      }
+      console.log(`[Phase 2] Group srcX=${fg.srcX} tgtX=${fg.tgtX}: ${sorted.length} edges, ${subGroups.length} subgroups (${subGroups.map((sg) => `${sg.edges.length}${sg.dir[0]}`).join("+")}), nested=${alreadyNested}, floor=${corridorFloor ?? "none"}`);
+      if (alreadyNested) continue;
+
+      // Assign tracks per subgroup with correct direction
+      const assignments = new Map<string, number>();
+
+      for (const sg of subGroups) {
+        if (sg.dir === "down") {
+          // Down-right: assign from target side inward (highest X first)
+          let nextX = corridorFloor !== undefined ? corridorFloor - 1 : maxTgtX - 2;
+          while (nextX > minSrcX + 2 && [...assignments.values()].includes(nextX)) nextX--;
+          for (const fe of sg.edges) {
+            const yMin = Math.min(fe.srcY, fe.tgtY);
+            const yMax = Math.max(fe.srcY, fe.tgtY);
+            let assignedX: number | null = null;
+            for (let gx = nextX; gx > minSrcX + 2; gx--) {
+              if ([...assignments.values()].includes(gx)) continue;
+              if (isColumnClear(gx, yMin, yMax)) {
+                assignedX = gx;
+                break;
+              }
+            }
+            if (assignedX !== null) {
+              assignments.set(fe.id, assignedX);
+              nextX = assignedX - 1;
             }
           }
-          if (assignedX !== null) {
-            assignments.set(fe.id, assignedX);
-            nextX = assignedX - 1;
+        } else {
+          // Up-right: assign from source side outward (lowest X first)
+          const upperBound = corridorFloor !== undefined ? corridorFloor - 1 : maxTgtX - 1;
+          let nextX = minSrcX + 2;
+          while (nextX < upperBound && [...assignments.values()].includes(nextX)) nextX++;
+          for (const fe of sg.edges) {
+            const yMin = Math.min(fe.srcY, fe.tgtY);
+            const yMax = Math.max(fe.srcY, fe.tgtY);
+            let assignedX: number | null = null;
+            for (let gx = nextX; gx < upperBound; gx++) {
+              if ([...assignments.values()].includes(gx)) continue;
+              if (isColumnClear(gx, yMin, yMax)) {
+                assignedX = gx;
+                break;
+              }
+            }
+            if (assignedX !== null) {
+              assignments.set(fe.id, assignedX);
+              nextX = assignedX + 1;
+            }
           }
         }
       }
@@ -1112,10 +1163,71 @@ export function routeAllEdges(
       routeStates.length = 0;
       routeStates.push(...keptStates);
 
-      // Rebuild L-shapes at assigned positions
+
+      // Check if a horizontal segment is clear of device obstacles
+      const isHSegmentClear = (gy: number, gxMin: number, gxMax: number): boolean => {
+        for (const r of gridRects) {
+          if (r.nodeId?.startsWith("turn-")) continue;
+          if (gy >= r.top && gy <= r.bottom && gxMax >= r.left && gxMin <= r.right) {
+            return false;
+          }
+        }
+        return true;
+      };
+
+      // Rebuild L-shapes at assigned positions, falling back to A* if path hits obstacles
       for (const fe of sorted) {
         const assignedX = assignments.get(fe.id);
         if (assignedX === undefined) continue;
+        const sigType = fe.ep.edge.data?.signalType;
+
+        // Check if the L-shape's horizontal segments are obstacle-free
+        const srcGY = fe.srcY;
+        const tgtGY = fe.tgtY;
+        const srcGX = fe.srcX;
+        const tgtGX = fe.tgtX;
+        const hSeg1Clear = isHSegmentClear(srcGY, Math.min(srcGX, assignedX), Math.max(srcGX, assignedX));
+        const hSeg2Clear = isHSegmentClear(tgtGY, Math.min(tgtGX, assignedX), Math.max(tgtGX, assignedX));
+
+        if (!hSeg1Clear || !hSeg2Clear) {
+          // L-shape blocked by obstacle — fall back to A*
+          const penalties = buildPenaltyZones(routeStates);
+          let result = computeEdgePath(
+            fe.ep.sourceX, fe.ep.sourceY, fe.ep.targetX, fe.ep.targetY,
+            obs.rects, 0, fe.ep.stubSpread,
+            penalties.length > 0 ? penalties : undefined,
+            sigType,
+            undefined, undefined, undefined, undefined, undefined,
+            fe.ep.sourceExitsRight, fe.ep.targetEntersLeft,
+          );
+          if (!result) {
+            const excludeSet = new Set([fe.ep.edge.source, fe.ep.edge.target]);
+            const relaxedRects = obs.rects.filter((r) => !r.nodeId || !excludeSet.has(r.nodeId));
+            result = computeEdgePath(
+              fe.ep.sourceX, fe.ep.sourceY, fe.ep.targetX, fe.ep.targetY,
+              relaxedRects, 0, fe.ep.stubSpread,
+              penalties.length > 0 ? penalties : undefined,
+              sigType,
+              undefined, undefined, undefined, undefined, undefined,
+              fe.ep.sourceExitsRight, fe.ep.targetEntersLeft,
+            );
+          }
+          if (result) {
+            routeStates.push({
+              edgeId: fe.id,
+              waypoints: result.waypoints,
+              segments: extractSegments(result.waypoints),
+              svgPath: result.path,
+              labelX: result.labelX,
+              labelY: result.labelY,
+              turns: result.turns,
+              status: "good",
+              signalType: sigType,
+            });
+            blockTurnPoints(result.waypoints, obs.rects);
+          }
+          continue;
+        }
 
         const turnPx = g2px(assignedX);
         const wp: Point[] = [
@@ -1125,7 +1237,6 @@ export function routeAllEdges(
           { x: fe.ep.targetX, y: fe.ep.targetY },
         ];
         const svgPath = waypointsToSvgPath(wp);
-        const sigType = fe.ep.edge.data?.signalType;
         routeStates.push({
           edgeId: fe.id,
           waypoints: wp,
@@ -1139,6 +1250,14 @@ export function routeAllEdges(
         });
         blockTurnPoints(wp, obs.rects);
       }
+
+      // Update corridor floor for the next group in this co-target cluster
+      const assignedXValues = [...assignments.values()];
+      if (assignedXValues.length > 0) {
+        const groupMin = Math.min(...assignedXValues);
+        corridorFloor = corridorFloor !== undefined ? Math.min(corridorFloor, groupMin) : groupMin;
+      }
+    }
     }
   }
 
