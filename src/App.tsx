@@ -288,6 +288,21 @@ function SchematicCanvas() {
     return () => { clearTimeout(timer); useSchematicStore.setState({ isRouting: false }); };
   }, [isDragging, nodeDigest, edgeDigest, nodeCount, edgeCount, rfInstance, hiddenSignalTypesStr, hideAdapters, adapterVisibilityDigest, autoRoute, routingParamVersion]);
 
+  // Retry routing if initial computation raced ahead of React Flow internals
+  const routedEdgeCount = useSchematicStore((s) => Object.keys(s.routedEdges).length);
+  useEffect(() => {
+    if (routedEdgeCount > 0 || edgeCount === 0) return;
+    const timer = setTimeout(() => {
+      const state = useSchematicStore.getState();
+      if (state.autoRoute) {
+        state.recomputeRoutes(rfInstance);
+      } else {
+        state.computeSimpleRoutes(rfInstance);
+      }
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [routedEdgeCount, edgeCount, rfInstance]);
+
   // Recompute cable ID map when edges/nodes/naming change
   const cableNamingScheme = useSchematicStore((s) => s.cableNamingScheme);
   const cableIdDigest = useSchematicStore((s) =>
