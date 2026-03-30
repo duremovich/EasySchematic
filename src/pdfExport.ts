@@ -314,12 +314,14 @@ function computePdfCrossingLabels(
 ): PdfCrossingLabel[] {
   if (pages.length <= 1) return [];
 
-  // Collect page boundary lines in canvas px
+  // Collect page boundary lines in canvas px (internal edges only)
+  const minCol = Math.min(...pages.map((p) => p.col));
+  const minRow = Math.min(...pages.map((p) => p.row));
   const vLines = new Set<number>();
   const hLines = new Set<number>();
   for (const p of pages) {
-    if (p.col > 0) vLines.add(p.x);
-    if (p.row > 0) hLines.add(p.y);
+    if (p.col > minCol) vLines.add(p.x);
+    if (p.row > minRow) hLines.add(p.y);
     vLines.add(p.x + p.widthPx);
     hLines.add(p.y + p.heightPx);
   }
@@ -499,7 +501,8 @@ export async function exportPdf(
   const nodes = rfInstance.getNodes();
   if (nodes.length === 0) return;
 
-  const pages = computePageGrid(paperSize, orientation, scale, nodes, layout.heightIn);
+  const { printOriginOffsetX, printOriginOffsetY } = useSchematicStore.getState();
+  const pages = computePageGrid(paperSize, orientation, scale, nodes, layout.heightIn, printOriginOffsetX, printOriginOffsetY);
 
   if (pages.length === 0) return;
 

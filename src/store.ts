@@ -29,7 +29,7 @@ import { DEFAULT_SCROLL_CONFIG } from "./types";
 import type { Orientation } from "./printConfig";
 import { computeAlignment, type AlignOperation } from "./alignUtils";
 import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
-import { routeAllEdges, orthogonalize, type RoutedEdge } from "./edgeRouter";
+import { routeAllEdges, orthogonalize, extractSegments, type RoutedEdge } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath } from "./pathfinding";
 import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, NETWORK_SIGNAL_TYPES } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
@@ -249,12 +249,15 @@ interface SchematicState {
   printScale: number;
   printCustomWidthIn: number;
   printCustomHeightIn: number;
+  printOriginOffsetX: number;
+  printOriginOffsetY: number;
   setPrintView: (v: boolean) => void;
   setPrintPaperId: (id: string) => void;
   setPrintOrientation: (o: Orientation) => void;
   setPrintScale: (s: number) => void;
   setPrintCustomWidthIn: (w: number) => void;
   setPrintCustomHeightIn: (h: number) => void;
+  setPrintOriginOffset: (x: number, y: number) => void;
 
   // Title block
   titleBlock: TitleBlock;
@@ -673,6 +676,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   printScale: 1.0,
   printCustomWidthIn: 24,
   printCustomHeightIn: 36,
+  printOriginOffsetX: 0,
+  printOriginOffsetY: 0,
   titleBlock: { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
   titleBlockLayout: createDefaultLayout(),
   signalColors: undefined,
@@ -1881,6 +1886,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   setPrintScale: (s) => { set({ printScale: Math.max(0.25, Math.min(2, s)) }); get().saveToLocalStorage(); },
   setPrintCustomWidthIn: (w) => { set({ printCustomWidthIn: Math.max(1, w) }); get().saveToLocalStorage(); },
   setPrintCustomHeightIn: (h) => { set({ printCustomHeightIn: Math.max(1, h) }); get().saveToLocalStorage(); },
+  setPrintOriginOffset: (x, y) => { set({ printOriginOffsetX: x, printOriginOffsetY: y }); get().saveToLocalStorage(); },
   setTitleBlock: (tb) => { set({ titleBlock: tb }); get().saveToLocalStorage(); },
   setTitleBlockLayout: (layout) => { set({ titleBlockLayout: layout }); get().saveToLocalStorage(); },
 
@@ -2056,6 +2062,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       printScale: state.printScale,
       printCustomWidthIn: state.printPaperId === "custom" ? state.printCustomWidthIn : undefined,
       printCustomHeightIn: state.printPaperId === "custom" ? state.printCustomHeightIn : undefined,
+      printOriginOffsetX: state.printOriginOffsetX || undefined,
+      printOriginOffsetY: state.printOriginOffsetY || undefined,
       titleBlock: state.titleBlock,
       titleBlockLayout: state.titleBlockLayout,
       hiddenSignalTypes: state.hiddenSignalTypes ? state.hiddenSignalTypes.split(",") as SignalType[] : undefined,
@@ -2118,6 +2126,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             printScale: data.printScale ?? 1.0,
             printCustomWidthIn: data.printCustomWidthIn ?? 24,
             printCustomHeightIn: data.printCustomHeightIn ?? 36,
+            printOriginOffsetX: data.printOriginOffsetX ?? 0,
+            printOriginOffsetY: data.printOriginOffsetY ?? 0,
             titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
             titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
             hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
@@ -2164,6 +2174,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         printScale: data.printScale ?? 1.0,
         printCustomWidthIn: data.printCustomWidthIn ?? 24,
         printCustomHeightIn: data.printCustomHeightIn ?? 36,
+        printOriginOffsetX: data.printOriginOffsetX ?? 0,
+        printOriginOffsetY: data.printOriginOffsetY ?? 0,
         titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
         titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
         hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
@@ -2210,6 +2222,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       printScale: state.printScale,
       printCustomWidthIn: state.printPaperId === "custom" ? state.printCustomWidthIn : undefined,
       printCustomHeightIn: state.printPaperId === "custom" ? state.printCustomHeightIn : undefined,
+      printOriginOffsetX: state.printOriginOffsetX || undefined,
+      printOriginOffsetY: state.printOriginOffsetY || undefined,
       titleBlock: state.titleBlock,
       titleBlockLayout: state.titleBlockLayout,
       hiddenSignalTypes: state.hiddenSignalTypes ? state.hiddenSignalTypes.split(",") as SignalType[] : undefined,
@@ -2271,6 +2285,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       printScale: data.printScale ?? 1.0,
       printCustomWidthIn: data.printCustomWidthIn ?? 24,
       printCustomHeightIn: data.printCustomHeightIn ?? 36,
+      printOriginOffsetX: data.printOriginOffsetX ?? 0,
+      printOriginOffsetY: data.printOriginOffsetY ?? 0,
       titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
       titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
       hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
@@ -2480,7 +2496,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         edgeId: edge.id,
         svgPath,
         waypoints: simplified,
-        segments: [],
+        segments: extractSegments(simplified),
         labelX: midPt.x,
         labelY: midPt.y,
         turns: "simple",

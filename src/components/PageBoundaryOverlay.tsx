@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useCallback, useRef } from "react";
 import { useViewport, useReactFlow } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import { computePageGrid, type PageRect } from "../printPageGrid";
@@ -48,12 +48,14 @@ function computeCrossingLabels(
 ): CrossingLabel[] {
   if (pages.length <= 1) return [];
 
-  // Collect unique page boundary lines
+  // Collect unique page boundary lines (internal edges only)
+  const minCol = Math.min(...pages.map((p) => p.col));
+  const minRow = Math.min(...pages.map((p) => p.row));
   const vLines = new Set<number>(); // vertical boundaries (x values)
   const hLines = new Set<number>(); // horizontal boundaries (y values)
   for (const p of pages) {
-    if (p.col > 0) vLines.add(p.x);
-    if (p.row > 0) hLines.add(p.y);
+    if (p.col > minCol) vLines.add(p.x);
+    if (p.row > minRow) hLines.add(p.y);
     vLines.add(p.x + p.widthPx);
     hLines.add(p.y + p.heightPx);
   }
@@ -238,6 +240,102 @@ function CrossingLabels({ labels, pxPerPt }: { labels: CrossingLabel[]; pxPerPt:
   );
 }
 
+// ─── Origin drag handle ──────────────────────────────────────────
+
+const GRID_SNAP = 20;
+
+function OriginDragHandle({
+  originX,
+  originY,
+  zoom,
+  onDrag,
+}: {
+  originX: number;
+  originY: number;
+  zoom: number;
+  onDrag: (x: number, y: number) => void;
+}) {
+  const dragging = useRef(false);
+  const startRef = useRef({ mouseX: 0, mouseY: 0, ox: 0, oy: 0 });
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      dragging.current = true;
+      startRef.current = { mouseX: e.clientX, mouseY: e.clientY, ox: originX, oy: originY };
+      (e.target as SVGElement).setPointerCapture(e.pointerId);
+    },
+    [originX, originY],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!dragging.current) return;
+      const dx = (e.clientX - startRef.current.mouseX) / zoom;
+      const dy = (e.clientY - startRef.current.mouseY) / zoom;
+      const newX = Math.round((startRef.current.ox + dx) / GRID_SNAP) * GRID_SNAP;
+      const newY = Math.round((startRef.current.oy + dy) / GRID_SNAP) * GRID_SNAP;
+      onDrag(newX, newY);
+    },
+    [zoom, onDrag],
+  );
+
+  const onPointerUp = useCallback(() => {
+    dragging.current = false;
+  }, []);
+
+  // Constant screen-size for the handle
+  const armLen = 24 / zoom;
+  const strokeW = 2 / zoom;
+  const hitSize = 16 / zoom;
+
+  return (
+    <g
+      style={{ pointerEvents: "all", cursor: "move" }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+    >
+      {/* Hit area */}
+      <rect
+        x={originX - hitSize / 2}
+        y={originY - hitSize / 2}
+        width={hitSize}
+        height={hitSize}
+        fill="transparent"
+      />
+      {/* L-bracket: right arm */}
+      <line
+        x1={originX}
+        y1={originY}
+        x2={originX + armLen}
+        y2={originY}
+        stroke="#2563eb"
+        strokeWidth={strokeW}
+        strokeLinecap="round"
+      />
+      {/* L-bracket: down arm */}
+      <line
+        x1={originX}
+        y1={originY}
+        x2={originX}
+        y2={originY + armLen}
+        stroke="#2563eb"
+        strokeWidth={strokeW}
+        strokeLinecap="round"
+      />
+      {/* Corner dot */}
+      <circle
+        cx={originX}
+        cy={originY}
+        r={3 / zoom}
+        fill="#2563eb"
+      />
+    </g>
+  );
+}
+
 // ─── Main overlay ─────────────────────────────────────────────────
 
 function PageBoundaryOverlay() {
@@ -255,6 +353,9 @@ function PageBoundaryOverlay() {
   const storeNodes = useSchematicStore((s) => s.nodes);
   const storeEdges = useSchematicStore((s) => s.edges);
   const signalColors = useSchematicStore((s) => s.signalColors);
+  const printOriginOffsetX = useSchematicStore((s) => s.printOriginOffsetX);
+  const printOriginOffsetY = useSchematicStore((s) => s.printOriginOffsetY);
+  const setPrintOriginOffset = useSchematicStore((s) => s.setPrintOriginOffset);
   // Subscribe to node positions so the overlay re-renders when nodes move
   useSchematicStore((s) =>
     s.nodes.map((n) => `${n.id}:${Math.round(n.position.x)},${Math.round(n.position.y)},${n.measured?.width ?? 0},${n.measured?.height ?? 0}`).join("|"),
@@ -263,7 +364,7 @@ function PageBoundaryOverlay() {
   const paperSize = getPaperSize(printPaperId, printCustomWidthIn, printCustomHeightIn);
   const nodes = rfInstance.getNodes();
 
-  const pages = computePageGrid(paperSize, printOrientation, printScale, nodes, titleBlockLayout.heightIn);
+  const pages = computePageGrid(paperSize, printOrientation, printScale, nodes, titleBlockLayout.heightIn, printOriginOffsetX, printOriginOffsetY);
 
   // Compute page-relative sizing: pxPerPt scales with page dimensions, not zoom
   const marginPx = pages.length > 0 ? pages[0].contentX - pages[0].x : 0;
@@ -278,6 +379,8 @@ function PageBoundaryOverlay() {
   if (pages.length === 0) return null;
 
   const totalPages = pages.length;
+  const minCol = Math.min(...pages.map((p) => p.col));
+  const minRow = Math.min(...pages.map((p) => p.row));
 
   return (
     <div
@@ -301,9 +404,10 @@ function PageBoundaryOverlay() {
         }}
       >
         {pages.map((p) => (
-          <PageOverlay key={p.index} page={p} zoom={zoom} titleBlock={titleBlock} layout={titleBlockLayout} totalPages={totalPages} />
+          <PageOverlay key={p.index} page={p} zoom={zoom} titleBlock={titleBlock} layout={titleBlockLayout} totalPages={totalPages} minCol={minCol} minRow={minRow} />
         ))}
         <CrossingLabels labels={crossingLabels} pxPerPt={pxPerPt} />
+        <OriginDragHandle originX={printOriginOffsetX} originY={printOriginOffsetY} zoom={zoom} onDrag={setPrintOriginOffset} />
       </svg>
     </div>
   );
@@ -321,12 +425,16 @@ function PageOverlay({
   titleBlock: tb,
   layout,
   totalPages,
+  minCol,
+  minRow,
 }: {
   page: PageRect;
   zoom: number;
   titleBlock: TitleBlock;
   layout: TitleBlockLayout;
   totalPages: number;
+  minCol: number;
+  minRow: number;
 }) {
   const fontSize = 14 / zoom;
   const labelFontSize = 10 / zoom;
@@ -581,7 +689,7 @@ function PageOverlay({
         fontSize={labelFontSize}
         fontFamily="'Inter', system-ui, sans-serif"
       >
-        {p.col + 1},{p.row + 1}
+        {p.col - minCol + 1},{p.row - minRow + 1}
       </text>
     </g>
   );

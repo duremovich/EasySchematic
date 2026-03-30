@@ -96,6 +96,8 @@ export interface PrintConfig {
   scale: number;
   customWidthIn?: number;
   customHeightIn?: number;
+  originOffsetX?: number;
+  originOffsetY?: number;
 }
 
 // ---------- Constants ----------
@@ -535,6 +537,9 @@ function buildTitleBlockObstacles(
     printConfig.orientation,
     printConfig.scale,
     nodes,
+    undefined,
+    printConfig.originOffsetX ?? 0,
+    printConfig.originOffsetY ?? 0,
   );
 
   const marginPx = (PAGE_MARGIN_IN * DPI) / printConfig.scale;

@@ -24,10 +24,13 @@ function PrintViewBar() {
   const setPrintScale = useSchematicStore((s) => s.setPrintScale);
   const setPrintCustomWidthIn = useSchematicStore((s) => s.setPrintCustomWidthIn);
   const setPrintCustomHeightIn = useSchematicStore((s) => s.setPrintCustomHeightIn);
+  const printOriginOffsetX = useSchematicStore((s) => s.printOriginOffsetX);
+  const printOriginOffsetY = useSchematicStore((s) => s.printOriginOffsetY);
+  const setPrintOriginOffset = useSchematicStore((s) => s.setPrintOriginOffset);
 
   const paperSize = getPaperSize(printPaperId, printCustomWidthIn, printCustomHeightIn);
   const nodes = rfInstance.getNodes();
-  const pages = computePageGrid(paperSize, printOrientation, printScale, nodes, titleBlockLayout.heightIn);
+  const pages = computePageGrid(paperSize, printOrientation, printScale, nodes, titleBlockLayout.heightIn, printOriginOffsetX, printOriginOffsetY);
 
   const handleExportPdf = useCallback(async () => {
     await exportPdf(rfInstance, paperSize, printOrientation, printScale, titleBlock, titleBlockLayout);
@@ -131,6 +134,33 @@ function PrintViewBar() {
         <span className="text-xs text-gray-800 w-8 text-right font-mono">
           {Math.round(printScale * 100)}%
         </span>
+      </label>
+
+      {/* Page offset */}
+      <label className="flex items-center gap-1 text-xs text-gray-600">
+        Offset
+        <input
+          type="number"
+          step={20}
+          value={printOriginOffsetX}
+          onChange={(e) => setPrintOriginOffset(Number(e.target.value), printOriginOffsetY)}
+          className="w-14 text-xs bg-white border border-gray-300 rounded px-1 py-0.5 text-gray-800 text-center"
+        />
+        <input
+          type="number"
+          step={20}
+          value={printOriginOffsetY}
+          onChange={(e) => setPrintOriginOffset(printOriginOffsetX, Number(e.target.value))}
+          className="w-14 text-xs bg-white border border-gray-300 rounded px-1 py-0.5 text-gray-800 text-center"
+        />
+        {(printOriginOffsetX !== 0 || printOriginOffsetY !== 0) && (
+          <button
+            className="text-xs text-blue-600 hover:underline cursor-pointer"
+            onClick={() => setPrintOriginOffset(0, 0)}
+          >
+            Reset
+          </button>
+        )}
       </label>
 
       {/* Page count */}

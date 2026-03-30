@@ -360,6 +360,8 @@ export interface SchematicFile {
   printScale?: number;
   printCustomWidthIn?: number;
   printCustomHeightIn?: number;
+  printOriginOffsetX?: number;
+  printOriginOffsetY?: number;
   titleBlock?: TitleBlock;
   titleBlockLayout?: TitleBlockLayout;
   hiddenSignalTypes?: SignalType[];

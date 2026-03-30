@@ -227,7 +227,7 @@ function OffsetEdgeComponent({
     let sp = "", tp = "";
     if (s.printView && srcNode && tgtNode) {
       const paperSize = getPaperSize(s.printPaperId, s.printCustomWidthIn, s.printCustomHeightIn);
-      const pages = computePageGrid(paperSize, s.printOrientation, s.printScale, s.nodes, s.titleBlockLayout?.heightIn ?? 1);
+      const pages = computePageGrid(paperSize, s.printOrientation, s.printScale, s.nodes, s.titleBlockLayout?.heightIn ?? 1, s.printOriginOffsetX, s.printOriginOffsetY);
       if (pages.length > 1) {
         const findPage = (x: number, y: number) => {
           for (const p of pages) {

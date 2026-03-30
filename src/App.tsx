@@ -1026,7 +1026,7 @@ function SchematicCanvas() {
       connectionLineStyle={{ opacity: 0 }}
       snapToGrid
       snapGrid={[GRID_SIZE, GRID_SIZE]}
-      nodeExtent={printView ? [[0, 0], [Infinity, Infinity]] : undefined}
+      nodeExtent={undefined}
       onEdgeContextMenu={(event, edge) => {
         event.preventDefault();
         const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });

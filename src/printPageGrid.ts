@@ -87,6 +87,8 @@ export function computePageGrid(
   scale: number,
   nodes: NodeInfo[],
   titleBlockHeightIn: number = TITLE_BLOCK_HEIGHT_IN,
+  originOffsetX: number = 0,
+  originOffsetY: number = 0,
 ): PageRect[] {
   if (nodes.length === 0) return [];
 
@@ -96,11 +98,13 @@ export function computePageGrid(
     position: getAbsolutePosition(n, nodes),
   }));
 
-  // Compute max extent of content (pages grow right and down from origin)
-  let maxX = -Infinity, maxY = -Infinity;
+  // Compute content bounding box
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const n of absNodes) {
     const nw = n.measured?.width ?? 180;
     const nh = n.measured?.height ?? 60;
+    minX = Math.min(minX, n.position.x);
+    minY = Math.min(minY, n.position.y);
     maxX = Math.max(maxX, n.position.x + nw);
     maxY = Math.max(maxY, n.position.y + nh);
   }
@@ -127,25 +131,24 @@ export function computePageGrid(
   const contentW = pageWidthPx - 2 * marginPx;
   const contentH = pageHeightPx - 2 * marginPx - titleBlockPx;
 
-  // Add padding beyond max content extent
+  // Add padding beyond content extent
   const pad = 40 / scale;
-  const boundsMaxX = maxX + pad;
-  const boundsMaxY = maxY + pad;
 
-  // Fixed origin at (0,0) — pages tile right and down from canvas origin.
-  // Content at the first page's margin inset gets natural breathing room.
-  const originX = 0;
-  const originY = 0;
+  // Origin from offset — pages tile in all directions to cover content
+  const originX = originOffsetX;
+  const originY = originOffsetY;
 
-  // Compute how many columns/rows needed to cover content
-  const cols = Math.max(1, Math.ceil(boundsMaxX / pageWidthPx));
-  const rows = Math.max(1, Math.ceil(boundsMaxY / pageHeightPx));
+  // Compute column/row range relative to origin (can be negative)
+  const colStart = Math.floor((minX - pad - originX) / pageWidthPx);
+  const colEnd = Math.max(colStart + 1, Math.ceil((maxX + pad - originX) / pageWidthPx));
+  const rowStart = Math.floor((minY - pad - originY) / pageHeightPx);
+  const rowEnd = Math.max(rowStart + 1, Math.ceil((maxY + pad - originY) / pageHeightPx));
 
   // Build pages, skipping empty cells
   const pages: PageRect[] = [];
   let index = 0;
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
+  for (let row = rowStart; row < rowEnd; row++) {
+    for (let col = colStart; col < colEnd; col++) {
       const pageX = originX + col * pageWidthPx;
       const pageY = originY + row * pageHeightPx;
       const contentX = pageX + marginPx;
