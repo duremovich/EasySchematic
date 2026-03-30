@@ -12,6 +12,7 @@ import type { RoutedEdge } from "./edgeRouter";
 import { computeCellRects, normalizeSizes, getFieldValue } from "./titleBlockLayout";
 import { useSchematicStore } from "./store";
 import { DEFAULT_SIGNAL_COLORS } from "./signalColors";
+import { collectColorKeyEntries, layoutColorKey, type ColorKeyEntry } from "./colorKeyLayout";
 
 const DPI = 96;
 const PIXEL_RATIO = 1.5;
@@ -106,7 +107,7 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
-function drawTitleBlock(
+async function drawTitleBlock(
   doc: jsPDF,
   pageWIn: number,
   pageHIn: number,
@@ -215,9 +216,14 @@ function drawTitleBlock(
           const logoPad = 0.03;
           const availW = cellW - logoPad * 2;
           const availH = cellH - logoPad * 2;
-          // Load image to get natural dimensions for aspect-ratio-preserving fit
+          // Load image and await decode to get natural dimensions
           const img = new Image();
           img.src = tb.logo;
+          await new Promise<void>((resolve) => {
+            if (img.naturalWidth > 0) { resolve(); return; }
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
           const natW = img.naturalWidth || availW;
           const natH = img.naturalHeight || availH;
           const aspect = natW / natH;
@@ -288,7 +294,7 @@ function drawContentBorder(
   const contentH = pageHIn - 2 * margin;
   doc.saveGraphicsState();
   doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.01);
+  doc.setLineWidth(0.005);
   doc.rect(margin, margin, contentW, contentH);
   doc.restoreGraphicsState();
 }
@@ -490,6 +496,90 @@ function drawCrossingLabels(doc: jsPDF, labels: PdfCrossingLabel[]) {
   doc.restoreGraphicsState();
 }
 
+/** Convert SVG dash-array string (e.g. "8 4") to inch-scaled numeric array for jsPDF. */
+function dashArrayToInches(dashStr: string | undefined, scale: number): number[] {
+  if (!dashStr) return [];
+  return dashStr.split(/\s+/).map((v) => parseFloat(v) * scale);
+}
+
+function drawColorKey(
+  doc: jsPDF,
+  pageWIn: number,
+  pageHIn: number,
+  entries: ColorKeyEntry[],
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right",
+  columns: number,
+) {
+  if (entries.length === 0) return;
+  doc.saveGraphicsState();
+
+  const margin = PAGE_MARGIN_IN;
+  const fontSize = 6; // pt
+  const headerFontSize = 7; // pt
+  const swatchLen = 0.25; // inches
+  const swatchGap = 0.06;
+  const cellW = 0.8;
+  const cellH = fontSize / 72 * 1.8;
+  const padding = 0.08;
+  const headerH = headerFontSize / 72 * 1.8;
+  const dashScale = swatchLen / 20; // SVG units → inches
+
+  const geo = layoutColorKey(entries, columns, cellW, cellH, padding, headerH);
+
+  // Flush with drawing border — locked into the corner like the title block
+  const contentW = pageWIn - 2 * margin;
+  const drawingH = pageHIn - 2 * margin; // full drawing border height
+  const isRight = corner.includes("right");
+  const isBottom = corner.includes("bottom");
+
+  const ox = isRight ? margin + contentW - geo.width : margin;
+  const oy = isBottom ? margin + drawingH - geo.height : margin;
+
+  // White fill + black border — matches title block style
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.005);
+  doc.rect(ox, oy, geo.width, geo.height, "FD");
+
+  // Header divider line
+  doc.line(ox, oy + padding + headerH, ox + geo.width, oy + padding + headerH);
+
+  // Header text
+  doc.setFont("Inter", "bold");
+  doc.setFontSize(headerFontSize);
+  doc.setTextColor(0, 0, 0);
+  doc.text("SIGNAL KEY", ox + padding, oy + padding + headerFontSize / 72 * 0.85);
+
+  // Entries
+  doc.setFont("Inter", "normal");
+  doc.setFontSize(fontSize);
+  doc.setLineWidth(0.012);
+
+  for (const { entry, x, y } of geo.entries) {
+    const absX = ox + x;
+    const absY = oy + y;
+    const lineY = absY + cellH / 2;
+
+    // Swatch line
+    const [r, g, b] = hexToRgb(entry.color);
+    doc.setDrawColor(r, g, b);
+    const dash = dashArrayToInches(entry.dashArray, dashScale);
+    if (dash.length > 0) {
+      doc.setLineDashPattern(dash, 0);
+    }
+    doc.line(absX, lineY, absX + swatchLen, lineY);
+    if (dash.length > 0) {
+      doc.setLineDashPattern([], 0);
+    }
+
+    // Label
+    doc.setTextColor(0, 0, 0);
+    doc.text(entry.label, absX + swatchLen + swatchGap, lineY + (fontSize / 72) * 0.35);
+  }
+
+  doc.restoreGraphicsState();
+}
+
 export async function exportPdf(
   rfInstance: ReactFlowInstance,
   paperSize: PaperSize,
@@ -622,7 +712,7 @@ export async function exportPdf(
 
       // Draw content border and title block with vector graphics
       drawContentBorder(doc, pageWIn, pageHIn);
-      drawTitleBlock(doc, pageWIn, pageHIn, titleBlock, layout, i + 1, pages.length);
+      await drawTitleBlock(doc, pageWIn, pageHIn, titleBlock, layout, i + 1, pages.length);
 
       // Draw crossing labels
       const storeState = useSchematicStore.getState();
@@ -630,6 +720,16 @@ export async function exportPdf(
         page, pages, storeState.routedEdges, storeState.edges, storeState.nodes, scale,
       );
       drawCrossingLabels(doc, pdfLabels);
+
+      // Draw color key / signal legend
+      if (storeState.colorKeyEnabled) {
+        const ckPage = storeState.colorKeyPage;
+        const showOnThis = ckPage === "all" || (ckPage === "first" && i === 0) || (ckPage === "last" && i === pages.length - 1);
+        if (showOnThis) {
+          const ckEntries = collectColorKeyEntries(storeState.edges, storeState.signalColors, storeState.signalLineStyles, storeState.colorKeyOverrides);
+          drawColorKey(doc, pageWIn, pageHIn, ckEntries, storeState.colorKeyCorner, storeState.colorKeyColumns);
+        }
+      }
     }
 
     // Save the PDF

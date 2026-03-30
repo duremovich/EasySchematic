@@ -7,6 +7,7 @@ import type { TitleBlock, TitleBlockLayout, DeviceData, SignalType } from "../ty
 import type { RoutedEdge } from "../edgeRouter";
 import { computeCellRects, normalizeSizes, getFieldValue, getFieldLabel } from "../titleBlockLayout";
 import { DEFAULT_SIGNAL_COLORS } from "../signalColors";
+import { collectColorKeyEntries, layoutColorKey, type ColorKeyEntry } from "../colorKeyLayout";
 
 // ─── Page crossing labels ─────────────────────────────────────────
 
@@ -336,6 +337,121 @@ function OriginDragHandle({
   );
 }
 
+// ─── Color key legend ────────────────────────────────────────────
+
+function ColorKeyLegend({
+  entries,
+  pages,
+  corner,
+  columns,
+  pageFilter,
+  pxPerPt,
+}: {
+  entries: ColorKeyEntry[];
+  pages: PageRect[];
+  corner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  columns: number;
+  pageFilter: "first" | "last" | "all";
+  pxPerPt: number;
+}) {
+  if (entries.length === 0 || pages.length === 0) return null;
+
+  const fontSize = 6.5 * pxPerPt;
+  const headerFontSize = 7.5 * pxPerPt;
+  const swatchLen = 18 * pxPerPt;
+  const swatchGap = 4 * pxPerPt;
+  const cellW = (swatchLen + swatchGap + 55 * pxPerPt);
+  const cellH = fontSize * 1.8;
+  const padding = 5 * pxPerPt;
+  const headerH = headerFontSize * 1.8;
+  const strokeW = 1.5 * pxPerPt;
+  const borderW = 0.5 * pxPerPt; // match title block stroke weight
+
+  const geo = layoutColorKey(entries, columns, cellW, cellH, padding, headerH);
+
+  // Determine which pages show the legend
+  const qualifying = pages.filter((_, i) =>
+    pageFilter === "all" ? true : pageFilter === "first" ? i === 0 : i === pages.length - 1,
+  );
+
+  return (
+    <g>
+      {qualifying.map((p) => {
+        // Flush with drawing border — locked into the corner like the title block
+        const isRight = corner.includes("right");
+        const isBottom = corner.includes("bottom");
+        const marginPx = p.contentX - p.x;
+        const drawingBottom = p.y + p.heightPx - marginPx;
+        const ox = isRight ? p.contentX + p.contentW - geo.width : p.contentX;
+        const oy = isBottom ? drawingBottom - geo.height : p.contentY;
+
+        return (
+          <g key={`ck-${p.index}`} transform={`translate(${ox},${oy})`}>
+            {/* White fill + black border — matches title block style */}
+            <rect
+              x={0}
+              y={0}
+              width={geo.width}
+              height={geo.height}
+              fill="white"
+              stroke="#000000"
+              strokeWidth={borderW}
+            />
+            {/* Header divider line */}
+            <line
+              x1={0}
+              y1={padding + headerH}
+              x2={geo.width}
+              y2={padding + headerH}
+              stroke="#000000"
+              strokeWidth={borderW}
+            />
+            {/* Header */}
+            <text
+              x={padding}
+              y={padding + headerFontSize * 0.85}
+              fontSize={headerFontSize}
+              fontFamily="'Inter', system-ui, sans-serif"
+              fontWeight="600"
+              fill="#000000"
+            >
+              SIGNAL KEY
+            </text>
+            {/* Entries */}
+            {geo.entries.map(({ entry, x, y }) => {
+              const lineY = y + cellH / 2;
+              const dashArray = entry.dashArray;
+              return (
+                <g key={entry.signalType}>
+                  <line
+                    x1={x}
+                    y1={lineY}
+                    x2={x + swatchLen}
+                    y2={lineY}
+                    stroke={entry.color}
+                    strokeWidth={strokeW}
+                    strokeDasharray={dashArray}
+                    strokeLinecap="round"
+                  />
+                  <text
+                    x={x + swatchLen + swatchGap}
+                    y={lineY + fontSize * 0.35}
+                    fontSize={fontSize}
+                    fontFamily="'Inter', system-ui, sans-serif"
+                    fill="#000000"
+                  >
+                    {entry.label}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
 // ─── Main overlay ─────────────────────────────────────────────────
 
 function PageBoundaryOverlay() {
@@ -353,6 +469,12 @@ function PageBoundaryOverlay() {
   const storeNodes = useSchematicStore((s) => s.nodes);
   const storeEdges = useSchematicStore((s) => s.edges);
   const signalColors = useSchematicStore((s) => s.signalColors);
+  const signalLineStyles = useSchematicStore((s) => s.signalLineStyles);
+  const colorKeyEnabled = useSchematicStore((s) => s.colorKeyEnabled);
+  const colorKeyCorner = useSchematicStore((s) => s.colorKeyCorner);
+  const colorKeyColumns = useSchematicStore((s) => s.colorKeyColumns);
+  const colorKeyPage = useSchematicStore((s) => s.colorKeyPage);
+  const colorKeyOverrides = useSchematicStore((s) => s.colorKeyOverrides);
   const printOriginOffsetX = useSchematicStore((s) => s.printOriginOffsetX);
   const printOriginOffsetY = useSchematicStore((s) => s.printOriginOffsetY);
   const setPrintOriginOffset = useSchematicStore((s) => s.setPrintOriginOffset);
@@ -374,6 +496,11 @@ function PageBoundaryOverlay() {
   const crossingLabels = useMemo(
     () => computeCrossingLabels(pages, routedEdges, storeEdges, storeNodes, pxPerPt, signalColors),
     [pages, routedEdges, storeEdges, storeNodes, pxPerPt, signalColors],
+  );
+
+  const colorKeyEntries = useMemo(
+    () => colorKeyEnabled ? collectColorKeyEntries(storeEdges, signalColors, signalLineStyles, colorKeyOverrides) : [],
+    [colorKeyEnabled, storeEdges, signalColors, signalLineStyles, colorKeyOverrides],
   );
 
   if (pages.length === 0) return null;
@@ -407,6 +534,7 @@ function PageBoundaryOverlay() {
           <PageOverlay key={p.index} page={p} zoom={zoom} titleBlock={titleBlock} layout={titleBlockLayout} totalPages={totalPages} minCol={minCol} minRow={minRow} />
         ))}
         <CrossingLabels labels={crossingLabels} pxPerPt={pxPerPt} />
+        {colorKeyEnabled && <ColorKeyLegend entries={colorKeyEntries} pages={pages} corner={colorKeyCorner} columns={colorKeyColumns} pageFilter={colorKeyPage} pxPerPt={pxPerPt} />}
         <OriginDragHandle originX={printOriginOffsetX} originY={printOriginOffsetY} zoom={zoom} onDrag={setPrintOriginOffset} />
       </svg>
     </div>
@@ -506,7 +634,7 @@ function PageOverlay({
         height={(p.y + p.heightPx) - p.contentY - marginPx}
         fill="none"
         stroke="#000000"
-        strokeWidth={1 / zoom}
+        strokeWidth={stroke}
       />
 
       {/* Title block */}

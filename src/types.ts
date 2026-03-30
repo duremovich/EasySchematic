@@ -392,6 +392,12 @@ export interface SchematicFile {
   edgeHitboxSize?: number;
   /** User-preferred device category display order (#62) */
   categoryOrder?: string[];
+  /** Color key / signal legend for print view (#70) */
+  colorKeyEnabled?: boolean;
+  colorKeyCorner?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  colorKeyColumns?: number;
+  colorKeyPage?: "first" | "last" | "all";
+  colorKeyOverrides?: Partial<Record<SignalType, boolean>>;
 }
 
 export type ScrollAction = "zoom" | "pan-x" | "pan-y";

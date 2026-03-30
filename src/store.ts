@@ -251,6 +251,17 @@ interface SchematicState {
   printCustomHeightIn: number;
   printOriginOffsetX: number;
   printOriginOffsetY: number;
+  // Color key / signal legend for print view
+  colorKeyEnabled: boolean;
+  colorKeyCorner: "top-left" | "top-right" | "bottom-left" | "bottom-right";
+  colorKeyColumns: number;
+  colorKeyPage: "first" | "last" | "all";
+  colorKeyOverrides: Partial<Record<SignalType, boolean>> | undefined;
+  setColorKeyEnabled: (v: boolean) => void;
+  setColorKeyCorner: (c: "top-left" | "top-right" | "bottom-left" | "bottom-right") => void;
+  setColorKeyColumns: (n: number) => void;
+  setColorKeyPage: (p: "first" | "last" | "all") => void;
+  setColorKeyOverrides: (o: Partial<Record<SignalType, boolean>> | undefined) => void;
   setPrintView: (v: boolean) => void;
   setPrintPaperId: (id: string) => void;
   setPrintOrientation: (o: Orientation) => void;
@@ -682,6 +693,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   printCustomHeightIn: 36,
   printOriginOffsetX: 0,
   printOriginOffsetY: 0,
+  colorKeyEnabled: false,
+  colorKeyCorner: "bottom-left" as "top-left" | "top-right" | "bottom-left" | "bottom-right",
+  colorKeyColumns: 1,
+  colorKeyPage: "all" as "first" | "last" | "all",
+  colorKeyOverrides: undefined,
   titleBlock: { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
   titleBlockLayout: createDefaultLayout(),
   signalColors: undefined,
@@ -1892,6 +1908,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   setPrintCustomWidthIn: (w) => { set({ printCustomWidthIn: Math.max(1, w) }); get().saveToLocalStorage(); },
   setPrintCustomHeightIn: (h) => { set({ printCustomHeightIn: Math.max(1, h) }); get().saveToLocalStorage(); },
   setPrintOriginOffset: (x, y) => { set({ printOriginOffsetX: x, printOriginOffsetY: y }); get().saveToLocalStorage(); },
+  setColorKeyEnabled: (v) => { set({ colorKeyEnabled: v }); get().saveToLocalStorage(); },
+  setColorKeyCorner: (c) => { set({ colorKeyCorner: c }); get().saveToLocalStorage(); },
+  setColorKeyColumns: (n) => { set({ colorKeyColumns: Math.max(1, Math.min(4, n)) }); get().saveToLocalStorage(); },
+  setColorKeyPage: (p) => { set({ colorKeyPage: p }); get().saveToLocalStorage(); },
+  setColorKeyOverrides: (o) => { set({ colorKeyOverrides: o && Object.keys(o).length > 0 ? o : undefined }); get().saveToLocalStorage(); },
   setTitleBlock: (tb) => { set({ titleBlock: tb }); get().saveToLocalStorage(); },
   setTitleBlockLayout: (layout) => { set({ titleBlockLayout: layout }); get().saveToLocalStorage(); },
 
@@ -2089,6 +2110,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       autoRoute: state.autoRoute === false ? false : undefined,
       edgeHitboxSize: state.edgeHitboxSize !== 10 ? state.edgeHitboxSize : undefined,
       categoryOrder: state.categoryOrder ?? undefined,
+      colorKeyEnabled: state.colorKeyEnabled || undefined,
+      colorKeyCorner: state.colorKeyCorner !== "bottom-left" ? state.colorKeyCorner : undefined,
+      colorKeyColumns: state.colorKeyColumns !== 1 ? state.colorKeyColumns : undefined,
+      colorKeyPage: state.colorKeyPage !== "all" ? state.colorKeyPage : undefined,
+      colorKeyOverrides: state.colorKeyOverrides && Object.keys(state.colorKeyOverrides).length > 0 ? state.colorKeyOverrides : undefined,
     };
     // Persist cloud identity alongside autosave (not part of SchematicFile export)
     const blob: Record<string, unknown> = { ...data };
@@ -2153,6 +2179,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             showConnectionLabels: data.showConnectionLabels ?? true,
             hideAdapters: data.hideAdapters ?? false,
             categoryOrder: data.categoryOrder ?? null,
+            colorKeyEnabled: data.colorKeyEnabled ?? false,
+            colorKeyCorner: data.colorKeyCorner ?? "bottom-left",
+            colorKeyColumns: data.colorKeyColumns ?? 1,
+            colorKeyPage: data.colorKeyPage ?? "all",
+            colorKeyOverrides: data.colorKeyOverrides ?? undefined,
           });
           hydrated = true;
           get().saveToLocalStorage();
@@ -2201,6 +2232,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         autoRoute: data.autoRoute ?? true,
         edgeHitboxSize: data.edgeHitboxSize ?? 10,
         categoryOrder: data.categoryOrder ?? null,
+        colorKeyEnabled: data.colorKeyEnabled ?? false,
+        colorKeyCorner: data.colorKeyCorner ?? "bottom-left",
+        colorKeyColumns: data.colorKeyColumns ?? 1,
+        colorKeyPage: data.colorKeyPage ?? "all",
+        colorKeyOverrides: data.colorKeyOverrides ?? undefined,
         // Restore cloud identity from autosave (not part of SchematicFile)
         cloudSchematicId: parsed.cloudSchematicId ?? null,
         cloudSavedAt: parsed.cloudSavedAt ?? null,
@@ -2247,6 +2283,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showConnectionLabels: !state.showConnectionLabels ? false : undefined,
       hideAdapters: state.hideAdapters || undefined,
       categoryOrder: state.categoryOrder ?? undefined,
+      colorKeyEnabled: state.colorKeyEnabled || undefined,
+      colorKeyCorner: state.colorKeyCorner !== "bottom-left" ? state.colorKeyCorner : undefined,
+      colorKeyColumns: state.colorKeyColumns !== 1 ? state.colorKeyColumns : undefined,
+      colorKeyPage: state.colorKeyPage !== "all" ? state.colorKeyPage : undefined,
+      colorKeyOverrides: state.colorKeyOverrides && Object.keys(state.colorKeyOverrides).length > 0 ? state.colorKeyOverrides : undefined,
     };
   },
 
@@ -2312,6 +2353,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       autoRoute: data.autoRoute ?? true,
       edgeHitboxSize: data.edgeHitboxSize ?? 10,
       categoryOrder: data.categoryOrder ?? null,
+      colorKeyEnabled: data.colorKeyEnabled ?? false,
+      colorKeyCorner: data.colorKeyCorner ?? "bottom-left",
+      colorKeyColumns: data.colorKeyColumns ?? 1,
+      colorKeyPage: data.colorKeyPage ?? "all",
+      colorKeyOverrides: data.colorKeyOverrides ?? undefined,
       // File imports and shared schematics always start as local-only
       cloudSchematicId: null,
       cloudSavedAt: null,
