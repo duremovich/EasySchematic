@@ -150,6 +150,7 @@ export default function MenuBar() {
 
   const cloudSchematicId = useSchematicStore((s) => s.cloudSchematicId);
   const cloudSavedAt = useSchematicStore((s) => s.cloudSavedAt);
+  const fileHandle = useSchematicStore((s) => s.fileHandle);
   const isOnline = useSchematicStore((s) => s.isOnline);
 
   // Keep nameValue in sync when schematicName changes externally
@@ -195,7 +196,17 @@ export default function MenuBar() {
 
   // ─── File actions ──────────────────────────────────────
 
-  const handleSave = useCallback(() => {
+  // Write schematic JSON to a FileSystemFileHandle (silent, no dialog)
+  const writeToFileHandle = useCallback(async (handle: FileSystemFileHandle) => {
+    const data = exportToJSON();
+    const json = JSON.stringify(data, null, 2);
+    const writable = await handle.createWritable();
+    await writable.write(json);
+    await writable.close();
+  }, [exportToJSON]);
+
+  // Legacy download fallback (always triggers browser download)
+  const downloadFile = useCallback(() => {
     const data = exportToJSON();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -206,9 +217,124 @@ export default function MenuBar() {
     URL.revokeObjectURL(url);
   }, [exportToJSON]);
 
-  const handleOpen = useCallback(() => {
-    fileInputRef.current?.click();
+  // Show the native file picker and return the chosen handle
+  const pickFileHandle = useCallback(async (): Promise<FileSystemFileHandle | null> => {
+    const store = useSchematicStore.getState();
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: `${store.schematicName.replace(/[^a-zA-Z0-9-_ ]/g, "")}.json`,
+        types: [{ description: "EasySchematic files", accept: { "application/json": [".json"] } }],
+      });
+      return handle;
+    } catch {
+      // User cancelled the picker
+      return null;
+    }
   }, []);
+
+  // Save: reuse existing handle/cloud, or prompt for first save
+  const handleSave = useCallback(async () => {
+    const store = useSchematicStore.getState();
+
+    // Cloud-backed schematic: update cloud (local file handle still used if present)
+    if (store.cloudSchematicId && store.isOnline) {
+      checkSession().then((session) => {
+        if (!session) return;
+        const data = store.exportToJSON();
+        updateSchematicInCloud(store.cloudSchematicId!, data)
+          .then((result) => store.setCloudSavedAt(result.updated_at))
+          .catch((e: unknown) => {
+            store.addToast(e instanceof Error ? e.message : "Cloud save failed", "error");
+          });
+      });
+    }
+
+    // Has a local file handle: silently overwrite
+    if (store.fileHandle) {
+      try {
+        await writeToFileHandle(store.fileHandle);
+        store.addToast("Saved", "success", 1500);
+        return;
+      } catch {
+        // Handle went stale (file moved/deleted) — fall through to picker
+        store.setFileHandle(null);
+      }
+    }
+
+    // If cloud-backed but no local handle, cloud save is enough
+    if (store.cloudSchematicId) return;
+
+    // No handle, no cloud — first save. Use File System Access API if available.
+    if ("showSaveFilePicker" in window) {
+      const handle = await pickFileHandle();
+      if (!handle) return;
+      store.setFileHandle(handle);
+      // Update schematic name to match chosen filename
+      const name = handle.name.replace(/\.json$/i, "");
+      if (name) store.setSchematicName(name);
+      try {
+        await writeToFileHandle(handle);
+        store.addToast("Saved", "success", 1500);
+      } catch (e: unknown) {
+        store.addToast(e instanceof Error ? e.message : "Save failed", "error");
+      }
+    } else {
+      downloadFile();
+    }
+  }, [writeToFileHandle, downloadFile, pickFileHandle]);
+
+  // Save As: always show picker, optionally switch from cloud to local
+  const handleSaveAs = useCallback(async () => {
+    if ("showSaveFilePicker" in window) {
+      const handle = await pickFileHandle();
+      if (!handle) return;
+      const store = useSchematicStore.getState();
+      // Detach from cloud — user explicitly chose local destination
+      if (store.cloudSchematicId) {
+        store.setCloudSchematicId(null);
+        store.setCloudSavedAt(null);
+      }
+      store.setFileHandle(handle);
+      const name = handle.name.replace(/\.json$/i, "");
+      if (name) store.setSchematicName(name);
+      try {
+        await writeToFileHandle(handle);
+        store.addToast("Saved", "success", 1500);
+      } catch (e: unknown) {
+        store.addToast(e instanceof Error ? e.message : "Save failed", "error");
+      }
+    } else {
+      downloadFile();
+    }
+  }, [pickFileHandle, writeToFileHandle, downloadFile]);
+
+  const handleOpen = useCallback(async () => {
+    if ("showOpenFilePicker" in window) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{ description: "EasySchematic files", accept: { "application/json": [".json"] } }],
+          multiple: false,
+        });
+        const file = await handle.getFile();
+        if (file.size > 10 * 1024 * 1024) {
+          alert("File is too large (max 10 MB). Please use a smaller schematic file.");
+          return;
+        }
+        const text = await file.text();
+        const data = JSON.parse(text) as SchematicFile;
+        importFromJSON(data);
+        // Store the handle so future saves go back to this file
+        useSchematicStore.getState().setFileHandle(handle);
+        // Update name to match file
+        const name = handle.name.replace(/\.json$/i, "");
+        if (name) useSchematicStore.getState().setSchematicName(name);
+      } catch {
+        // User cancelled or read error — ignore
+      }
+    } else {
+      fileInputRef.current?.click();
+    }
+  }, [importFromJSON]);
 
   const handleImport = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -267,7 +393,7 @@ export default function MenuBar() {
     const store = useSchematicStore.getState();
 
     if (!navigator.onLine) {
-      store.addToast("You're offline. Use File → Save Schematic to save a copy to your computer.", "info");
+      store.addToast("You're offline. Use File → Save to save a copy to your computer.", "info");
       return;
     }
 
@@ -297,30 +423,18 @@ export default function MenuBar() {
 
   // Listen for keyboard shortcut events from App.tsx
   useEffect(() => {
-    const onSave = () => {
-      handleSave();
-      // Also save to cloud in parallel if cloud-backed and online
-      const store = useSchematicStore.getState();
-      if (store.cloudSchematicId && store.isOnline) {
-        checkSession().then((session) => {
-          if (!session) return;
-          const data = store.exportToJSON();
-          updateSchematicInCloud(store.cloudSchematicId!, data)
-            .then((result) => store.setCloudSavedAt(result.updated_at))
-            .catch((e: unknown) => {
-              useSchematicStore.getState().addToast(e instanceof Error ? e.message : "Cloud save failed", "error");
-            });
-        });
-      }
-    };
-    const onOpen = () => handleOpen();
+    const onSave = () => { handleSave(); };
+    const onSaveAs = () => { handleSaveAs(); };
+    const onOpen = () => { handleOpen(); };
     window.addEventListener("easyschematic:save", onSave);
+    window.addEventListener("easyschematic:save-as", onSaveAs);
     window.addEventListener("easyschematic:open", onOpen);
     return () => {
       window.removeEventListener("easyschematic:save", onSave);
+      window.removeEventListener("easyschematic:save-as", onSaveAs);
       window.removeEventListener("easyschematic:open", onOpen);
     };
-  }, [handleSave, handleOpen]);
+  }, [handleSave, handleSaveAs, handleOpen]);
 
   // ─── Export helpers ────────────────────────────────────
 
@@ -388,8 +502,9 @@ export default function MenuBar() {
     File: [
       { type: "item", label: "New", onClick: handleNew },
       { type: "separator" },
-      { type: "item", label: "Save Schematic", shortcut: "Ctrl+S", onClick: handleSave },
-      { type: "item", label: "Open Schematic...", shortcut: "Ctrl+O", onClick: handleOpen },
+      { type: "item", label: "Save", shortcut: "Ctrl+S", onClick: handleSave },
+      { type: "item", label: "Save As...", shortcut: "Ctrl+Shift+S", onClick: handleSaveAs },
+      { type: "item", label: "Open...", shortcut: "Ctrl+O", onClick: handleOpen },
       { type: "separator" },
       { type: "item", label: cloudSaving ? "Saving..." : isOnline ? "Save to Cloud" : "Save to Cloud (Offline)", disabled: cloudSaving || !isOnline, onClick: handleCloudSave },
       { type: "item", label: "My Schematics...", disabled: !isLoggedIn, title: isLoggedIn ? undefined : "Must be logged in", onClick: () => setShowSchematicBrowser(true) },
@@ -612,10 +727,17 @@ export default function MenuBar() {
                   </svg>
                 </span>
               )}
+              {fileHandle && !cloudSchematicId && (
+                <span title={`Saving to: ${fileHandle.name}`}>
+                  <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v18l7-5 7 5V3H5z" />
+                  </svg>
+                </span>
+              )}
               {!isOnline && (
                 <span
                   className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700"
-                  title="No internet connection. Editing works normally — save to your computer via File → Save Schematic."
+                  title="No internet connection. Editing works normally — save to your computer via File → Save."
                 >
                   Offline
                 </span>

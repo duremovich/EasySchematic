@@ -448,6 +448,9 @@ function SchematicCanvas() {
       } else if ((e.ctrlKey || e.metaKey) && e.key === "b") {
         e.preventDefault();
         useSchematicStore.getState().toggleDebugEdges();
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "S") {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent("easyschematic:save-as"));
       } else if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         window.dispatchEvent(new CustomEvent("easyschematic:save"));

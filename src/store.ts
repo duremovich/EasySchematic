@@ -347,6 +347,10 @@ interface SchematicState {
   setCloudSchematicId: (id: string | null) => void;
   setCloudSavedAt: (ts: string | null) => void;
 
+  // Local file handle (File System Access API — Chromium only, not persisted)
+  fileHandle: FileSystemFileHandle | null;
+  setFileHandle: (handle: FileSystemFileHandle | null) => void;
+
   // Online / offline state
   isOnline: boolean;
   setIsOnline: (online: boolean) => void;
@@ -698,6 +702,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   cableIdMap: {},
   cloudSchematicId: null,
   cloudSavedAt: null,
+  fileHandle: null,
   isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
   pendingIncompatibleConnection: null,
   hideAdapters: false,
@@ -2030,6 +2035,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   setCloudSchematicId: (id) => { set({ cloudSchematicId: id }); get().saveToLocalStorage(); },
   setCloudSavedAt: (ts) => { set({ cloudSavedAt: ts }); get().saveToLocalStorage(); },
+  setFileHandle: (handle) => set({ fileHandle: handle }),
 
   setIsOnline: (online) => set({ isOnline: online }),
 
@@ -2309,6 +2315,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       // File imports and shared schematics always start as local-only
       cloudSchematicId: null,
       cloudSavedAt: null,
+      fileHandle: null,
     });
     saveCategoryOrder(data.categoryOrder ?? null);
     get().saveToLocalStorage();
@@ -2342,6 +2349,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         isDemo: false,
         cloudSchematicId: null,
         cloudSavedAt: null,
+        fileHandle: null,
         undoSize: 0,
         redoSize: 0,
       });
@@ -2353,6 +2361,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         isDemo: false,
         cloudSchematicId: null,
         cloudSavedAt: null,
+        fileHandle: null,
         titleBlock: { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
         titleBlockLayout: createDefaultLayout(),
         hiddenSignalTypes: "",
