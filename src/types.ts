@@ -185,6 +185,12 @@ export interface DeviceData {
   isVenueProvided?: boolean;
   /** Adapter visibility override — only meaningful for deviceType "adapter" */
   adapterVisibility?: "default" | "force-show" | "force-hide";
+  /** Rack height in rack units (e.g. 1, 2, 3, 4) */
+  rackHeightU?: number;
+  /** Rack depth in mm */
+  rackDepthMm?: number;
+  /** Device weight in kg */
+  weightKg?: number;
 }
 
 export type DeviceNode = Node<DeviceData, "device">;
@@ -280,6 +286,9 @@ export interface DeviceTemplate {
   voltage?: string;              // Informational: "100-240V", "208V", "120V"
   isVenueProvided?: boolean;     // Venue-owned gear — excluded from pack list
   poeBudgetW?: number;           // PoE budget in watts (switches only)
+  rackHeightU?: number;          // Rack height in rack units
+  rackDepthMm?: number;          // Rack depth in mm
+  weightKg?: number;             // Weight in kg
 }
 
 export interface CustomTemplateGroup {
@@ -347,6 +356,75 @@ export interface TitleBlockLayout {
   heightIn: number;
 }
 
+// ── Rack Builder Types ──────────────────────────────────────────────
+
+export type RackType = "floor-19" | "wall-mount" | "desktop" | "open-2post" | "open-4post";
+
+export const RACK_TYPE_LABELS: Record<RackType, string> = {
+  "floor-19": "19\" Floor Standing",
+  "wall-mount": "Wall Mount",
+  "desktop": "Desktop / Tabletop",
+  "open-2post": "Open Frame (2-Post)",
+  "open-4post": "Open Frame (4-Post)",
+};
+
+export interface RackData {
+  id: string;
+  label: string;
+  rackType: RackType;
+  /** Rack height in rack units (e.g. 42, 25, 12) */
+  heightU: number;
+  /** Rack depth in mm (600, 800, 1000, 1200) */
+  depthMm: number;
+  /** Width class — 19" standard or half-rack */
+  widthClass: "19in" | "half";
+  /** Position on the rack page canvas */
+  position: { x: number; y: number };
+}
+
+export interface RackDevicePlacement {
+  id: string;
+  rackId: string;
+  /** Links to the device's node ID in the schematic */
+  deviceNodeId: string;
+  /** Bottom U position (1-based, bottom-up numbering) */
+  uPosition: number;
+  /** Which face of the rack the device is mounted on */
+  face: "front" | "rear";
+  /** For half-rack-width devices mounted in a 19" rack */
+  halfRackSide?: "left" | "right";
+}
+
+export type RackAccessoryType = "blank-panel" | "vent-panel" | "shelf" | "drawer" | "cable-manager" | "fan-unit";
+
+export const RACK_ACCESSORY_LABELS: Record<RackAccessoryType, string> = {
+  "blank-panel": "Blank Panel",
+  "vent-panel": "Vent Panel",
+  "shelf": "Shelf",
+  "drawer": "Drawer",
+  "cable-manager": "Cable Manager",
+  "fan-unit": "Fan Unit",
+};
+
+export interface RackAccessory {
+  id: string;
+  rackId: string;
+  type: RackAccessoryType;
+  uPosition: number;
+  heightU: number;
+  face: "front" | "rear";
+  label?: string;
+}
+
+export interface SchematicPage {
+  id: string;
+  label: string;
+  type: "rack-elevation";
+  racks: RackData[];
+  placements: RackDevicePlacement[];
+  accessories: RackAccessory[];
+}
+
 export interface SchematicFile {
   version: number;
   name: string;
@@ -398,6 +476,8 @@ export interface SchematicFile {
   colorKeyColumns?: number;
   colorKeyPage?: "first" | "last" | "all";
   colorKeyOverrides?: Partial<Record<SignalType, boolean>>;
+  /** Rack elevation pages */
+  pages?: SchematicPage[];
 }
 
 export type ScrollAction = "zoom" | "pan-x" | "pan-y";

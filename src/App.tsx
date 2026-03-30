@@ -39,6 +39,9 @@ import RoomContextMenu from "./components/RoomContextMenu";
 import RoomEditor from "./components/RoomEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
 import RouterCreator from "./components/RouterCreator";
+import PageTabs from "./components/PageTabs";
+import RackPage from "./components/RackPage";
+import DeviceContextMenu from "./components/DeviceContextMenu";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
 import type { DeviceData, DeviceTemplate, SchematicFile, SchematicNode } from "./types";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
@@ -1038,11 +1041,17 @@ function SchematicCanvas() {
         setQuickAddPos(pos);
       }}
       onNodeContextMenu={(event, node) => {
-        if (node.type !== "room") return;
-        event.preventDefault();
-        useSchematicStore.setState({
-          roomContextMenu: { nodeId: node.id, screenX: event.clientX, screenY: event.clientY },
-        });
+        if (node.type === "room") {
+          event.preventDefault();
+          useSchematicStore.setState({
+            roomContextMenu: { nodeId: node.id, screenX: event.clientX, screenY: event.clientY },
+          });
+        } else if (node.type === "device") {
+          event.preventDefault();
+          useSchematicStore.setState({
+            deviceContextMenu: { nodeId: node.id, screenX: event.clientX, screenY: event.clientY },
+          });
+        }
       }}
       onReconnectStart={onReconnectStart}
       onReconnect={onReconnect}
@@ -1218,6 +1227,8 @@ function DemoBanner() {
 
 export default function App() {
   const printView = useSchematicStore((s) => s.printView);
+  const activePage = useSchematicStore((s) => s.activePage);
+  const isSchematicActive = activePage === "schematic";
 
   // Handle /s/{token} URLs for shared schematics
   useEffect(() => {
@@ -1240,23 +1251,29 @@ export default function App() {
       </div>
       <DemoBanner />
       <PendingSubmissionBanner />
-      {printView && <PrintViewBar />}
-      <PrintTitleBlock />
-      <div className="flex flex-1 overflow-hidden">
-        <div data-print-hide data-mobile-hide>
-          <DeviceLibrary />
+      {printView && isSchematicActive && <PrintViewBar />}
+      {isSchematicActive && <PrintTitleBlock />}
+      <PageTabs />
+      {isSchematicActive ? (
+        <div className="flex flex-1 overflow-hidden">
+          <div data-print-hide data-mobile-hide>
+            <DeviceLibrary />
+          </div>
+          <div className="flex-1">
+            <SchematicCanvas />
+          </div>
+          <div data-print-hide className="hidden md:flex">
+            <ViewOptionsPanel />
+            <ShowInfoPanel />
+            <SignalColorPanel />
+          </div>
         </div>
-        <div className="flex-1">
-          <SchematicCanvas />
-        </div>
-        <div data-print-hide className="hidden md:flex">
-          <ViewOptionsPanel />
-          <ShowInfoPanel />
-          <SignalColorPanel />
-        </div>
-      </div>
+      ) : (
+        <RackPage />
+      )}
       <DeviceEditor />
       <RoomEditor />
+      <DeviceContextMenu />
       <EdgeContextMenu />
       <RoomContextMenu />
       <PortContextMenu />

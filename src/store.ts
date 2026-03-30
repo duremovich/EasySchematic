@@ -15,6 +15,10 @@ import type {
   DeviceTemplate,
   Port,
   SchematicFile,
+  SchematicPage,
+  RackData,
+  RackDevicePlacement,
+  RackAccessory,
   TitleBlock,
   TitleBlockLayout,
   TemplatePreset,
@@ -32,6 +36,7 @@ import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 import { routeAllEdges, orthogonalize, extractSegments, type RoutedEdge } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath } from "./pathfinding";
 import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, NETWORK_SIGNAL_TYPES } from "./connectorTypes";
+import { inferRackHeightU } from "./rackUtils";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
 import { sanitizeNoteHtml } from "./sanitizeHtml";
@@ -200,6 +205,8 @@ interface SchematicState {
   // Manual edge routing
   setManualWaypoints: (edgeId: string, waypoints: { x: number; y: number }[]) => void;
   clearManualWaypoints: (edgeId: string) => void;
+  deviceContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
+  setDeviceContextMenu: (menu: { nodeId: string; screenX: number; screenY: number } | null) => void;
   edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number } | null;
   roomContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   portContextMenu: { nodeId: string; portId: string; screenX: number; screenY: number } | null;
@@ -358,6 +365,25 @@ interface SchematicState {
   setCloudSchematicId: (id: string | null) => void;
   setCloudSavedAt: (ts: string | null) => void;
 
+  // Rack builder pages
+  pages: SchematicPage[];
+  /** "schematic" for the main signal flow, or a page ID for rack elevation pages */
+  activePage: string;
+  setActivePage: (pageId: string) => void;
+  addRackPage: (label: string) => string;
+  removeRackPage: (pageId: string) => void;
+  renameRackPage: (pageId: string, label: string) => void;
+  addRack: (pageId: string, rack: Omit<RackData, "id">) => string;
+  removeRack: (pageId: string, rackId: string) => void;
+  updateRack: (pageId: string, rackId: string, patch: Partial<RackData>) => void;
+  addRackPlacement: (pageId: string, placement: Omit<RackDevicePlacement, "id">) => string;
+  removeRackPlacement: (pageId: string, placementId: string) => void;
+  updateRackPlacement: (pageId: string, placementId: string, patch: Partial<RackDevicePlacement>) => void;
+  addRackAccessory: (pageId: string, accessory: Omit<RackAccessory, "id">) => string;
+  removeRackAccessory: (pageId: string, accessoryId: string) => void;
+  /** Check if a U range is available in a rack for placement */
+  isRackSlotAvailable: (pageId: string, rackId: string, uPosition: number, heightU: number, face: "front" | "rear", halfRackSide?: "left" | "right", excludePlacementId?: string) => boolean;
+
   // Local file handle (File System Access API — Chromium only, not persisted)
   fileHandle: FileSystemFileHandle | null;
   setFileHandle: (handle: FileSystemFileHandle | null) => void;
@@ -401,6 +427,46 @@ function nextNoteId(): string {
   return `note-${++noteIdCounter}`;
 }
 
+let rackPageIdCounter = 0;
+function nextRackPageId(): string {
+  return `rackpage-${++rackPageIdCounter}`;
+}
+
+let rackIdCounter = 0;
+function nextRackId(): string {
+  return `rack-${++rackIdCounter}`;
+}
+
+let placementIdCounter = 0;
+function nextPlacementId(): string {
+  return `rp-${++placementIdCounter}`;
+}
+
+let accessoryIdCounter = 0;
+function nextAccessoryId(): string {
+  return `ra-${++accessoryIdCounter}`;
+}
+
+/** Sync rack-related counters from pages data. */
+function syncRackCounters(pages: SchematicPage[]) {
+  for (const page of pages) {
+    const pm = page.id.match(/^rackpage-(\d+)$/);
+    if (pm) rackPageIdCounter = Math.max(rackPageIdCounter, Number(pm[1]));
+    for (const rack of page.racks) {
+      const rm = rack.id.match(/^rack-(\d+)$/);
+      if (rm) rackIdCounter = Math.max(rackIdCounter, Number(rm[1]));
+    }
+    for (const p of page.placements) {
+      const pm2 = p.id.match(/^rp-(\d+)$/);
+      if (pm2) placementIdCounter = Math.max(placementIdCounter, Number(pm2[1]));
+    }
+    for (const a of page.accessories) {
+      const am = a.id.match(/^ra-(\d+)$/);
+      if (am) accessoryIdCounter = Math.max(accessoryIdCounter, Number(am[1]));
+    }
+  }
+}
+
 /** Sync counters so new IDs never collide with existing ones. */
 function syncCounters(nodes: SchematicNode[], edges: ConnectionEdge[]) {
   for (const n of nodes) {
@@ -424,6 +490,7 @@ const PASTE_GAP = 20;
 interface Snapshot {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
+  pages: SchematicPage[];
 }
 const MAX_HISTORY = 50;
 const undoStack: Snapshot[] = [];
@@ -438,8 +505,14 @@ export function setReconnectingEdgeId(id: string | null) {
   _reconnectingEdgeId = id;
 }
 
-function pushUndo(snapshot: Snapshot) {
-  undoStack.push(pendingUndoSnapshot ?? snapshot);
+/** Push an undo snapshot. Pages are captured automatically from the store. */
+function pushUndo(partial: { nodes: SchematicNode[]; edges: ConnectionEdge[] }) {
+  if (pendingUndoSnapshot) {
+    undoStack.push(pendingUndoSnapshot);
+  } else {
+    const pages = useSchematicStore?.getState?.()?.pages ?? [];
+    undoStack.push({ ...partial, pages });
+  }
   pendingUndoSnapshot = null;
   if (undoStack.length > MAX_HISTORY) undoStack.shift();
   redoStack.length = 0; // clear redo on new action
@@ -666,6 +739,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   categoryOrder: loadCategoryOrder(),
   routedEdges: {},
   routingDebugData: null,
+  deviceContextMenu: null,
+  setDeviceContextMenu: (menu) => set({ deviceContextMenu: menu }),
   edgeContextMenu: null,
   roomContextMenu: null,
   portContextMenu: null,
@@ -725,6 +800,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   hiddenAdapterNodeIds: new Set(),
   hiddenVirtualEdgeIds: new Set(),
   virtualEdgeGradients: {},
+  pages: [],
+  activePage: "schematic",
 
   setHideAdapters: (hide) => {
     const state = get();
@@ -989,9 +1066,27 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return n;
       });
 
+    // Cascade-remove rack placements for deleted devices
+    const pages = state.pages.length > 0 && selectedNodeIds.size > 0
+      ? state.pages.map((page) => ({
+          ...page,
+          placements: page.placements.filter((p) => !selectedNodeIds.has(p.deviceNodeId)),
+        }))
+      : state.pages;
+
+    // Notify user if rack placements were removed
+    if (pages !== state.pages) {
+      const removedCount = state.pages.reduce((sum, p) => sum + p.placements.length, 0) -
+        pages.reduce((sum, p) => sum + p.placements.length, 0);
+      if (removedCount > 0) {
+        get().addToast(`Removed ${removedCount} rack placement${removedCount > 1 ? "s" : ""} for deleted device${selectedNodeIds.size > 1 ? "s" : ""}`, "info");
+      }
+    }
+
     set({
       nodes: renumberNodes(remainingNodes),
       edges: newEdges,
+      pages,
     });
     get().saveToLocalStorage();
   },
@@ -1559,7 +1654,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   setPendingUndoSnapshot: () => {
     const state = get();
-    pendingUndoSnapshot = { nodes: state.nodes, edges: state.edges };
+    pendingUndoSnapshot = { nodes: state.nodes, edges: state.edges, pages: state.pages };
   },
 
   clearPendingUndoSnapshot: () => {
@@ -1570,9 +1665,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const prev = undoStack.pop();
     if (!prev) return;
     const state = get();
-    redoStack.push({ nodes: state.nodes, edges: state.edges });
+    redoStack.push({ nodes: state.nodes, edges: state.edges, pages: state.pages });
     const edges = prev.edges.map(({ zIndex: _, selected: _s, ...rest }) => ({ ...rest, zIndex: 0 })) as typeof prev.edges;
-    set({ nodes: prev.nodes, edges, undoSize: undoStack.length, redoSize: redoStack.length });
+    set({ nodes: prev.nodes, edges, pages: prev.pages, undoSize: undoStack.length, redoSize: redoStack.length });
     get().saveToLocalStorage();
   },
 
@@ -1580,9 +1675,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const next = redoStack.pop();
     if (!next) return;
     const state = get();
-    undoStack.push({ nodes: state.nodes, edges: state.edges });
+    undoStack.push({ nodes: state.nodes, edges: state.edges, pages: state.pages });
     const edges = next.edges.map(({ zIndex: _, selected: _s, ...rest }) => ({ ...rest, zIndex: 0 })) as typeof next.edges;
-    set({ nodes: next.nodes, edges, undoSize: undoStack.length, redoSize: redoStack.length });
+    set({ nodes: next.nodes, edges, pages: next.pages, undoSize: undoStack.length, redoSize: redoStack.length });
     get().saveToLocalStorage();
   },
 
@@ -2075,6 +2170,173 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
   },
 
+  // ── Rack builder actions ──────────────────────────────────────────
+
+  setActivePage: (pageId) => {
+    set({ activePage: pageId });
+  },
+
+  addRackPage: (label) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const id = nextRackPageId();
+    const page: SchematicPage = { id, label, type: "rack-elevation", racks: [], placements: [], accessories: [] };
+    set({ pages: [...state.pages, page], activePage: id, undoSize: undoStack.length, redoSize: 0 });
+    get().saveToLocalStorage();
+    return id;
+  },
+
+  removeRackPage: (pageId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const pages = state.pages.filter((p) => p.id !== pageId);
+    const activePage = state.activePage === pageId ? "schematic" : state.activePage;
+    set({ pages, activePage, undoSize: undoStack.length, redoSize: 0 });
+    get().saveToLocalStorage();
+  },
+
+  renameRackPage: (pageId, label) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({ pages: state.pages.map((p) => p.id === pageId ? { ...p, label } : p), undoSize: undoStack.length, redoSize: 0 });
+    get().saveToLocalStorage();
+  },
+
+  addRack: (pageId, rackData) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const id = nextRackId();
+    const rack: RackData = { ...rackData, id };
+    set({
+      pages: state.pages.map((p) => p.id === pageId ? { ...p, racks: [...p.racks, rack] } : p),
+      undoSize: undoStack.length, redoSize: 0,
+    });
+    get().saveToLocalStorage();
+    return id;
+  },
+
+  removeRack: (pageId, rackId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      pages: state.pages.map((p) => p.id === pageId ? {
+        ...p,
+        racks: p.racks.filter((r) => r.id !== rackId),
+        placements: p.placements.filter((pl) => pl.rackId !== rackId),
+        accessories: p.accessories.filter((a) => a.rackId !== rackId),
+      } : p),
+      undoSize: undoStack.length, redoSize: 0,
+    });
+    get().saveToLocalStorage();
+  },
+
+  updateRack: (pageId, rackId, patch) => {
+    const state = get();
+    set({
+      pages: state.pages.map((p) => p.id === pageId ? {
+        ...p,
+        racks: p.racks.map((r) => r.id === rackId ? { ...r, ...patch } : r),
+      } : p),
+    });
+    get().saveToLocalStorage();
+  },
+
+  addRackPlacement: (pageId, placementData) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const id = nextPlacementId();
+    const placement: RackDevicePlacement = { ...placementData, id };
+    set({
+      pages: state.pages.map((p) => p.id === pageId ? { ...p, placements: [...p.placements, placement] } : p),
+      undoSize: undoStack.length, redoSize: 0,
+    });
+    get().saveToLocalStorage();
+    return id;
+  },
+
+  removeRackPlacement: (pageId, placementId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      pages: state.pages.map((p) => p.id === pageId ? { ...p, placements: p.placements.filter((pl) => pl.id !== placementId) } : p),
+      undoSize: undoStack.length, redoSize: 0,
+    });
+    get().saveToLocalStorage();
+  },
+
+  updateRackPlacement: (pageId, placementId, patch) => {
+    const state = get();
+    set({
+      pages: state.pages.map((p) => p.id === pageId ? {
+        ...p,
+        placements: p.placements.map((pl) => pl.id === placementId ? { ...pl, ...patch } : pl),
+      } : p),
+    });
+    get().saveToLocalStorage();
+  },
+
+  addRackAccessory: (pageId, accessoryData) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const id = nextAccessoryId();
+    const accessory: RackAccessory = { ...accessoryData, id };
+    set({
+      pages: state.pages.map((p) => p.id === pageId ? { ...p, accessories: [...p.accessories, accessory] } : p),
+      undoSize: undoStack.length, redoSize: 0,
+    });
+    get().saveToLocalStorage();
+    return id;
+  },
+
+  removeRackAccessory: (pageId, accessoryId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      pages: state.pages.map((p) => p.id === pageId ? { ...p, accessories: p.accessories.filter((a) => a.id !== accessoryId) } : p),
+      undoSize: undoStack.length, redoSize: 0,
+    });
+    get().saveToLocalStorage();
+  },
+
+  isRackSlotAvailable: (pageId, rackId, uPosition, heightU, face, halfRackSide, excludePlacementId) => {
+    const state = get();
+    const page = state.pages.find((p) => p.id === pageId);
+    if (!page) return false;
+    const rack = page.racks.find((r) => r.id === rackId);
+    if (!rack) return false;
+
+    // Check bounds
+    if (uPosition < 1 || uPosition + heightU - 1 > rack.heightU) return false;
+
+    // Check against existing placements on this rack and face
+    for (const p of page.placements) {
+      if (p.rackId !== rackId || p.face !== face) continue;
+      if (excludePlacementId && p.id === excludePlacementId) continue;
+      const device = state.nodes.find((n) => n.id === p.deviceNodeId);
+      const deviceData = device?.data as DeviceData | undefined;
+      const deviceHeightU = deviceData ? inferRackHeightU(deviceData) : 1;
+      const pTop = p.uPosition + deviceHeightU - 1;
+      const newTop = uPosition + heightU - 1;
+      // Check U range overlap
+      if (p.uPosition <= newTop && uPosition <= pTop) {
+        // Ranges overlap — check width compatibility
+        if (!p.halfRackSide || !halfRackSide) return false; // either is full-width → blocked
+        if (p.halfRackSide === halfRackSide) return false;  // same side → blocked
+        // Different sides of half-rack → OK
+      }
+    }
+
+    // Check against accessories
+    for (const a of page.accessories) {
+      if (a.rackId !== rackId || a.face !== face) continue;
+      const aTop = a.uPosition + a.heightU - 1;
+      const newTop = uPosition + heightU - 1;
+      if (a.uPosition <= newTop && uPosition <= aTop) return false;
+    }
+
+    return true;
+  },
+
   saveToLocalStorage: () => {
     if (!hydrated) return;
     const state = get();
@@ -2116,6 +2378,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       colorKeyColumns: state.colorKeyColumns !== 1 ? state.colorKeyColumns : undefined,
       colorKeyPage: state.colorKeyPage !== "all" ? state.colorKeyPage : undefined,
       colorKeyOverrides: state.colorKeyOverrides && Object.keys(state.colorKeyOverrides).length > 0 ? state.colorKeyOverrides : undefined,
+      pages: state.pages.length > 0 ? state.pages : undefined,
     };
     // Persist cloud identity alongside autosave (not part of SchematicFile export)
     const blob: Record<string, unknown> = { ...data };
@@ -2185,7 +2448,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             colorKeyColumns: data.colorKeyColumns ?? 1,
             colorKeyPage: data.colorKeyPage ?? "all",
             colorKeyOverrides: data.colorKeyOverrides ?? undefined,
+            pages: data.pages ?? [],
           });
+          if (data.pages?.length) syncRackCounters(data.pages);
           hydrated = true;
           get().saveToLocalStorage();
         });
@@ -2238,10 +2503,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         colorKeyColumns: data.colorKeyColumns ?? 1,
         colorKeyPage: data.colorKeyPage ?? "all",
         colorKeyOverrides: data.colorKeyOverrides ?? undefined,
+        pages: data.pages ?? [],
         // Restore cloud identity from autosave (not part of SchematicFile)
         cloudSchematicId: parsed.cloudSchematicId ?? null,
         cloudSavedAt: parsed.cloudSavedAt ?? null,
       });
+      if (data.pages?.length) syncRackCounters(data.pages);
       hydrated = true;
       return true;
     } catch {
@@ -2289,6 +2556,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       colorKeyColumns: state.colorKeyColumns !== 1 ? state.colorKeyColumns : undefined,
       colorKeyPage: state.colorKeyPage !== "all" ? state.colorKeyPage : undefined,
       colorKeyOverrides: state.colorKeyOverrides && Object.keys(state.colorKeyOverrides).length > 0 ? state.colorKeyOverrides : undefined,
+      pages: state.pages.length > 0 ? state.pages : undefined,
     };
   },
 
@@ -2359,11 +2627,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       colorKeyColumns: data.colorKeyColumns ?? 1,
       colorKeyPage: data.colorKeyPage ?? "all",
       colorKeyOverrides: data.colorKeyOverrides ?? undefined,
+      pages: data.pages ?? [],
+      activePage: "schematic",
       // File imports and shared schematics always start as local-only
       cloudSchematicId: null,
       cloudSavedAt: null,
       fileHandle: null,
     });
+    if (data.pages?.length) syncRackCounters(data.pages);
     saveCategoryOrder(data.categoryOrder ?? null);
     get().saveToLocalStorage();
   },
@@ -2428,6 +2699,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         edgeHitboxSize: 10,
         undoSize: 0,
         redoSize: 0,
+        pages: [],
+        activePage: "schematic",
       });
     }
     get().saveToLocalStorage();

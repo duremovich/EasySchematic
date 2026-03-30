@@ -94,6 +94,11 @@ export default function DeviceEditor() {
   const [voltage, setVoltage] = useState<string | undefined>(undefined);
   const [poeBudgetW, setPoeBudgetW] = useState<number | undefined>(undefined);
 
+  // Rack fields
+  const [rackHeightU, setRackHeightU] = useState<number | undefined>(undefined);
+  const [rackDepthMm, setRackDepthMm] = useState<number | undefined>(undefined);
+  const [weightKg, setWeightKg] = useState<number | undefined>(undefined);
+
   // Cable accessory flags
   const [isCableAccessory, setIsCableAccessory] = useState(false);
   const [integratedWithCable, setIntegratedWithCable] = useState(false);
@@ -143,6 +148,9 @@ export default function DeviceEditor() {
     setPowerCapacityW(node.data.powerCapacityW);
     setVoltage(node.data.voltage);
     setPoeBudgetW(node.data.poeBudgetW);
+    setRackHeightU(node.data.rackHeightU);
+    setRackDepthMm(node.data.rackDepthMm);
+    setWeightKg(node.data.weightKg);
     setIsCableAccessory(node.data.isCableAccessory ?? false);
     setIntegratedWithCable(node.data.integratedWithCable ?? false);
     setIsVenueProvided(node.data.isVenueProvided ?? false);
@@ -199,10 +207,13 @@ export default function DeviceEditor() {
       ...(adapterVisibility !== "default" ? { adapterVisibility } : {}),
       ...(existing?.baseLabel ? { baseLabel: existing.baseLabel } : {}),
       ...(existing?.slots ? { slots: existing.slots } : {}),
+      ...(rackHeightU != null ? { rackHeightU } : {}),
+      ...(rackDepthMm != null ? { rackDepthMm } : {}),
+      ...(weightKg != null ? { weightKg } : {}),
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
+  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, rackHeightU, rackDepthMm, weightKg]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
@@ -757,6 +768,57 @@ export default function DeviceEditor() {
               </div>
             </details>
           )}
+
+          {/* Rack */}
+          <details className="text-xs">
+            <summary className="cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text)] select-none py-1">
+              Rack
+            </summary>
+            <div className="grid grid-cols-3 gap-2 pt-1 pl-2">
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
+                  Height (U)
+                </label>
+                <input
+                  type="number"
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none focus:border-blue-500"
+                  value={rackHeightU ?? ""}
+                  onChange={(e) => setRackHeightU(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="1"
+                  min={1}
+                  max={20}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
+                  Depth (mm)
+                </label>
+                <input
+                  type="number"
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none focus:border-blue-500"
+                  value={rackDepthMm ?? ""}
+                  onChange={(e) => setRackDepthMm(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="mm"
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
+                  Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none focus:border-blue-500"
+                  value={weightKg ?? ""}
+                  onChange={(e) => setWeightKg(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="kg"
+                  step={0.1}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+              </div>
+            </div>
+          </details>
 
           {/* Flags */}
           <details className="text-xs">

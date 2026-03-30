@@ -13,7 +13,7 @@
 import { createDefaultLayout } from "./titleBlockLayout";
 import { DEFAULT_CONNECTOR } from "./connectorTypes";
 
-export const CURRENT_SCHEMA_VERSION = 23;
+export const CURRENT_SCHEMA_VERSION = 24;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -253,6 +253,11 @@ const migrations: Record<number, Migration> = {
   22: (data) => {
     // v22 → v23: autoRoute on SchematicFile — optional, defaults to true
     data.version = 23;
+    return data;
+  },
+  23: (data) => {
+    // v23 → v24: rack builder pages — optional field, no transform needed
+    data.version = 24;
     return data;
   },
 };

@@ -87,6 +87,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     });
   }, [id]);
 
+
   // Split ports by visual side (respects flip), not semantic direction.
   // When hideUnconnectedPorts is on, bidir ports with only one side connected
   // collapse into the appropriate column so the device gets smaller.
