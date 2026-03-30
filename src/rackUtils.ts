@@ -1,4 +1,4 @@
-import type { DeviceData } from "./types";
+import type { DeviceData, Port, ConnectorType } from "./types";
 
 /**
  * Infer a reasonable rack height in U for a device that doesn't have one explicitly set.
@@ -31,3 +31,91 @@ export const PX_PER_U = 24;
 
 /** Standard rack width in pixels */
 export const RACK_WIDTH_PX = 260;
+
+// ── Auto-layout for connector face-plates ──────────────────────────
+
+export interface LayoutPort {
+  id: string;
+  label: string;
+  connectorType?: ConnectorType;
+  signalType: string;
+  direction: string;
+  section?: string;
+  /** Percentage position (0-100) on the face-plate */
+  x: number;
+  y: number;
+}
+
+/**
+ * Generate a default face-plate layout for a device's ports.
+ *
+ * Groups ports by section, arranges them in rows left-to-right.
+ * Inputs tend toward the left, outputs toward the right.
+ * Power connectors go to the far right.
+ */
+export function autoLayoutPorts(ports: Port[], _faceWidth: number, _faceHeight: number): LayoutPort[] {
+  if (ports.length === 0) return [];
+
+  // Separate power ports — they go to the right edge
+  const isPower = (p: Port) => p.signalType.startsWith("power");
+  const signalPorts = ports.filter((p) => !isPower(p));
+  const powerPorts = ports.filter(isPower);
+
+  // Group signal ports by section
+  const sections = new Map<string, Port[]>();
+  for (const p of signalPorts) {
+    const key = p.section ?? "_default";
+    if (!sections.has(key)) sections.set(key, []);
+    sections.get(key)!.push(p);
+  }
+
+  const result: LayoutPort[] = [];
+
+  // Calculate available width (leave right margin for power if needed)
+  const powerMargin = powerPorts.length > 0 ? 15 : 0; // percentage
+  const usableWidth = 100 - powerMargin;
+
+  // Lay out each section as a row
+  const sectionKeys = [...sections.keys()];
+  const totalSections = sectionKeys.length;
+  const rowHeight = 100 / (totalSections + 1); // +1 for top/bottom padding
+
+  sectionKeys.forEach((sectionKey, sectionIdx) => {
+    const sectionPorts = sections.get(sectionKey)!;
+    const cy = rowHeight * (sectionIdx + 1); // center Y of this row
+    const portCount = sectionPorts.length;
+    const spacing = usableWidth / (portCount + 1);
+
+    sectionPorts.forEach((p, portIdx) => {
+      result.push({
+        id: p.id,
+        label: p.label,
+        connectorType: p.connectorType,
+        signalType: p.signalType,
+        direction: p.direction,
+        section: p.section,
+        x: spacing * (portIdx + 1),
+        y: cy,
+      });
+    });
+  });
+
+  // Lay out power ports in a column on the right
+  if (powerPorts.length > 0) {
+    const powerSpacing = 100 / (powerPorts.length + 1);
+    powerPorts.forEach((p, i) => {
+      result.push({
+        id: p.id,
+        label: p.label,
+        connectorType: p.connectorType,
+        signalType: p.signalType,
+        direction: p.direction,
+        section: p.section,
+        x: 100 - powerMargin / 2,
+        y: powerSpacing * (i + 1),
+      });
+    });
+  }
+
+  return result;
+}

@@ -2,7 +2,9 @@ import { useCallback, useMemo, useRef, useState, type WheelEvent, type MouseEven
 import { useSchematicStore } from "../store";
 import type { RackData, RackDevicePlacement, RackAccessory, DeviceData, SchematicPage } from "../types";
 import { RACK_ACCESSORY_LABELS } from "../types";
-import { inferRackHeightU } from "../rackUtils";
+import { inferRackHeightU, autoLayoutPorts } from "../rackUtils";
+import { SIGNAL_COLORS } from "../types";
+import { ConnectorIcon } from "./connectorIcons";
 import { draggedDeviceHeightU } from "./RackSidebar";
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -143,21 +145,45 @@ function RackLabel({ rack, width = RACK_WIDTH, onRename }: { rack: RackData; wid
 interface DeviceBlockProps {
   placement: RackDevicePlacement;
   rack: RackData;
-  label: string;
-  heightU: number;
-  color?: string;
+  deviceData: DeviceData;
   isSelected: boolean;
   isDragging: boolean;
+  zoom: number;
   onSelect: (id: string) => void;
   onDragStart: (placementId: string, e: React.MouseEvent) => void;
 }
 
-function DeviceBlock({ placement, rack, label, heightU, color, isSelected, isDragging, onSelect, onDragStart }: DeviceBlockProps) {
+function DeviceBlock({ placement, rack, deviceData, isSelected, isDragging, zoom, onSelect, onDragStart }: DeviceBlockProps) {
+  const label = deviceData.label;
+  const heightU = inferRackHeightU(deviceData);
+  const color = deviceData.headerColor ?? deviceData.color;
   const y = uToY(placement.uPosition + heightU - 1, rack.heightU);
   const h = heightU * PX_PER_U - 1;
   const isHalf = !!placement.halfRackSide;
   const w = isHalf ? HALF_WIDTH : FULL_WIDTH;
   const x = DEVICE_INSET + (isHalf && placement.halfRackSide === "right" ? HALF_WIDTH + 2 : 0);
+
+  // Connector rendering — need enough vertical space for label + icons
+  // 1U (23px) = label only, no connectors. 2U+ = connectors fit.
+  const labelHeight = 14;
+  const availableHeight = h - labelHeight;
+  const showConnectors = zoom >= 0.8 && availableHeight >= 16;
+
+  // Connector detail level based on zoom
+  // 0 = dots, 1 = silhouettes, 2 = detailed with pins
+  const connectorDetail = zoom < 1.2 ? 0 : zoom < 2.5 ? 1 : 2;
+  // Suppress port labels if not enough vertical space even at high zoom
+  const showPortLabels = connectorDetail >= 2 && availableHeight >= 40;
+
+  // Auto-layout ports for this face
+  const layoutPorts = useMemo(() => {
+    if (!showConnectors) return [];
+    return autoLayoutPorts(deviceData.ports ?? [], w, h);
+  }, [showConnectors, deviceData.ports, w, h]);
+
+  // Icon size scales with zoom and available space
+  const maxIconByHeight = availableHeight * 0.6;
+  const iconSize = Math.max(4, Math.min(maxIconByHeight, Math.min(12, 8 * Math.sqrt(zoom))));
 
   return (
     <g
@@ -171,13 +197,65 @@ function DeviceBlock({ placement, rack, label, heightU, color, isSelected, isDra
         }
       }}
     >
+      {/* Clip path to prevent connector overflow */}
+      <clipPath id={`dev-clip-${placement.id}`}>
+        <rect x={x} y={y} width={w} height={h} rx={1} />
+      </clipPath>
       <rect x={x} y={y} width={w} height={h} fill={color ?? "#4a90d9"} stroke={isSelected ? "#2563eb" : "#333"} strokeWidth={isSelected ? 2 : 0.75} rx={1} />
-      <text x={x + w / 2} y={y + h / 2} textAnchor="middle" dominantBaseline="central" fontSize={h > 20 ? 10 : 8} fill="#fff" fontWeight={500} style={{ pointerEvents: "none" }}>
-        {label.length > (isHalf ? 12 : 24) ? label.slice(0, isHalf ? 11 : 23) + "…" : label}
+
+      <g clipPath={`url(#dev-clip-${placement.id})`}>
+      {/* Device label — shown above connectors or centered if no connectors */}
+      <text
+        x={x + w / 2}
+        y={showConnectors && layoutPorts.length > 0 ? y + 6 : y + h / 2}
+        textAnchor="middle"
+        dominantBaseline={showConnectors && layoutPorts.length > 0 ? "hanging" : "central"}
+        fontSize={h > 20 ? 9 : 7}
+        fill="#fff"
+        fontWeight={600}
+        style={{ pointerEvents: "none" }}
+      >
+        {label.length > (isHalf ? 12 : 28) ? label.slice(0, isHalf ? 11 : 27) + "…" : label}
       </text>
-      {heightU > 1 && (
+
+      {/* U height indicator */}
+      {heightU > 1 && !showConnectors && (
         <text x={x + w - 4} y={y + 8} textAnchor="end" fontSize={7} fill="rgba(255,255,255,0.7)" style={{ pointerEvents: "none" }}>{heightU}U</text>
       )}
+
+      {/* Connector icons */}
+      {showConnectors && layoutPorts.map((lp) => {
+        const cx = x + (lp.x / 100) * w;
+        // Offset Y to leave room for label at top
+        const labelOffset = 14;
+        const cy = y + labelOffset + ((lp.y / 100) * (h - labelOffset));
+        const sigColor = SIGNAL_COLORS[lp.signalType as keyof typeof SIGNAL_COLORS] ?? "#fff";
+        return (
+          <g key={lp.id} style={{ pointerEvents: "none" }}>
+            <ConnectorIcon
+              x={cx}
+              y={cy}
+              connectorType={lp.connectorType}
+              size={iconSize}
+              color={sigColor}
+              detail={connectorDetail}
+            />
+            {/* Port label at high zoom with enough space */}
+            {showPortLabels && (
+              <text
+                x={cx}
+                y={cy + iconSize / 2 + 5}
+                textAnchor="middle"
+                fontSize={4}
+                fill="rgba(255,255,255,0.8)"
+              >
+                {lp.label.length > 8 ? lp.label.slice(0, 7) + "…" : lp.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+      </g>{/* end clip group */}
     </g>
   );
 }
@@ -403,14 +481,27 @@ export default function RackRenderer({ page }: { page: SchematicPage }) {
 
   // ── Pan/zoom ─────────────────────────────────────────────────────
 
+  const scrollConfig = useSchematicStore((s) => s.scrollConfig);
+
   const onWheel = useCallback((e: WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    e.preventDefault();
+    // Determine which action based on modifier keys (matching schematic behavior)
+    const action = (e.ctrlKey || e.metaKey) ? scrollConfig.ctrlScroll
+      : e.shiftKey ? scrollConfig.shiftScroll
+      : scrollConfig.scroll;
+
+    if (action === "zoom") {
+      const speed = scrollConfig.zoomSpeed;
+      const delta = e.deltaY > 0 ? 1 - 0.1 * speed : 1 + 0.1 * speed;
       setZoom((z) => Math.min(4, Math.max(0.25, z * delta)));
-    } else {
-      setViewOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }));
+    } else if (action === "pan-y") {
+      const speed = scrollConfig.panSpeed;
+      setViewOffset((o) => ({ x: o.x, y: o.y - e.deltaY * speed }));
+    } else if (action === "pan-x") {
+      const speed = scrollConfig.panSpeed;
+      setViewOffset((o) => ({ x: o.x - e.deltaY * speed, y: o.y }));
     }
-  }, []);
+  }, [scrollConfig]);
 
   const onMouseDown = useCallback((e: MouseEvent) => {
     if (inRackDrag) return; // Don't pan while dragging a device
@@ -613,11 +704,10 @@ export default function RackRenderer({ page }: { page: SchematicPage }) {
                       key={pl.id}
                       placement={pl}
                       rack={rack}
-                      label={dd.label}
-                      heightU={inferRackHeightU(dd)}
-                      color={dd.headerColor ?? dd.color}
+                      deviceData={dd}
                       isSelected={selectedPlacementId === pl.id}
                       isDragging={inRackDrag?.placementId === pl.id}
+                      zoom={zoom}
                       onSelect={setSelectedPlacementId}
                       onDragStart={onPlacementDragStart}
                     />
