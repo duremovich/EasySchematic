@@ -94,9 +94,9 @@ html, body, #root {
   pointer-events: none;
 }
 
-/* Room nodes: let pointer events pass through to the pane so drag-select
-   can start on top of a room. Interactive children (label, lock) opt back in. */
-.react-flow__node-room {
+/* Locked rooms: pass through pointer events so drag-select works over them.
+   Unlocked rooms keep normal pointer events for move/resize/context-menu. */
+.react-flow__node-room.locked {
   pointer-events: none !important;
 }
 .react-flow__node-room .react-flow__resize-control {

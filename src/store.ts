@@ -101,11 +101,16 @@ function snapNodesToGrid(nodes: SchematicNode[]): SchematicNode[] {
   return nodes;
 }
 
-/** Ensure `draggable: false` is set on any room with `data.locked`. Mutates in place. */
+/** Apply interaction flags on rooms based on lock state. Mutates in place. */
 function applyRoomLockState(nodes: SchematicNode[]): void {
   for (const n of nodes) {
-    if (n.type === "room" && (n.data as import("./types").RoomData).locked) {
-      n.draggable = false;
+    if (n.type === "room") {
+      const locked = (n.data as import("./types").RoomData).locked;
+      if (locked) {
+        n.draggable = false;
+        n.selectable = false;
+        n.className = "locked";
+      }
     }
   }
 }
@@ -748,9 +753,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const updated = applyNodeChanges(changes, get().nodes) as SchematicNode[];
     // Keep room zIndex pinned low (React Flow may reset it)
     set({
-      nodes: updated.map((n) =>
-        n.type === "room" ? { ...n, zIndex: -1, selectable: false } : n,
-      ),
+      nodes: updated.map((n) => {
+        if (n.type !== "room") return n;
+        const locked = (n.data as import("./types").RoomData).locked;
+        return {
+          ...n,
+          zIndex: -1,
+          selectable: !locked,
+          className: locked ? "locked" : undefined,
+        };
+      }),
     });
     get().saveToLocalStorage();
   },
@@ -1409,11 +1421,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       position,
       data: { label },
       style: { width: 400, height: 300 },
-      selectable: false,
+      selected: true,
       zIndex: -1,
     };
     // Rooms must appear before their potential children in the array
-    set({ nodes: [newRoom, ...state.nodes] });
+    // Deselect everything else so the new room is the sole selection
+    const deselected = state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
+    set({ nodes: [newRoom, ...deselected] });
     get().saveToLocalStorage();
   },
 
@@ -1455,6 +1469,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return {
           ...n,
           draggable: locked ? false : undefined,
+          selectable: !locked,
+          className: locked ? "locked" : undefined,
           data: {
             ...n.data,
             locked: locked || undefined, // keep JSON clean

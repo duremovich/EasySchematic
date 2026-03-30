@@ -982,6 +982,26 @@ function SchematicCanvas() {
       onClickConnectStart={onClickConnectStart}
       onClickConnectEnd={onClickConnectEnd}
       onPaneClick={onPaneClick}
+      onPaneContextMenu={(event) => {
+        // Locked rooms have pointer-events: none, so right-click falls through to pane.
+        // Detect if the click is within a room's bounds and show context menu.
+        const pos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        const state = useSchematicStore.getState();
+        const room = state.nodes.find(
+          (n) =>
+            n.type === "room" &&
+            pos.x >= n.position.x &&
+            pos.x <= n.position.x + (parseFloat(String(n.style?.width)) || 0) &&
+            pos.y >= n.position.y &&
+            pos.y <= n.position.y + (parseFloat(String(n.style?.height)) || 0),
+        );
+        if (room) {
+          event.preventDefault();
+          useSchematicStore.setState({
+            roomContextMenu: { nodeId: room.id, screenX: event.clientX, screenY: event.clientY },
+          });
+        }
+      }}
       onNodeClick={(event, node) => {
         if (!isClickConnectMode.current) return;
         // If clicking a handle, let the normal click-connect flow handle it
