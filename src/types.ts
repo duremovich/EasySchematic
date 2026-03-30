@@ -191,6 +191,22 @@ export interface DeviceData {
   rackDepthMm?: number;
   /** Device weight in kg */
   weightKg?: number;
+  /** Custom face-plate connector layout (overrides auto-layout) */
+  facePlateLayout?: FacePlateLayout;
+}
+
+export interface FacePlateLayout {
+  positions: Record<string, { x: number; y: number }>;
+  labels?: FacePlateLabel[];
+  /** Custom device label position and size (defaults to top-center) */
+  deviceLabel?: { x: number; y: number; fontSize?: number };
+}
+
+export interface FacePlateLabel {
+  id: string;
+  text: string;
+  x: number; // 0-100 percentage
+  y: number; // 0-100 percentage
 }
 
 export type DeviceNode = Node<DeviceData, "device">;
@@ -289,6 +305,7 @@ export interface DeviceTemplate {
   rackHeightU?: number;          // Rack height in rack units
   rackDepthMm?: number;          // Rack depth in mm
   weightKg?: number;             // Weight in kg
+  facePlateLayout?: FacePlateLayout; // Custom face-plate connector positions
 }
 
 export interface CustomTemplateGroup {

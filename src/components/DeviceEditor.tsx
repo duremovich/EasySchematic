@@ -20,6 +20,8 @@ import { getBundledTemplates, getCardsByFamily, checkSession, createDraft, creat
 import LoginDialog from "./LoginDialog";
 import { isValidIpv4, isValidSubnetMask, isValidVlan, findDuplicateIps } from "../networkValidation";
 import IpInput from "./IpInput";
+import FacePlateEditor from "./FacePlateEditor";
+import type { FacePlateLayout } from "../types";
 
 const ALL_SIGNAL_TYPES = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
   (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
@@ -70,6 +72,7 @@ export default function DeviceEditor() {
   const setTemplateHiddenSignals = useSchematicStore((s) => s.setTemplateHiddenSignals);
   const templatePresets = useSchematicStore((s) => s.templatePresets);
   const setTemplatePreset = useSchematicStore((s) => s.setTemplatePreset);
+  const patchDeviceData = useSchematicStore((s) => s.patchDeviceData);
 
   const node = nodes.find((n) => n.id === editingNodeId && n.type === "device") as DeviceNode | undefined;
 
@@ -107,6 +110,9 @@ export default function DeviceEditor() {
 
   // Login dialog for community submission
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+
+  // Face-plate editor
+  const [showFacePlateEditor, setShowFacePlateEditor] = useState(false);
 
   // Drag state — which port is being dragged and where it would drop
   const [draggedPortId, setDraggedPortId] = useState<string | null>(null);
@@ -818,6 +824,14 @@ export default function DeviceEditor() {
                 />
               </div>
             </div>
+            <div className="pt-1.5 pl-2">
+              <button
+                className="w-full px-2 py-1.5 rounded border border-neutral-300 hover:bg-neutral-50 text-xs text-left"
+                onClick={() => setShowFacePlateEditor(true)}
+              >
+                Edit Face-Plate Layout
+              </button>
+            </div>
           </details>
 
           {/* Flags */}
@@ -937,6 +951,16 @@ export default function DeviceEditor() {
         </div>
       </div>
       <LoginDialog open={showLoginDialog} onClose={() => setShowLoginDialog(false)} />
+      {showFacePlateEditor && node && (
+        <FacePlateEditor
+          deviceData={node.data as DeviceData}
+          onSave={(layout: FacePlateLayout) => {
+            patchDeviceData(editingNodeId!, { facePlateLayout: layout });
+            setShowFacePlateEditor(false);
+          }}
+          onClose={() => setShowFacePlateEditor(false)}
+        />
+      )}
     </div>
   );
 }
