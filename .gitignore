@@ -51,3 +51,13 @@ api/backup-*.sql
 
 # Internal notes
 internal/
+
+# Docs build output (source is .tsx)
+docs/src/**/*.js
+
+# One-off scripts
+scripts/
+
+# Local dev
+start-dev.sh
+email-signature.html
