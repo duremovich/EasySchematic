@@ -496,6 +496,7 @@ export default function RackRenderer({ page }: { page: SchematicPage }) {
 
   // In-rack drag (moving existing placements)
   const [inRackDrag, setInRackDrag] = useState<InRackDrag | null>(null);
+  const pendingDragRef = useRef<{ placementId: string; startX: number; startY: number } | null>(null);
 
   const deviceDataMap = useMemo(() => {
     const map = new Map<string, DeviceData>();
@@ -575,6 +576,33 @@ export default function RackRenderer({ page }: { page: SchematicPage }) {
       return;
     }
 
+    // Promote pending drag to real drag after 4px threshold
+    if (pendingDragRef.current && !inRackDrag) {
+      const dx = e.clientX - pendingDragRef.current.startX;
+      const dy = e.clientY - pendingDragRef.current.startY;
+      if (dx * dx + dy * dy > 16) { // 4px threshold
+        const { placementId } = pendingDragRef.current;
+        pendingDragRef.current = null;
+        const pl = page.placements.find((p) => p.id === placementId);
+        if (pl) {
+          const dd = deviceDataMap.get(pl.deviceNodeId);
+          if (dd) {
+            const c = clientToCanvas(e.clientX, e.clientY);
+            setInRackDrag({
+              placementId,
+              deviceNodeId: pl.deviceNodeId,
+              heightU: inferRackHeightU(dd),
+              label: dd.label,
+              color: dd.headerColor ?? dd.color ?? "#4a90d9",
+              cx: c.x,
+              cy: c.y,
+            });
+          }
+        }
+      }
+      return;
+    }
+
     if (inRackDrag) {
       const c = clientToCanvas(e.clientX, e.clientY);
       setInRackDrag((d) => d ? { ...d, cx: c.x, cy: c.y } : null);
@@ -591,14 +619,14 @@ export default function RackRenderer({ page }: { page: SchematicPage }) {
           setDropTarget({ rackId: hit.rack.id, uPosition: clampedU, heightU: inRackDrag.heightU, valid });
         }
       } else {
-        // Outside any rack — show "unrack" indicator
         setDropTarget(null);
       }
     }
-  }, [isPanning, inRackDrag, clientToCanvas, page, isRackSlotAvailable, activeFace, isRackRearBlocked]);
+  }, [isPanning, inRackDrag, clientToCanvas, page, isRackSlotAvailable, activeFace, isRackRearBlocked, deviceDataMap]);
 
   const onMouseUp = useCallback((e: MouseEvent) => {
     setIsPanning(false);
+    pendingDragRef.current = null;
 
     if (inRackDrag) {
       const c = clientToCanvas(e.clientX, e.clientY);
@@ -637,22 +665,10 @@ export default function RackRenderer({ page }: { page: SchematicPage }) {
 
   const onPlacementDragStart = useCallback((placementId: string, e: React.MouseEvent) => {
     if (viewMode === "side" || isPlacementBlocked) return;
-    const pl = page.placements.find((p) => p.id === placementId);
-    if (!pl) return;
-    const dd = deviceDataMap.get(pl.deviceNodeId);
-    if (!dd) return;
-    const c = clientToCanvas(e.clientX, e.clientY);
+    // Don't start drag immediately — wait for mouse movement past threshold
+    pendingDragRef.current = { placementId, startX: e.clientX, startY: e.clientY };
     setSelectedPlacementId(placementId);
-    setInRackDrag({
-      placementId,
-      deviceNodeId: pl.deviceNodeId,
-      heightU: inferRackHeightU(dd),
-      label: dd.label,
-      color: dd.headerColor ?? dd.color ?? "#4a90d9",
-      cx: c.x,
-      cy: c.y,
-    });
-  }, [page.placements, deviceDataMap, clientToCanvas, viewMode, isPlacementBlocked]);
+  }, [viewMode, isPlacementBlocked]);
 
   // ── Sidebar drag-and-drop (new placements) ───────────────────────
 

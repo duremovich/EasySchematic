@@ -195,7 +195,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2.7
   },
   {
     "id": "c0a80101-0027-4000-8000-000000000039",
@@ -252,7 +255,7 @@
       "pt30x",
       "move se"
     ],
-    "powerDrawW": 25,
+    "powerDrawW": 24,
     "ports": [
       {
         "id": "port-29",
@@ -325,7 +328,10 @@
         "connectorType": "phoenix"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.45
   },
   {
     "id": "c0a80101-0034-4000-8000-000000000052",
@@ -399,7 +405,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3
   },
   {
     "id": "c0a80101-007c-4000-8000-000000000124",
@@ -414,7 +423,7 @@
       "4k",
       "g2"
     ],
-    "powerDrawW": 60,
+    "powerDrawW": 40,
     "ports": [
       {
         "id": "port-47",
@@ -508,7 +517,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.77
   },
   {
     "id": "c0a80101-007d-4000-8000-000000000125",
@@ -522,7 +534,7 @@
       "studio camera",
       "6k"
     ],
-    "powerDrawW": 60,
+    "powerDrawW": 45,
     "ports": [
       {
         "id": "port-60",
@@ -616,7 +628,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.82
   },
   {
     "id": "c0a80101-007e-4000-8000-000000000126",
@@ -631,7 +646,7 @@
       "broadcast",
       "cinema camera"
     ],
-    "powerDrawW": 75,
+    "powerDrawW": 65,
     "ports": [
       {
         "id": "port-73",
@@ -697,7 +712,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 3.69
   },
   {
     "id": "c0a80101-007f-4000-8000-000000000127",
@@ -757,7 +775,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.24
   },
   {
     "id": "c0a80101-0080-4000-8000-000000000128",
@@ -773,7 +794,7 @@
       "4k",
       "broadcast"
     ],
-    "powerDrawW": 75,
+    "powerDrawW": 55,
     "ports": [
       {
         "id": "port-88",
@@ -832,7 +853,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 5
   },
   {
     "id": "c0a80101-0081-4000-8000-000000000129",
@@ -848,7 +872,7 @@
       "hd",
       "broadcast"
     ],
-    "powerDrawW": 65,
+    "powerDrawW": 50,
     "ports": [
       {
         "id": "port-96",
@@ -907,7 +931,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 4.6
   },
   {
     "id": "c0a80101-0082-4000-8000-000000000130",
@@ -923,7 +950,7 @@
       "full frame",
       "camcorder"
     ],
-    "powerDrawW": 35,
+    "powerDrawW": 28,
     "ports": [
       {
         "id": "port-104",
@@ -996,7 +1023,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2
   },
   {
     "id": "c0a80101-0083-4000-8000-000000000131",
@@ -1013,7 +1043,7 @@
       "st2110",
       "ndi"
     ],
-    "powerDrawW": 40,
+    "powerDrawW": 80,
     "ports": [
       {
         "id": "port-114",
@@ -1101,7 +1131,10 @@
         "defaultCardId": "sfp-10g-sr"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 5.2
   },
   {
     "id": "c0a80101-0084-4000-8000-000000000132",
@@ -1117,7 +1150,7 @@
       "4k",
       "ndi"
     ],
-    "powerDrawW": 38,
+    "powerDrawW": 72,
     "ports": [
       {
         "id": "port-125",
@@ -1205,7 +1238,10 @@
         "defaultCardId": "sfp-10g-sr"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 4.3
   },
   {
     "id": "c0a80101-0085-4000-8000-000000000133",
@@ -1222,7 +1258,7 @@
       "ndi",
       "srt"
     ],
-    "powerDrawW": 32,
+    "powerDrawW": 38,
     "ports": [
       {
         "id": "port-136",
@@ -1281,7 +1317,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2.4
   },
   {
     "id": "c0a80101-0086-4000-8000-000000000134",
@@ -1297,7 +1336,7 @@
       "4k",
       "ndi|hx"
     ],
-    "powerDrawW": 23,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-144",
@@ -1349,7 +1388,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2.2
   },
   {
     "id": "c0a80101-0087-4000-8000-000000000135",
@@ -1364,7 +1406,7 @@
       "ue50",
       "4k"
     ],
-    "powerDrawW": 20,
+    "powerDrawW": 24,
     "ports": [
       {
         "id": "port-151",
@@ -1416,7 +1458,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.8
   },
   {
     "id": "c0a80101-0088-4000-8000-000000000136",
@@ -1431,7 +1476,7 @@
       "he145",
       "hd"
     ],
-    "powerDrawW": 25,
+    "powerDrawW": 35,
     "ports": [
       {
         "id": "port-158",
@@ -1476,7 +1521,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 3.4
   },
   {
     "id": "c0a80101-0089-4000-8000-000000000137",
@@ -1491,7 +1539,7 @@
       "move 4k",
       "ndi"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-164",
@@ -1550,7 +1598,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2
   },
   {
     "id": "c0a80101-008a-4000-8000-000000000138",
@@ -1565,7 +1616,7 @@
       "4k",
       "broadcast"
     ],
-    "powerDrawW": 70,
+    "powerDrawW": 56,
     "ports": [
       {
         "id": "port-172",
@@ -1631,7 +1682,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Sources"
+    "category": "Sources",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 4.2
   },
   {
     "id": "c0a80101-00fc-4000-8000-000000000328",
@@ -1677,7 +1731,10 @@
         "direction": "input",
         "connectorType": "trs-eighth"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.31
   },
   {
     "id": "c0a80101-0104-4000-8000-000000000336",
@@ -1694,7 +1751,7 @@
       "camera",
       "ndi"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 25,
     "ports": [
       {
         "id": "port-185",
@@ -1745,7 +1802,10 @@
         "direction": "input",
         "connectorType": "barrel"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.8
   },
   {
     "id": "c0a80101-0002-4000-8000-000000000002",
@@ -1905,7 +1965,7 @@
       "20x20",
       "matrix"
     ],
-    "powerDrawW": 28,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-210",
@@ -2216,7 +2276,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 160,
+    "weightKg": 2
   },
   {
     "id": "c0a80101-0016-4000-8000-000000000022",
@@ -2431,7 +2494,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 160,
+    "weightKg": 1.88
   },
   {
     "id": "c0a80101-0017-4000-8000-000000000023",
@@ -2447,7 +2513,7 @@
       "8x8",
       "switcher"
     ],
-    "powerDrawW": 66,
+    "powerDrawW": 70,
     "ports": [
       {
         "id": "port-282",
@@ -2583,7 +2649,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 366,
+    "weightKg": 3.3
   },
   {
     "id": "c0a80101-003d-4000-8000-000000000061",
@@ -2598,7 +2667,7 @@
       "mini",
       "hdmi switcher"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-301",
@@ -2657,7 +2726,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 237,
+    "weightKg": 0.55
   },
   {
     "id": "c0a80101-003e-4000-8000-000000000062",
@@ -2672,7 +2744,7 @@
       "mini pro",
       "streaming"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-309",
@@ -2738,7 +2810,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 237,
+    "weightKg": 0.55
   },
   {
     "id": "c0a80101-003f-4000-8000-000000000063",
@@ -2753,7 +2828,7 @@
       "mini pro iso",
       "recording"
     ],
-    "powerDrawW": 36,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-318",
@@ -2819,7 +2894,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 237,
+    "weightKg": 0.55
   },
   {
     "id": "c0a80101-0040-4000-8000-000000000064",
@@ -2949,7 +3027,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 375,
+    "weightKg": 1.17
   },
   {
     "id": "c0a80101-0041-4000-8000-000000000065",
@@ -2965,7 +3046,7 @@
       "8 input",
       "recording"
     ],
-    "powerDrawW": 120,
+    "powerDrawW": 36,
     "ports": [
       {
         "id": "port-343",
@@ -3080,7 +3161,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 375,
+    "weightKg": 1.17
   },
   {
     "id": "c0a80101-0042-4000-8000-000000000066",
@@ -3167,7 +3251,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 237,
+    "weightKg": 0.51
   },
   {
     "id": "c0a80101-0043-4000-8000-000000000067",
@@ -3181,7 +3268,7 @@
       "atem",
       "sdi pro iso"
     ],
-    "powerDrawW": 36,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-369",
@@ -3254,7 +3341,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 237,
+    "weightKg": 0.51
   },
   {
     "id": "c0a80101-0044-4000-8000-000000000068",
@@ -3398,7 +3488,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 375,
+    "weightKg": 1.1
   },
   {
     "id": "c0a80101-0045-4000-8000-000000000069",
@@ -3640,7 +3733,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 375,
+    "weightKg": 6.76
   },
   {
     "id": "c0a80101-0046-4000-8000-000000000070",
@@ -3813,7 +3909,10 @@
         "connectorType": "xlr-5"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 389,
+    "weightKg": 1.87
   },
   {
     "id": "c0a80101-0047-4000-8000-000000000071",
@@ -3828,7 +3927,7 @@
       "constellation",
       "2me"
     ],
-    "powerDrawW": 52,
+    "powerDrawW": 50,
     "ports": [
       {
         "id": "port-451",
@@ -4104,7 +4203,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 182,
+    "weightKg": 2.97
   },
   {
     "id": "c0a80101-0048-4000-8000-000000000072",
@@ -4119,7 +4221,7 @@
       "constellation",
       "4me"
     ],
-    "powerDrawW": 147,
+    "powerDrawW": 100,
     "ports": [
       {
         "id": "port-490",
@@ -4654,7 +4756,10 @@
         "connectorType": "trs-quarter"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 2,
+    "rackDepthMm": 350,
+    "weightKg": 6.5
   },
   {
     "id": "c0a80101-0049-4000-8000-000000000073",
@@ -4882,7 +4987,10 @@
         "connectorType": "rca"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 3
   },
   {
     "id": "c0a80101-004a-4000-8000-000000000074",
@@ -4897,7 +5005,7 @@
       "event master",
       "presentation"
     ],
-    "powerDrawW": 1200,
+    "powerDrawW": 850,
     "slots": [
       {
         "id": "e2-in-1",
@@ -4997,7 +5105,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 4,
+    "rackDepthMm": 594,
+    "weightKg": 22
   },
   {
     "id": "c0a80101-004b-4000-8000-000000000075",
@@ -5013,7 +5124,7 @@
       "4k",
       "presentation"
     ],
-    "powerDrawW": 650,
+    "powerDrawW": 250,
     "slots": [
       {
         "id": "s3-in-1",
@@ -5093,7 +5204,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 500,
+    "weightKg": 7.5
   },
   {
     "id": "c0a80101-004c-4000-8000-000000000076",
@@ -5108,7 +5222,7 @@
       "presentation",
       "4k"
     ],
-    "powerDrawW": 450,
+    "powerDrawW": 850,
     "slots": [
       {
         "id": "aql-in-1",
@@ -5181,7 +5295,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 6,
+    "rackDepthMm": 600,
+    "weightKg": 30
   },
   {
     "id": "c0a80101-004d-4000-8000-000000000077",
@@ -5360,7 +5477,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 160,
+    "weightKg": 1.35
   },
   {
     "id": "c0a80101-004e-4000-8000-000000000078",
@@ -5375,7 +5495,7 @@
       "12g",
       "40x40"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 47,
     "ports": [
       {
         "id": "port-633",
@@ -5959,7 +6079,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 2,
+    "rackDepthMm": 160,
+    "weightKg": 4.5
   },
   {
     "id": "c0a80101-004f-4000-8000-000000000079",
@@ -5975,7 +6098,7 @@
       "72x72",
       "matrix"
     ],
-    "powerDrawW": 250,
+    "powerDrawW": 50,
     "ports": [
       {
         "id": "port-716",
@@ -7007,7 +7130,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 5,
+    "rackDepthMm": 161,
+    "weightKg": 6.4
   },
   {
     "id": "c0a80101-0050-4000-8000-000000000080",
@@ -7023,7 +7149,7 @@
       "8x8",
       "matrix"
     ],
-    "powerDrawW": 50,
+    "powerDrawW": 80,
     "ports": [
       {
         "id": "port-863",
@@ -7159,7 +7285,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 350,
+    "weightKg": 3.5
   },
   {
     "id": "c0a80101-0051-4000-8000-000000000081",
@@ -7175,7 +7304,7 @@
       "16x16",
       "matrix"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 130,
     "ports": [
       {
         "id": "port-882",
@@ -7423,7 +7552,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 2,
+    "rackDepthMm": 400,
+    "weightKg": 6
   },
   {
     "id": "c0a80101-0103-4000-8000-000000000335",
@@ -7441,7 +7573,7 @@
       "12g",
       "sdi"
     ],
-    "powerDrawW": 35,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-917",
@@ -7688,7 +7820,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 260,
+    "weightKg": 2.3
   },
   {
     "id": "c0a80101-0115-4000-8000-000000000353",
@@ -7705,7 +7840,7 @@
       "matrix",
       "8x8"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 200,
     "slots": [
       {
         "id": "dm8-in-1",
@@ -7784,7 +7919,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 3,
+    "rackDepthMm": 406,
+    "weightKg": 8.2
   },
   {
     "id": "c0a80101-0116-4000-8000-000000000354",
@@ -7801,7 +7939,7 @@
       "matrix",
       "16x16"
     ],
-    "powerDrawW": 120,
+    "powerDrawW": 350,
     "slots": [
       {
         "id": "dm16-in-1",
@@ -7900,7 +8038,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 6,
+    "rackDepthMm": 406,
+    "weightKg": 14.5
   },
   {
     "id": "c0a80101-0117-4000-8000-000000000355",
@@ -7917,7 +8058,7 @@
       "matrix",
       "24x24"
     ],
-    "powerDrawW": 100,
+    "powerDrawW": 200,
     "slots": [
       {
         "id": "mx2m-in-1",
@@ -7996,7 +8137,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 4,
+    "rackDepthMm": 400,
+    "weightKg": 9
   },
   {
     "id": "c0a80101-0118-4000-8000-000000000356",
@@ -8013,7 +8157,7 @@
       "4k",
       "matrix"
     ],
-    "powerDrawW": 60,
+    "powerDrawW": 120,
     "ports": [
       {
         "id": "port-958",
@@ -8114,7 +8258,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 2,
+    "rackDepthMm": 437,
+    "weightKg": 5.4
   },
   {
     "id": "c0a80101-0119-4000-8000-000000000357",
@@ -8131,7 +8278,7 @@
       "4k",
       "matrix"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 160,
     "ports": [
       {
         "id": "port-972",
@@ -8274,7 +8421,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 3,
+    "rackDepthMm": 437,
+    "weightKg": 7.3
   },
   {
     "id": "c0a80101-0167-4000-8000-000000000359",
@@ -8291,7 +8441,7 @@
       "modular",
       "router"
     ],
-    "powerDrawW": 500,
+    "powerDrawW": 450,
     "slots": [
       {
         "id": "ufr5-slot-1",
@@ -8369,7 +8519,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 5,
+    "rackDepthMm": 457,
+    "weightKg": 18
   },
   {
     "id": "c0a80101-0168-4000-8000-000000000360",
@@ -8386,7 +8539,7 @@
       "modular",
       "router"
     ],
-    "powerDrawW": 300,
+    "powerDrawW": 200,
     "slots": [
       {
         "id": "ufr2-slot-1",
@@ -8670,7 +8823,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 2,
+    "rackDepthMm": 457,
+    "weightKg": 7.5
   },
   {
     "id": "c0a80101-0169-4000-8000-000000000361",
@@ -8687,7 +8843,7 @@
       "modular",
       "router"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 100,
     "slots": [
       {
         "id": "ufr1-slot-1",
@@ -8961,7 +9117,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 1,
+    "rackDepthMm": 457,
+    "weightKg": 4.5
   },
   {
     "id": "c0a80101-016a-4000-8000-000000000362",
@@ -8978,7 +9137,7 @@
       "production",
       "switcher"
     ],
-    "powerDrawW": 250,
+    "powerDrawW": 150,
     "ports": [
       {
         "id": "port-1068",
@@ -9443,7 +9602,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 2,
+    "rackDepthMm": 370,
+    "weightKg": 6
   },
   {
     "id": "c0a80101-016b-4000-8000-000000000363",
@@ -9460,7 +9622,7 @@
       "production",
       "switcher"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 72,
     "ports": [
       {
         "id": "port-1134",
@@ -9631,7 +9793,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 0,
+    "rackDepthMm": 375,
+    "weightKg": 4.5
   },
   {
     "id": "c0a80101-016c-4000-8000-000000000364",
@@ -9648,7 +9813,7 @@
       "control",
       "panel"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 150,
     "ports": [
       {
         "id": "port-1158",
@@ -9693,7 +9858,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Control"
+    "category": "Control",
+    "rackHeightU": 0,
+    "rackDepthMm": 725,
+    "weightKg": 11
   },
   {
     "id": "c0a80101-016d-4000-8000-000000000365",
@@ -9711,7 +9879,7 @@
       "sdi",
       "router"
     ],
-    "powerDrawW": 75,
+    "powerDrawW": 55,
     "ports": [
       {
         "id": "port-1164",
@@ -10183,7 +10351,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 2,
+    "rackDepthMm": 260,
+    "weightKg": 4.5
   },
   {
     "id": "c0a80101-016e-4000-8000-000000000366",
@@ -10200,7 +10371,7 @@
       "panel",
       "router"
     ],
-    "powerDrawW": 10,
+    "powerDrawW": 8,
     "ports": [
       {
         "id": "port-1231",
@@ -10224,7 +10395,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Control"
+    "category": "Control",
+    "rackHeightU": 1,
+    "rackDepthMm": 100,
+    "weightKg": 0.9
   },
   {
     "id": "c0a80101-016f-4000-8000-000000000367",
@@ -10242,7 +10416,7 @@
       "router",
       "2ru"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 10,
     "ports": [
       {
         "id": "port-1234",
@@ -10259,7 +10433,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Control"
+    "category": "Control",
+    "rackHeightU": 2,
+    "rackDepthMm": 100,
+    "weightKg": 1.5
   },
   {
     "id": "c0a80101-0170-4000-8000-000000000368",
@@ -10276,7 +10453,7 @@
       "universal",
       "router"
     ],
-    "powerDrawW": 350,
+    "powerDrawW": 200,
     "ports": [
       {
         "id": "port-1236",
@@ -12001,7 +12178,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 4,
+    "rackDepthMm": 400,
+    "weightKg": 14.5
   },
   {
     "id": "c0a80101-0171-4000-8000-000000000369",
@@ -12018,7 +12198,7 @@
       "matrix",
       "4k"
     ],
-    "powerDrawW": 120,
+    "powerDrawW": 220,
     "ports": [
       {
         "id": "port-1482",
@@ -12385,7 +12565,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 4,
+    "rackDepthMm": 400,
+    "weightKg": 9.5
   },
   {
     "id": "c0a80101-0172-4000-8000-000000000370",
@@ -12402,7 +12585,7 @@
       "4k",
       "8k"
     ],
-    "powerDrawW": 600,
+    "powerDrawW": 750,
     "slots": [
       {
         "id": "rs6-in-1",
@@ -12506,7 +12689,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Switching"
+    "category": "Switching",
+    "rackHeightU": 6,
+    "rackDepthMm": 600,
+    "weightKg": 28
   },
   {
     "id": "c0a80101-0173-4000-8000-000000000371",
@@ -12522,7 +12708,7 @@
       "livepremier",
       "midra"
     ],
-    "powerDrawW": 25,
+    "powerDrawW": 50,
     "ports": [
       {
         "id": "port-1541",
@@ -12546,7 +12732,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Control"
+    "category": "Control",
+    "rackHeightU": 2,
+    "rackDepthMm": 350,
+    "weightKg": 4.5
   },
   {
     "id": "c0a80101-0003-4000-8000-000000000003",
@@ -12626,7 +12815,7 @@
       "rack monitor",
       "17 inch"
     ],
-    "powerDrawW": 55,
+    "powerDrawW": 24,
     "ports": [
       {
         "id": "port-1550",
@@ -12650,7 +12839,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Monitoring"
+    "category": "Monitoring",
+    "rackHeightU": 6,
+    "rackDepthMm": 44,
+    "weightKg": 2.2
   },
   {
     "id": "c0a80101-0063-4000-8000-000000000099",
@@ -12666,7 +12858,7 @@
       "12g",
       "rack monitor"
     ],
-    "powerDrawW": 60,
+    "powerDrawW": 48,
     "ports": [
       {
         "id": "port-1553",
@@ -12704,7 +12896,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Monitoring"
+    "category": "Monitoring",
+    "rackHeightU": 6,
+    "rackDepthMm": 50,
+    "weightKg": 3.6
   },
   {
     "id": "c0a80101-0064-4000-8000-000000000100",
@@ -12720,7 +12915,7 @@
       "dual",
       "rack monitor"
     ],
-    "powerDrawW": 40,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-1558",
@@ -12758,7 +12953,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Monitoring"
+    "category": "Monitoring",
+    "rackHeightU": 3,
+    "rackDepthMm": 44,
+    "weightKg": 1.6
   },
   {
     "id": "c0a80101-0065-4000-8000-000000000101",
@@ -12773,7 +12971,7 @@
       "13 inch",
       "production monitor"
     ],
-    "powerDrawW": 65,
+    "powerDrawW": 37,
     "ports": [
       {
         "id": "port-1563",
@@ -12860,7 +13058,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "category": "Monitoring"
+    "category": "Monitoring",
+    "rackHeightU": 0,
+    "rackDepthMm": 50,
+    "weightKg": 3.08
   },
   {
     "id": "c0a80101-0066-4000-8000-000000000102",
@@ -12875,7 +13076,7 @@
       "24 inch",
       "production monitor"
     ],
-    "powerDrawW": 90,
+    "powerDrawW": 80,
     "ports": [
       {
         "id": "port-1575",
@@ -12969,7 +13170,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Monitoring"
+    "category": "Monitoring",
+    "rackHeightU": 0,
+    "rackDepthMm": 51,
+    "weightKg": 7.5
   },
   {
     "id": "c0a80101-0067-4000-8000-000000000103",
@@ -12984,7 +13188,7 @@
       "7 inch",
       "rack monitor"
     ],
-    "powerDrawW": 20,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-1588",
@@ -13064,7 +13268,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Monitoring"
+    "category": "Monitoring",
+    "rackHeightU": 3,
+    "rackDepthMm": 44,
+    "weightKg": 2.27
   },
   {
     "id": "c0a80101-00fa-4000-8000-000000000326",
@@ -13080,7 +13287,7 @@
       "speakers",
       "12g"
     ],
-    "powerDrawW": 50,
+    "powerDrawW": 55,
     "ports": [
       {
         "id": "port-1599",
@@ -13159,7 +13366,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 242,
+    "weightKg": 2.6
   },
   {
     "id": "c0a80101-0102-4000-8000-000000000334",
@@ -13175,7 +13385,7 @@
       "18 inch",
       "production monitor"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 165,
     "ports": [
       {
         "id": "port-1610",
@@ -13261,7 +13471,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 64,
+    "weightKg": 5.44
   },
   {
     "id": "c0a80101-0197-4000-8000-000000000407",
@@ -13279,7 +13492,7 @@
       "monitor",
       "test"
     ],
-    "powerDrawW": 40,
+    "powerDrawW": 25,
     "ports": [
       {
         "id": "port-1622",
@@ -13344,7 +13557,10 @@
         "direction": "input",
         "connectorType": "other"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 63,
+    "weightKg": 1.5
   },
   {
     "id": "c0a80101-0005-4000-8000-000000000005",
@@ -13432,7 +13648,7 @@
       "deembed",
       "audio extract"
     ],
-    "powerDrawW": 16,
+    "powerDrawW": 9,
     "ports": [
       {
         "id": "port-1640",
@@ -13491,7 +13707,10 @@
         "connectorType": "toslink"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 109,
+    "weightKg": 0.45
   },
   {
     "id": "c0a80101-0032-4000-8000-000000000050",
@@ -13506,7 +13725,7 @@
       "embedder",
       "audio embed"
     ],
-    "powerDrawW": 16,
+    "powerDrawW": 9,
     "ports": [
       {
         "id": "port-1648",
@@ -13565,7 +13784,10 @@
         "connectorType": "toslink"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 109,
+    "weightKg": 0.45
   },
   {
     "id": "c0a80101-0035-4000-8000-000000000053",
@@ -13648,7 +13870,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 274,
+    "weightKg": 3.45
   },
   {
     "id": "c0a80101-0036-4000-8000-000000000054",
@@ -13724,7 +13949,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 373,
+    "weightKg": 4.56
   },
   {
     "id": "c0a80101-0037-4000-8000-000000000055",
@@ -13740,7 +13968,7 @@
       "audio interface",
       "a16r"
     ],
-    "powerDrawW": 40,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-1673",
@@ -13820,7 +14048,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 352,
+    "weightKg": 5
   },
   {
     "id": "c0a80101-008b-4000-8000-000000000139",
@@ -14037,7 +14268,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 36
   },
   {
     "id": "c0a80101-008c-4000-8000-000000000140",
@@ -14254,7 +14488,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 29
   },
   {
     "id": "c0a80101-008d-4000-8000-000000000141",
@@ -14471,7 +14708,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 24
   },
   {
     "id": "c0a80101-008e-4000-8000-000000000142",
@@ -14844,7 +15084,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 21.8
   },
   {
     "id": "c0a80101-008f-4000-8000-000000000143",
@@ -15105,7 +15348,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 14.7
   },
   {
     "id": "c0a80101-0090-4000-8000-000000000144",
@@ -15509,7 +15755,10 @@
         "connectorType": "trs-quarter"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 20
   },
   {
     "id": "c0a80101-0091-4000-8000-000000000145",
@@ -15856,7 +16105,10 @@
         "connectorType": "trs-quarter"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 13.5
   },
   {
     "id": "c0a80101-0092-4000-8000-000000000146",
@@ -16147,7 +16399,10 @@
         "connectorType": "trs-quarter"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 13.5
   },
   {
     "id": "c0a80101-0093-4000-8000-000000000147",
@@ -16371,7 +16626,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 41
   },
   {
     "id": "c0a80101-0094-4000-8000-000000000148",
@@ -16386,7 +16644,7 @@
       "digital console",
       "32 channel"
     ],
-    "powerDrawW": 120,
+    "powerDrawW": 110,
     "slots": [
       {
         "id": "sq7-slink-exp",
@@ -16781,7 +17039,10 @@
         "connectorType": "trs-quarter"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 17.8
   },
   {
     "id": "c0a80101-0095-4000-8000-000000000149",
@@ -16796,7 +17057,7 @@
       "digital console",
       "16 channel"
     ],
-    "powerDrawW": 100,
+    "powerDrawW": 75,
     "slots": [
       {
         "id": "sq5-slink-exp",
@@ -17079,7 +17340,10 @@
         "connectorType": "trs-quarter"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 10.5
   },
   {
     "id": "c0a80101-0096-4000-8000-000000000150",
@@ -17094,7 +17358,7 @@
       "digital console",
       "flagship"
     ],
-    "powerDrawW": 600,
+    "powerDrawW": 800,
     "slots": [
       {
         "id": "sd7-dmi-1",
@@ -17354,7 +17618,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 141
   },
   {
     "id": "c0a80101-011a-4000-8000-000000000358",
@@ -17368,7 +17635,7 @@
       "sd12",
       "digital console"
     ],
-    "powerDrawW": 250,
+    "powerDrawW": 140,
     "slots": [
       {
         "id": "sd12-dmi-1",
@@ -17460,7 +17727,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 42
   },
   {
     "id": "c0a80101-0097-4000-8000-000000000151",
@@ -17476,7 +17746,7 @@
       "dante",
       "32 channel"
     ],
-    "powerDrawW": 85,
+    "powerDrawW": 120,
     "ports": [
       {
         "id": "port-2152",
@@ -17920,7 +18190,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 5,
+    "rackDepthMm": 368,
+    "weightKg": 13.5
   },
   {
     "id": "c0a80101-0098-4000-8000-000000000152",
@@ -17936,7 +18209,7 @@
       "dante",
       "16 channel"
     ],
-    "powerDrawW": 55,
+    "powerDrawW": 72,
     "ports": [
       {
         "id": "port-2215",
@@ -18128,7 +18401,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 3,
+    "rackDepthMm": 368,
+    "weightKg": 9.6
   },
   {
     "id": "c0a80101-0099-4000-8000-000000000153",
@@ -18315,7 +18591,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 283,
+    "weightKg": 5
   },
   {
     "id": "c0a80101-009a-4000-8000-000000000154",
@@ -18331,7 +18610,7 @@
       "dsp",
       "avb"
     ],
-    "powerDrawW": 100,
+    "powerDrawW": 150,
     "ports": [
       {
         "id": "port-2266",
@@ -18614,7 +18893,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 3,
+    "rackDepthMm": 445,
+    "weightKg": 8.2
   },
   {
     "id": "c0a80101-009b-4000-8000-000000000155",
@@ -18630,7 +18912,7 @@
       "dante",
       "card"
     ],
-    "powerDrawW": 7,
+    "powerDrawW": 10,
     "ports": [
       {
         "id": "port-2306",
@@ -18647,7 +18929,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.15
   },
   {
     "id": "c0a80101-009c-4000-8000-000000000156",
@@ -18687,7 +18972,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.16
   },
   {
     "id": "c0a80101-009d-4000-8000-000000000157",
@@ -18727,7 +19015,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.16
   },
   {
     "id": "c0a80101-009e-4000-8000-000000000158",
@@ -18759,7 +19050,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.16
   },
   {
     "id": "c0a80101-009f-4000-8000-000000000159",
@@ -18776,7 +19070,7 @@
       "wireless",
       "receiver"
     ],
-    "powerDrawW": 50,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-2316",
@@ -18842,7 +19136,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 333,
+    "weightKg": 4.8
   },
   {
     "id": "c0a80101-00a0-4000-8000-000000000160",
@@ -18857,7 +19154,7 @@
       "wireless",
       "receiver"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 5,
     "ports": [
       {
         "id": "port-2325",
@@ -18881,7 +19178,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.78
   },
   {
     "id": "c0a80101-00a1-4000-8000-000000000161",
@@ -18896,7 +19196,7 @@
       "wireless",
       "receiver"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 9,
     "ports": [
       {
         "id": "port-2328",
@@ -18920,7 +19220,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.82
   },
   {
     "id": "c0a80101-00a2-4000-8000-000000000162",
@@ -18935,7 +19238,7 @@
       "wireless",
       "receiver"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 35,
     "ports": [
       {
         "id": "port-2331",
@@ -19001,7 +19304,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 373,
+    "weightKg": 5.2
   },
   {
     "id": "c0a80101-00b2-4000-8000-000000000178",
@@ -19017,7 +19323,7 @@
       "816",
       "processor"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 66,
     "ports": [
       {
         "id": "port-2340",
@@ -19223,7 +19529,10 @@
         "connectorType": "trs-quarter"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 2,
+    "rackDepthMm": 410,
+    "weightKg": 7.6
   },
   {
     "id": "c0a80101-0107-4000-8000-000000000339",
@@ -19238,7 +19547,7 @@
       "dm7",
       "digital console"
     ],
-    "powerDrawW": 150,
+    "powerDrawW": 240,
     "ports": [
       {
         "id": "port-2369",
@@ -19450,7 +19759,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 23.5
   },
   {
     "id": "c0a80101-0108-4000-8000-000000000340",
@@ -19467,7 +19779,7 @@
       "audio network interface",
       "4 input"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 10,
     "ports": [
       {
         "id": "port-2399",
@@ -19511,7 +19823,10 @@
         "direction": "bidirectional",
         "connectorType": "rj45"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.67
   },
   {
     "id": "c0a80101-0109-4000-8000-000000000341",
@@ -19528,7 +19843,7 @@
       "audio network interface",
       "4 output"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 10,
     "ports": [
       {
         "id": "port-2405",
@@ -19572,7 +19887,10 @@
         "direction": "bidirectional",
         "connectorType": "rj45"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.66
   },
   {
     "id": "c0a80101-01aa-4000-8000-000000000426",
@@ -19589,7 +19907,7 @@
       "digital console",
       "96khz"
     ],
-    "powerDrawW": 350,
+    "powerDrawW": 200,
     "slots": [
       {
         "id": "csr3-hy-1",
@@ -19795,7 +20113,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 38
   },
   {
     "id": "c0a80101-01ab-4000-8000-000000000427",
@@ -19812,7 +20133,7 @@
       "digital console",
       "96khz"
     ],
-    "powerDrawW": 400,
+    "powerDrawW": 200,
     "slots": [
       {
         "id": "csr5-hy-1",
@@ -20088,7 +20409,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 42
   },
   {
     "id": "c0a80101-01ac-4000-8000-000000000428",
@@ -20105,7 +20429,7 @@
       "dante",
       "compact"
     ],
-    "powerDrawW": 40,
+    "powerDrawW": 43,
     "ports": [
       {
         "id": "port-2467",
@@ -20325,7 +20649,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 6.5
   },
   {
     "id": "c0a80101-01ad-4000-8000-000000000429",
@@ -20341,7 +20668,7 @@
       "digital mixer",
       "midas preamp"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 120,
     "ports": [
       {
         "id": "port-2498",
@@ -20673,7 +21000,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 15.4
   },
   {
     "id": "c0a80101-01ae-4000-8000-000000000430",
@@ -20690,7 +21020,7 @@
       "usb",
       "effects"
     ],
-    "powerDrawW": 50,
+    "powerDrawW": 40,
     "ports": [
       {
         "id": "port-2545",
@@ -20882,7 +21212,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Mixing Consoles"
+    "category": "Mixing Consoles",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 5.9
   },
   {
     "id": "c0a80101-01af-4000-8000-000000000431",
@@ -21006,7 +21339,7 @@
       "monitor",
       "transmitter"
     ],
-    "powerDrawW": 18,
+    "powerDrawW": 50,
     "ports": [
       {
         "id": "port-2584",
@@ -21065,7 +21398,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 1,
+    "rackDepthMm": 343,
+    "weightKg": 4.7
   },
   {
     "id": "c0a80101-01b1-4000-8000-000000000433",
@@ -21092,7 +21428,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.49
   },
   {
     "id": "c0a80101-01b2-4000-8000-000000000434",
@@ -21120,7 +21459,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.22
   },
   {
     "id": "c0a80101-01b3-4000-8000-000000000435",
@@ -21147,7 +21489,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.14
   },
   {
     "id": "c0a80101-01b4-4000-8000-000000000436",
@@ -21175,7 +21520,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Audio"
+    "category": "Audio",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.16
   },
   {
     "id": "c0a80101-0006-4000-8000-000000000006",
@@ -21213,7 +21561,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 49,
+    "weightKg": 0.07
   },
   {
     "id": "c0a80101-0007-4000-8000-000000000007",
@@ -21251,7 +21602,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 49,
+    "weightKg": 0.07
   },
   {
     "id": "c0a80101-0008-4000-8000-000000000008",
@@ -21296,7 +21650,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 57,
+    "weightKg": 0.1
   },
   {
     "id": "c0a80101-0009-4000-8000-000000000009",
@@ -21342,7 +21699,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 49,
+    "weightKg": 0.07
   },
   {
     "id": "c0a80101-000a-4000-8000-000000000010",
@@ -21358,7 +21718,7 @@
       "transmitter",
       "quad"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 4,
     "ports": [
       {
         "id": "port-2610",
@@ -21417,7 +21777,10 @@
         "connectorType": "lc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 79,
+    "weightKg": 0.22
   },
   {
     "id": "c0a80101-000b-4000-8000-000000000011",
@@ -21433,7 +21796,7 @@
       "receiver",
       "quad"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 4,
     "ports": [
       {
         "id": "port-2618",
@@ -21492,7 +21855,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 79,
+    "weightKg": 0.22
   },
   {
     "id": "c0a80101-000c-4000-8000-000000000012",
@@ -21508,7 +21874,7 @@
       "transmitter",
       "single"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 2,
     "ports": [
       {
         "id": "port-2626",
@@ -21532,7 +21898,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 57,
+    "weightKg": 0.14
   },
   {
     "id": "c0a80101-000d-4000-8000-000000000013",
@@ -21548,7 +21917,7 @@
       "receiver",
       "single"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 2,
     "ports": [
       {
         "id": "port-2629",
@@ -21572,7 +21941,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 57,
+    "weightKg": 0.14
   },
   {
     "id": "c0a80101-000e-4000-8000-000000000014",
@@ -21660,7 +22032,10 @@
         "connectorType": "rca"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 145,
+    "weightKg": 0.4
   },
   {
     "id": "c0a80101-000f-4000-8000-000000000015",
@@ -21714,7 +22089,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 77,
+    "weightKg": 0.17
   },
   {
     "id": "c0a80101-0010-4000-8000-000000000016",
@@ -21729,7 +22107,7 @@
       "vga",
       "scan converter"
     ],
-    "powerDrawW": 20,
+    "powerDrawW": 25,
     "ports": [
       {
         "id": "port-2647",
@@ -21795,7 +22173,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 1,
+    "rackDepthMm": 224,
+    "weightKg": 1.1
   },
   {
     "id": "c0a80101-0011-4000-8000-000000000017",
@@ -21962,7 +22343,7 @@
       "playback",
       "thunderbolt"
     ],
-    "powerDrawW": 75,
+    "powerDrawW": 45,
     "ports": [
       {
         "id": "port-2671",
@@ -22048,7 +22429,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 177,
+    "weightKg": 1.2
   },
   {
     "id": "c0a80101-0052-4000-8000-000000000082",
@@ -22063,7 +22447,7 @@
       "12g",
       "sdi to hdmi"
     ],
-    "powerDrawW": 4,
+    "powerDrawW": 3,
     "ports": [
       {
         "id": "port-2683",
@@ -22087,7 +22471,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 53,
+    "weightKg": 0.08
   },
   {
     "id": "c0a80101-0053-4000-8000-000000000083",
@@ -22102,7 +22489,7 @@
       "12g",
       "hdmi to sdi"
     ],
-    "powerDrawW": 4,
+    "powerDrawW": 3,
     "ports": [
       {
         "id": "port-2686",
@@ -22126,7 +22513,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 53,
+    "weightKg": 0.08
   },
   {
     "id": "c0a80101-0054-4000-8000-000000000084",
@@ -22141,7 +22531,7 @@
       "bidirectional",
       "12g"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 4,
     "ports": [
       {
         "id": "port-2689",
@@ -22172,7 +22562,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 53,
+    "weightKg": 0.08
   },
   {
     "id": "c0a80101-0057-4000-8000-000000000087",
@@ -22187,7 +22580,7 @@
       "sdi to hdmi",
       "12g"
     ],
-    "powerDrawW": 16,
+    "powerDrawW": 10,
     "ports": [
       {
         "id": "port-2693",
@@ -22239,7 +22632,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 1,
+    "rackDepthMm": 109,
+    "weightKg": 0.45
   },
   {
     "id": "c0a80101-0058-4000-8000-000000000088",
@@ -22254,7 +22650,7 @@
       "hdmi to sdi",
       "12g"
     ],
-    "powerDrawW": 16,
+    "powerDrawW": 10,
     "ports": [
       {
         "id": "port-2700",
@@ -22285,7 +22681,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 1,
+    "rackDepthMm": 109,
+    "weightKg": 0.45
   },
   {
     "id": "c0a80101-0059-4000-8000-000000000089",
@@ -22300,7 +22699,7 @@
       "12g",
       "sdi to hdmi"
     ],
-    "powerDrawW": 7,
+    "powerDrawW": 6,
     "ports": [
       {
         "id": "port-2704",
@@ -22346,7 +22745,10 @@
         "defaultCardId": "sfp-10g-sr"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 79,
+    "weightKg": 0.22
   },
   {
     "id": "c0a80101-005a-4000-8000-000000000090",
@@ -22361,7 +22763,7 @@
       "12g",
       "hdmi to sdi"
     ],
-    "powerDrawW": 7,
+    "powerDrawW": 6,
     "ports": [
       {
         "id": "port-2709",
@@ -22407,7 +22809,10 @@
         "defaultCardId": "sfp-10g-sr"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 79,
+    "weightKg": 0.22
   },
   {
     "id": "c0a80101-005b-4000-8000-000000000091",
@@ -22511,7 +22916,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 1,
+    "rackDepthMm": 406,
+    "weightKg": 3.6
   },
   {
     "id": "c0a80101-005c-4000-8000-000000000092",
@@ -22563,7 +22971,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 77,
+    "weightKg": 0.17
   },
   {
     "id": "c0a80101-005d-4000-8000-000000000093",
@@ -22658,7 +23069,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 1,
+    "rackDepthMm": 170,
+    "weightKg": 0.58
   },
   {
     "id": "c0a80101-005e-4000-8000-000000000094",
@@ -22836,7 +23250,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 1,
+    "rackDepthMm": 153,
+    "weightKg": 2.3
   },
   {
     "id": "c0a80101-005f-4000-8000-000000000095",
@@ -22851,7 +23268,7 @@
       "quad",
       "multiviewer"
     ],
-    "powerDrawW": 7,
+    "powerDrawW": 5,
     "ports": [
       {
         "id": "port-2765",
@@ -22924,7 +23341,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 77,
+    "weightKg": 0.17
   },
   {
     "id": "c0a80101-0060-4000-8000-000000000096",
@@ -22939,7 +23359,7 @@
       "4s",
       "multiviewer"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 6,
     "ports": [
       {
         "id": "port-2775",
@@ -23005,7 +23425,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 77,
+    "weightKg": 0.17
   },
   {
     "id": "c0a80101-0061-4000-8000-000000000097",
@@ -23021,7 +23444,7 @@
       "16 input",
       "multiviewer"
     ],
-    "powerDrawW": 24,
+    "powerDrawW": 10,
     "ports": [
       {
         "id": "port-2784",
@@ -23276,7 +23699,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 104,
+    "weightKg": 0.35
   },
   {
     "id": "c0a80101-006f-4000-8000-000000000111",
@@ -23291,7 +23717,7 @@
       "pcie",
       "capture"
     ],
-    "powerDrawW": 18,
+    "powerDrawW": 8,
     "ports": [
       {
         "id": "port-2820",
@@ -23322,7 +23748,10 @@
         "connectorType": "other"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.08
   },
   {
     "id": "c0a80101-0070-4000-8000-000000000112",
@@ -23338,7 +23767,7 @@
       "pcie",
       "4 channel"
     ],
-    "powerDrawW": 18,
+    "powerDrawW": 14,
     "ports": [
       {
         "id": "port-2824",
@@ -23376,7 +23805,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.08
   },
   {
     "id": "c0a80101-0071-4000-8000-000000000113",
@@ -23392,7 +23824,7 @@
       "pcie",
       "8 channel"
     ],
-    "powerDrawW": 25,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-2829",
@@ -23458,7 +23890,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.08
   },
   {
     "id": "c0a80101-0072-4000-8000-000000000114",
@@ -23474,7 +23909,7 @@
       "thunderbolt",
       "capture"
     ],
-    "powerDrawW": 120,
+    "powerDrawW": 65,
     "ports": [
       {
         "id": "port-2838",
@@ -23617,7 +24052,10 @@
         "connectorType": "other"
       }
     ],
-    "category": "Processing"
+    "category": "Processing",
+    "rackHeightU": 2,
+    "rackDepthMm": 234,
+    "weightKg": 3.8
   },
   {
     "id": "c0a80101-00c8-4000-8000-000000000200",
@@ -25242,7 +25680,7 @@
       "12g",
       "sdi"
     ],
-    "powerDrawW": 2,
+    "powerDrawW": 7,
     "ports": [
       {
         "id": "port-2958",
@@ -25279,7 +25717,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 95,
+    "weightKg": 0.21
   },
   {
     "id": "c0a80101-0194-4000-8000-000000000404",
@@ -25296,7 +25737,7 @@
       "4k",
       "scaler"
     ],
-    "powerDrawW": 7,
+    "powerDrawW": 12,
     "ports": [
       {
         "id": "port-2963",
@@ -25354,7 +25795,10 @@
         "direction": "output",
         "connectorType": "hdmi"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 130,
+    "weightKg": 1.04
   },
   {
     "id": "c0a80101-0195-4000-8000-000000000405",
@@ -25371,7 +25815,7 @@
       "fiber converter",
       "camera"
     ],
-    "powerDrawW": 60,
+    "powerDrawW": 360,
     "ports": [
       {
         "id": "port-2971",
@@ -25485,7 +25929,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 372,
+    "weightKg": 2.8
   },
   {
     "id": "c0a80101-0012-4000-8000-000000000018",
@@ -25743,7 +26190,7 @@
       "srt",
       "hevc"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 24,
     "ports": [
       {
         "id": "port-3011",
@@ -25816,7 +26263,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 0,
+    "rackDepthMm": 92,
+    "weightKg": 0.33
   },
   {
     "id": "c0a80101-003a-4000-8000-000000000058",
@@ -25907,7 +26357,10 @@
         "defaultCardId": "sfp-10g-sr"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 1,
+    "rackDepthMm": 200,
+    "weightKg": 0.9
   },
   {
     "id": "c0a80101-0073-4000-8000-000000000115",
@@ -25923,7 +26376,7 @@
       "encoder",
       "hdmi"
     ],
-    "powerDrawW": 13,
+    "powerDrawW": 8,
     "ports": [
       {
         "id": "port-3030",
@@ -25947,7 +26400,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 0,
+    "rackDepthMm": 118,
+    "weightKg": 0.54
   },
   {
     "id": "c0a80101-0074-4000-8000-000000000116",
@@ -25963,7 +26419,7 @@
       "encoder",
       "4k"
     ],
-    "powerDrawW": 13,
+    "powerDrawW": 7,
     "ports": [
       {
         "id": "port-3033",
@@ -25987,7 +26443,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 0,
+    "rackDepthMm": 118,
+    "weightKg": 0.54
   },
   {
     "id": "c0a80101-0075-4000-8000-000000000117",
@@ -26002,7 +26461,7 @@
       "ndi",
       "decoder"
     ],
-    "powerDrawW": 13,
+    "powerDrawW": 7,
     "ports": [
       {
         "id": "port-3036",
@@ -26019,7 +26478,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 0,
+    "rackDepthMm": 118,
+    "weightKg": 0.54
   },
   {
     "id": "c0a80101-0076-4000-8000-000000000118",
@@ -26072,7 +26534,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 0,
+    "rackDepthMm": 170,
+    "weightKg": 0.62
   },
   {
     "id": "c0a80101-0077-4000-8000-000000000119",
@@ -26087,7 +26552,7 @@
       "4k",
       "streaming"
     ],
-    "powerDrawW": 18,
+    "powerDrawW": 25,
     "ports": [
       {
         "id": "port-3043",
@@ -26132,7 +26597,10 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 0,
+    "rackDepthMm": 170,
+    "weightKg": 0.72
   },
   {
     "id": "c0a80101-0078-4000-8000-000000000120",
@@ -26148,7 +26616,7 @@
       "hevc",
       "h265"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 8,
     "ports": [
       {
         "id": "port-3049",
@@ -26179,7 +26647,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 0,
+    "rackDepthMm": 76,
+    "weightKg": 0.33
   },
   {
     "id": "c0a80101-0079-4000-8000-000000000121",
@@ -26194,7 +26665,7 @@
       "decoder",
       "hevc"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 8,
     "ports": [
       {
         "id": "port-3053",
@@ -26225,7 +26696,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 0,
+    "rackDepthMm": 76,
+    "weightKg": 0.33
   },
   {
     "id": "c0a80101-00f3-4000-8000-000000000319",
@@ -26242,7 +26716,7 @@
       "streaming",
       "pure3"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 20,
     "ports": [
       {
         "id": "port-3057",
@@ -26294,7 +26768,10 @@
         "connectorType": "barrel"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 1,
+    "rackDepthMm": 188,
+    "weightKg": 0.7
   },
   {
     "id": "c0a80101-00f4-4000-8000-000000000320",
@@ -26311,7 +26788,7 @@
       "scaling",
       "pure3"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 20,
     "ports": [
       {
         "id": "port-3064",
@@ -26356,7 +26833,10 @@
         "connectorType": "barrel"
       }
     ],
-    "category": "Networking"
+    "category": "Networking",
+    "rackHeightU": 1,
+    "rackDepthMm": 188,
+    "weightKg": 0.7
   },
   {
     "id": "c0a80101-00fb-4000-8000-000000000327",
@@ -26410,7 +26890,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 176,
+    "weightKg": 0.76
   },
   {
     "id": "c0a80101-00ff-4000-8000-000000000331",
@@ -26444,7 +26927,10 @@
         "direction": "bidirectional",
         "connectorType": "rj45"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 113,
+    "weightKg": 0.2
   },
   {
     "id": "c0a80101-0100-4000-8000-000000000332",
@@ -26461,7 +26947,7 @@
       "encoder",
       "hdmi"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 4,
     "ports": [
       {
         "id": "port-3077",
@@ -26477,7 +26963,10 @@
         "direction": "bidirectional",
         "connectorType": "rj45"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 89,
+    "weightKg": 0.38
   },
   {
     "id": "c0a80101-0105-4000-8000-000000000337",
@@ -26493,7 +26982,7 @@
       "hdmi",
       "capture card"
     ],
-    "powerDrawW": 0,
+    "powerDrawW": 3,
     "ports": [
       {
         "id": "port-3079",
@@ -26530,7 +27019,10 @@
         "direction": "output",
         "connectorType": "usb-b"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 85,
+    "weightKg": 0.12
   },
   {
     "id": "c0a80101-0106-4000-8000-000000000338",
@@ -26547,7 +27039,7 @@
       "encoder",
       "sdi"
     ],
-    "powerDrawW": 13,
+    "powerDrawW": 7,
     "ports": [
       {
         "id": "port-3084",
@@ -26570,7 +27062,10 @@
         "direction": "bidirectional",
         "connectorType": "rj45"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 118,
+    "weightKg": 0.54
   },
   {
     "id": "c0a80101-001a-4000-8000-000000000026",
@@ -26624,7 +27119,7 @@
       "recorder",
       "player"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 190,
     "ports": [
       {
         "id": "port-3091",
@@ -26774,7 +27269,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Recording"
+    "category": "Recording",
+    "rackHeightU": 3,
+    "rackDepthMm": 335,
+    "weightKg": 7.6
   },
   {
     "id": "c0a80101-0068-4000-8000-000000000104",
@@ -26790,7 +27288,7 @@
       "monitor recorder",
       "12g"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 25,
     "ports": [
       {
         "id": "port-3112",
@@ -26870,7 +27368,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Recording"
+    "category": "Recording",
+    "rackHeightU": 0,
+    "rackDepthMm": 40,
+    "weightKg": 0.73
   },
   {
     "id": "c0a80101-0069-4000-8000-000000000105",
@@ -26885,7 +27386,7 @@
       "monitor recorder",
       "hdmi"
     ],
-    "powerDrawW": 20,
+    "powerDrawW": 19,
     "ports": [
       {
         "id": "port-3123",
@@ -26909,7 +27410,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "category": "Recording"
+    "category": "Recording",
+    "rackHeightU": 0,
+    "rackDepthMm": 31,
+    "weightKg": 0.32
   },
   {
     "id": "c0a80101-006a-4000-8000-000000000106",
@@ -26924,7 +27428,7 @@
       "mini",
       "recorder"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-3126",
@@ -27004,7 +27508,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Recording"
+    "category": "Recording",
+    "rackHeightU": 1,
+    "rackDepthMm": 170,
+    "weightKg": 0.72
   },
   {
     "id": "c0a80101-006b-4000-8000-000000000107",
@@ -27120,7 +27627,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Recording"
+    "category": "Recording",
+    "rackHeightU": 1,
+    "rackDepthMm": 237,
+    "weightKg": 1.4
   },
   {
     "id": "c0a80101-006c-4000-8000-000000000108",
@@ -27135,7 +27645,7 @@
       "4k pro",
       "recorder"
     ],
-    "powerDrawW": 40,
+    "powerDrawW": 100,
     "ports": [
       {
         "id": "port-3151",
@@ -27236,7 +27746,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "category": "Recording"
+    "category": "Recording",
+    "rackHeightU": 1,
+    "rackDepthMm": 375,
+    "weightKg": 3.2
   },
   {
     "id": "c0a80101-006d-4000-8000-000000000109",
@@ -27253,7 +27766,7 @@
       "recorder",
       "player"
     ],
-    "powerDrawW": 60,
+    "powerDrawW": 55,
     "ports": [
       {
         "id": "port-3165",
@@ -27354,7 +27867,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Recording"
+    "category": "Recording",
+    "rackHeightU": 2,
+    "rackDepthMm": 241,
+    "weightKg": 3
   },
   {
     "id": "c0a80101-006e-4000-8000-000000000110",
@@ -27470,7 +27986,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Recording"
+    "category": "Recording",
+    "rackHeightU": 2,
+    "rackDepthMm": 262,
+    "weightKg": 3.4
   },
   {
     "id": "c0a80101-00f8-4000-8000-000000000324",
@@ -27487,7 +28006,7 @@
       "12g",
       "hdr"
     ],
-    "powerDrawW": 25,
+    "powerDrawW": 23,
     "ports": [
       {
         "id": "port-3193",
@@ -27545,7 +28064,10 @@
         "direction": "bidirectional",
         "connectorType": "usb-c"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 38,
+    "weightKg": 0.66
   },
   {
     "id": "c0a80101-00f9-4000-8000-000000000325",
@@ -27562,7 +28084,7 @@
       "5 inch",
       "12g"
     ],
-    "powerDrawW": 20,
+    "powerDrawW": 19,
     "ports": [
       {
         "id": "port-3201",
@@ -27606,7 +28128,10 @@
         "direction": "bidirectional",
         "connectorType": "usb-c"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 35,
+    "weightKg": 0.37
   },
   {
     "id": "c0a80101-0101-4000-8000-000000000333",
@@ -27623,7 +28148,7 @@
       "monitor recorder",
       "5 inch"
     ],
-    "powerDrawW": 25,
+    "powerDrawW": 20,
     "ports": [
       {
         "id": "port-3207",
@@ -27667,7 +28192,10 @@
         "direction": "bidirectional",
         "connectorType": "usb-c"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 31,
+    "weightKg": 0.36
   },
   {
     "id": "c0a80101-0192-4000-8000-000000000402",
@@ -27686,7 +28214,7 @@
       "h265",
       "hevc"
     ],
-    "powerDrawW": 50,
+    "powerDrawW": 20,
     "ports": [
       {
         "id": "port-3213",
@@ -27821,7 +28349,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 2,
+    "rackDepthMm": 145,
+    "weightKg": 1
   },
   {
     "id": "c0a80101-0193-4000-8000-000000000403",
@@ -27839,7 +28370,7 @@
       "4k",
       "6g"
     ],
-    "powerDrawW": 40,
+    "powerDrawW": 55,
     "ports": [
       {
         "id": "port-3232",
@@ -27974,7 +28505,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 335,
+    "weightKg": 3.6
   },
   {
     "id": "c0a80101-001d-4000-8000-000000000029",
@@ -28031,7 +28565,7 @@
       "datapath",
       "video wall"
     ],
-    "powerDrawW": 35,
+    "powerDrawW": 15,
     "ports": [
       {
         "id": "port-3256",
@@ -28125,7 +28659,10 @@
         "connectorType": "usb-b"
       }
     ],
-    "category": "Distribution"
+    "category": "Distribution",
+    "rackHeightU": 0,
+    "rackDepthMm": 130,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-0021-4000-8000-000000000033",
@@ -28134,7 +28671,7 @@
     "manufacturer": "Datapath",
     "modelNumber": "FX4 HDMI",
     "referenceUrl": "https://www.datapath.co.uk/datapath-products/video-wall-controllers/datapath-fx4/",
-    "powerDrawW": 35,
+    "powerDrawW": 15,
     "ports": [
       {
         "id": "port-3269",
@@ -28228,7 +28765,10 @@
         "connectorType": "usb-b"
       }
     ],
-    "category": "Distribution"
+    "category": "Distribution",
+    "rackHeightU": 0,
+    "rackDepthMm": 130,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-0055-4000-8000-000000000085",
@@ -28317,7 +28857,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Distribution"
+    "category": "Distribution",
+    "rackHeightU": 0,
+    "rackDepthMm": 95,
+    "weightKg": 0.21
   },
   {
     "id": "c0a80101-0056-4000-8000-000000000086",
@@ -28334,7 +28877,7 @@
       "6g",
       "da"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 6,
     "ports": [
       {
         "id": "port-3292",
@@ -28407,7 +28950,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Distribution"
+    "category": "Distribution",
+    "rackHeightU": 0,
+    "rackDepthMm": 95,
+    "weightKg": 0.21
   },
   {
     "id": "c0a80101-00fd-4000-8000-000000000329",
@@ -28424,7 +28970,7 @@
       "da",
       "12g"
     ],
-    "powerDrawW": 16,
+    "powerDrawW": 8,
     "ports": [
       {
         "id": "port-3302",
@@ -28496,7 +29042,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 109,
+    "weightKg": 0.45
   },
   {
     "id": "c0a80101-0113-4000-8000-000000000351",
@@ -28512,7 +29061,7 @@
       "video wall",
       "4k"
     ],
-    "powerDrawW": 35,
+    "powerDrawW": 15,
     "ports": [
       {
         "id": "port-3312",
@@ -28591,7 +29140,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 130,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-0196-4000-8000-000000000406",
@@ -28609,7 +29161,7 @@
       "12g",
       "sdi"
     ],
-    "powerDrawW": 7,
+    "powerDrawW": 5,
     "ports": [
       {
         "id": "port-3323",
@@ -28660,7 +29212,10 @@
         "direction": "output",
         "connectorType": "bnc"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 79,
+    "weightKg": 0.3
   },
   {
     "id": "c0a80101-0304-4000-8000-000000000704",
@@ -28714,7 +29269,11 @@
         "direction": "input",
         "connectorType": "usb-b"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 140,
+    "weightKg": 0.28,
+    "powerDrawW": 5
   },
   {
     "id": "c0a80101-0305-4000-8000-000000000705",
@@ -28769,7 +29328,11 @@
         "direction": "input",
         "connectorType": "usb-b"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 140,
+    "weightKg": 0.28,
+    "powerDrawW": 5
   },
   {
     "id": "c0a80101-0306-4000-8000-000000000706",
@@ -28824,7 +29387,11 @@
         "direction": "input",
         "connectorType": "usb-b"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 140,
+    "weightKg": 0.28,
+    "powerDrawW": 5
   },
   {
     "id": "c0a80101-0307-4000-8000-000000000707",
@@ -28894,7 +29461,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 181,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-0308-4000-8000-000000000708",
@@ -28950,7 +29520,11 @@
         "direction": "output",
         "connectorType": "mini-hdmi"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 181,
+    "weightKg": 0.5,
+    "powerDrawW": 15
   },
   {
     "id": "c0a80101-0309-4000-8000-000000000709",
@@ -29020,7 +29594,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 181,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-030a-4000-8000-000000000710",
@@ -29077,7 +29654,11 @@
         "direction": "output",
         "connectorType": "mini-hdmi"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 181,
+    "weightKg": 0.5,
+    "powerDrawW": 15
   },
   {
     "id": "c0a80101-0022-4000-8000-000000000034",
@@ -29086,7 +29667,7 @@
     "manufacturer": "Panasonic",
     "modelNumber": "PT-DZ13K",
     "referenceUrl": "https://na.panasonic.com/us/audio-video-solutions/projectors/large-venue/pt-dz13ku-3-chip-dlptm-large-venue-projector",
-    "powerDrawW": 1000,
+    "powerDrawW": 980,
     "ports": [
       {
         "id": "port-3369",
@@ -29166,7 +29747,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Projection"
+    "category": "Projection",
+    "rackHeightU": 0,
+    "rackDepthMm": 549,
+    "weightKg": 24
   },
   {
     "id": "c0a80101-0023-4000-8000-000000000035",
@@ -29182,7 +29766,7 @@
       "21k",
       "projector"
     ],
-    "powerDrawW": 1510,
+    "powerDrawW": 1850,
     "ports": [
       {
         "id": "port-3380",
@@ -29255,7 +29839,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Projection"
+    "category": "Projection",
+    "rackHeightU": 0,
+    "rackDepthMm": 700,
+    "weightKg": 49
   },
   {
     "id": "c0a80101-00ce-4000-8000-000000000206",
@@ -29336,7 +29923,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Projection"
+    "category": "Projection",
+    "rackHeightU": 0,
+    "rackDepthMm": 739,
+    "weightKg": 44
   },
   {
     "id": "c0a80101-0189-4000-8000-000000000393",
@@ -29355,7 +29945,7 @@
       "projector",
       "dlp"
     ],
-    "powerDrawW": 2200,
+    "powerDrawW": 1800,
     "ports": [
       {
         "id": "port-3399",
@@ -29406,7 +29996,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 690,
+    "weightKg": 38
   },
   {
     "id": "c0a80101-018a-4000-8000-000000000394",
@@ -29425,7 +30018,7 @@
       "projector",
       "laser"
     ],
-    "powerDrawW": 3100,
+    "powerDrawW": 2850,
     "ports": [
       {
         "id": "port-3406",
@@ -29497,7 +30090,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 750,
+    "weightKg": 62
   },
   {
     "id": "c0a80101-018b-4000-8000-000000000395",
@@ -29588,7 +30184,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 750,
+    "weightKg": 65
   },
   {
     "id": "c0a80101-018c-4000-8000-000000000396",
@@ -29607,7 +30206,7 @@
       "projector",
       "laser"
     ],
-    "powerDrawW": 2400,
+    "powerDrawW": 2500,
     "ports": [
       {
         "id": "port-3426",
@@ -29679,7 +30278,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 750,
+    "weightKg": 65
   },
   {
     "id": "c0a80101-018d-4000-8000-000000000397",
@@ -29697,7 +30299,7 @@
       "projector",
       "laser"
     ],
-    "powerDrawW": 2450,
+    "powerDrawW": 2700,
     "ports": [
       {
         "id": "port-3436",
@@ -29755,7 +30357,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 780,
+    "weightKg": 68.6
   },
   {
     "id": "c0a80101-018e-4000-8000-000000000398",
@@ -29773,7 +30378,7 @@
       "projector",
       "laser"
     ],
-    "powerDrawW": 1520,
+    "powerDrawW": 1490,
     "ports": [
       {
         "id": "port-3444",
@@ -29824,7 +30429,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 700,
+    "weightKg": 35
   },
   {
     "id": "c0a80101-018f-4000-8000-000000000399",
@@ -29900,7 +30508,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 780,
+    "weightKg": 69.8
   },
   {
     "id": "c0a80101-0190-4000-8000-000000000400",
@@ -29918,7 +30529,7 @@
       "projector",
       "laser"
     ],
-    "powerDrawW": 1301,
+    "powerDrawW": 880,
     "ports": [
       {
         "id": "port-3459",
@@ -29983,7 +30594,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 23
   },
   {
     "id": "c0a80101-0191-4000-8000-000000000401",
@@ -30001,7 +30615,7 @@
       "projector",
       "laser"
     ],
-    "powerDrawW": 1082,
+    "powerDrawW": 680,
     "ports": [
       {
         "id": "port-3468",
@@ -30066,7 +30680,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 22
   },
   {
     "id": "c0a80101-0028-4000-8000-000000000040",
@@ -30197,8 +30814,11 @@
       "IP",
       "matrix"
     ],
-    "powerDrawW": 15,
-    "category": "KVM / Extenders"
+    "powerDrawW": 12,
+    "category": "KVM / Extenders",
+    "rackHeightU": 0,
+    "rackDepthMm": 140,
+    "weightKg": 0.4
   },
   {
     "id": "c0a80101-002c-4000-8000-000000000044",
@@ -30214,7 +30834,7 @@
       "transmitter",
       "extender"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 8,
     "ports": [
       {
         "id": "port-3489",
@@ -30252,7 +30872,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "KVM / Extenders"
+    "category": "KVM / Extenders",
+    "rackHeightU": 0,
+    "rackDepthMm": 130,
+    "weightKg": 0.3
   },
   {
     "id": "c0a80101-002d-4000-8000-000000000045",
@@ -30268,7 +30891,7 @@
       "receiver",
       "extender"
     ],
-    "powerDrawW": 12,
+    "powerDrawW": 8,
     "ports": [
       {
         "id": "port-3494",
@@ -30299,7 +30922,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "KVM / Extenders"
+    "category": "KVM / Extenders",
+    "rackHeightU": 0,
+    "rackDepthMm": 130,
+    "weightKg": 0.3
   },
   {
     "id": "c0a80101-002e-4000-8000-000000000046",
@@ -30315,7 +30941,7 @@
       "transmitter",
       "zero delay"
     ],
-    "powerDrawW": 14,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-3498",
@@ -30346,7 +30972,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Wireless"
+    "category": "Wireless",
+    "rackHeightU": 0,
+    "rackDepthMm": 103,
+    "weightKg": 0.43
   },
   {
     "id": "c0a80101-002f-4000-8000-000000000047",
@@ -30362,7 +30991,7 @@
       "receiver",
       "zero delay"
     ],
-    "powerDrawW": 14,
+    "powerDrawW": 18,
     "ports": [
       {
         "id": "port-3502",
@@ -30393,7 +31022,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Wireless"
+    "category": "Wireless",
+    "rackHeightU": 0,
+    "rackDepthMm": 139,
+    "weightKg": 0.43
   },
   {
     "id": "c0a80101-0030-4000-8000-000000000048",
@@ -30496,7 +31128,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Intercom"
+    "category": "Intercom",
+    "rackHeightU": 1,
+    "rackDepthMm": 300,
+    "weightKg": 2.5
   },
   {
     "id": "c0a80101-007a-4000-8000-000000000122",
@@ -30512,7 +31147,7 @@
       "wireless",
       "transmitter"
     ],
-    "powerDrawW": 18,
+    "powerDrawW": 20,
     "ports": [
       {
         "id": "port-3518",
@@ -30543,7 +31178,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Wireless"
+    "category": "Wireless",
+    "rackHeightU": 0,
+    "rackDepthMm": 113,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-007b-4000-8000-000000000123",
@@ -30559,7 +31197,7 @@
       "wireless",
       "receiver"
     ],
-    "powerDrawW": 18,
+    "powerDrawW": 20,
     "ports": [
       {
         "id": "port-3522",
@@ -30590,7 +31228,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Wireless"
+    "category": "Wireless",
+    "rackHeightU": 0,
+    "rackDepthMm": 139,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-00a3-4000-8000-000000000163",
@@ -30605,7 +31246,7 @@
       "matrix intercom",
       "digital"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 225,
     "ports": [
       {
         "id": "port-3526",
@@ -30678,7 +31319,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Intercom"
+    "category": "Intercom",
+    "rackHeightU": 2,
+    "rackDepthMm": 404,
+    "weightKg": 6.3
   },
   {
     "id": "c0a80101-00a4-4000-8000-000000000164",
@@ -30693,7 +31337,7 @@
       "wireless intercom",
       "dect"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 15,
     "ports": [
       {
         "id": "port-3536",
@@ -30752,7 +31396,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Intercom"
+    "category": "Intercom",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.14
   },
   {
     "id": "c0a80101-00a5-4000-8000-000000000165",
@@ -30767,7 +31414,7 @@
       "eclipse",
       "matrix intercom"
     ],
-    "powerDrawW": 150,
+    "powerDrawW": 225,
     "ports": [
       {
         "id": "port-3544",
@@ -30826,7 +31473,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Intercom"
+    "category": "Intercom",
+    "rackHeightU": 3,
+    "rackDepthMm": 445,
+    "weightKg": 11
   },
   {
     "id": "c0a80101-00a6-4000-8000-000000000166",
@@ -30842,7 +31492,7 @@
       "edge",
       "wireless intercom"
     ],
-    "powerDrawW": 70,
+    "powerDrawW": 160,
     "ports": [
       {
         "id": "port-3552",
@@ -30922,7 +31572,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Intercom"
+    "category": "Intercom",
+    "rackHeightU": 1,
+    "rackDepthMm": 300,
+    "weightKg": 3
   },
   {
     "id": "c0a80101-0038-4000-8000-000000000056",
@@ -30938,7 +31591,7 @@
       "automation",
       "cp4"
     ],
-    "powerDrawW": 50,
+    "powerDrawW": 25,
     "ports": [
       {
         "id": "port-3563",
@@ -31004,7 +31657,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Control"
+    "category": "Control",
+    "rackHeightU": 1,
+    "rackDepthMm": 254,
+    "weightKg": 1.4
   },
   {
     "id": "c0a80101-0039-4000-8000-000000000057",
@@ -31062,7 +31718,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Control"
+    "category": "Control",
+    "rackHeightU": 0,
+    "rackDepthMm": 65,
+    "weightKg": 0.42
   },
   {
     "id": "c0a80101-00cf-4000-8000-000000000207",
@@ -31077,7 +31736,7 @@
       "speaker timer",
       "presentation"
     ],
-    "powerDrawW": 10,
+    "powerDrawW": 5,
     "ports": [
       {
         "id": "port-3577",
@@ -31101,7 +31760,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Control"
+    "category": "Control",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-00d0-4000-8000-000000000208",
@@ -31118,7 +31780,7 @@
       "ltc",
       "generator"
     ],
-    "powerDrawW": 15,
+    "powerDrawW": 5,
     "ports": [
       {
         "id": "port-3580",
@@ -31170,7 +31832,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Control"
+    "category": "Control",
+    "rackHeightU": 1,
+    "rackDepthMm": 150,
+    "weightKg": 0.9
   },
   {
     "id": "c0a80101-00d1-4000-8000-000000000209",
@@ -31963,7 +32628,11 @@
         "connectorType": "l6-20"
       }
     ],
-    "category": "Infrastructure"
+    "category": "Infrastructure",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 4.5,
+    "powerDrawW": 0
   },
   {
     "id": "c0a80101-021c-4000-8000-000000000540",
@@ -32121,7 +32790,11 @@
         "connectorType": "l6-20"
       }
     ],
-    "category": "Infrastructure"
+    "category": "Infrastructure",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 5.4,
+    "powerDrawW": 0
   },
   {
     "id": "c0a80101-021d-4000-8000-000000000541",
@@ -32342,7 +33015,11 @@
         "section": "100A Feed 4"
       }
     ],
-    "category": "Infrastructure"
+    "category": "Infrastructure",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 9.1,
+    "powerDrawW": 0
   },
   {
     "id": "c0a80101-021e-4000-8000-000000000542",
@@ -35519,7 +36196,7 @@
       "line array",
       "powered"
     ],
-    "powerDrawW": 450,
+    "powerDrawW": 900,
     "ports": [
       {
         "id": "port-4134",
@@ -35550,7 +36227,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 34
   },
   {
     "id": "c0a80101-00a8-4000-8000-000000000168",
@@ -35582,7 +36262,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 14
   },
   {
     "id": "c0a80101-00a9-4000-8000-000000000169",
@@ -35615,7 +36298,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 13
   },
   {
     "id": "c0a80101-00aa-4000-8000-000000000170",
@@ -35655,7 +36341,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 10
   },
   {
     "id": "c0a80101-00ab-4000-8000-000000000171",
@@ -35670,7 +36359,7 @@
       "powered",
       "loudspeaker"
     ],
-    "powerDrawW": 400,
+    "powerDrawW": 550,
     "ports": [
       {
         "id": "port-4145",
@@ -35694,7 +36383,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 34.9
   },
   {
     "id": "c0a80101-00ac-4000-8000-000000000172",
@@ -35710,7 +36402,7 @@
       "powered",
       "portable"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 500,
     "ports": [
       {
         "id": "port-4148",
@@ -35741,7 +36433,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 21.7
   },
   {
     "id": "c0a80101-00ad-4000-8000-000000000173",
@@ -35757,7 +36452,7 @@
       "subwoofer",
       "powered"
     ],
-    "powerDrawW": 1100,
+    "powerDrawW": 3100,
     "ports": [
       {
         "id": "port-4152",
@@ -35788,7 +36483,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 61.7
   },
   {
     "id": "c0a80101-00ae-4000-8000-000000000174",
@@ -35820,7 +36518,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 36
   },
   {
     "id": "c0a80101-00af-4000-8000-000000000175",
@@ -35836,7 +36537,7 @@
       "monitor",
       "stage"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 900,
     "ports": [
       {
         "id": "port-4158",
@@ -35860,7 +36561,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 30.4
   },
   {
     "id": "c0a80101-00b0-4000-8000-000000000176",
@@ -35963,7 +36667,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Amplifiers"
+    "category": "Amplifiers",
+    "rackHeightU": 2,
+    "rackDepthMm": 391,
+    "weightKg": 10
   },
   {
     "id": "c0a80101-00b1-4000-8000-000000000177",
@@ -35978,7 +36685,7 @@
       "amplified controller",
       "4 channel"
     ],
-    "powerDrawW": 1800,
+    "powerDrawW": 2400,
     "ports": [
       {
         "id": "port-4173",
@@ -36072,7 +36779,10 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Amplifiers"
+    "category": "Amplifiers",
+    "rackHeightU": 2,
+    "rackDepthMm": 380,
+    "weightKg": 11.3
   },
   {
     "id": "c0a80101-01c3-4000-8000-000000000451",
@@ -36106,7 +36816,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 33
   },
   {
     "id": "c0a80101-01c4-4000-8000-000000000452",
@@ -36139,7 +36852,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 43
   },
   {
     "id": "c0a80101-01c5-4000-8000-000000000453",
@@ -36172,7 +36888,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 21
   },
   {
     "id": "c0a80101-01c6-4000-8000-000000000454",
@@ -36206,7 +36925,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 21
   },
   {
     "id": "c0a80101-01c7-4000-8000-000000000455",
@@ -36239,7 +36961,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 12
   },
   {
     "id": "c0a80101-01c8-4000-8000-000000000456",
@@ -36272,7 +36997,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 20
   },
   {
     "id": "c0a80101-01c9-4000-8000-000000000457",
@@ -36298,7 +37026,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 79
   },
   {
     "id": "c0a80101-01ca-4000-8000-000000000458",
@@ -36331,7 +37062,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 56
   },
   {
     "id": "c0a80101-01cb-4000-8000-000000000459",
@@ -36364,7 +37098,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 26
   },
   {
     "id": "c0a80101-01cc-4000-8000-000000000460",
@@ -36397,7 +37134,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 3.5
   },
   {
     "id": "c0a80101-01cd-4000-8000-000000000461",
@@ -36429,7 +37169,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 52
   },
   {
     "id": "c0a80101-01ce-4000-8000-000000000462",
@@ -36446,7 +37189,7 @@
       "milan",
       "avb"
     ],
-    "powerDrawW": 3700,
+    "powerDrawW": 3200,
     "ports": [
       {
         "id": "port-4207",
@@ -36491,7 +37234,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Amplifiers"
+    "category": "Amplifiers",
+    "rackHeightU": 2,
+    "rackDepthMm": 400,
+    "weightKg": 15
   },
   {
     "id": "c0a80101-01cf-4000-8000-000000000463",
@@ -36509,7 +37255,7 @@
       "avb",
       "milan"
     ],
-    "powerDrawW": 5400,
+    "powerDrawW": 4500,
     "ports": [
       {
         "id": "port-4213",
@@ -36687,7 +37433,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Amplifiers"
+    "category": "Amplifiers",
+    "rackHeightU": 9,
+    "rackDepthMm": 600,
+    "weightKg": 88
   },
   {
     "id": "c0a80101-01d0-4000-8000-000000000464",
@@ -36704,7 +37453,7 @@
       "powered",
       "low frequency"
     ],
-    "powerDrawW": 900,
+    "powerDrawW": 3100,
     "ports": [
       {
         "id": "port-4238",
@@ -36735,7 +37484,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 40.3
   },
   {
     "id": "c0a80101-01d1-4000-8000-000000000465",
@@ -36751,7 +37503,7 @@
       "powered",
       "compact"
     ],
-    "powerDrawW": 350,
+    "powerDrawW": 1950,
     "ports": [
       {
         "id": "port-4242",
@@ -36782,7 +37534,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 19.5
   },
   {
     "id": "c0a80101-01d2-4000-8000-000000000466",
@@ -36799,7 +37554,7 @@
       "point source",
       "compact"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 860,
     "ports": [
       {
         "id": "port-4246",
@@ -36823,7 +37578,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 12.3
   },
   {
     "id": "c0a80101-01d3-4000-8000-000000000467",
@@ -36879,7 +37637,7 @@
       "powered",
       "self-powered"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 220,
     "ports": [
       {
         "id": "port-4252",
@@ -36889,7 +37647,10 @@
         "connectorType": "other"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.8
   },
   {
     "id": "c0a80101-01d5-4000-8000-000000000469",
@@ -36906,7 +37667,7 @@
       "powered",
       "curvilinear"
     ],
-    "powerDrawW": 100,
+    "powerDrawW": 500,
     "ports": [
       {
         "id": "port-4253",
@@ -36930,7 +37691,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 16
   },
   {
     "id": "c0a80101-01d6-4000-8000-000000000470",
@@ -36946,7 +37710,7 @@
       "powered",
       "point source"
     ],
-    "powerDrawW": 300,
+    "powerDrawW": 1950,
     "ports": [
       {
         "id": "port-4256",
@@ -36970,7 +37734,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 23.6
   },
   {
     "id": "c0a80101-01d7-4000-8000-000000000471",
@@ -36986,7 +37753,7 @@
       "compact",
       "vario"
     ],
-    "powerDrawW": 350,
+    "powerDrawW": 550,
     "ports": [
       {
         "id": "port-4259",
@@ -37010,7 +37777,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 20.9
   },
   {
     "id": "c0a80101-01d8-4000-8000-000000000472",
@@ -37043,7 +37813,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 18
   },
   {
     "id": "c0a80101-01d9-4000-8000-000000000473",
@@ -37076,7 +37849,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 34
   },
   {
     "id": "c0a80101-01da-4000-8000-000000000474",
@@ -37109,7 +37885,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 64
   },
   {
     "id": "c0a80101-01db-4000-8000-000000000475",
@@ -37143,7 +37922,10 @@
         "connectorType": "speakon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 7.3
   },
   {
     "id": "c0a80101-01dc-4000-8000-000000000476",
@@ -37158,7 +37940,7 @@
       "amplifier",
       "4 channel"
     ],
-    "powerDrawW": 3200,
+    "powerDrawW": 1400,
     "ports": [
       {
         "id": "port-4270",
@@ -37252,7 +38034,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Amplifiers"
+    "category": "Amplifiers",
+    "rackHeightU": 2,
+    "rackDepthMm": 460,
+    "weightKg": 13.5
   },
   {
     "id": "c0a80101-01dd-4000-8000-000000000477",
@@ -37269,7 +38054,7 @@
       "portable",
       "bluetooth"
     ],
-    "powerDrawW": 250,
+    "powerDrawW": 500,
     "ports": [
       {
         "id": "port-4283",
@@ -37307,7 +38092,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 11.8
   },
   {
     "id": "c0a80101-01de-4000-8000-000000000478",
@@ -37323,7 +38111,7 @@
       "line array",
       "powered"
     ],
-    "powerDrawW": 720,
+    "powerDrawW": 875,
     "ports": [
       {
         "id": "port-4288",
@@ -37347,7 +38135,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 24
   },
   {
     "id": "c0a80101-01df-4000-8000-000000000479",
@@ -37387,7 +38178,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 4.7
   },
   {
     "id": "c0a80101-01e0-4000-8000-000000000480",
@@ -37405,7 +38199,7 @@
       "powered",
       "portable"
     ],
-    "powerDrawW": 150,
+    "powerDrawW": 1000,
     "ports": [
       {
         "id": "port-4294",
@@ -37443,7 +38237,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 27.4
   },
   {
     "id": "c0a80101-01e1-4000-8000-000000000481",
@@ -37484,7 +38281,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Speakers"
+    "category": "Speakers",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 3
   },
   {
     "id": "c0a80101-00b3-4000-8000-000000000179",
@@ -37500,7 +38300,7 @@
       "led processor",
       "led wall"
     ],
-    "powerDrawW": 250,
+    "powerDrawW": 80,
     "ports": [
       {
         "id": "port-4302",
@@ -37594,7 +38394,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "LED Video"
+    "category": "LED Video",
+    "rackHeightU": 1,
+    "rackDepthMm": 310,
+    "weightKg": 3.4
   },
   {
     "id": "c0a80101-00b4-4000-8000-000000000180",
@@ -37609,7 +38412,7 @@
       "s4",
       "led processor"
     ],
-    "powerDrawW": 60,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-4315",
@@ -37661,7 +38464,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "LED Video"
+    "category": "LED Video",
+    "rackHeightU": 1,
+    "rackDepthMm": 230,
+    "weightKg": 1.5
   },
   {
     "id": "c0a80101-00b5-4000-8000-000000000181",
@@ -37677,7 +38483,7 @@
       "receiver card",
       "led"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 15,
     "ports": [
       {
         "id": "port-4322",
@@ -37694,7 +38500,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "LED Video"
+    "category": "LED Video",
+    "rackHeightU": 0,
+    "rackDepthMm": 130,
+    "weightKg": 0.7
   },
   {
     "id": "c0a80101-00b6-4000-8000-000000000182",
@@ -37709,7 +38518,7 @@
       "led processor",
       "led wall"
     ],
-    "powerDrawW": 120,
+    "powerDrawW": 60,
     "ports": [
       {
         "id": "port-4324",
@@ -37831,7 +38640,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "LED Video"
+    "category": "LED Video",
+    "rackHeightU": 1,
+    "rackDepthMm": 362,
+    "weightKg": 4.5
   },
   {
     "id": "c0a80101-00b7-4000-8000-000000000183",
@@ -37846,7 +38658,7 @@
       "led processor",
       "all-in-one"
     ],
-    "powerDrawW": 300,
+    "powerDrawW": 150,
     "ports": [
       {
         "id": "port-4341",
@@ -38066,7 +38878,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "LED Video"
+    "category": "LED Video",
+    "rackHeightU": 3,
+    "rackDepthMm": 430,
+    "weightKg": 8
   },
   {
     "id": "c0a80101-010d-4000-8000-000000000345",
@@ -38082,7 +38897,7 @@
       "uhd",
       "led processor"
     ],
-    "powerDrawW": 150,
+    "powerDrawW": 50,
     "ports": [
       {
         "id": "port-4372",
@@ -38245,7 +39060,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 356,
+    "weightKg": 3.5
   },
   {
     "id": "c0a80101-010e-4000-8000-000000000346",
@@ -38261,7 +39079,7 @@
       "s8",
       "led processor"
     ],
-    "powerDrawW": 120,
+    "powerDrawW": 60,
     "ports": [
       {
         "id": "port-4395",
@@ -38361,7 +39179,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 310,
+    "weightKg": 3
   },
   {
     "id": "c0a80101-010f-4000-8000-000000000347",
@@ -38378,7 +39199,7 @@
       "receiver",
       "led"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 12,
     "ports": [
       {
         "id": "port-4409",
@@ -38394,7 +39215,10 @@
         "direction": "output",
         "connectorType": "ethercon"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 130,
+    "weightKg": 0.6
   },
   {
     "id": "c0a80101-0187-4000-8000-000000000391",
@@ -38412,7 +39236,7 @@
       "distribution",
       "led"
     ],
-    "powerDrawW": 80,
+    "powerDrawW": 70,
     "ports": [
       {
         "id": "port-4411",
@@ -38512,7 +39336,10 @@
         "slotFamily": "sfp",
         "defaultCardId": "sfp-10g-sr"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 310,
+    "weightKg": 3.2
   },
   {
     "id": "c0a80101-0188-4000-8000-000000000392",
@@ -38529,7 +39356,7 @@
       "led wall",
       "virtual production"
     ],
-    "powerDrawW": 500,
+    "powerDrawW": 65,
     "ports": [
       {
         "id": "port-4423",
@@ -38639,7 +39466,10 @@
         "slotFamily": "sfp",
         "defaultCardId": "sfp-10g-sr"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 340,
+    "weightKg": 4
   },
   {
     "id": "c0a80101-00b8-4000-8000-000000000184",
@@ -38725,7 +39555,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Media Servers"
+    "category": "Media Servers",
+    "rackHeightU": 4,
+    "rackDepthMm": 660,
+    "weightKg": 25
   },
   {
     "id": "c0a80101-00b9-4000-8000-000000000185",
@@ -38794,7 +39627,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Media Servers"
+    "category": "Media Servers",
+    "rackHeightU": 2,
+    "rackDepthMm": 600,
+    "weightKg": 12
   },
   {
     "id": "c0a80101-00ba-4000-8000-000000000186",
@@ -38809,7 +39645,7 @@
       "watchout",
       "media server"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 300,
     "ports": [
       {
         "id": "port-4439",
@@ -38875,7 +39711,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Media Servers"
+    "category": "Media Servers",
+    "rackHeightU": 1,
+    "rackDepthMm": 394,
+    "weightKg": 5.5
   },
   {
     "id": "c0a80101-00bb-4000-8000-000000000187",
@@ -38891,7 +39730,7 @@
       "media server",
       "compact"
     ],
-    "powerDrawW": 120,
+    "powerDrawW": 200,
     "ports": [
       {
         "id": "port-4448",
@@ -38943,7 +39782,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Media Servers"
+    "category": "Media Servers",
+    "rackHeightU": 1,
+    "rackDepthMm": 394,
+    "weightKg": 5
   },
   {
     "id": "c0a80101-010a-4000-8000-000000000342",
@@ -38959,7 +39801,7 @@
       "media server",
       "d3"
     ],
-    "powerDrawW": 1500,
+    "powerDrawW": 1100,
     "slots": [
       {
         "id": "vfc-slot-a",
@@ -39041,7 +39883,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 4,
+    "rackDepthMm": 660,
+    "weightKg": 24
   },
   {
     "id": "c0a80101-010c-4000-8000-000000000344",
@@ -39057,7 +39902,7 @@
       "media server",
       "d3"
     ],
-    "powerDrawW": 600,
+    "powerDrawW": 350,
     "slots": [
       {
         "id": "vx1-vfc-a",
@@ -39109,7 +39954,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 600,
+    "weightKg": 10
   },
   {
     "id": "c0a80101-010d-4000-8000-000000000345",
@@ -39125,7 +39973,7 @@
       "media server",
       "d3"
     ],
-    "powerDrawW": 900,
+    "powerDrawW": 550,
     "slots": [
       {
         "id": "vx2-vfc-a",
@@ -39195,7 +40043,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 2,
+    "rackDepthMm": 620,
+    "weightKg": 14
   },
   {
     "id": "c0a80101-010e-4000-8000-000000000346",
@@ -39211,7 +40062,7 @@
       "media server",
       "d3"
     ],
-    "powerDrawW": 1200,
+    "powerDrawW": 750,
     "slots": [
       {
         "id": "vx3-vfc-a",
@@ -39287,7 +40138,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 3,
+    "rackDepthMm": 650,
+    "weightKg": 18
   },
   {
     "id": "c0a80101-010f-4000-8000-000000000347",
@@ -39303,7 +40157,7 @@
       "media server",
       "gpu"
     ],
-    "powerDrawW": 800,
+    "powerDrawW": 350,
     "slots": [
       {
         "id": "gx1-vfc-a",
@@ -39355,7 +40209,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 600,
+    "weightKg": 10
   },
   {
     "id": "c0a80101-0110-4000-8000-000000000348",
@@ -39371,7 +40228,7 @@
       "media server",
       "gpu"
     ],
-    "powerDrawW": 1200,
+    "powerDrawW": 650,
     "slots": [
       {
         "id": "gx2-vfc-a",
@@ -39441,7 +40298,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 2,
+    "rackDepthMm": 620,
+    "weightKg": 15
   },
   {
     "id": "c0a80101-0111-4000-8000-000000000349",
@@ -39458,7 +40318,7 @@
       "gpu",
       "compact"
     ],
-    "powerDrawW": 1000,
+    "powerDrawW": 650,
     "slots": [
       {
         "id": "gx2c-vfc-a",
@@ -39528,7 +40388,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 2,
+    "rackDepthMm": 620,
+    "weightKg": 15
   },
   {
     "id": "c0a80101-0112-4000-8000-000000000350",
@@ -39544,7 +40407,7 @@
       "media server",
       "gpu"
     ],
-    "powerDrawW": 1500,
+    "powerDrawW": 850,
     "slots": [
       {
         "id": "gx3-vfc-a",
@@ -39614,7 +40477,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 3,
+    "rackDepthMm": 650,
+    "weightKg": 20
   },
   {
     "id": "c0a80101-010b-4000-8000-000000000343",
@@ -39630,7 +40496,7 @@
       "media server",
       "d3"
     ],
-    "powerDrawW": 400,
+    "powerDrawW": 550,
     "ports": [
       {
         "id": "port-4503",
@@ -39688,7 +40554,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 2,
+    "rackDepthMm": 620,
+    "weightKg": 14
   },
   {
     "id": "c0a80101-010c-4000-8000-000000000344",
@@ -39704,7 +40573,7 @@
       "watchout",
       "media server"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 450,
     "ports": [
       {
         "id": "port-4511",
@@ -39762,7 +40631,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 2,
+    "rackDepthMm": 475,
+    "weightKg": 8
   },
   {
     "id": "c0a80101-0182-4000-8000-000000000386",
@@ -39778,7 +40650,7 @@
       "media server",
       "playback"
     ],
-    "powerDrawW": 800,
+    "powerDrawW": 750,
     "slots": [
       {
         "id": "sfp-1",
@@ -39862,7 +40734,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 3,
+    "rackDepthMm": 650,
+    "weightKg": 18
   },
   {
     "id": "c0a80101-0183-4000-8000-000000000387",
@@ -39878,7 +40753,7 @@
       "media server",
       "playback"
     ],
-    "powerDrawW": 1200,
+    "powerDrawW": 800,
     "ports": [
       {
         "id": "port-4527",
@@ -39985,7 +40860,10 @@
         "slotFamily": "qsfp",
         "defaultCardId": "qsfp-40g-sr4"
       }
-    ]
+    ],
+    "rackHeightU": 3,
+    "rackDepthMm": 650,
+    "weightKg": 19
   },
   {
     "id": "c0a80101-0184-4000-8000-000000000388",
@@ -40001,7 +40879,7 @@
       "media server",
       "gpu"
     ],
-    "powerDrawW": 2000,
+    "powerDrawW": 900,
     "slots": [
       {
         "id": "gx3p-vfc-a",
@@ -40122,7 +41000,10 @@
         "direction": "input",
         "connectorType": "powercon"
       }
-    ]
+    ],
+    "rackHeightU": 3,
+    "rackDepthMm": 650,
+    "weightKg": 21
   },
   {
     "id": "c0a80101-0185-4000-8000-000000000389",
@@ -40139,7 +41020,7 @@
       "follow spot",
       "rack server"
     ],
-    "powerDrawW": 300,
+    "powerDrawW": 100,
     "ports": [
       {
         "id": "port-4549",
@@ -40183,7 +41064,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 1,
+    "rackDepthMm": 450,
+    "weightKg": 5
   },
   {
     "id": "c0a80101-0186-4000-8000-000000000390",
@@ -40199,7 +41083,7 @@
       "playback pro",
       "video playback"
     ],
-    "powerDrawW": 100,
+    "powerDrawW": 0,
     "ports": [
       {
         "id": "port-4555",
@@ -40236,7 +41120,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0
   },
   {
     "id": "c0a80101-00bc-4000-8000-000000000188",
@@ -40251,7 +41138,7 @@
       "lighting console",
       "compact"
     ],
-    "powerDrawW": 100,
+    "powerDrawW": 80,
     "ports": [
       {
         "id": "port-4560",
@@ -40275,7 +41162,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 4.5
   },
   {
     "id": "c0a80101-00bd-4000-8000-000000000189",
@@ -40290,7 +41180,7 @@
       "road hog",
       "lighting console"
     ],
-    "powerDrawW": 350,
+    "powerDrawW": 300,
     "ports": [
       {
         "id": "port-4563",
@@ -40384,7 +41274,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 28
   },
   {
     "id": "c0a80101-00be-4000-8000-000000000190",
@@ -40400,7 +41293,7 @@
       "lighting console",
       "flagship"
     ],
-    "powerDrawW": 500,
+    "powerDrawW": 350,
     "ports": [
       {
         "id": "port-4576",
@@ -40494,7 +41387,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 27.2
   },
   {
     "id": "c0a80101-00bf-4000-8000-000000000191",
@@ -40610,7 +41506,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 25
   },
   {
     "id": "c0a80101-00c0-4000-8000-000000000192",
@@ -40627,7 +41526,7 @@
       "moving light",
       "wash"
     ],
-    "powerDrawW": 340,
+    "powerDrawW": 270,
     "ports": [
       {
         "id": "port-4603",
@@ -40658,7 +41557,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 7.5
   },
   {
     "id": "c0a80101-00c1-4000-8000-000000000193",
@@ -40674,7 +41576,7 @@
       "profile",
       "spot"
     ],
-    "powerDrawW": 550,
+    "powerDrawW": 540,
     "ports": [
       {
         "id": "port-4607",
@@ -40698,7 +41600,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 25
   },
   {
     "id": "c0a80101-00c2-4000-8000-000000000194",
@@ -40713,7 +41618,7 @@
       "led wash",
       "cyclorama"
     ],
-    "powerDrawW": 400,
+    "powerDrawW": 550,
     "ports": [
       {
         "id": "port-4610",
@@ -40737,7 +41642,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 10.5
   },
   {
     "id": "c0a80101-00c3-4000-8000-000000000195",
@@ -40754,7 +41662,7 @@
       "leko",
       "ellipsoidal"
     ],
-    "powerDrawW": 150,
+    "powerDrawW": 130,
     "ports": [
       {
         "id": "port-4613",
@@ -40785,7 +41693,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 7.7
   },
   {
     "id": "c0a80101-00c4-4000-8000-000000000196",
@@ -40802,7 +41713,7 @@
       "led par",
       "uplight"
     ],
-    "powerDrawW": 50,
+    "powerDrawW": 38,
     "ports": [
       {
         "id": "port-4617",
@@ -40819,7 +41730,10 @@
         "connectorType": "xlr-5"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2.4
   },
   {
     "id": "c0a80101-00c5-4000-8000-000000000197",
@@ -40835,7 +41749,7 @@
       "soft light",
       "bi-color"
     ],
-    "powerDrawW": 75,
+    "powerDrawW": 105,
     "ports": [
       {
         "id": "port-4619",
@@ -40852,7 +41766,10 @@
         "connectorType": "barrel"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.8
   },
   {
     "id": "c0a80101-00c6-4000-8000-000000000198",
@@ -41013,7 +41930,7 @@
       "apex",
       "lighting console"
     ],
-    "powerDrawW": 500,
+    "powerDrawW": 350,
     "ports": [
       {
         "id": "port-4637",
@@ -41106,7 +42023,10 @@
         "direction": "input",
         "connectorType": "iec"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 29.5
   },
   {
     "id": "c0a80101-0111-4000-8000-000000000349",
@@ -41122,7 +42042,7 @@
       "full",
       "lighting console"
     ],
-    "powerDrawW": 600,
+    "powerDrawW": 500,
     "ports": [
       {
         "id": "port-4650",
@@ -41236,7 +42156,10 @@
         "direction": "input",
         "connectorType": "powercon"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 52
   },
   {
     "id": "c0a80101-0112-4000-8000-000000000350",
@@ -41253,7 +42176,7 @@
       "xt",
       "lighting console"
     ],
-    "powerDrawW": 400,
+    "powerDrawW": 250,
     "ports": [
       {
         "id": "port-4666",
@@ -41353,7 +42276,10 @@
         "direction": "input",
         "connectorType": "powercon"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 22
   },
   {
     "id": "c0a80101-0114-4000-8000-000000000352",
@@ -41369,7 +42295,7 @@
       "moving light",
       "performance"
     ],
-    "powerDrawW": 1450,
+    "powerDrawW": 1150,
     "ports": [
       {
         "id": "port-4680",
@@ -41399,7 +42325,10 @@
         "direction": "input",
         "connectorType": "powercon"
       }
-    ]
+    ],
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 36
   },
   {
     "id": "c0a80101-01f5-4000-8000-000000000501",
@@ -41414,7 +42343,7 @@
       "grandma2",
       "lighting console"
     ],
-    "powerDrawW": 350,
+    "powerDrawW": 400,
     "ports": [
       {
         "id": "port-4684",
@@ -41508,7 +42437,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 46
   },
   {
     "id": "c0a80101-01f6-4000-8000-000000000502",
@@ -41523,7 +42455,7 @@
       "network processing unit",
       "dmx node"
     ],
-    "powerDrawW": 150,
+    "powerDrawW": 250,
     "ports": [
       {
         "id": "port-4697",
@@ -41603,7 +42535,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 4,
+    "rackDepthMm": 460,
+    "weightKg": 15
   },
   {
     "id": "c0a80101-01f7-4000-8000-000000000503",
@@ -41619,7 +42554,7 @@
       "command wing",
       "lighting console"
     ],
-    "powerDrawW": 40,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-4708",
@@ -41671,7 +42606,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 5.5
   },
   {
     "id": "c0a80101-01f8-4000-8000-000000000504",
@@ -41815,7 +42753,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 32
   },
   {
     "id": "c0a80101-01f9-4000-8000-000000000505",
@@ -41830,7 +42771,7 @@
       "element 2",
       "lighting console"
     ],
-    "powerDrawW": 100,
+    "powerDrawW": 85,
     "ports": [
       {
         "id": "port-4733",
@@ -41868,7 +42809,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 7.3
   },
   {
     "id": "c0a80101-01fa-4000-8000-000000000506",
@@ -41884,7 +42828,7 @@
       "eos",
       "lighting console"
     ],
-    "powerDrawW": 300,
+    "powerDrawW": 250,
     "ports": [
       {
         "id": "port-4738",
@@ -41971,7 +42915,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 18.1
   },
   {
     "id": "c0a80101-01fb-4000-8000-000000000507",
@@ -41987,7 +42934,7 @@
       "eos",
       "lighting console"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 85,
     "ports": [
       {
         "id": "port-4750",
@@ -42060,7 +43007,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 7.5
   },
   {
     "id": "c0a80101-01fc-4000-8000-000000000508",
@@ -42077,7 +43027,7 @@
       "eos",
       "lighting console"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 85,
     "ports": [
       {
         "id": "port-4760",
@@ -42150,7 +43100,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 6.4
   },
   {
     "id": "c0a80101-01fd-4000-8000-000000000509",
@@ -42166,7 +43119,7 @@
       "puck",
       "lighting console"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 15,
     "ports": [
       {
         "id": "port-4770",
@@ -42197,7 +43150,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.5
   },
   {
     "id": "c0a80101-01fe-4000-8000-000000000510",
@@ -42213,7 +43169,7 @@
       "sacn",
       "dmx node"
     ],
-    "powerDrawW": 30,
+    "powerDrawW": 12,
     "ports": [
       {
         "id": "port-4774",
@@ -42258,7 +43214,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 1,
+    "rackDepthMm": 178,
+    "weightKg": 1.4
   },
   {
     "id": "c0a80101-01ff-4000-8000-000000000511",
@@ -42274,7 +43233,7 @@
       "wing",
       "lighting console"
     ],
-    "powerDrawW": 15,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-4780",
@@ -42291,7 +43250,10 @@
         "connectorType": "barrel"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 5
   },
   {
     "id": "c0a80101-0200-4000-8000-000000000512",
@@ -42380,7 +43342,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 35
   },
   {
     "id": "c0a80101-0201-4000-8000-000000000513",
@@ -42396,7 +43361,7 @@
       "hog 4",
       "lighting console"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 85,
     "ports": [
       {
         "id": "port-4792",
@@ -42441,7 +43406,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 7.3
   },
   {
     "id": "c0a80101-0202-4000-8000-000000000514",
@@ -42457,7 +43425,7 @@
       "hog",
       "dmx node"
     ],
-    "powerDrawW": 60,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-4798",
@@ -42544,7 +43512,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 1,
+    "rackDepthMm": 305,
+    "weightKg": 2.7
   },
   {
     "id": "c0a80101-0203-4000-8000-000000000515",
@@ -42561,7 +43532,7 @@
       "zeros",
       "lighting console"
     ],
-    "powerDrawW": 50,
+    "powerDrawW": 30,
     "ports": [
       {
         "id": "port-4810",
@@ -42599,7 +43570,10 @@
         "connectorType": "barrel"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 3.5
   },
   {
     "id": "c0a80101-0204-4000-8000-000000000516",
@@ -42626,7 +43600,10 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2
   },
   {
     "id": "c0a80101-0205-4000-8000-000000000517",
@@ -42643,7 +43620,7 @@
       "tracking",
       "lighting console"
     ],
-    "powerDrawW": 5,
+    "powerDrawW": 15,
     "ports": [
       {
         "id": "port-4816",
@@ -42653,7 +43630,10 @@
         "connectorType": "xlr-5"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2.5
   },
   {
     "id": "c0a80101-0206-4000-8000-000000000518",
@@ -42672,7 +43652,7 @@
       "spot",
       "wash"
     ],
-    "powerDrawW": 700,
+    "powerDrawW": 550,
     "ports": [
       {
         "id": "port-4817",
@@ -42710,7 +43690,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 25.5
   },
   {
     "id": "c0a80101-0207-4000-8000-000000000519",
@@ -42727,7 +43710,7 @@
       "moving light",
       "profile"
     ],
-    "powerDrawW": 1400,
+    "powerDrawW": 1480,
     "ports": [
       {
         "id": "port-4822",
@@ -42765,7 +43748,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 43
   },
   {
     "id": "c0a80101-0208-4000-8000-000000000520",
@@ -42781,7 +43767,7 @@
       "moving light",
       "profile"
     ],
-    "powerDrawW": 1500,
+    "powerDrawW": 560,
     "ports": [
       {
         "id": "port-4827",
@@ -42812,7 +43798,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 25
   },
   {
     "id": "c0a80101-0209-4000-8000-000000000521",
@@ -42828,7 +43817,7 @@
       "moving light",
       "profile"
     ],
-    "powerDrawW": 1470,
+    "powerDrawW": 1050,
     "ports": [
       {
         "id": "port-4831",
@@ -42859,7 +43848,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 37
   },
   {
     "id": "c0a80101-020a-4000-8000-000000000522",
@@ -42875,7 +43867,7 @@
       "ip65",
       "moving light"
     ],
-    "powerDrawW": 700,
+    "powerDrawW": 550,
     "ports": [
       {
         "id": "port-4835",
@@ -42913,7 +43905,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 25.5
   },
   {
     "id": "c0a80101-020b-4000-8000-000000000523",
@@ -42929,7 +43924,7 @@
       "spot",
       "moving light"
     ],
-    "powerDrawW": 1180,
+    "powerDrawW": 820,
     "ports": [
       {
         "id": "port-4840",
@@ -42967,7 +43962,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 27.5
   },
   {
     "id": "c0a80101-020c-4000-8000-000000000524",
@@ -42984,7 +43982,7 @@
       "ip65",
       "moving light"
     ],
-    "powerDrawW": 291,
+    "powerDrawW": 350,
     "ports": [
       {
         "id": "port-4845",
@@ -43008,7 +44006,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 12
   },
   {
     "id": "c0a80101-020d-4000-8000-000000000525",
@@ -43025,7 +44026,7 @@
       "ip65",
       "blinder"
     ],
-    "powerDrawW": 740,
+    "powerDrawW": 530,
     "ports": [
       {
         "id": "port-4848",
@@ -43063,7 +44064,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 17.5
   },
   {
     "id": "c0a80101-020e-4000-8000-000000000526",
@@ -43080,7 +44084,7 @@
       "moving light",
       "hybrid"
     ],
-    "powerDrawW": 1000,
+    "powerDrawW": 700,
     "ports": [
       {
         "id": "port-4853",
@@ -43111,7 +44115,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 32
   },
   {
     "id": "c0a80101-020f-4000-8000-000000000527",
@@ -43151,7 +44158,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 22.5
   },
   {
     "id": "c0a80101-0210-4000-8000-000000000528",
@@ -43169,7 +44179,7 @@
       "batten",
       "wash"
     ],
-    "powerDrawW": 400,
+    "powerDrawW": 250,
     "ports": [
       {
         "id": "port-4860",
@@ -43200,7 +44210,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 9.5
   },
   {
     "id": "c0a80101-0211-4000-8000-000000000529",
@@ -43216,7 +44229,7 @@
       "moving light",
       "profile"
     ],
-    "powerDrawW": 1100,
+    "powerDrawW": 1150,
     "ports": [
       {
         "id": "port-4864",
@@ -43254,7 +44267,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 39.5
   },
   {
     "id": "c0a80101-0212-4000-8000-000000000530",
@@ -43271,7 +44287,7 @@
       "beam",
       "hybrid"
     ],
-    "powerDrawW": 850,
+    "powerDrawW": 1050,
     "ports": [
       {
         "id": "port-4869",
@@ -43309,7 +44325,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 35
   },
   {
     "id": "c0a80101-0213-4000-8000-000000000531",
@@ -43324,7 +44343,7 @@
       "moving light",
       "profile"
     ],
-    "powerDrawW": 800,
+    "powerDrawW": 1000,
     "ports": [
       {
         "id": "port-4874",
@@ -43362,7 +44381,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 37
   },
   {
     "id": "c0a80101-0214-4000-8000-000000000532",
@@ -43379,7 +44401,7 @@
       "soft light",
       "panel"
     ],
-    "powerDrawW": 400,
+    "powerDrawW": 450,
     "ports": [
       {
         "id": "port-4879",
@@ -43417,7 +44439,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 13
   },
   {
     "id": "c0a80101-0215-4000-8000-000000000533",
@@ -43434,7 +44459,7 @@
       "soft light",
       "panel"
     ],
-    "powerDrawW": 1500,
+    "powerDrawW": 1600,
     "ports": [
       {
         "id": "port-4884",
@@ -43472,7 +44497,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 43
   },
   {
     "id": "c0a80101-0216-4000-8000-000000000534",
@@ -43490,7 +44518,7 @@
       "led",
       "pixel"
     ],
-    "powerDrawW": 48,
+    "powerDrawW": 72,
     "ports": [
       {
         "id": "port-4889",
@@ -43500,7 +44528,10 @@
         "connectorType": "barrel"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 1.5
   },
   {
     "id": "c0a80101-0217-4000-8000-000000000535",
@@ -43519,7 +44550,7 @@
       "par",
       "uplight"
     ],
-    "powerDrawW": 45,
+    "powerDrawW": 90,
     "ports": [
       {
         "id": "port-4890",
@@ -43550,7 +44581,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 2.9
   },
   {
     "id": "c0a80101-0218-4000-8000-000000000536",
@@ -43567,7 +44601,7 @@
       "soft light",
       "batten"
     ],
-    "powerDrawW": 550,
+    "powerDrawW": 200,
     "ports": [
       {
         "id": "port-4894",
@@ -43598,7 +44632,10 @@
         "connectorType": "powercon"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 6.8
   },
   {
     "id": "c0a80101-0219-4000-8000-000000000537",
@@ -43647,7 +44684,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Lighting"
+    "category": "Lighting",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 7.3
   },
   {
     "id": "c0a80101-00e0-4000-8000-000000000300",
@@ -45132,7 +46172,11 @@
         "connectorType": "none"
       }
     ],
-    "category": "Cloud Services"
+    "category": "Cloud Services",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0,
+    "powerDrawW": 0
   },
   {
     "id": "c0a80101-00f6-4000-8000-000000000322",
@@ -45217,7 +46261,11 @@
         "connectorType": "none"
       }
     ],
-    "category": "Cloud Services"
+    "category": "Cloud Services",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0,
+    "powerDrawW": 0
   },
   {
     "id": "c0a80101-00f7-4000-8000-000000000323",
@@ -45274,7 +46322,11 @@
         "connectorType": "none"
       }
     ],
-    "category": "Cloud Services"
+    "category": "Cloud Services",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0,
+    "powerDrawW": 0
   },
   {
     "id": "c0a80101-00f1-4000-8000-000000000317",
@@ -45290,7 +46342,7 @@
       "webex",
       "collaboration"
     ],
-    "powerDrawW": 100,
+    "powerDrawW": 70,
     "ports": [
       {
         "id": "port-5081",
@@ -45342,7 +46394,10 @@
         "connectorType": "iec"
       }
     ],
-    "category": "Codecs"
+    "category": "Codecs",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 5.5
   },
   {
     "id": "c0a80101-00f2-4000-8000-000000000318",
@@ -45359,7 +46414,7 @@
       "collaboration",
       "sdi"
     ],
-    "powerDrawW": 200,
+    "powerDrawW": 100,
     "ports": [
       {
         "id": "port-5088",
@@ -45586,7 +46641,10 @@
         "connectorType": "phoenix"
       }
     ],
-    "category": "Codecs"
+    "category": "Codecs",
+    "rackHeightU": 1,
+    "rackDepthMm": 300,
+    "weightKg": 4.5
   },
   {
     "id": "vfc-card-hdmi20",
@@ -45611,7 +46669,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "vfc-card-dp14",
@@ -45637,7 +46699,11 @@
         "connectorType": "displayport"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "vfc-card-dp12",
@@ -45663,7 +46729,11 @@
         "connectorType": "displayport"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "vfc-card-quad-sdi",
@@ -45710,7 +46780,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "vfc-card-quad-dvi",
@@ -45757,7 +46831,11 @@
         "connectorType": "dvi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "vfc-card-ip",
@@ -45801,7 +46879,11 @@
       }
     ],
     "ports": [],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "barco-em-tricombo-in",
@@ -45862,7 +46944,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "barco-em-tricombo-out",
@@ -45923,7 +47009,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "barco-em-hdmi-quad-in",
@@ -45971,7 +47061,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "barco-em-hdmi-quad-out",
@@ -46019,7 +47113,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "barco-em-dp-quad-in",
@@ -46067,7 +47165,11 @@
         "connectorType": "displayport"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "barco-em-dp-quad-out",
@@ -46115,7 +47217,11 @@
         "connectorType": "displayport"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "aw-aql-in-dp",
@@ -46162,7 +47268,11 @@
         "connectorType": "displayport"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "aw-aql-in-sdi",
@@ -46209,7 +47319,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "aw-aql-out-sdi",
@@ -46256,7 +47370,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "yamaha-my8-ae",
@@ -46387,7 +47505,11 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "yamaha-my16-ae",
@@ -46630,7 +47752,11 @@
         "connectorType": "xlr-3"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "yamaha-my8-lake",
@@ -46769,7 +47895,11 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "yamaha-dugan-my16",
@@ -46802,7 +47932,11 @@
         "connectorType": "toslink"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "digico-dmi-dante",
@@ -46835,7 +47969,11 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "digico-dmi-madi",
@@ -46868,7 +48006,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "digico-dmi-waves",
@@ -46895,7 +48037,11 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "barco-em-sdi-quad-in",
@@ -46943,7 +48089,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "barco-em-sdi-quad-out",
@@ -46991,7 +48141,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "aw-aql-in-hdmi",
@@ -47038,7 +48192,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "aw-aql-out-hdmi",
@@ -47085,7 +48243,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "aw-aql-out-dp",
@@ -47132,7 +48294,11 @@
         "connectorType": "displayport"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "aw-aql-in-fiber",
@@ -47179,7 +48345,11 @@
         "connectorType": "sc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "aw-aql-out-fiber",
@@ -47226,7 +48396,11 @@
         "connectorType": "sc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 20
   },
   {
     "id": "crestron-dmc-4kz-hd",
@@ -47261,7 +48435,11 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 15
   },
   {
     "id": "crestron-dmc-4kz-hdmi",
@@ -47296,7 +48474,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 15
   },
   {
     "id": "crestron-dmc-4kz-c",
@@ -47331,7 +48513,11 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 15
   },
   {
     "id": "crestron-dmco-4kz-hd",
@@ -47366,7 +48552,11 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 15
   },
   {
     "id": "crestron-dmco-4kz-hdmi",
@@ -47401,7 +48591,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 15
   },
   {
     "id": "lightware-mx2m-hdmi-ib",
@@ -47448,7 +48642,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "lightware-mx2m-hdmi-ob",
@@ -47495,7 +48693,11 @@
         "connectorType": "hdmi"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "lightware-mx2m-dp-ib",
@@ -47542,7 +48744,11 @@
         "connectorType": "displayport"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "lightware-mx2m-fiber-ib",
@@ -47589,7 +48795,11 @@
         "connectorType": "sc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "lightware-mx2m-fiber-ob",
@@ -47636,7 +48846,11 @@
         "connectorType": "sc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 15
   },
   {
     "id": "yamaha-my16-md64",
@@ -47669,7 +48883,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "yamaha-my16-at",
@@ -47716,7 +48934,11 @@
         "connectorType": "toslink"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.3,
+    "powerDrawW": 0
   },
   {
     "id": "ah-dlive-dante128",
@@ -47750,7 +48972,11 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.4,
+    "powerDrawW": 0
   },
   {
     "id": "ah-dlive-madi",
@@ -47783,7 +49009,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.4,
+    "powerDrawW": 0
   },
   {
     "id": "ah-dlive-waves",
@@ -47810,7 +49040,11 @@
         "connectorType": "rj45"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.4,
+    "powerDrawW": 0
   },
   {
     "id": "ah-sq-slink-card",
@@ -47836,7 +49070,11 @@
         "connectorType": "lc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.2,
+    "powerDrawW": 0
   },
   {
     "id": "ross-ultrix-hdx-io",
@@ -48081,7 +49319,11 @@
         "connectorType": "bnc"
       }
     ],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.5,
+    "powerDrawW": 30
   },
   {
     "id": "ross-ultrix-ipx-io",
@@ -48128,7 +49370,11 @@
       }
     ],
     "ports": [],
-    "category": "Expansion Cards"
+    "category": "Expansion Cards",
+    "rackHeightU": 0,
+    "rackDepthMm": 0,
+    "weightKg": 0.5,
+    "powerDrawW": 40
   },
   {
     "id": "c0a80101-ffff-4000-8000-ffffffffffff",
@@ -48138,67 +49384,425 @@
     "modelNumber": "CTC-60",
     "rackHeightU": 8,
     "color": "#334155",
-    "searchTerms": ["test", "connector", "all"],
+    "searchTerms": [
+      "test",
+      "connector",
+      "all"
+    ],
     "ports": [
-      { "id": "ct-01", "label": "XLR-3", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "xlr-3" },
-      { "id": "ct-02", "label": "XLR-4", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "xlr-4" },
-      { "id": "ct-03", "label": "XLR-5", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "xlr-5" },
-      { "id": "ct-04", "label": "Mini XLR", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "mini-xlr" },
-      { "id": "ct-05", "label": "Combo", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "combo-xlr-trs" },
-      { "id": "ct-06", "label": "BNC", "signalType": "sdi", "direction": "bidirectional", "connectorType": "bnc" },
-      { "id": "ct-07", "label": "RCA", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "rca" },
-      { "id": "ct-08", "label": "1/4\" TRS", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "trs-quarter" },
-      { "id": "ct-09", "label": "3.5mm", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "trs-eighth" },
-      { "id": "ct-10", "label": "2.5mm", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "trs-2.5mm" },
-      { "id": "ct-11", "label": "DIN-5", "signalType": "midi", "direction": "bidirectional", "connectorType": "din-5" },
-      { "id": "ct-12", "label": "MiniDIN4", "signalType": "composite", "direction": "bidirectional", "connectorType": "mini-din-4" },
-      { "id": "ct-13", "label": "MiniDIN7", "signalType": "composite", "direction": "bidirectional", "connectorType": "mini-din-7" },
-      { "id": "ct-14", "label": "Barrel", "signalType": "power", "direction": "input", "connectorType": "barrel" },
-      { "id": "ct-15", "label": "Banana", "signalType": "speaker", "direction": "output", "connectorType": "banana" },
-      { "id": "ct-16", "label": "Bind Post", "signalType": "speaker", "direction": "output", "connectorType": "binding-post" },
-      { "id": "ct-17", "label": "Bind+Ban", "signalType": "speaker", "direction": "output", "connectorType": "binding-post-banana" },
-      { "id": "ct-18", "label": "Speakon", "signalType": "speaker", "direction": "output", "connectorType": "speakon" },
-      { "id": "ct-19", "label": "Cam-Lok", "signalType": "power", "direction": "input", "connectorType": "cam-lok" },
-      { "id": "ct-20", "label": "Socapex", "signalType": "power", "direction": "input", "connectorType": "socapex" },
-      { "id": "ct-21", "label": "Multipin", "signalType": "control", "direction": "bidirectional", "connectorType": "multipin" },
-      { "id": "ct-22", "label": "RJ45", "signalType": "ndi", "direction": "bidirectional", "connectorType": "rj45" },
-      { "id": "ct-23", "label": "RJ11", "signalType": "control", "direction": "bidirectional", "connectorType": "rj11" },
-      { "id": "ct-24", "label": "HDMI", "signalType": "hdmi", "direction": "bidirectional", "connectorType": "hdmi" },
-      { "id": "ct-25", "label": "MiniHDMI", "signalType": "hdmi", "direction": "bidirectional", "connectorType": "mini-hdmi" },
-      { "id": "ct-26", "label": "DP", "signalType": "displayport", "direction": "bidirectional", "connectorType": "displayport" },
-      { "id": "ct-27", "label": "MiniDP", "signalType": "displayport", "direction": "bidirectional", "connectorType": "mini-displayport" },
-      { "id": "ct-28", "label": "USB-A", "signalType": "usb", "direction": "bidirectional", "connectorType": "usb-a" },
-      { "id": "ct-29", "label": "USB-B", "signalType": "usb", "direction": "bidirectional", "connectorType": "usb-b" },
-      { "id": "ct-30", "label": "USB-C", "signalType": "usb", "direction": "bidirectional", "connectorType": "usb-c" },
-      { "id": "ct-31", "label": "USBmini", "signalType": "usb", "direction": "bidirectional", "connectorType": "usb-mini" },
-      { "id": "ct-32", "label": "DVI", "signalType": "dvi", "direction": "bidirectional", "connectorType": "dvi" },
-      { "id": "ct-33", "label": "VGA", "signalType": "vga", "direction": "bidirectional", "connectorType": "vga" },
-      { "id": "ct-34", "label": "DB9", "signalType": "control", "direction": "bidirectional", "connectorType": "db9" },
-      { "id": "ct-35", "label": "DB15", "signalType": "control", "direction": "bidirectional", "connectorType": "db15" },
-      { "id": "ct-36", "label": "DB25", "signalType": "control", "direction": "bidirectional", "connectorType": "db25" },
-      { "id": "ct-37", "label": "DB7W2", "signalType": "control", "direction": "bidirectional", "connectorType": "db7w2" },
-      { "id": "ct-38", "label": "LC", "signalType": "fiber", "direction": "bidirectional", "connectorType": "lc" },
-      { "id": "ct-39", "label": "SC", "signalType": "fiber", "direction": "bidirectional", "connectorType": "sc" },
-      { "id": "ct-40", "label": "TOSLINK", "signalType": "aes-ebu", "direction": "bidirectional", "connectorType": "toslink" },
-      { "id": "ct-41", "label": "SFP", "signalType": "fiber", "direction": "bidirectional", "connectorType": "sfp" },
-      { "id": "ct-42", "label": "QSFP", "signalType": "fiber", "direction": "bidirectional", "connectorType": "qsfp" },
-      { "id": "ct-43", "label": "MPO", "signalType": "fiber", "direction": "bidirectional", "connectorType": "mpo" },
-      { "id": "ct-44", "label": "optCON", "signalType": "fiber", "direction": "bidirectional", "connectorType": "opticalcon" },
-      { "id": "ct-45", "label": "EtherCON", "signalType": "ndi", "direction": "bidirectional", "connectorType": "ethercon" },
-      { "id": "ct-46", "label": "pwrCON", "signalType": "power", "direction": "input", "connectorType": "powercon" },
-      { "id": "ct-47", "label": "TRUE1", "signalType": "power", "direction": "input", "connectorType": "powercon-true1" },
-      { "id": "ct-48", "label": "Phoenix", "signalType": "analog-audio", "direction": "bidirectional", "connectorType": "phoenix" },
-      { "id": "ct-49", "label": "TermBlk", "signalType": "speaker", "direction": "output", "connectorType": "terminal-block" },
-      { "id": "ct-50", "label": "IEC C14", "signalType": "power", "direction": "input", "connectorType": "iec" },
-      { "id": "ct-51", "label": "IEC C5", "signalType": "power", "direction": "input", "connectorType": "iec-c5" },
-      { "id": "ct-52", "label": "IEC C7", "signalType": "power", "direction": "input", "connectorType": "iec-c7" },
-      { "id": "ct-53", "label": "IEC C15", "signalType": "power", "direction": "input", "connectorType": "iec-c15" },
-      { "id": "ct-54", "label": "IEC C20", "signalType": "power", "direction": "input", "connectorType": "iec-c20" },
-      { "id": "ct-55", "label": "Edison", "signalType": "power", "direction": "input", "connectorType": "edison" },
-      { "id": "ct-56", "label": "L5-20", "signalType": "power", "direction": "input", "connectorType": "l5-20" },
-      { "id": "ct-57", "label": "L6-20", "signalType": "power", "direction": "input", "connectorType": "l6-20" },
-      { "id": "ct-58", "label": "L6-30", "signalType": "power", "direction": "input", "connectorType": "l6-30" },
-      { "id": "ct-59", "label": "L21-30", "signalType": "power", "direction": "input", "connectorType": "l21-30" }
+      {
+        "id": "ct-01",
+        "label": "XLR-3",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "xlr-3"
+      },
+      {
+        "id": "ct-02",
+        "label": "XLR-4",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "xlr-4"
+      },
+      {
+        "id": "ct-03",
+        "label": "XLR-5",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "xlr-5"
+      },
+      {
+        "id": "ct-04",
+        "label": "Mini XLR",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "mini-xlr"
+      },
+      {
+        "id": "ct-05",
+        "label": "Combo",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "combo-xlr-trs"
+      },
+      {
+        "id": "ct-06",
+        "label": "BNC",
+        "signalType": "sdi",
+        "direction": "bidirectional",
+        "connectorType": "bnc"
+      },
+      {
+        "id": "ct-07",
+        "label": "RCA",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "rca"
+      },
+      {
+        "id": "ct-08",
+        "label": "1/4\" TRS",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "trs-quarter"
+      },
+      {
+        "id": "ct-09",
+        "label": "3.5mm",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "trs-eighth"
+      },
+      {
+        "id": "ct-10",
+        "label": "2.5mm",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "trs-2.5mm"
+      },
+      {
+        "id": "ct-11",
+        "label": "DIN-5",
+        "signalType": "midi",
+        "direction": "bidirectional",
+        "connectorType": "din-5"
+      },
+      {
+        "id": "ct-12",
+        "label": "MiniDIN4",
+        "signalType": "composite",
+        "direction": "bidirectional",
+        "connectorType": "mini-din-4"
+      },
+      {
+        "id": "ct-13",
+        "label": "MiniDIN7",
+        "signalType": "composite",
+        "direction": "bidirectional",
+        "connectorType": "mini-din-7"
+      },
+      {
+        "id": "ct-14",
+        "label": "Barrel",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "barrel"
+      },
+      {
+        "id": "ct-15",
+        "label": "Banana",
+        "signalType": "speaker",
+        "direction": "output",
+        "connectorType": "banana"
+      },
+      {
+        "id": "ct-16",
+        "label": "Bind Post",
+        "signalType": "speaker",
+        "direction": "output",
+        "connectorType": "binding-post"
+      },
+      {
+        "id": "ct-17",
+        "label": "Bind+Ban",
+        "signalType": "speaker",
+        "direction": "output",
+        "connectorType": "binding-post-banana"
+      },
+      {
+        "id": "ct-18",
+        "label": "Speakon",
+        "signalType": "speaker",
+        "direction": "output",
+        "connectorType": "speakon"
+      },
+      {
+        "id": "ct-19",
+        "label": "Cam-Lok",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "cam-lok"
+      },
+      {
+        "id": "ct-20",
+        "label": "Socapex",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "socapex"
+      },
+      {
+        "id": "ct-21",
+        "label": "Multipin",
+        "signalType": "control",
+        "direction": "bidirectional",
+        "connectorType": "multipin"
+      },
+      {
+        "id": "ct-22",
+        "label": "RJ45",
+        "signalType": "ndi",
+        "direction": "bidirectional",
+        "connectorType": "rj45"
+      },
+      {
+        "id": "ct-23",
+        "label": "RJ11",
+        "signalType": "control",
+        "direction": "bidirectional",
+        "connectorType": "rj11"
+      },
+      {
+        "id": "ct-24",
+        "label": "HDMI",
+        "signalType": "hdmi",
+        "direction": "bidirectional",
+        "connectorType": "hdmi"
+      },
+      {
+        "id": "ct-25",
+        "label": "MiniHDMI",
+        "signalType": "hdmi",
+        "direction": "bidirectional",
+        "connectorType": "mini-hdmi"
+      },
+      {
+        "id": "ct-26",
+        "label": "DP",
+        "signalType": "displayport",
+        "direction": "bidirectional",
+        "connectorType": "displayport"
+      },
+      {
+        "id": "ct-27",
+        "label": "MiniDP",
+        "signalType": "displayport",
+        "direction": "bidirectional",
+        "connectorType": "mini-displayport"
+      },
+      {
+        "id": "ct-28",
+        "label": "USB-A",
+        "signalType": "usb",
+        "direction": "bidirectional",
+        "connectorType": "usb-a"
+      },
+      {
+        "id": "ct-29",
+        "label": "USB-B",
+        "signalType": "usb",
+        "direction": "bidirectional",
+        "connectorType": "usb-b"
+      },
+      {
+        "id": "ct-30",
+        "label": "USB-C",
+        "signalType": "usb",
+        "direction": "bidirectional",
+        "connectorType": "usb-c"
+      },
+      {
+        "id": "ct-31",
+        "label": "USBmini",
+        "signalType": "usb",
+        "direction": "bidirectional",
+        "connectorType": "usb-mini"
+      },
+      {
+        "id": "ct-32",
+        "label": "DVI",
+        "signalType": "dvi",
+        "direction": "bidirectional",
+        "connectorType": "dvi"
+      },
+      {
+        "id": "ct-33",
+        "label": "VGA",
+        "signalType": "vga",
+        "direction": "bidirectional",
+        "connectorType": "vga"
+      },
+      {
+        "id": "ct-34",
+        "label": "DB9",
+        "signalType": "control",
+        "direction": "bidirectional",
+        "connectorType": "db9"
+      },
+      {
+        "id": "ct-35",
+        "label": "DB15",
+        "signalType": "control",
+        "direction": "bidirectional",
+        "connectorType": "db15"
+      },
+      {
+        "id": "ct-36",
+        "label": "DB25",
+        "signalType": "control",
+        "direction": "bidirectional",
+        "connectorType": "db25"
+      },
+      {
+        "id": "ct-37",
+        "label": "DB7W2",
+        "signalType": "control",
+        "direction": "bidirectional",
+        "connectorType": "db7w2"
+      },
+      {
+        "id": "ct-38",
+        "label": "LC",
+        "signalType": "fiber",
+        "direction": "bidirectional",
+        "connectorType": "lc"
+      },
+      {
+        "id": "ct-39",
+        "label": "SC",
+        "signalType": "fiber",
+        "direction": "bidirectional",
+        "connectorType": "sc"
+      },
+      {
+        "id": "ct-40",
+        "label": "TOSLINK",
+        "signalType": "aes-ebu",
+        "direction": "bidirectional",
+        "connectorType": "toslink"
+      },
+      {
+        "id": "ct-41",
+        "label": "SFP",
+        "signalType": "fiber",
+        "direction": "bidirectional",
+        "connectorType": "sfp"
+      },
+      {
+        "id": "ct-42",
+        "label": "QSFP",
+        "signalType": "fiber",
+        "direction": "bidirectional",
+        "connectorType": "qsfp"
+      },
+      {
+        "id": "ct-43",
+        "label": "MPO",
+        "signalType": "fiber",
+        "direction": "bidirectional",
+        "connectorType": "mpo"
+      },
+      {
+        "id": "ct-44",
+        "label": "optCON",
+        "signalType": "fiber",
+        "direction": "bidirectional",
+        "connectorType": "opticalcon"
+      },
+      {
+        "id": "ct-45",
+        "label": "EtherCON",
+        "signalType": "ndi",
+        "direction": "bidirectional",
+        "connectorType": "ethercon"
+      },
+      {
+        "id": "ct-46",
+        "label": "pwrCON",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "powercon"
+      },
+      {
+        "id": "ct-47",
+        "label": "TRUE1",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "powercon-true1"
+      },
+      {
+        "id": "ct-48",
+        "label": "Phoenix",
+        "signalType": "analog-audio",
+        "direction": "bidirectional",
+        "connectorType": "phoenix"
+      },
+      {
+        "id": "ct-49",
+        "label": "TermBlk",
+        "signalType": "speaker",
+        "direction": "output",
+        "connectorType": "terminal-block"
+      },
+      {
+        "id": "ct-50",
+        "label": "IEC C14",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "iec"
+      },
+      {
+        "id": "ct-51",
+        "label": "IEC C5",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "iec-c5"
+      },
+      {
+        "id": "ct-52",
+        "label": "IEC C7",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "iec-c7"
+      },
+      {
+        "id": "ct-53",
+        "label": "IEC C15",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "iec-c15"
+      },
+      {
+        "id": "ct-54",
+        "label": "IEC C20",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "iec-c20"
+      },
+      {
+        "id": "ct-55",
+        "label": "Edison",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "edison"
+      },
+      {
+        "id": "ct-56",
+        "label": "L5-20",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "l5-20"
+      },
+      {
+        "id": "ct-57",
+        "label": "L6-20",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "l6-20"
+      },
+      {
+        "id": "ct-58",
+        "label": "L6-30",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "l6-30"
+      },
+      {
+        "id": "ct-59",
+        "label": "L21-30",
+        "signalType": "power",
+        "direction": "input",
+        "connectorType": "l21-30"
+      }
     ],
     "category": "Test Equipment"
   }
