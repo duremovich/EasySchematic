@@ -2,9 +2,9 @@ import { useCallback, useMemo, useRef, useState, type WheelEvent, type MouseEven
 import { useSchematicStore } from "../store";
 import type { RackData, RackDevicePlacement, RackAccessory, DeviceData, SchematicPage } from "../types";
 import { RACK_ACCESSORY_LABELS } from "../types";
-import { inferRackHeightU, autoLayoutPorts } from "../rackUtils";
+import { inferRackHeightU, autoLayoutPorts, PX_PER_MM } from "../rackUtils";
 import { SIGNAL_COLORS } from "../types";
-import { ConnectorIcon } from "./connectorIcons";
+import { ConnectorIcon, getConnectorSpec } from "./connectorIcons";
 import { draggedDeviceHeightU } from "./RackSidebar";
 import FacePlateEditor from "./FacePlateEditor";
 import type { FacePlateLayout } from "../types";
@@ -18,7 +18,7 @@ const RAIL_WIDTH = 8;
 const RACK_PAD_X = 20;
 const RACK_PAD_Y = 40;
 const LABEL_HEIGHT = 24;
-const DEVICE_INSET = 2;
+const DEVICE_INSET = RAIL_WIDTH;
 const HALF_WIDTH = (RACK_WIDTH - 2 * DEVICE_INSET) / 2 - 1;
 const FULL_WIDTH = RACK_WIDTH - 2 * DEVICE_INSET;
 const SIDE_VIEW_WIDTH = 120;
@@ -190,10 +190,6 @@ function DeviceBlock({ placement, rack, deviceData, isSelected, isDragging, zoom
     });
   }, [showConnectors, deviceData.ports, w, h, deviceData.facePlateLayout]);
 
-  // Icon size scales with zoom and available space
-  const maxIconByHeight = availableHeight * 0.6;
-  const iconSize = Math.max(4, Math.min(maxIconByHeight, Math.min(12, 8 * Math.sqrt(zoom))));
-
   return (
     <g
       className="cursor-grab"
@@ -246,9 +242,7 @@ function DeviceBlock({ placement, rack, deviceData, isSelected, isDragging, zoom
       {/* Connector icons */}
       {showConnectors && layoutPorts.map((lp) => {
         const cx = x + (lp.x / 100) * w;
-        // Offset Y to leave room for label at top
-        const labelOffset = 14;
-        const cy = y + labelOffset + ((lp.y / 100) * (h - labelOffset));
+        const cy = y + (lp.y / 100) * h;
         const sigColor = SIGNAL_COLORS[lp.signalType as keyof typeof SIGNAL_COLORS] ?? "#fff";
         return (
           <g key={lp.id} style={{ pointerEvents: "none" }}>
@@ -256,7 +250,7 @@ function DeviceBlock({ placement, rack, deviceData, isSelected, isDragging, zoom
               x={cx}
               y={cy}
               connectorType={lp.connectorType}
-              size={iconSize}
+              scale={PX_PER_MM}
               color={sigColor}
               detail={connectorDetail}
             />
@@ -264,7 +258,7 @@ function DeviceBlock({ placement, rack, deviceData, isSelected, isDragging, zoom
             {showPortLabels && (
               <text
                 x={cx}
-                y={cy + iconSize / 2 + 5}
+                y={cy + (getConnectorSpec(lp.connectorType).heightMm * PX_PER_MM) / 2 + 3}
                 textAnchor="middle"
                 fontSize={4}
                 fill="rgba(255,255,255,0.8)"
@@ -279,8 +273,7 @@ function DeviceBlock({ placement, rack, deviceData, isSelected, isDragging, zoom
       {/* Face-plate section labels (from custom layout) */}
       {showConnectors && deviceData.facePlateLayout?.labels?.map((lbl) => {
         const lx = x + (lbl.x / 100) * w;
-        const labelOffset = 14;
-        const ly = y + labelOffset + ((lbl.y / 100) * (h - labelOffset));
+        const ly = y + (lbl.y / 100) * h;
         return (
           <text
             key={lbl.id}

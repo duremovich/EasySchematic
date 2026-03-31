@@ -32,6 +32,15 @@ export const PX_PER_U = 24;
 /** Standard rack width in pixels */
 export const RACK_WIDTH_PX = 260;
 
+/** Rail width — device inset from rack edges */
+export const RAIL_WIDTH_PX = 8;
+
+/** Pixels per millimeter at rack scale (1U = 44.45mm) */
+export const PX_PER_MM = PX_PER_U / 44.45;
+
+/** Full-width device width in rack view */
+export const DEVICE_WIDTH_PX = RACK_WIDTH_PX - 2 * RAIL_WIDTH_PX;
+
 // ── Auto-layout for connector face-plates ──────────────────────────
 
 export interface LayoutPort {
