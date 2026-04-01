@@ -46,5 +46,6 @@
   --color-sacn: #eab308;      /* yellow — streaming ACN lighting */
   --color-ir: #f97316;        /* orange — infrared control */
   --color-timecode: #06b6d4;  /* cyan — timecode */
+  --color-gigaace: #7c3aed;   /* violet — Allen & Heath GigaACE */
   --color-custom: #64748b;    /* cool gray */
 }

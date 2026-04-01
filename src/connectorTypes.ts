@@ -47,6 +47,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   sacn: "rj45",
   ir: "terminal-block",
   timecode: "bnc",
+  gigaace: "ethercon",
   custom: "other",
 };
 

@@ -49,6 +49,7 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   sacn: "Ethernet",
   ir: "IR Emitter Cable",
   timecode: "BNC",
+  gigaace: "Ethercon",
   custom: "Other",
 };
 

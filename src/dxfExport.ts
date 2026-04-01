@@ -49,6 +49,7 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   sacn: 50,        // yellow — streaming ACN
   ir: 30,          // orange — infrared
   timecode: 174,   // dark cyan — timecode
+  gigaace: 129,    // violet — Allen & Heath GigaACE
   custom: 9,       // cool gray
 };
 

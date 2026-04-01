@@ -47,6 +47,7 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   sacn: "#eab308",
   ir: "#f97316",
   timecode: "#06b6d4",
+  gigaace: "#7c3aed",
   custom: "#64748b",
 };
 
