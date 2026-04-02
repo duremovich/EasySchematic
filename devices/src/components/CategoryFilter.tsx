@@ -18,8 +18,8 @@ export default function CategoryFilter({ categories, selected, onChange }: Categ
         onClick={() => onChange(new Set())}
         className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
           selected.size === 0
-            ? "bg-slate-900 text-white"
-            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
+            : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
         }`}
       >
         All
@@ -30,8 +30,8 @@ export default function CategoryFilter({ categories, selected, onChange }: Categ
           onClick={() => toggle(cat)}
           className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
             selected.has(cat)
-              ? "bg-slate-900 text-white"
-              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+              ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
+              : "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
           }`}
         >
           {cat}

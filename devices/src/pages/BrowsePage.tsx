@@ -8,19 +8,19 @@ import DeviceCard from "../components/DeviceCard";
 
 function SkeletonCard() {
   return (
-    <div className="block p-4 rounded-lg border border-slate-200 bg-white animate-pulse">
+    <div className="block p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 animate-pulse">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <div className="h-5 bg-slate-200 rounded w-3/4" />
-          <div className="h-4 bg-slate-100 rounded w-1/2 mt-1" />
+          <div className="h-5 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+          <div className="h-4 bg-slate-100 dark:bg-slate-700/60 rounded w-1/2 mt-1" />
         </div>
-        <div className="w-4 h-4 rounded-full bg-slate-200 shrink-0" />
+        <div className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 shrink-0" />
       </div>
       <div className="mt-3 flex gap-1">
-        <div className="h-5 bg-slate-100 rounded w-12" />
-        <div className="h-5 bg-slate-100 rounded w-16" />
+        <div className="h-5 bg-slate-100 dark:bg-slate-700/60 rounded w-12" />
+        <div className="h-5 bg-slate-100 dark:bg-slate-700/60 rounded w-16" />
       </div>
-      <div className="h-3 bg-slate-100 rounded w-16 mt-2" />
+      <div className="h-3 bg-slate-100 dark:bg-slate-700/60 rounded w-16 mt-2" />
     </div>
   );
 }
@@ -100,7 +100,7 @@ export default function BrowsePage() {
       <div className="mb-4">
         <button
           onClick={() => setCategoriesOpen((o) => !o)}
-          className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1.5 hover:text-slate-700 transition-colors"
+          className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
         >
           <svg className={`w-3 h-3 transition-transform ${categoriesOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -112,7 +112,7 @@ export default function BrowsePage() {
       <div className="mb-6">
         <button
           onClick={() => setBrandsOpen((o) => !o)}
-          className="flex items-center gap-1.5 text-xs font-medium text-slate-500 mb-1.5 hover:text-slate-700 transition-colors"
+          className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
         >
           <svg className={`w-3 h-3 transition-transform ${brandsOpen ? "rotate-90" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -129,7 +129,7 @@ export default function BrowsePage() {
             ))}
       </div>
       {!loading && filtered.length === 0 && (
-        <p className="text-center text-slate-400 mt-8">No devices match your search.</p>
+        <p className="text-center text-slate-400 dark:text-slate-500 mt-8">No devices match your search.</p>
       )}
     </div>
   );

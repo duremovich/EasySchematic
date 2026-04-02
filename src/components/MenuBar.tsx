@@ -21,6 +21,7 @@ import ViewOptionsPanel from "./ViewOptionsPanel";
 import ShowInfoPanel from "./ShowInfoPanel";
 import CsvImportWizard from "./CsvImportWizard";
 import SignalColorPanel from "./SignalColorPanel";
+import { useTheme } from "../hooks/useTheme";
 
 // ─── Menu data types ─────────────────────────────────────────────
 
@@ -126,6 +127,8 @@ export default function MenuBar() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const archiveInputRef = useRef<HTMLInputElement>(null);
   const menuBarRef = useRef<HTMLDivElement>(null);
+
+  const { isDark, toggle: toggleTheme } = useTheme();
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -773,6 +776,23 @@ export default function MenuBar() {
           <div className="w-px h-5 bg-[var(--color-border)] mx-1" />
           <AlignmentMenu />
           <div className="w-px h-5 bg-[var(--color-border)] mx-1" />
+          <button
+            onClick={toggleTheme}
+            title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            className="p-1.5 rounded hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer text-[var(--color-text)]"
+          >
+            {isDark ? (
+              <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="8" r="3.5" />
+                <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 16 16" className="w-4 h-4" fill="currentColor">
+                <path d="M6 .278a.77.77 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z" />
+              </svg>
+            )}
+          </button>
+          <div className="w-px h-5 bg-[var(--color-border)] mx-1" />
           <UserMenuButton />
         </div>
       </div>
@@ -823,15 +843,33 @@ export default function MenuBar() {
               </button>
             </div>
             <span className="text-sm font-semibold text-[var(--color-text-heading)]">Menu</span>
-            <button
-              onClick={closeMobileMenu}
-              className="p-2 rounded hover:bg-[var(--color-surface-hover)] transition-colors text-[var(--color-text)]"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
-                <line x1="6" y1="6" x2="18" y2="18" />
-                <line x1="18" y1="6" x2="6" y2="18" />
-              </svg>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggleTheme}
+                title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+                className="p-2 rounded hover:bg-[var(--color-surface-hover)] transition-colors text-[var(--color-text)]"
+              >
+                {isDark ? (
+                  <svg viewBox="0 0 16 16" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="8" cy="8" r="3.5" />
+                    <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 16 16" className="w-5 h-5" fill="currentColor">
+                    <path d="M6 .278a.77.77 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z" />
+                  </svg>
+                )}
+              </button>
+              <button
+                onClick={closeMobileMenu}
+                className="p-2 rounded hover:bg-[var(--color-surface-hover)] transition-colors text-[var(--color-text)]"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Scrollable menu sections */}

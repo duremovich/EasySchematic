@@ -46,6 +46,14 @@
     </script>
   </head>
   <body>
+    <script>
+      (function() {
+        var stored = localStorage.getItem('easyschematic-theme');
+        if (stored === 'dark' || (!stored && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
     <div id="root"></div>
     <noscript>
       <h1>EasySchematic — AV Signal Flow Diagram Tool</h1>

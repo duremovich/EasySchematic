@@ -50,3 +50,16 @@
   --color-dx5: #8b5cf6;       /* lighter violet — Allen & Heath DX5 */
   --color-custom: #64748b;    /* cool gray */
 }
+
+.dark {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #334155;
+  --color-border: #475569;
+  --color-text: #cbd5e1;
+  --color-text-heading: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  /* Power colors adjusted for dark backgrounds */
+  --color-power-neutral: #b0b0b0;
+  --color-power-l1: #e5e5e5;
+}

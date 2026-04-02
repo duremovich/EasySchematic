@@ -3,6 +3,9 @@
 
 @source ".";
 
+/* Enable class-based dark mode for Tailwind dark: utilities */
+@variant dark (&:where(.dark, .dark *));
+
 @font-face {
   font-family: 'Inter';
   font-weight: 400;
@@ -22,7 +25,7 @@ html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: #ffffff;
-  color: #374151;
+  background: var(--color-bg);
+  color: var(--color-text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }

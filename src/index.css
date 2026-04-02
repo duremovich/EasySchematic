@@ -2,6 +2,25 @@
 @import "@xyflow/react/dist/style.css";
 @import "./theme.css";
 
+/* Enable class-based dark mode for Tailwind dark: utilities */
+@variant dark (&:where(.dark, .dark *));
+
+/* Dark mode overrides for hardcoded Tailwind utility colors used in components */
+.dark .bg-white { background-color: var(--color-surface) !important; }
+.dark .bg-gray-50 { background-color: var(--color-surface) !important; }
+.dark .bg-gray-100 { background-color: var(--color-surface-hover) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: var(--color-surface-hover) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: var(--color-surface-hover) !important; }
+.dark .border-gray-200 { border-color: var(--color-border) !important; }
+.dark .border-gray-300 { border-color: var(--color-border) !important; }
+.dark .text-gray-900 { color: var(--color-text-heading) !important; }
+.dark .text-gray-800 { color: var(--color-text-heading) !important; }
+.dark .text-gray-700 { color: var(--color-text) !important; }
+.dark .text-gray-600 { color: var(--color-text) !important; }
+.dark .text-gray-500 { color: var(--color-text-muted) !important; }
+.dark .text-gray-400 { color: var(--color-text-muted) !important; }
+.dark .text-gray-300 { color: var(--color-border) !important; }
+
 @font-face {
   font-family: 'Inter';
   font-weight: 400;

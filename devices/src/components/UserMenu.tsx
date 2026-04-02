@@ -29,7 +29,7 @@ export default function UserMenu({ user, onLogout }: Props) {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="text-sm text-gray-500 hover:text-gray-900 transition-colors flex items-center gap-1"
+        className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors flex items-center gap-1"
       >
         {user.name || user.email}
         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -37,18 +37,18 @@ export default function UserMenu({ user, onLogout }: Props) {
         </svg>
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
-          <div className="px-3 py-2 border-b border-slate-100">
-            <p className="text-xs text-slate-500 truncate">{user.email}</p>
-            <p className="text-xs text-slate-400 capitalize">{user.role}</p>
+        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50">
+          <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-700">
+            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 capitalize">{user.role}</p>
           </div>
-          <a href="/profile" onClick={(e) => { setOpen(false); linkClick(e); }} className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+          <a href="/profile" onClick={(e) => { setOpen(false); linkClick(e); }} className="block px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
             Profile
           </a>
-          <a href="/my-submissions" onClick={(e) => { setOpen(false); linkClick(e); }} className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+          <a href="/my-submissions" onClick={(e) => { setOpen(false); linkClick(e); }} className="block px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
             My Submissions
           </a>
-          <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+          <button onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20">
             Log out
           </button>
         </div>
