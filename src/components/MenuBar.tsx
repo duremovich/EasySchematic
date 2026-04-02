@@ -211,7 +211,7 @@ export default function MenuBar() {
   // Legacy download fallback (always triggers browser download)
   const downloadFile = useCallback(() => {
     const data = exportToJSON();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json; charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -357,7 +357,7 @@ export default function MenuBar() {
           alert("Invalid schematic file.");
         }
       };
-      reader.readAsText(file);
+      reader.readAsText(file, "UTF-8");
       e.target.value = "";
     },
     [importFromJSON],

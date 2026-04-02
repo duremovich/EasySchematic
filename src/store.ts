@@ -39,6 +39,25 @@ import { getTemplateById } from "./templateApi";
 import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
 import { computeCableSchedule } from "./cableSchedule";
 
+/** Fix UTF-8 → Windows-1252 double-encoding in string values (e.g. → becomes â†').
+ *  Applied on import so old/corrupted saves display correctly. */
+function repairMojibake(obj: unknown): unknown {
+  if (typeof obj === "string") {
+    return obj
+      .replace(/\u00e2\u2020\u2019/g, "\u2192")  // â†' → →
+      .replace(/\u00e2\u2020\u2018/g, "\u2191")  // â†' → ↑
+      .replace(/\u00e2\u2020\u201c/g, "\u2193")  // â†" → ↓
+      .replace(/\u00e2\u2020\u201d/g, "\u2194");  // â†" → ↔
+  }
+  if (Array.isArray(obj)) return obj.map(repairMojibake);
+  if (obj && typeof obj === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) out[k] = repairMojibake(v);
+    return out;
+  }
+  return obj;
+}
+
 const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
 const TEMPLATE_META_KEY = "easyschematic-custom-template-meta";
@@ -2385,6 +2404,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   },
 
   importFromJSON: (rawData) => {
+    rawData = repairMojibake(rawData) as SchematicFile;
     const data = migrateSchematic(rawData) as SchematicFile;
     const nodes = data.nodes ?? [];
     let edges = data.edges ?? [];
