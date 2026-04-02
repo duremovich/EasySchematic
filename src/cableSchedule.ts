@@ -75,6 +75,7 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   ir: "IR",
   timecode: "TC",
   gigaace: "GA",
+  dx5: "DX",
   custom: "X",
 };
 

@@ -92,6 +92,7 @@ export type SignalType =
   | "ir"
   | "timecode"
   | "gigaace"
+  | "dx5"
   | "custom";
 
 export type LineStyle = "solid" | "dashed" | "dotted" | "dash-dot";
@@ -476,6 +477,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   ir: "var(--color-ir)",
   timecode: "var(--color-timecode)",
   gigaace: "var(--color-gigaace)",
+  dx5: "var(--color-dx5)",
   custom: "var(--color-custom)",
 };
 
@@ -598,5 +600,6 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   ir: "IR",
   timecode: "Timecode",
   gigaace: "GigaACE",
+  dx5: "DX5",
   custom: "Custom",
 };

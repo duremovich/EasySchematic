@@ -48,6 +48,7 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   ir: "#f97316",
   timecode: "#06b6d4",
   gigaace: "#7c3aed",
+  dx5: "#8b5cf6",
   custom: "#64748b",
 };
 

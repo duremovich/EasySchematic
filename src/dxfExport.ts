@@ -50,6 +50,7 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   ir: 30,          // orange — infrared
   timecode: 174,   // dark cyan — timecode
   gigaace: 129,    // violet — Allen & Heath GigaACE
+  dx5: 177,        // lighter violet — Allen & Heath DX5
   custom: 9,       // cool gray
 };
 
