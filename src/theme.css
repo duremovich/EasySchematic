@@ -48,5 +48,8 @@
   --color-timecode: #06b6d4;  /* cyan — timecode */
   --color-gigaace: #7c3aed;   /* violet — Allen & Heath GigaACE */
   --color-dx5: #8b5cf6;       /* lighter violet — Allen & Heath DX5 */
+  --color-slink: #a78bfa;     /* light violet — Allen & Heath SLink */
+  --color-soundgrid: #6d28d9; /* deep violet — Waves SoundGrid */
+  --color-fibreace: #9333ea;  /* purple — Allen & Heath fibreACE */
   --color-custom: #64748b;    /* cool gray */
 }

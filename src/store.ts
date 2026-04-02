@@ -66,6 +66,7 @@ export const CATEGORY_ORDER_DEFAULT: string[] = [
   "Media Servers",
   "Lighting",
   "Control",
+  "Storage",
   "Infrastructure",
   "Cable Accessories",
 ];

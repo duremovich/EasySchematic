@@ -51,6 +51,9 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   timecode: "BNC",
   gigaace: "Ethercon",
   dx5: "Ethercon",
+  slink: "Ethercon",
+  soundgrid: "Ethercon",
+  fibreace: "Fiber - opticalCON",
   custom: "Other",
 };
 
