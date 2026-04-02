@@ -26,6 +26,7 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
   const updateRoomLabel = useSchematicStore((s) => s.updateRoomLabel);
   const toggleRoomLock = useSchematicStore((s) => s.toggleRoomLock);
   const setResizeGuides = useSchematicStore((s) => s.setResizeGuides);
+  const isSubroom = useSchematicStore((s) => !!s.nodes.find((n) => n.id === id)?.parentId);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(data.label);
 
@@ -61,9 +62,11 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
     setEditing(false);
   };
 
-  const borderStyleVal = data.borderStyle ?? "dashed";
+  const borderStyleVal = data.borderStyle ?? (isSubroom ? "solid" : "dashed");
   const borderColorVal = selected ? undefined : data.borderColor;
   const bgColor = data.color;
+  // Subrooms use a slightly more opaque background so they read as distinct zones
+  const bgAlpha = isSubroom ? "33" : "1a"; // 20% vs 10% opacity
   const fontSize = data.labelSize ?? 12;
 
   return (
@@ -85,7 +88,7 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
           pointerEvents: "none",
           borderStyle: borderStyleVal,
           ...(!selected ? { borderColor: borderColorVal || "var(--color-border)" } : {}),
-          backgroundColor: bgColor ? `${bgColor}1a` : selected ? "rgba(239,246,255,0.3)" : "rgba(var(--color-surface-rgb, 245,245,245),0.3)",
+          backgroundColor: bgColor ? `${bgColor}${bgAlpha}` : selected ? "rgba(239,246,255,0.3)" : "rgba(var(--color-surface-rgb, 245,245,245),0.3)",
         }}
       >
         <div

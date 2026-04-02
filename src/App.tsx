@@ -963,16 +963,16 @@ function SchematicCanvas() {
         useSchematicStore.setState({ isDragging: false, overlapNodeId: null });
       }
 
-      if (draggedNode.type === "room") return;
-      // Compute absolute position for reparenting check
+      // Compute absolute position by walking the full parent chain
       let absX = finalX;
       let absY = finalY;
-      if (draggedNode.parentId) {
-        const parent = state.nodes.find((n) => n.id === draggedNode.parentId);
-        if (parent) {
-          absX += parent.position.x;
-          absY += parent.position.y;
-        }
+      let parentId: string | undefined = draggedNode.parentId as string | undefined;
+      while (parentId) {
+        const parent = state.nodes.find((n) => n.id === parentId);
+        if (!parent) break;
+        absX += parent.position.x;
+        absY += parent.position.y;
+        parentId = parent.parentId as string | undefined;
       }
       reparentNode(draggedNode.id, { x: absX, y: absY });
     },
