@@ -272,6 +272,8 @@ interface SchematicState {
   colorKeyColumns: number;
   colorKeyPage: "first" | "last" | "all";
   colorKeyOverrides: Partial<Record<SignalType, boolean>> | undefined;
+  cableCosts: Record<string, number> | undefined;
+  setCableCost: (key: string, cost: number | undefined) => void;
   setColorKeyEnabled: (v: boolean) => void;
   setColorKeyCorner: (c: "top-left" | "top-right" | "bottom-left" | "bottom-right") => void;
   setColorKeyColumns: (n: number) => void;
@@ -714,6 +716,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   colorKeyColumns: 1,
   colorKeyPage: "all" as "first" | "last" | "all",
   colorKeyOverrides: undefined,
+  cableCosts: undefined,
   titleBlock: { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
   titleBlockLayout: createDefaultLayout(),
   signalColors: undefined,
@@ -1962,6 +1965,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   setColorKeyColumns: (n) => { set({ colorKeyColumns: Math.max(1, Math.min(4, n)) }); get().saveToLocalStorage(); },
   setColorKeyPage: (p) => { set({ colorKeyPage: p }); get().saveToLocalStorage(); },
   setColorKeyOverrides: (o) => { set({ colorKeyOverrides: o && Object.keys(o).length > 0 ? o : undefined }); get().saveToLocalStorage(); },
+  setCableCost: (key, cost) => {
+    const current = { ...get().cableCosts };
+    if (cost == null || cost <= 0) { delete current[key]; } else { current[key] = cost; }
+    set({ cableCosts: Object.keys(current).length > 0 ? current : undefined });
+    get().saveToLocalStorage();
+  },
   setTitleBlock: (tb) => { set({ titleBlock: tb }); get().saveToLocalStorage(); },
   setTitleBlockLayout: (layout) => { set({ titleBlockLayout: layout }); get().saveToLocalStorage(); },
 
@@ -2164,6 +2173,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       colorKeyColumns: state.colorKeyColumns !== 1 ? state.colorKeyColumns : undefined,
       colorKeyPage: state.colorKeyPage !== "all" ? state.colorKeyPage : undefined,
       colorKeyOverrides: state.colorKeyOverrides && Object.keys(state.colorKeyOverrides).length > 0 ? state.colorKeyOverrides : undefined,
+      cableCosts: state.cableCosts && Object.keys(state.cableCosts).length > 0 ? state.cableCosts : undefined,
     };
     // Persist cloud identity alongside autosave (not part of SchematicFile export)
     const blob: Record<string, unknown> = { ...data };
@@ -2233,6 +2243,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             colorKeyColumns: data.colorKeyColumns ?? 1,
             colorKeyPage: data.colorKeyPage ?? "all",
             colorKeyOverrides: data.colorKeyOverrides ?? undefined,
+            cableCosts: data.cableCosts ?? undefined,
           });
           hydrated = true;
           get().saveToLocalStorage();
@@ -2286,6 +2297,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         colorKeyColumns: data.colorKeyColumns ?? 1,
         colorKeyPage: data.colorKeyPage ?? "all",
         colorKeyOverrides: data.colorKeyOverrides ?? undefined,
+        cableCosts: data.cableCosts ?? undefined,
         // Restore cloud identity from autosave (not part of SchematicFile)
         cloudSchematicId: parsed.cloudSchematicId ?? null,
         cloudSavedAt: parsed.cloudSavedAt ?? null,
@@ -2337,6 +2349,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       colorKeyColumns: state.colorKeyColumns !== 1 ? state.colorKeyColumns : undefined,
       colorKeyPage: state.colorKeyPage !== "all" ? state.colorKeyPage : undefined,
       colorKeyOverrides: state.colorKeyOverrides && Object.keys(state.colorKeyOverrides).length > 0 ? state.colorKeyOverrides : undefined,
+      cableCosts: state.cableCosts && Object.keys(state.cableCosts).length > 0 ? state.cableCosts : undefined,
     };
   },
 
@@ -2407,6 +2420,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       colorKeyColumns: data.colorKeyColumns ?? 1,
       colorKeyPage: data.colorKeyPage ?? "all",
       colorKeyOverrides: data.colorKeyOverrides ?? undefined,
+      cableCosts: data.cableCosts ?? undefined,
       // File imports and shared schematics always start as local-only
       cloudSchematicId: null,
       cloudSavedAt: null,

@@ -171,8 +171,9 @@ function drawTableSection(
   tableData: ReportTableData,
   startY: number,
   bottomLimit: number,
+  contentWidthMm: number,
 ): number {
-  const visCols = getVisibleColumns(tableDef);
+  const visCols = getVisibleColumns(tableDef, contentWidthMm);
   if (visCols.length === 0) return startY;
 
   let y = startY;
@@ -302,7 +303,7 @@ export async function renderReportPdf(
       y = REPORT_MARGIN_MM + 6;
     }
 
-    y = drawTableSection(doc, tableDef, td, y, bottomLimit);
+    y = drawTableSection(doc, tableDef, td, y, bottomLimit, widthMm - 2 * REPORT_MARGIN_MM);
     y += 6;
   }
 

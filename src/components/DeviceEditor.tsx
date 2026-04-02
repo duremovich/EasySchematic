@@ -94,6 +94,9 @@ export default function DeviceEditor() {
   const [voltage, setVoltage] = useState<string | undefined>(undefined);
   const [poeBudgetW, setPoeBudgetW] = useState<number | undefined>(undefined);
 
+  // Cost
+  const [unitCost, setUnitCost] = useState<number | undefined>(undefined);
+
   // Cable accessory flags
   const [isCableAccessory, setIsCableAccessory] = useState(false);
   const [integratedWithCable, setIntegratedWithCable] = useState(false);
@@ -143,6 +146,7 @@ export default function DeviceEditor() {
     setPowerCapacityW(node.data.powerCapacityW);
     setVoltage(node.data.voltage);
     setPoeBudgetW(node.data.poeBudgetW);
+    setUnitCost(node.data.unitCost);
     setIsCableAccessory(node.data.isCableAccessory ?? false);
     setIntegratedWithCable(node.data.integratedWithCable ?? false);
     setIsVenueProvided(node.data.isVenueProvided ?? false);
@@ -193,6 +197,7 @@ export default function DeviceEditor() {
       ...(powerCapacityW != null ? { powerCapacityW } : {}),
       ...(poeBudgetW != null ? { poeBudgetW } : {}),
       ...(voltage ? { voltage } : {}),
+      ...(unitCost != null ? { unitCost } : {}),
       ...(isCableAccessory ? { isCableAccessory: true } : {}),
       ...(integratedWithCable ? { integratedWithCable: true } : {}),
       ...(isVenueProvided ? { isVenueProvided: true } : {}),
@@ -202,7 +207,7 @@ export default function DeviceEditor() {
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
+  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
@@ -757,6 +762,28 @@ export default function DeviceEditor() {
               </div>
             </details>
           )}
+
+          {/* Cost */}
+          <details className="text-xs">
+            <summary className="cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text)] select-none py-1">
+              Cost
+            </summary>
+            <div className="pt-1 pl-2" style={{ maxWidth: "50%" }}>
+              <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
+                Unit Cost ($)
+              </label>
+              <input
+                type="number"
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none focus:border-blue-500"
+                value={unitCost ?? ""}
+                onChange={(e) => setUnitCost(e.target.value ? Number(e.target.value) : undefined)}
+                placeholder="0.00"
+                min={0}
+                step={0.01}
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+            </div>
+          </details>
 
           {/* Flags */}
           <details className="text-xs">

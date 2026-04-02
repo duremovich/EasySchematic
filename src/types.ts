@@ -153,6 +153,7 @@ export interface InstalledSlot {
   cardLabel?: string;           // denormalized for display/pack list
   cardManufacturer?: string;
   cardModelNumber?: string;
+  cardUnitCost?: number;
   portIds: string[];            // tracks which ports in device.ports belong to this slot
 }
 
@@ -186,6 +187,8 @@ export interface DeviceData {
   voltage?: string;
   /** PoE budget in watts (for network switches) */
   poeBudgetW?: number;
+  /** Unit cost in dollars (optional, for BOM/quoting) */
+  unitCost?: number;
   isVenueProvided?: boolean;
   /** Adapter visibility override — only meaningful for deviceType "adapter" */
   adapterVisibility?: "default" | "force-show" | "force-hide";
@@ -284,6 +287,7 @@ export interface DeviceTemplate {
   voltage?: string;              // Informational: "100-240V", "208V", "120V"
   isVenueProvided?: boolean;     // Venue-owned gear — excluded from pack list
   poeBudgetW?: number;           // PoE budget in watts (switches only)
+  unitCost?: number;             // MSRP / default unit cost in dollars
 }
 
 export interface CustomTemplateGroup {
@@ -402,6 +406,8 @@ export interface SchematicFile {
   colorKeyColumns?: number;
   colorKeyPage?: "first" | "last" | "all";
   colorKeyOverrides?: Partial<Record<SignalType, boolean>>;
+  /** Cable unit costs keyed by "cableType|signalType|cableLength" */
+  cableCosts?: Record<string, number>;
 }
 
 export type ScrollAction = "zoom" | "pan-x" | "pan-y";

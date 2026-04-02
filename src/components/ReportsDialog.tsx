@@ -11,6 +11,7 @@ import {
   type PackListDevice,
   type PackListSummaryRow,
   groupCablesByCategory,
+  cableCostKey,
 } from "../packList";
 import {
   computeCableSchedule,
@@ -77,7 +78,8 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
       exportPowerReportCsv(data, schematicName);
     } else {
       const data = computePackList(nodes, edges);
-      exportPackListCsv(data, schematicName);
+      const cableCosts = useSchematicStore.getState().cableCosts;
+      exportPackListCsv(data, schematicName, cableCosts);
     }
   }, [tab, nodes, edges, schematicName]);
 
@@ -200,7 +202,7 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
           defaultLayout={defaultLayout}
           titleBlock={titleBlock}
           getTableData={(layout) =>
-            getPackListTableData(computePackList(nodes, edges), layout)
+            getPackListTableData(computePackList(nodes, edges), layout, useSchematicStore.getState().cableCosts)
           }
           onClose={() => setShowPreview(false)}
           filename={`${schematicName.replace(/[^a-zA-Z0-9-_ ]/g, "")} - Pack List.pdf`}
@@ -951,8 +953,10 @@ interface DeviceReportRow {
   deviceType: string;
   manufacturer: string;
   model: string;
+  modelNumber: string;
   room: string;
   portCount: number;
+  unitCost: number;
   color: string;
 }
 
@@ -974,18 +978,21 @@ function computeDeviceReport(nodes: SchematicNode[]): DeviceReportRow[] {
       deviceType: data.deviceType,
       manufacturer: data.manufacturer ?? "",
       model: data.model ?? data.label,
+      modelNumber: data.modelNumber ?? "",
       room,
       portCount: data.ports.length,
+      unitCost: data.unitCost ?? 0,
       color: data.color ?? "#6366f1",
     });
   }
   return rows;
 }
 
-type DeviceSortKey = "label" | "deviceType" | "manufacturer" | "model" | "room" | "portCount";
+type DeviceSortKey = "label" | "deviceType" | "manufacturer" | "model" | "modelNumber" | "room" | "portCount" | "unitCost";
 
 const deviceColumns: SpreadsheetColumn<DeviceReportRow>[] = [
   { id: "label", header: "Device", getValue: (r) => r.label, editable: true, fillType: "deviceName" },
+  { id: "unitCost", header: "Unit Cost", getValue: (r) => r.unitCost > 0 ? r.unitCost.toFixed(2) : "", editable: true },
 ];
 
 function DeviceReportTab() {
@@ -1015,10 +1022,10 @@ function DeviceReportTab() {
     const copy = [...filtered];
     copy.sort((a, b) => {
       let cmp: number;
-      if (sortKey === "portCount") {
-        cmp = a.portCount - b.portCount;
+      if (sortKey === "portCount" || sortKey === "unitCost") {
+        cmp = (a[sortKey] as number) - (b[sortKey] as number);
       } else {
-        cmp = a[sortKey].localeCompare(b[sortKey]);
+        cmp = (a[sortKey] as string).localeCompare(b[sortKey] as string);
       }
       return sortAsc ? cmp : -cmp;
     });
@@ -1044,28 +1051,38 @@ function DeviceReportTab() {
   );
 
   const onCellChange = useCallback(
-    (rowIndex: number, _columnId: string, value: string) => {
+    (rowIndex: number, columnId: string, value: string) => {
       const row = sorted[rowIndex];
-      if (!row || !value.trim()) return;
-      useSchematicStore.getState().updateDeviceLabel(row.nodeId, value.trim());
+      if (!row) return;
+      if (columnId === "unitCost") {
+        const parsed = parseFloat(value);
+        patchDeviceData(row.nodeId, { unitCost: isNaN(parsed) || parsed <= 0 ? undefined : parsed });
+      } else {
+        if (!value.trim()) return;
+        useSchematicStore.getState().updateDeviceLabel(row.nodeId, value.trim());
+      }
     },
-    [sorted],
+    [sorted, patchDeviceData],
   );
 
   const onBatchChange = useCallback(
     (changes: { rowIndex: number; columnId: string; value: string }[]) => {
-      const labelChanges = changes
-        .map((c) => {
-          const row = sorted[c.rowIndex];
-          if (!row || !c.value.trim()) return null;
-          return { nodeId: row.nodeId, label: c.value.trim() };
-        })
-        .filter((c): c is { nodeId: string; label: string } => c !== null);
+      const labelChanges: { nodeId: string; label: string }[] = [];
+      for (const c of changes) {
+        const row = sorted[c.rowIndex];
+        if (!row) continue;
+        if (c.columnId === "unitCost") {
+          const parsed = parseFloat(c.value);
+          patchDeviceData(row.nodeId, { unitCost: isNaN(parsed) || parsed <= 0 ? undefined : parsed });
+        } else {
+          if (c.value.trim()) labelChanges.push({ nodeId: row.nodeId, label: c.value.trim() });
+        }
+      }
       if (labelChanges.length > 0) {
         useSchematicStore.getState().batchUpdateDeviceLabels(labelChanges);
       }
     },
-    [sorted],
+    [sorted, patchDeviceData],
   );
 
   const isCellEditable = useCallback(
@@ -1074,7 +1091,12 @@ function DeviceReportTab() {
   );
 
   const getCellValue = useCallback(
-    (rowIndex: number, _columnId: string) => sorted[rowIndex]?.label ?? "",
+    (rowIndex: number, columnId: string) => {
+      const row = sorted[rowIndex];
+      if (!row) return "";
+      if (columnId === "unitCost") return row.unitCost > 0 ? row.unitCost.toFixed(2) : "";
+      return row.label ?? "";
+    },
     [sorted],
   );
 
@@ -1147,11 +1169,17 @@ function DeviceReportTab() {
               <th className={thClass} onClick={() => toggleSort("model")}>
                 Model{sortArrow("model")}
               </th>
+              <th className={thClass} onClick={() => toggleSort("modelNumber")}>
+                Model #{sortArrow("modelNumber")}
+              </th>
               <th className={thClass} onClick={() => toggleSort("room")}>
                 Room{sortArrow("room")}
               </th>
               <th className={thClass} onClick={() => toggleSort("portCount")}>
                 Ports{sortArrow("portCount")}
+              </th>
+              <th className={thClass} onClick={() => toggleSort("unitCost")}>
+                Unit Cost{sortArrow("unitCost")}
               </th>
               <th className={thClass} style={{ width: 40 }}>Color</th>
             </tr>
@@ -1231,8 +1259,46 @@ const DeviceRow = memo(function DeviceRow({
       <td className={tdClass}>{row.deviceType}</td>
       <td className={tdClass}>{row.manufacturer || "—"}</td>
       <td className={tdClass}>{row.model}</td>
+      <td className={tdClass}>{row.modelNumber || "—"}</td>
       <td className={tdClass}>{row.room}</td>
       <td className={tdClass}>{row.portCount}</td>
+      {(() => {
+        const costCellProps = spreadsheet.getCellProps(rowIndex, "unitCost");
+        if (costCellProps.isEditing) {
+          return (
+            <td className={`${tdClass} p-0.5`}>
+              <input
+                className="w-full bg-[var(--color-surface)] border border-blue-500 rounded px-1 py-0.5 text-xs outline-none"
+                value={spreadsheet.editValue}
+                onChange={(e) => spreadsheet.setEditValue(e.target.value)}
+                onBlur={() => spreadsheet.commitEdit(spreadsheet.editValue)}
+                onKeyDown={(e) => {
+                  e.stopPropagation();
+                  if (e.key === "Enter") { e.preventDefault(); spreadsheet.commitEdit(spreadsheet.editValue); }
+                  else if (e.key === "Escape") { e.preventDefault(); spreadsheet.cancelEdit(); }
+                  else if (e.key === "Tab") { e.preventDefault(); spreadsheet.commitEdit(spreadsheet.editValue); }
+                }}
+                autoFocus
+                type="number"
+                step={0.01}
+                min={0}
+              />
+            </td>
+          );
+        }
+        return (
+          <td
+            className={`${tdClass} p-0.5 cursor-cell ${costCellProps.isSelected ? "bg-blue-100 ring-1 ring-inset ring-blue-300" : ""}`}
+            onMouseDown={costCellProps.onMouseDown}
+            onMouseEnter={costCellProps.onMouseEnter}
+            onDoubleClick={costCellProps.onDoubleClick}
+          >
+            <span className="text-[10px] px-1 select-none">
+              {row.unitCost > 0 ? `$${row.unitCost.toFixed(2)}` : "—"}
+            </span>
+          </td>
+        );
+      })()}
       <td className={`${tdClass} p-0.5`}>
         <input
           type="color"
@@ -1656,7 +1722,24 @@ function PackListTabInline() {
   type CableGrouping = "" | "path" | "category";
   const [cableGrouping, setCableGrouping] = useState<CableGrouping>("category");
 
+  const cableCosts = useSchematicStore((s) => s.cableCosts);
+  const setCableCost = useSchematicStore((s) => s.setCableCost);
+
   const data = useMemo(() => computePackList(nodes, edges), [nodes, edges]);
+
+  const totalCost = useMemo(() => {
+    let sum = 0;
+    for (const d of data.devices) {
+      sum += (d.unitCost ?? 0) * d.count;
+      for (const c of d.cards) sum += (c.cardUnitCost ?? 0) * c.count;
+    }
+    // Include cable costs
+    for (const s of data.summary) {
+      const uc = cableCosts?.[cableCostKey(s.cableType, s.signalType, s.cableLength)] ?? 0;
+      sum += uc * s.count;
+    }
+    return sum;
+  }, [data, cableCosts]);
 
   const subTabClass = (t: SubTab) =>
     `px-2 py-1 text-[10px] rounded cursor-pointer transition-colors ${
@@ -1710,6 +1793,15 @@ function PackListTabInline() {
         )}
       </div>
 
+      {totalCost > 0 && (
+        <div className="mb-3 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-3 py-2 inline-block">
+          <div className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">Project Total</div>
+          <div className="text-sm font-semibold text-[var(--color-text-heading)]">
+            ${totalCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+        </div>
+      )}
+
       {subTab === "devices" && (
         <>
           {data.devices.length === 0 ? (
@@ -1723,6 +1815,8 @@ function PackListTabInline() {
                   <th className={plThClass}>Qty</th>
                   <th className={plThClass}>Device</th>
                   <th className={plThClass}>Type</th>
+                  <th className={plThClass}>Unit Cost</th>
+                  <th className={plThClass}>Ext. Cost</th>
                 </tr>
               </thead>
               <tbody>
@@ -1747,15 +1841,24 @@ function PackListTabInline() {
               {(() => {
                 const showPath = cableGrouping === "path";
                 const cableRows = showPath ? data.summary : mergeCablesByType(data.summary);
-                const renderRow = (s: PackListSummaryRow, i: number) => (
-                  <tr key={i} className={rowClass(i)}>
-                    <td className={tdClass}>{s.count}&times;</td>
-                    <td className={tdClass}>{s.cableType}</td>
-                    <td className={tdClass}>{s.signalType}</td>
-                    <td className={tdClass}>{s.cableLength}</td>
-                    {showPath && <td className={tdClass}>{s.route}</td>}
-                  </tr>
-                );
+                const renderRow = (s: PackListSummaryRow, i: number) => {
+                  const key = cableCostKey(s.cableType, s.signalType, s.cableLength);
+                  const uc = cableCosts?.[key] ?? 0;
+                  const ext = uc > 0 ? uc * s.count : 0;
+                  return (
+                    <tr key={i} className={rowClass(i)}>
+                      <td className={tdClass}>{s.count}&times;</td>
+                      <td className={tdClass}>{s.cableType}</td>
+                      <td className={tdClass}>{s.signalType}</td>
+                      <td className={tdClass}>{s.cableLength}</td>
+                      {showPath && <td className={tdClass}>{s.route}</td>}
+                      <td className={`${tdClass} p-0.5`}>
+                        <CableCostCell costKey={key} value={uc} onChange={setCableCost} />
+                      </td>
+                      <td className={tdClass}>{ext > 0 ? `$${ext.toFixed(2)}` : "—"}</td>
+                    </tr>
+                  );
+                };
 
                 const categories = cableGrouping === "category" ? groupCablesByCategory(cableRows) : null;
                 let rowIdx = 0;
@@ -1769,6 +1872,8 @@ function PackListTabInline() {
                         <th className={plThClass}>Signal</th>
                         <th className={plThClass}>Length</th>
                         {showPath && <th className={plThClass}>Route</th>}
+                        <th className={plThClass}>Unit Cost</th>
+                        <th className={plThClass}>Ext. Cost</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1859,16 +1964,20 @@ function renderDeviceRows(devices: PackListDevice[], keyPrefix = "") {
   const elements: React.ReactNode[] = [];
   let idx = 0;
   for (const d of devices) {
+    const extCost = d.unitCost > 0 ? d.unitCost * d.count : 0;
     elements.push(
       <tr key={`${keyPrefix}${idx}`} className={rowClass(idx)}>
         <td className={tdClass}>{d.count}&times;</td>
         <td className={tdClass}>{d.model}</td>
         <td className={tdClass}>{d.deviceType}</td>
+        <td className={tdClass}>{d.unitCost > 0 ? `$${d.unitCost.toFixed(2)}` : "—"}</td>
+        <td className={tdClass}>{extCost > 0 ? `$${extCost.toFixed(2)}` : "—"}</td>
       </tr>,
     );
     idx++;
     for (let ci = 0; ci < d.cards.length; ci++) {
       const c = d.cards[ci];
+      const cardExt = c.cardUnitCost > 0 ? c.cardUnitCost * c.count : 0;
       elements.push(
         <tr key={`${keyPrefix}${idx}-c${ci}`} className="bg-[var(--color-surface)]">
           <td className={`${tdClass} pl-6 text-[var(--color-text-muted)]`}>{c.count}&times;</td>
@@ -1876,6 +1985,8 @@ function renderDeviceRows(devices: PackListDevice[], keyPrefix = "") {
             <span className="pl-3">{c.cardLabel}</span>
           </td>
           <td className={tdClass} />
+          <td className={`${tdClass} text-[var(--color-text-muted)]`}>{c.cardUnitCost > 0 ? `$${c.cardUnitCost.toFixed(2)}` : ""}</td>
+          <td className={`${tdClass} text-[var(--color-text-muted)]`}>{cardExt > 0 ? `$${cardExt.toFixed(2)}` : ""}</td>
         </tr>,
       );
     }
@@ -1950,21 +2061,31 @@ function exportDevicesCsv(nodes: SchematicNode[], schematicName: string) {
       grouped.set(key, { row: r, count: 1 });
     }
   }
-  const header = ["Qty", "Device", "Manufacturer", "Model", "Type", "Room", "Ports"];
+  const header = ["Qty", "Device", "Manufacturer", "Model #", "Type", "Room", "Ports", "Unit Cost", "Extended Cost"];
+  const groupedValues = [...grouped.values()];
   const lines = [
     header.join(","),
-    ...[...grouped.values()].map(({ row: r, count }) =>
-      [
+    ...groupedValues.map(({ row: r, count }) => {
+      const extCost = r.unitCost > 0 ? r.unitCost * count : 0;
+      return [
         count,
         csvEscape(r.model),
         csvEscape(r.manufacturer),
-        csvEscape(r.model),
+        csvEscape(r.modelNumber),
         csvEscape(r.deviceType),
         csvEscape(r.room),
         r.portCount,
-      ].join(","),
-    ),
+        r.unitCost > 0 ? r.unitCost.toFixed(2) : "",
+        extCost > 0 ? extCost.toFixed(2) : "",
+      ].join(",");
+    }),
   ];
+  const totalCost = groupedValues.reduce(
+    (sum, { row, count }) => sum + (row.unitCost > 0 ? row.unitCost * count : 0), 0,
+  );
+  if (totalCost > 0) {
+    lines.push(["", "", "", "", "", "", "", "TOTAL", totalCost.toFixed(2)].join(","));
+  }
   downloadCsv(lines.join("\n"), `${schematicName} - Device List.csv`);
 }
 
@@ -2081,6 +2202,55 @@ function PowerReportTab() {
   );
 }
 
+/** Inline-editable cost cell for cable rows */
+const CableCostCell = memo(function CableCostCell({
+  costKey,
+  value,
+  onChange,
+}: {
+  costKey: string;
+  value: number;
+  onChange: (key: string, cost: number | undefined) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+
+  const commit = () => {
+    const parsed = parseFloat(editValue);
+    onChange(costKey, isNaN(parsed) || parsed <= 0 ? undefined : parsed);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <input
+        className="w-full bg-[var(--color-surface)] border border-blue-500 rounded px-1 py-0.5 text-xs outline-none"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") { e.preventDefault(); commit(); }
+          else if (e.key === "Escape") { e.preventDefault(); setEditing(false); }
+        }}
+        autoFocus
+        type="number"
+        step={0.01}
+        min={0}
+      />
+    );
+  }
+
+  return (
+    <span
+      className="text-[10px] px-1 cursor-cell select-none block"
+      onDoubleClick={() => { setEditValue(value > 0 ? value.toFixed(2) : ""); setEditing(true); }}
+    >
+      {value > 0 ? `$${value.toFixed(2)}` : "—"}
+    </span>
+  );
+});
+
 function csvEscape(s: string): string {
   if (s.includes(",") || s.includes('"') || s.includes("\n")) {
     return `"${s.replace(/"/g, '""')}"`;
@@ -2089,7 +2259,7 @@ function csvEscape(s: string): string {
 }
 
 function downloadCsv(content: string, filename: string) {
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

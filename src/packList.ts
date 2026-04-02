@@ -77,6 +77,7 @@ export interface PackListDeviceCard {
   manufacturer: string;
   modelNumber: string;
   count: number;
+  cardUnitCost: number;
 }
 
 export interface PackListDevice {
@@ -88,6 +89,7 @@ export interface PackListDevice {
   modelNumber: string;
   cards: PackListDeviceCard[];
   powerDrawW: number;
+  unitCost: number;
 }
 
 export interface PackListCable {
@@ -272,6 +274,7 @@ export function computePackList(
         modelNumber: data.modelNumber ?? "",
         cards: [],
         powerDrawW: data.powerDrawW ?? 0,
+        unitCost: data.unitCost ?? 0,
       });
     }
 
@@ -292,6 +295,7 @@ export function computePackList(
             manufacturer: slot.cardManufacturer ?? "",
             modelNumber: slot.cardModelNumber ?? "",
             count: 1,
+            cardUnitCost: slot.cardUnitCost ?? 0,
           });
         }
       }
@@ -387,6 +391,11 @@ export function computePackList(
   return { devices, cables, summary, accessories, adapters };
 }
 
+/** Generate a lookup key for cable costs: "cableType|signalType|cableLength" */
+export function cableCostKey(cableType: string, signalType: string, cableLength: string): string {
+  return `${cableType}|${signalType}|${cableLength}`;
+}
+
 // --------------- CSV Export ---------------
 
 export function escapeCsv(val: string): string {
@@ -403,6 +412,7 @@ export function csvRow(cells: string[]): string {
 export function exportPackListCsv(
   data: PackListData,
   schematicName: string,
+  cableCosts?: Record<string, number>,
 ): void {
   const lines: string[] = [];
 
@@ -412,12 +422,28 @@ export function exportPackListCsv(
 
   // Device List
   lines.push("DEVICE LIST");
-  lines.push(csvRow(["Qty", "Device", "Manufacturer", "Model #", "Type", "Room"]));
+  lines.push(csvRow(["Qty", "Device", "Manufacturer", "Model #", "Type", "Room", "Unit Cost", "Extended Cost"]));
+  let deviceTotal = 0;
   for (const d of data.devices) {
-    lines.push(csvRow([`${d.count}`, d.model, d.manufacturer, d.modelNumber, d.deviceType, d.room]));
+    const extCost = d.unitCost > 0 ? d.unitCost * d.count : 0;
+    deviceTotal += extCost;
+    lines.push(csvRow([
+      `${d.count}`, d.model, d.manufacturer, d.modelNumber, d.deviceType, d.room,
+      d.unitCost > 0 ? d.unitCost.toFixed(2) : "",
+      extCost > 0 ? extCost.toFixed(2) : "",
+    ]));
     for (const c of d.cards) {
-      lines.push(csvRow([`  ${c.count}`, `  ${c.cardLabel}`, c.manufacturer, c.modelNumber, "", ""]));
+      const cardExt = c.cardUnitCost > 0 ? c.cardUnitCost * c.count : 0;
+      deviceTotal += cardExt;
+      lines.push(csvRow([
+        `  ${c.count}`, `  ${c.cardLabel}`, c.manufacturer, c.modelNumber, "", "",
+        c.cardUnitCost > 0 ? c.cardUnitCost.toFixed(2) : "",
+        cardExt > 0 ? cardExt.toFixed(2) : "",
+      ]));
     }
+  }
+  if (deviceTotal > 0) {
+    lines.push(csvRow(["", "", "", "", "", "", "TOTAL", deviceTotal.toFixed(2)]));
   }
   lines.push("");
 
@@ -443,14 +469,24 @@ export function exportPackListCsv(
 
   // Cable List
   lines.push("CABLE LIST");
-  lines.push(csvRow(["Qty", "Cable Type", "Signal", "Length", "Route"]));
+  lines.push(csvRow(["Qty", "Cable Type", "Signal", "Length", "Route", "Unit Cost", "Extended Cost"]));
+  let cableTotal = 0;
   for (const s of data.summary) {
-    lines.push(
-      csvRow([`${s.count}`, s.cableType, s.signalType, s.cableLength, s.route]),
-    );
+    const key = cableCostKey(s.cableType, s.signalType, s.cableLength);
+    const uc = cableCosts?.[key] ?? 0;
+    const ext = uc > 0 ? uc * s.count : 0;
+    cableTotal += ext;
+    lines.push(csvRow([
+      `${s.count}`, s.cableType, s.signalType, s.cableLength, s.route,
+      uc > 0 ? uc.toFixed(2) : "",
+      ext > 0 ? ext.toFixed(2) : "",
+    ]));
+  }
+  if (cableTotal > 0) {
+    lines.push(csvRow(["", "", "", "", "", "TOTAL", cableTotal.toFixed(2)]));
   }
 
-  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -476,6 +512,7 @@ export function groupBy<T>(items: T[], keyFn: (item: T) => string): Map<string, 
 export function getPackListTableData(
   data: PackListData,
   layout: ReportLayout,
+  cableCosts?: Record<string, number>,
 ): ReportTableData[] {
   const devicesTableDef = layout.tables.find((t) => t.id === "devices");
   const cablesTableDef = layout.tables.find((t) => t.id === "cables");
@@ -483,7 +520,7 @@ export function getPackListTableData(
   // Devices table: only merge when room column is hidden AND not grouping by room
   const roomColVisible = devicesTableDef?.columns.find((c) => c.key === "room")?.visible ?? false;
   const devGroupBy = devicesTableDef?.groupBy;
-  const useRawDevices = devGroupBy === "room" || roomColVisible;
+  const useRawDevices = devGroupBy === "room" || devGroupBy === "deviceType" || roomColVisible;
   const deviceSource = useRawDevices ? data.devices : mergeDevicesByModel(data.devices);
   const deviceRows: Record<string, string>[] = [];
   for (const d of deviceSource) {
@@ -495,6 +532,8 @@ export function getPackListTableData(
       deviceType: d.deviceType,
       room: d.room,
       powerDrawW: d.powerDrawW > 0 ? `${d.powerDrawW}` : "",
+      unitCost: d.unitCost > 0 ? `$${d.unitCost.toFixed(2)}` : "",
+      extCost: d.unitCost > 0 ? `$${(d.unitCost * d.count).toFixed(2)}` : "",
     });
     for (const c of d.cards) {
       deviceRows.push({
@@ -505,6 +544,8 @@ export function getPackListTableData(
         deviceType: "",
         room: "",
         _isSubItem: "true",
+        unitCost: c.cardUnitCost > 0 ? `$${c.cardUnitCost.toFixed(2)}` : "",
+        extCost: c.cardUnitCost > 0 ? `$${(c.cardUnitCost * c.count).toFixed(2)}` : "",
       });
     }
   }
@@ -512,6 +553,8 @@ export function getPackListTableData(
   let deviceGroupedRows: Map<string, Record<string, string>[]> | undefined;
   if (devGroupBy === "room") {
     deviceGroupedRows = groupBy(deviceRows, (r) => r.room);
+  } else if (devGroupBy === "deviceType") {
+    deviceGroupedRows = groupBy(deviceRows, (r) => r.deviceType || "Other");
   }
 
   // Cables table: only merge when route column is hidden AND not grouping by path
@@ -525,15 +568,23 @@ export function getPackListTableData(
     signalType: "",
     cableLength: "",
     route: "",
+    unitCost: "",
+    extCost: "",
   }));
   const cableRows = [
-    ...summarySource.map((s) => ({
-      count: `${s.count}x`,
-      cableType: s.cableType,
-      signalType: s.signalType,
-      cableLength: s.cableLength,
-      route: s.route,
-    })),
+    ...summarySource.map((s) => {
+      const key = cableCostKey(s.cableType, s.signalType, s.cableLength);
+      const uc = cableCosts?.[key] ?? 0;
+      return {
+        count: `${s.count}x`,
+        cableType: s.cableType,
+        signalType: s.signalType,
+        cableLength: s.cableLength,
+        route: s.route,
+        unitCost: uc > 0 ? `$${uc.toFixed(2)}` : "",
+        extCost: uc > 0 ? `$${(uc * s.count).toFixed(2)}` : "",
+      };
+    }),
     ...adapterCableRows,
   ];
 
@@ -584,6 +635,8 @@ export function getPackListTableData(
   let sortedDeviceGrouped = deviceGroupedRows;
   if (devGroupBy === "room" && devicesTableDef?.sortBy) {
     sortedDeviceGrouped = groupBy(sortedDeviceRows, (r) => r.room);
+  } else if (devGroupBy === "deviceType" && devicesTableDef?.sortBy) {
+    sortedDeviceGrouped = groupBy(sortedDeviceRows, (r) => r.deviceType || "Other");
   }
 
   let sortedCableGrouped = cableGroupedRows;

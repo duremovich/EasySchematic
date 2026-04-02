@@ -17,6 +17,43 @@ import {
   getFieldLabel,
 } from "../titleBlockLayout";
 
+/**
+ * Resolve a layout by combining hardcoded defaults with saved user preferences.
+ * Column definitions, headers, and groupByOptions always come from code.
+ * Only user selections (visibility, widths, groupBy, sort) are restored from saved data.
+ */
+function resolveLayout(defaults: ReportLayout, saved: ReportLayout | null): ReportLayout {
+  if (!saved) return defaults;
+  return {
+    ...defaults,
+    // Restore user's page/header/footer preferences
+    headerLayout: saved.headerLayout ?? defaults.headerLayout,
+    headerHeightMm: saved.headerHeightMm ?? defaults.headerHeightMm,
+    footerLayout: saved.footerLayout ?? defaults.footerLayout,
+    footerHeightMm: saved.footerHeightMm ?? defaults.footerHeightMm,
+    orientation: saved.orientation ?? defaults.orientation,
+    paperSize: saved.paperSize ?? defaults.paperSize,
+    tables: defaults.tables.map((defaultTable) => {
+      const savedTable = saved.tables.find((t) => t.id === defaultTable.id);
+      if (!savedTable) return defaultTable;
+      // Apply saved visibility and widths onto hardcoded column definitions
+      const savedVis = new Map(savedTable.columns.map((c) => [c.key, c.visible]));
+      const savedWidths = new Map(savedTable.columns.map((c) => [c.key, c.widthMm]));
+      return {
+        ...defaultTable, // id, label, columns (definitions), groupByOptions from code
+        columns: defaultTable.columns.map((col) => ({
+          ...col,
+          visible: savedVis.has(col.key) ? savedVis.get(col.key)! : col.visible,
+          widthMm: savedWidths.has(col.key) ? savedWidths.get(col.key)! : col.widthMm,
+        })),
+        groupBy: savedTable.groupBy,
+        sortBy: savedTable.sortBy,
+        sortDir: savedTable.sortDir,
+      };
+    }),
+  };
+}
+
 // ─── Page Break Computation ───
 // Heights in mm — must match the PDF renderer constants in reportPdf.ts
 
@@ -151,33 +188,20 @@ function ReportPreviewDialog({
   const setGlobalReportFooterLayout = useSchematicStore((s) => s.setGlobalReportFooterLayout);
 
   const [layout, setLayout] = useState<ReportLayout>(() => {
-    let base: ReportLayout | null = null;
-    if (storedLayout) {
-      base = storedLayout;
-    } else {
-      // One-time migration: check old localStorage key
+    // Load saved preferences (old localStorage key or store)
+    let saved: ReportLayout | null = storedLayout ?? null;
+    if (!saved) {
       try {
         const raw = localStorage.getItem(reportKey);
         if (raw) {
           const parsed = JSON.parse(raw) as ReportLayout;
           localStorage.removeItem(reportKey);
-          if (parsed.headerLayout) base = parsed;
+          if (parsed.headerLayout) saved = parsed;
         }
       } catch { /* ignore */ }
     }
-    if (!base) return defaultLayout;
-    // Merge new groupByOptions from default layout into saved layouts
-    return {
-      ...base,
-      tables: base.tables.map((t) => {
-        const defaultTable = defaultLayout.tables.find((dt) => dt.id === t.id);
-        if (!defaultTable) return t;
-        const existingKeys = new Set(t.groupByOptions.map((o) => o.key));
-        const newOptions = defaultTable.groupByOptions.filter((o) => !existingKeys.has(o.key));
-        if (newOptions.length === 0) return t;
-        return { ...t, groupByOptions: [...t.groupByOptions, ...newOptions] };
-      }),
-    };
+    // Resolve: hardcoded definitions + saved user preferences
+    return resolveLayout(defaultLayout, saved);
   });
 
   const tables = getTableData(layout);
@@ -890,7 +914,9 @@ function PageContentRenderer({
 
     const tableDef = layout.tables.find((t) => t.id === item.tableId);
     if (!tableDef) continue;
-    const visCols = getVisibleColumns(tableDef);
+    const { widthMm: pageWidthMm } = getPageDimensions(layout.paperSize, layout.orientation);
+    const contentWidthMm = pageWidthMm - 2 * REPORT_MARGIN_MM;
+    const visCols = getVisibleColumns(tableDef, contentWidthMm);
     if (visCols.length === 0) continue;
 
     switch (item.kind) {
@@ -921,6 +947,7 @@ function PageContentRenderer({
             mm={mm}
             topMm={y}
             setLayout={setLayout}
+            contentWidthMm={contentWidthMm}
           />,
         );
         y += PDF_HEADER_HEIGHT + 2;
@@ -960,6 +987,7 @@ function PageContentRenderer({
             tableDef={tableDef}
             mm={mm}
             topMm={y}
+            contentWidthMm={contentWidthMm}
           />,
         );
         y += PDF_ROW_HEIGHT;
@@ -1579,13 +1607,15 @@ function PreviewColumnHeaders({
   mm,
   topMm,
   setLayout,
+  contentWidthMm,
 }: {
   tableDef: ReportTableDef;
   mm: (v: number) => number;
   topMm: number;
   setLayout: React.Dispatch<React.SetStateAction<ReportLayout>>;
+  contentWidthMm: number;
 }) {
-  const visCols = getVisibleColumns(tableDef);
+  const visCols = getVisibleColumns(tableDef, contentWidthMm);
   const colGap = mm(1.5);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -1693,14 +1723,16 @@ function PreviewDataRow({
   tableDef,
   mm,
   topMm,
+  contentWidthMm,
 }: {
   row: Record<string, string>;
   rowIndex: number;
   tableDef: ReportTableDef;
   mm: (v: number) => number;
   topMm: number;
+  contentWidthMm: number;
 }) {
-  const visCols = getVisibleColumns(tableDef);
+  const visCols = getVisibleColumns(tableDef, contentWidthMm);
   const colGap = mm(1.5);
   const isSubItem = row._isSubItem === "true";
 

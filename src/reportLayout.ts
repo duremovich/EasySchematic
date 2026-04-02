@@ -190,14 +190,19 @@ export function createDefaultPackListLayout(): ReportLayout {
         columns: [
           { key: "count", header: "Qty", widthMm: 12, visible: true },
           { key: "model", header: "Device", widthMm: 60, visible: true },
+          { key: "manufacturer", header: "Manufacturer", widthMm: 30, visible: false },
+          { key: "modelNumber", header: "Model #", widthMm: 30, visible: false },
           { key: "deviceType", header: "Type", widthMm: 40, visible: true },
           { key: "room", header: "Room", widthMm: 50, visible: true },
           { key: "powerDrawW", header: "Power (W)", widthMm: 22, visible: false },
+          { key: "unitCost", header: "Unit Cost", widthMm: 22, visible: false },
+          { key: "extCost", header: "Ext. Cost", widthMm: 22, visible: false },
         ],
         groupBy: null,
         groupByOptions: [
           { key: "", label: "None" },
           { key: "room", label: "Room" },
+          { key: "deviceType", label: "Device Category" },
         ],
         sortBy: null,
         sortDir: "asc",
@@ -211,6 +216,8 @@ export function createDefaultPackListLayout(): ReportLayout {
           { key: "signalType", header: "Signal", widthMm: 28, visible: true },
           { key: "cableLength", header: "Length", widthMm: 18, visible: true },
           { key: "route", header: "Route", widthMm: 52, visible: true },
+          { key: "unitCost", header: "Unit Cost", widthMm: 22, visible: false },
+          { key: "extCost", header: "Ext. Cost", widthMm: 22, visible: false },
         ],
         groupBy: null,
         groupByOptions: [
@@ -374,8 +381,19 @@ export function createDefaultPowerReportLayout(): ReportLayout {
 
 // ─── Helpers ───
 
-export function getVisibleColumns(table: ReportTableDef): ReportColumnDef[] {
-  return table.columns.filter((c) => c.visible);
+/**
+ * Get visible columns, optionally scaled to fill the available page width.
+ * When availableWidthMm is provided, column widths are proportionally scaled
+ * so they fill the space — hiding a column lets others expand automatically.
+ */
+export function getVisibleColumns(table: ReportTableDef, availableWidthMm?: number): ReportColumnDef[] {
+  const visible = table.columns.filter((c) => c.visible);
+  if (!availableWidthMm || visible.length === 0) return visible;
+  const totalW = visible.reduce((s, c) => s + c.widthMm, 0);
+  if (totalW <= 0) return visible;
+  const scale = availableWidthMm / totalW;
+  if (Math.abs(scale - 1) < 0.001) return visible; // already fills
+  return visible.map((c) => ({ ...c, widthMm: c.widthMm * scale }));
 }
 
 // Re-export titleBlockLayout helpers for convenience
