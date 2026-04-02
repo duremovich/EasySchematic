@@ -2356,6 +2356,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showLineJumps: !state.showLineJumps ? false : undefined,
       showConnectionLabels: !state.showConnectionLabels ? false : undefined,
       hideAdapters: state.hideAdapters || undefined,
+      autoRoute: state.autoRoute === false ? false : undefined,
+      edgeHitboxSize: state.edgeHitboxSize !== 10 ? state.edgeHitboxSize : undefined,
       categoryOrder: state.categoryOrder ?? undefined,
       colorKeyEnabled: state.colorKeyEnabled || undefined,
       colorKeyCorner: state.colorKeyCorner !== "bottom-left" ? state.colorKeyCorner : undefined,
