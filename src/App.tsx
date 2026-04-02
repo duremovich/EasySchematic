@@ -46,6 +46,7 @@ import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnect
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { loadSharedSchematic, checkSession } from "./templateApi";
 import { refreshCloudCache } from "./cloudSync";
+import { useTheme } from "./hooks/useTheme";
 
 /** Darkens the canvas area left of x=0 and above y=0, marking the printable origin. */
 function CanvasOriginOverlay() {
@@ -72,9 +73,9 @@ function CanvasOriginOverlay() {
         }}
       >
         {/* Everything left of x=0 */}
-        <rect x={-FAR} y={-FAR} width={FAR} height={2 * FAR} fill="#e5e5e5" />
+        <rect x={-FAR} y={-FAR} width={FAR} height={2 * FAR} fill="var(--color-canvas-origin)" />
         {/* Everything above y=0 (only the positive-x portion, avoid double-fill) */}
-        <rect x={0} y={-FAR} width={FAR} height={FAR} fill="#e5e5e5" />
+        <rect x={0} y={-FAR} width={FAR} height={FAR} fill="var(--color-canvas-origin)" />
       </svg>
     </div>
   );
@@ -210,6 +211,7 @@ function SchematicCanvas() {
   const rfStore = useStoreApi();
   const { screenToFlowPosition } = rfInstance;
   const rfContainerRef = useRef<HTMLDivElement>(null);
+  const { isDark } = useTheme();
 
   // Locked rooms have pointer-events: none (CSS) so right-clicks fall through.
   // React Flow's pane handler uses wrapHandler() which only fires when
@@ -1257,7 +1259,7 @@ function SchematicCanvas() {
         </div>
       )}
       {!printView && <CanvasOriginOverlay />}
-      <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color="#d4d4d4" />
+      <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color={isDark ? "#374151" : "#d4d4d4"} />
       <Controls position="bottom-right" />
       <AutoRouteChip />
       <AutoRouteConfirmDialog />
@@ -1265,7 +1267,7 @@ function SchematicCanvas() {
         position="bottom-left"
         pannable
         zoomable
-        nodeColor={(node) => node.type === "room" ? "#e5e7eb" : "#3b82f6"}
+        nodeColor={(node) => node.type === "room" ? (isDark ? "#334155" : "#e5e7eb") : "#3b82f6"}
       />
       <RoutingDebugOverlay />
     </ReactFlow>
