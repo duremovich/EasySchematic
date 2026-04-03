@@ -30,6 +30,7 @@ export default function RoomEditor() {
   const [borderStyle, setBorderStyle] = useState<RoomData["borderStyle"]>("dashed");
   const [labelSize, setLabelSize] = useState(12);
   const [locked, setLocked] = useState(false);
+  const [isEquipmentRack, setIsEquipmentRack] = useState(false);
 
   /* eslint-disable react-hooks/set-state-in-effect -- syncing props to local editor state */
   useEffect(() => {
@@ -40,6 +41,7 @@ export default function RoomEditor() {
     setBorderStyle(node.data.borderStyle ?? "dashed");
     setLabelSize(node.data.labelSize ?? 12);
     setLocked(node.data.locked ?? false);
+    setIsEquipmentRack(node.data.isEquipmentRack ?? false);
   }, [node]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -53,6 +55,7 @@ export default function RoomEditor() {
       ...(borderColor ? { borderColor } : {}),
       ...(borderStyle && borderStyle !== "dashed" ? { borderStyle } : {}),
       ...(labelSize !== 12 ? { labelSize } : {}),
+      ...(isEquipmentRack ? { isEquipmentRack: true } : {}),
     };
     updateRoom(editingNodeId, data);
     close();
@@ -114,6 +117,25 @@ export default function RoomEditor() {
               {locked ? "Locked" : "Unlocked"}
             </button>
           </div>
+
+          {/* Equipment Rack — only for nested rooms */}
+          {node.parentId && (
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+                Equipment Rack
+              </label>
+              <button
+                onClick={() => setIsEquipmentRack(!isEquipmentRack)}
+                className={`px-3 py-1 text-xs rounded border cursor-pointer transition-colors ${
+                  isEquipmentRack
+                    ? "bg-blue-50 border-blue-400 text-blue-700"
+                    : "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text)] hover:text-[var(--color-text-heading)]"
+                }`}
+              >
+                {isEquipmentRack ? "Yes" : "No"}
+              </button>
+            </div>
+          )}
 
           {/* Label Size */}
           <div>

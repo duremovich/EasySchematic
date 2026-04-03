@@ -168,6 +168,7 @@ interface SchematicState {
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
   toggleRoomLock: (nodeId: string) => void;
+  toggleEquipmentRack: (nodeId: string) => void;
   addNote: (position: { x: number; y: number }) => void;
   updateNoteHtml: (nodeId: string, html: string) => void;
   reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }) => void;
@@ -1546,6 +1547,25 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           data: {
             ...n.data,
             locked: locked || undefined, // keep JSON clean
+          },
+        } as SchematicNode;
+      }),
+    });
+    get().saveToLocalStorage();
+  },
+
+  toggleEquipmentRack: (nodeId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId || n.type !== "room") return n;
+        const wasRack = (n.data as import("./types").RoomData).isEquipmentRack;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            isEquipmentRack: wasRack ? undefined : true,
           },
         } as SchematicNode;
       }),

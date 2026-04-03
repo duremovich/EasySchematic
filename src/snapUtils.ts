@@ -572,7 +572,7 @@ export function speculativeReparent(
   node: SchematicNode,
   allNodes: SchematicNode[],
 ): SchematicNode {
-  if (node.parentId || node.type === "room") return node;
+  if (node.parentId) return node;
 
   const nodeW = node.measured?.width ?? 180;
   const nodeH = node.measured?.height ?? estimateDeviceHeight(node);
