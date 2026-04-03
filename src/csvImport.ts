@@ -721,6 +721,24 @@ export function buildImportResult(
     }
   }
 
+  // Re-stack top-level rooms vertically. ROOM_GAP (80px) between layout bands
+  // is far smaller than the parent-room padding on both sides (60px × 2 = 120px
+  // per room), so parent rooms still overlap after sizing. Sort by current y
+  // and stack them cleanly — subrooms stay correct since their positions are
+  // already relative to their parent at this point.
+  const topLevelRooms = nodes
+    .filter((n) => n.type === "room" && !n.parentId)
+    .sort((a, b) => a.position.y - b.position.y);
+
+  if (topLevelRooms.length > 1) {
+    const OUTER_GAP = 40;
+    let curY = topLevelRooms[0].position.y;
+    for (const room of topLevelRooms) {
+      room.position = { ...room.position, y: curY };
+      curY += ((room.style as Record<string, number>).height ?? 300) + OUTER_GAP;
+    }
+  }
+
   // Create edges
   const usedPorts = new Map<string, Set<string>>(); // nodeId → set of used port IDs
   let edgeCounter = importCounter;
