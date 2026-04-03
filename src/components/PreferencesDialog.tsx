@@ -1,6 +1,9 @@
+import { useState } from "react";
 import { useSchematicStore } from "../store";
 import { DEFAULT_SCROLL_CONFIG } from "../types";
 import type { ScrollAction, ScrollConfig } from "../types";
+
+const AUTOROUTE_PREF_KEY = "easyschematic-autoroute-pref";
 
 const ACTION_LABELS: Record<ScrollAction, string> = {
   "zoom": "Zoom",
@@ -73,6 +76,9 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
   const setScrollConfig = useSchematicStore((s) => s.setScrollConfig);
   const edgeHitboxSize = useSchematicStore((s) => s.edgeHitboxSize);
   const setEdgeHitboxSize = useSchematicStore((s) => s.setEdgeHitboxSize);
+  const [autoRoutePref, setAutoRoutePref] = useState(
+    () => localStorage.getItem(AUTOROUTE_PREF_KEY) ?? "ask",
+  );
 
   const update = (patch: Partial<ScrollConfig>) =>
     setScrollConfig({ ...scrollConfig, ...patch });
@@ -84,7 +90,8 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
     scrollConfig.zoomSpeed === DEFAULT_SCROLL_CONFIG.zoomSpeed &&
     scrollConfig.panSpeed === DEFAULT_SCROLL_CONFIG.panSpeed &&
     scrollConfig.trackpadEnabled === DEFAULT_SCROLL_CONFIG.trackpadEnabled &&
-    edgeHitboxSize === 10;
+    edgeHitboxSize === 10 &&
+    autoRoutePref === "ask";
 
   return (
     <div
@@ -199,9 +206,41 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
             </p>
           </div>
 
+          {/* Auto-Route */}
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+              Auto-Route
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <span className="text-xs text-[var(--color-text)]">When disabling auto-route</span>
+              <select
+                className={selectClass}
+                value={autoRoutePref}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "ask") localStorage.removeItem(AUTOROUTE_PREF_KEY);
+                  else localStorage.setItem(AUTOROUTE_PREF_KEY, v);
+                  setAutoRoutePref(v);
+                }}
+              >
+                <option value="ask">Ask me</option>
+                <option value="keep">Always keep routes</option>
+                <option value="revert">Always restore previous</option>
+              </select>
+            </div>
+            <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+              Choose whether to keep auto-routed paths or revert to your previous routing
+            </p>
+          </div>
+
           {!isDefault && (
             <button
-              onClick={() => { setScrollConfig({ ...DEFAULT_SCROLL_CONFIG }); setEdgeHitboxSize(10); }}
+              onClick={() => {
+                setScrollConfig({ ...DEFAULT_SCROLL_CONFIG });
+                setEdgeHitboxSize(10);
+                localStorage.removeItem(AUTOROUTE_PREF_KEY);
+                setAutoRoutePref("ask");
+              }}
               className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
             >
               Reset to defaults

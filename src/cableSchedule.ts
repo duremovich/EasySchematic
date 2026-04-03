@@ -76,6 +76,9 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   timecode: "TC",
   gigaace: "GA",
   dx5: "DX",
+  slink: "SL",
+  soundgrid: "SG",
+  fibreace: "FA",
   custom: "X",
 };
 

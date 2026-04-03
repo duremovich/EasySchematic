@@ -14,6 +14,7 @@ import ProfilePage from "./pages/ProfilePage";
 import ContributorsPage from "./pages/ContributorsPage";
 import UserMenu from "./components/UserMenu";
 import { navigateTo, linkClick } from "./navigate";
+import { useTheme } from "./hooks/useTheme";
 
 function parseRoute(): { page: string; id?: string; draft?: string; auth?: string } {
   const path = window.location.pathname;
@@ -107,6 +108,8 @@ export default function App() {
     }
   }, [route.page]);
 
+  const { isDark, toggle: toggleTheme } = useTheme();
+
   const isMod = user?.role === "moderator" || user?.role === "admin";
   const isAdmin = user?.role === "admin" || !!getAdminToken();
 
@@ -127,31 +130,50 @@ export default function App() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
 
+  const themeToggle = (
+    <button
+      onClick={toggleTheme}
+      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      className="p-1.5 rounded text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+    >
+      {isDark ? (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="8" cy="8" r="3.5" />
+          <path d="M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 16 16" className="w-4 h-4" fill="currentColor">
+          <path d="M6 .278a.77.77 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z" />
+        </svg>
+      )}
+    </button>
+  );
+
   const navLinks = (
     <>
-      <a href="/contributors" onClick={linkClick} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+      <a href="/contributors" onClick={linkClick} className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors">
         Contributors
       </a>
-      <a href="https://easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+      <a href="https://easyschematic.live" className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors">
         Main App
       </a>
-      <a href="mailto:support@easyschematic.live" className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+      <a href="mailto:support@easyschematic.live" className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors">
         Support
       </a>
       {!authLoading && user && (
         <>
-          <a href="/submit" onClick={linkClick} className="text-sm text-blue-600 hover:text-blue-800 transition-colors font-medium">
+          <a href="/submit" onClick={linkClick} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors font-medium">
             Submit Device
           </a>
           {isMod && (
-            <a href="/review" onClick={linkClick} className="text-sm text-yellow-600 hover:text-yellow-800 transition-colors">
+            <a href="/review" onClick={linkClick} className="text-sm text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300 transition-colors">
               Review Queue
             </a>
           )}
         </>
       )}
       {isAdmin && (
-        <a href="/admin" onClick={linkClick} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+        <a href="/admin" onClick={linkClick} className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors">
           Admin
         </a>
       )}
@@ -159,7 +181,7 @@ export default function App() {
         user ? (
           <UserMenu user={user} onLogout={handleLogout} />
         ) : (
-          <a href="/login" onClick={linkClick} className="text-sm text-gray-500 hover:text-gray-900 transition-colors">
+          <a href="/login" onClick={linkClick} className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors">
             Log in
           </a>
         )
@@ -169,34 +191,38 @@ export default function App() {
 
   return (
     <div className="min-h-full flex flex-col">
-      <nav ref={menuRef} className="bg-gray-50 border-b border-gray-200 text-gray-900 px-4 sm:px-6 py-3">
+      <nav ref={menuRef} className="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 text-gray-900 dark:text-slate-100 px-4 sm:px-6 py-3">
         <div className="flex items-center justify-between">
-          <a href="/" onClick={linkClick} className="flex items-center gap-2 text-lg font-semibold tracking-tight hover:text-gray-600 transition-colors">
+          <a href="/" onClick={linkClick} className="flex items-center gap-2 text-lg font-semibold tracking-tight hover:text-gray-600 dark:hover:text-slate-300 transition-colors">
             <img src="/favicon.svg" alt="" className="w-6 h-6" />
-            EasySchematic <span className="text-gray-400 font-normal">Devices</span>
+            EasySchematic <span className="text-gray-400 dark:text-slate-500 font-normal">Devices</span>
           </a>
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-4">
             {navLinks}
+            {themeToggle}
           </div>
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            className="md:hidden p-1 text-gray-500 hover:text-gray-900"
-            aria-label="Toggle menu"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          {/* Mobile: theme toggle + hamburger */}
+          <div className="md:hidden flex items-center gap-1">
+            {themeToggle}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-1 text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100"
+              aria-label="Toggle menu"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                {menuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
         {/* Mobile dropdown */}
         {menuOpen && (
-          <div className="md:hidden flex flex-col gap-3 pt-3 pb-1 border-t border-gray-200 mt-3">
+          <div className="md:hidden flex flex-col gap-3 pt-3 pb-1 border-t border-gray-200 dark:border-slate-700 mt-3">
             {navLinks}
           </div>
         )}

@@ -67,6 +67,9 @@ export default function OverviewPage() {
           <strong>Sharing</strong> — generate a link to share any cloud-saved schematic with anyone
         </li>
         <li>
+          <strong>Dark mode</strong> — toggle between light and dark themes from the menu bar; preference is saved automatically and respects your OS setting on first visit
+        </li>
+        <li>
           <strong>Trackpad support</strong> — pinch-to-zoom and two-finger pan with configurable sensitivity
         </li>
         <li>

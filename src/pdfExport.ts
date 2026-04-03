@@ -53,6 +53,16 @@ async function loadInterFont(doc: jsPDF) {
   doc.addFont("Inter-Bold.ttf", "Inter", "bold");
 }
 
+/** Build @font-face CSS with base64-embedded Inter for html-to-image.
+ *  Bypasses html-to-image's flaky auto font-embedding so glyphs like → survive. */
+function getInterFontEmbedCSS(): string {
+  if (!interRegularB64 || !interBoldB64) return "";
+  return [
+    `@font-face { font-family: 'Inter'; font-weight: 400; font-style: normal; src: url(data:font/truetype;base64,${interRegularB64}) format('truetype'); }`,
+    `@font-face { font-family: 'Inter'; font-weight: 700; font-style: normal; src: url(data:font/truetype;base64,${interBoldB64}) format('truetype'); }`,
+  ].join("\n");
+}
+
 /** Wait for rendering to settle (edge routing debounce, etc.) */
 function waitForRender(ms = 200): Promise<void> {
   return new Promise((resolve) => {
@@ -695,6 +705,7 @@ export async function exportPdf(
           width: contentWPx,
           height: contentHPx,
           pixelRatio: PIXEL_RATIO,
+          fontEmbedCSS: getInterFontEmbedCSS(),
           style: {
             width: `${contentWPx}px`,
             height: `${contentHPx}px`,

@@ -39,6 +39,25 @@ import { getTemplateById } from "./templateApi";
 import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
 import { computeCableSchedule } from "./cableSchedule";
 
+/** Fix UTF-8 → Windows-1252 double-encoding in string values (e.g. → becomes â†').
+ *  Applied on import so old/corrupted saves display correctly. */
+function repairMojibake(obj: unknown): unknown {
+  if (typeof obj === "string") {
+    return obj
+      .replace(/\u00e2\u2020\u2019/g, "\u2192")  // â†' → →
+      .replace(/\u00e2\u2020\u2018/g, "\u2191")  // â†' → ↑
+      .replace(/\u00e2\u2020\u201c/g, "\u2193")  // â†" → ↓
+      .replace(/\u00e2\u2020\u201d/g, "\u2194");  // â†" → ↔
+  }
+  if (Array.isArray(obj)) return obj.map(repairMojibake);
+  if (obj && typeof obj === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) out[k] = repairMojibake(v);
+    return out;
+  }
+  return obj;
+}
+
 const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
 const TEMPLATE_META_KEY = "easyschematic-custom-template-meta";
@@ -66,6 +85,7 @@ export const CATEGORY_ORDER_DEFAULT: string[] = [
   "Media Servers",
   "Lighting",
   "Control",
+  "Storage",
   "Infrastructure",
   "Cable Accessories",
 ];
@@ -230,6 +250,16 @@ interface SchematicState {
   // Auto-route toggle
   autoRoute: boolean;
   toggleAutoRoute: () => void;
+  /** Transient stash of per-edge waypoint state captured when toggling auto-route ON.
+   *  Consumed (and cleared) when toggling back OFF so edges revert to their pre-toggle appearance.
+   *  null = had no waypoints (L-shape), object = had waypoints. Not persisted/exported. */
+  _edgeWaypointStash: Record<string, { manualWaypoints: { x: number; y: number }[]; autoRouteWaypoints?: boolean } | null> | null;
+  /** When true, the auto-route-off confirmation dialog is shown */
+  autoRouteConfirmPending: boolean;
+  /** Complete the pending toggle-off with the user's choice (true = keep A* routes, false = restore previous) */
+  confirmAutoRouteOff: (preserve: boolean) => void;
+  /** Cancel the pending toggle-off (dismiss dialog, auto-route stays ON) */
+  cancelAutoRouteOff: () => void;
 
   // Edge interaction hitbox width (pixels)
   edgeHitboxSize: number;
@@ -442,6 +472,7 @@ const PASTE_GAP = 20;
 interface Snapshot {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
+  autoRoute?: boolean;
 }
 const MAX_HISTORY = 50;
 const undoStack: Snapshot[] = [];
@@ -710,6 +741,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   deviceContextMenu: null,
   portContextMenu: null,
   autoRoute: true,
+  _edgeWaypointStash: null,
+  autoRouteConfirmPending: false,
   edgeHitboxSize: 10,
   debugEdges: false,
   debugShowLabels: true,
@@ -1703,9 +1736,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const prev = undoStack.pop();
     if (!prev) return;
     const state = get();
-    redoStack.push({ nodes: state.nodes, edges: state.edges });
+    redoStack.push({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute });
     const edges = prev.edges.map(({ zIndex: _, selected: _s, ...rest }) => ({ ...rest, zIndex: 0 })) as typeof prev.edges;
-    set({ nodes: prev.nodes, edges, undoSize: undoStack.length, redoSize: redoStack.length });
+    const restoreAutoRoute = prev.autoRoute !== undefined ? { autoRoute: prev.autoRoute } : {};
+    set({ nodes: prev.nodes, edges, ...restoreAutoRoute, undoSize: undoStack.length, redoSize: redoStack.length });
     get().saveToLocalStorage();
   },
 
@@ -1713,9 +1747,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const next = redoStack.pop();
     if (!next) return;
     const state = get();
-    undoStack.push({ nodes: state.nodes, edges: state.edges });
+    undoStack.push({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute });
     const edges = next.edges.map(({ zIndex: _, selected: _s, ...rest }) => ({ ...rest, zIndex: 0 })) as typeof next.edges;
-    set({ nodes: next.nodes, edges, undoSize: undoStack.length, redoSize: redoStack.length });
+    const restoreAutoRoute = next.autoRoute !== undefined ? { autoRoute: next.autoRoute } : {};
+    set({ nodes: next.nodes, edges, ...restoreAutoRoute, undoSize: undoStack.length, redoSize: redoStack.length });
     get().saveToLocalStorage();
   },
 
@@ -2438,6 +2473,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   },
 
   importFromJSON: (rawData) => {
+    rawData = repairMojibake(rawData) as SchematicFile;
     const data = migrateSchematic(rawData) as SchematicFile;
     const nodes = data.nodes ?? [];
     let edges = data.edges ?? [];
@@ -2625,7 +2661,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({
       edges: state.edges.map((e) =>
         e.id === edgeId
-          ? { ...e, data: { ...e.data!, manualWaypoints: waypoints } }
+          ? { ...e, data: { ...e.data!, manualWaypoints: waypoints, autoRouteWaypoints: undefined } }
           : e,
       ),
     });
@@ -2838,16 +2874,60 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   toggleAutoRoute: () => {
     const state = get();
-    const newAutoRoute = !state.autoRoute;
+    if (state.autoRouteConfirmPending) return; // Dialog already open
 
-    if (!newAutoRoute) {
-      // Toggling OFF — freeze current routed paths as temporary manual waypoints
+    if (state.autoRoute) {
+      // Toggling OFF — check if we need to show the confirmation dialog
+      const stash = state._edgeWaypointStash;
+      if (!stash) {
+        // No stash (file opened with auto-route ON) — just freeze routes, no dialog
+        pushUndo({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute });
+        get().confirmAutoRouteOff(true);
+        return;
+      }
+      const pref = localStorage.getItem("easyschematic-autoroute-pref");
+      if (pref === "keep") {
+        pushUndo({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute });
+        get().confirmAutoRouteOff(true);
+      } else if (pref === "revert") {
+        pushUndo({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute });
+        get().confirmAutoRouteOff(false);
+      } else {
+        // "ask" (default) — show dialog, don't push undo yet
+        set({ autoRouteConfirmPending: true });
+      }
+    } else {
+      // Toggling ON — stash current waypoint state, then clear auto-generated waypoints
+      pushUndo({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute });
+      const stash: Record<string, { manualWaypoints: { x: number; y: number }[]; autoRouteWaypoints?: boolean } | null> = {};
+      for (const e of state.edges) {
+        stash[e.id] = e.data?.manualWaypoints?.length
+          ? { manualWaypoints: e.data.manualWaypoints, autoRouteWaypoints: e.data.autoRouteWaypoints }
+          : null;
+      }
+      const updatedEdges = state.edges.map((e) => {
+        if (!e.data?.autoRouteWaypoints) return e;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { manualWaypoints, autoRouteWaypoints, ...restData } = e.data;
+        return { ...e, data: restData };
+      });
+      set({ autoRoute: true, edges: updatedEdges as typeof state.edges, _edgeWaypointStash: stash });
+    }
+  },
+
+  confirmAutoRouteOff: (preserve) => {
+    const state = get();
+    // Push undo if called from dialog (pending = true means undo wasn't pushed yet)
+    if (state.autoRouteConfirmPending) {
+      pushUndo({ nodes: state.nodes, edges: state.edges, autoRoute: true });
+    }
+
+    if (preserve) {
+      // Keep A* routes — freeze as manual waypoints
       const updatedEdges = state.edges.map((e) => {
         const route = state.routedEdges[e.id];
         if (!route || route.waypoints.length <= 2) return e;
-        // Already has user-placed manual waypoints — don't overwrite
         if (e.data?.manualWaypoints?.length && !e.data.autoRouteWaypoints) return e;
-        // Extract interior waypoints (skip first/last = handle endpoints)
         const interior = route.waypoints.slice(1, -1);
         if (interior.length === 0) return e;
         return {
@@ -2855,17 +2935,38 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           data: { ...e.data!, manualWaypoints: interior, autoRouteWaypoints: true },
         };
       });
-      set({ autoRoute: false, edges: updatedEdges as typeof state.edges });
+      set({ autoRoute: false, edges: updatedEdges as typeof state.edges, _edgeWaypointStash: null, autoRouteConfirmPending: false });
     } else {
-      // Toggling ON — clear auto-generated waypoints, keep user-placed ones
+      // Restore previous — use stash
+      const stash = state._edgeWaypointStash;
       const updatedEdges = state.edges.map((e) => {
-        if (!e.data?.autoRouteWaypoints) return e;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { manualWaypoints, autoRouteWaypoints, ...restData } = e.data;
-        return { ...e, data: restData };
+        if (stash && e.id in stash) {
+          const saved = stash[e.id];
+          if (saved === null) {
+            if (!e.data) return e;
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { manualWaypoints: _, autoRouteWaypoints: _a, ...restData } = e.data;
+            return { ...e, data: restData as typeof e.data };
+          }
+          return { ...e, data: { ...e.data!, manualWaypoints: saved.manualWaypoints, autoRouteWaypoints: saved.autoRouteWaypoints } };
+        }
+        // Edge not in stash — freeze A* route
+        const route = state.routedEdges[e.id];
+        if (!route || route.waypoints.length <= 2) return e;
+        if (e.data?.manualWaypoints?.length && !e.data.autoRouteWaypoints) return e;
+        const interior = route.waypoints.slice(1, -1);
+        if (interior.length === 0) return e;
+        return {
+          ...e,
+          data: { ...e.data!, manualWaypoints: interior, autoRouteWaypoints: true },
+        };
       });
-      set({ autoRoute: true, edges: updatedEdges as typeof state.edges });
+      set({ autoRoute: false, edges: updatedEdges as typeof state.edges, _edgeWaypointStash: null, autoRouteConfirmPending: false, routedEdges: {} });
     }
+  },
+
+  cancelAutoRouteOff: () => {
+    set({ autoRouteConfirmPending: false });
   },
 
   toggleDebugEdges: () => {

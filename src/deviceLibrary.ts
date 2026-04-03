@@ -98,6 +98,8 @@ const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "expansion-chassis": "Infrastructure",
   "power-mixer": "Powered Mixers",
   "hdmi-splitter": "Distribution",
+  "network-router": "Networking",
+  "nas": "Storage",
 };
 
 export const DEVICE_TEMPLATES: DeviceTemplate[] = [

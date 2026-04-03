@@ -2,6 +2,25 @@
 @import "@xyflow/react/dist/style.css";
 @import "./theme.css";
 
+/* Enable class-based dark mode for Tailwind dark: utilities */
+@variant dark (&:where(.dark, .dark *));
+
+/* Dark mode overrides for hardcoded Tailwind utility colors used in components */
+.dark .bg-white { background-color: var(--color-surface) !important; }
+.dark .bg-gray-50 { background-color: var(--color-surface) !important; }
+.dark .bg-gray-100 { background-color: var(--color-surface-hover) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: var(--color-surface-hover) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: var(--color-surface-hover) !important; }
+.dark .border-gray-200 { border-color: var(--color-border) !important; }
+.dark .border-gray-300 { border-color: var(--color-border) !important; }
+.dark .text-gray-900 { color: var(--color-text-heading) !important; }
+.dark .text-gray-800 { color: var(--color-text-heading) !important; }
+.dark .text-gray-700 { color: var(--color-text) !important; }
+.dark .text-gray-600 { color: var(--color-text) !important; }
+.dark .text-gray-500 { color: var(--color-text-muted) !important; }
+.dark .text-gray-400 { color: var(--color-text-muted) !important; }
+.dark .text-gray-300 { color: var(--color-border) !important; }
+
 @font-face {
   font-family: 'Inter';
   font-weight: 400;
@@ -206,12 +225,56 @@ html, body, #root {
   display: none !important;
 }
 
+/* Force light-mode colors during PDF capture so dark mode doesn't bleed
+   into exported images (html-to-image captures computed styles) */
+[data-pdf-capturing] {
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f3f4f6;
+  --color-border: #e5e7eb;
+  --color-text: #374151;
+  --color-text-heading: #111827;
+  --color-text-muted: #6b7280;
+  --color-canvas-origin: #e5e5e5;
+  --color-power-neutral: #808080;
+  --color-power-l1: #000000;
+}
+
 /* ===== Print ===== */
 @media print {
   * {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
+
+  /* Force light-mode colors for print — dark backgrounds waste ink and
+     light-on-dark text is unreadable on white paper */
+  :root {
+    --color-bg: #ffffff;
+    --color-surface: #ffffff;
+    --color-surface-hover: #f3f4f6;
+    --color-border: #e5e7eb;
+    --color-text: #374151;
+    --color-text-heading: #111827;
+    --color-text-muted: #6b7280;
+    --color-canvas-origin: #e5e5e5;
+    --color-power-neutral: #808080;
+    --color-power-l1: #000000;
+  }
+
+  /* Neutralize .dark utility overrides for print */
+  .dark .bg-white { background-color: #ffffff !important; }
+  .dark .bg-gray-50 { background-color: #f9fafb !important; }
+  .dark .bg-gray-100 { background-color: #f3f4f6 !important; }
+  .dark .text-gray-900 { color: #111827 !important; }
+  .dark .text-gray-800 { color: #1f2937 !important; }
+  .dark .text-gray-700 { color: #374151 !important; }
+  .dark .text-gray-600 { color: #4b5563 !important; }
+  .dark .text-gray-500 { color: #6b7280 !important; }
+  .dark .text-gray-400 { color: #9ca3af !important; }
+  .dark .text-gray-300 { color: #d1d5db !important; }
+  .dark .border-gray-200 { border-color: #e5e7eb !important; }
+  .dark .border-gray-300 { border-color: #d1d5db !important; }
 
   /* Hide UI chrome */
   [data-print-hide],

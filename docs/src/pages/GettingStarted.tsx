@@ -47,8 +47,20 @@ export default function GettingStartedPage() {
           <tr><td><strong>Quick-add device</strong></td><td>Double-click empty canvas or room background</td></tr>
           <tr><td><strong>Room properties</strong></td><td>Right-click a room</td></tr>
           <tr><td><strong>Print View</strong></td><td>Press F9</td></tr>
+          <tr><td><strong>Dark mode</strong></td><td>Sun/moon icon in the menu bar (right side)</td></tr>
         </tbody>
       </table>
+
+      <h2>Dark mode</h2>
+      <p>
+        Click the <strong>sun/moon icon</strong> in the right side of the menu bar to toggle between light and dark
+        themes. The preference is saved to your browser and automatically applied on future visits. On first visit,
+        EasySchematic follows your OS dark mode setting.
+      </p>
+      <p>
+        The dark mode toggle is also available in the <strong>devices database</strong> (devices.easyschematic.live)
+        via the same icon in the top navigation bar.
+      </p>
 
       <h2>Preferences</h2>
       <p>

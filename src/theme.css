@@ -6,6 +6,8 @@
   --color-text: #374151;
   --color-text-heading: #111827;
   --color-text-muted: #6b7280;
+  /* Canvas origin overlay — slightly darker than bg to mark non-printable zone */
+  --color-canvas-origin: #e5e5e5;
 
   /* Signal type colors — max distinction at a glance, print-friendly on white */
   --color-sdi: #2563eb;       /* blue — broadcast standard */
@@ -48,5 +50,23 @@
   --color-timecode: #06b6d4;  /* cyan — timecode */
   --color-gigaace: #7c3aed;   /* violet — Allen & Heath GigaACE */
   --color-dx5: #8b5cf6;       /* lighter violet — Allen & Heath DX5 */
+  --color-slink: #a78bfa;     /* light violet — Allen & Heath SLink */
+  --color-soundgrid: #6d28d9; /* deep violet — Waves SoundGrid */
+  --color-fibreace: #9333ea;  /* purple — Allen & Heath fibreACE */
   --color-custom: #64748b;    /* cool gray */
+}
+
+.dark {
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #334155;
+  --color-border: #475569;
+  --color-text: #cbd5e1;
+  --color-text-heading: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  /* Power colors adjusted for dark backgrounds */
+  --color-power-neutral: #b0b0b0;
+  --color-power-l1: #e5e5e5;
+  /* Canvas origin overlay — slightly lighter than bg to mark non-printable zone */
+  --color-canvas-origin: #1e293b;
 }

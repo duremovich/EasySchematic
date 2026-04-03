@@ -1458,7 +1458,7 @@ app.post("/schematics", async (c) => {
   const id = crypto.randomUUID();
 
   await c.env.SCHEMATIC_STORAGE.put(`schematics/${id}.json`, raw, {
-    httpMetadata: { contentType: "application/json" },
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
   });
 
   await db
@@ -1499,7 +1499,7 @@ app.get("/schematics/template", async (c) => {
   const obj = await c.env.SCHEMATIC_STORAGE.get(`schematics/${row.id}.json`);
   if (!obj) return c.json({ error: "Template data not found" }, 404);
 
-  return c.body(obj.body as ReadableStream, 200, { "Content-Type": "application/json" });
+  return c.body(obj.body as ReadableStream, 200, { "Content-Type": "application/json; charset=utf-8" });
 });
 
 app.get("/schematics/:id", async (c) => {
@@ -1517,7 +1517,7 @@ app.get("/schematics/:id", async (c) => {
   const obj = await c.env.SCHEMATIC_STORAGE.get(`schematics/${id}.json`);
   if (!obj) return c.json({ error: "Schematic data not found" }, 404);
 
-  return c.body(obj.body as ReadableStream, 200, { "Content-Type": "application/json" });
+  return c.body(obj.body as ReadableStream, 200, { "Content-Type": "application/json; charset=utf-8" });
 });
 
 app.put("/schematics/:id", async (c) => {
@@ -1561,7 +1561,7 @@ app.put("/schematics/:id", async (c) => {
   }
 
   await c.env.SCHEMATIC_STORAGE.put(`schematics/${id}.json`, raw, {
-    httpMetadata: { contentType: "application/json" },
+    httpMetadata: { contentType: "application/json; charset=utf-8" },
   });
 
   await db
@@ -1668,7 +1668,7 @@ app.get("/shared/:token", async (c) => {
   const obj = await c.env.SCHEMATIC_STORAGE.get(`schematics/${row.id}.json`);
   if (!obj) return c.json({ error: "Schematic data not found" }, 404);
 
-  return c.body(obj.body as ReadableStream, 200, { "Content-Type": "application/json" });
+  return c.body(obj.body as ReadableStream, 200, { "Content-Type": "application/json; charset=utf-8" });
 });
 
 app.put("/schematics/:id/rename", async (c) => {
