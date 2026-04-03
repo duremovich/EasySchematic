@@ -51,6 +51,9 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   timecode: 174,   // dark cyan — timecode
   gigaace: 129,    // violet — Allen & Heath GigaACE
   dx5: 177,        // lighter violet — Allen & Heath DX5
+  slink: 181,      // light violet — Allen & Heath SLink
+  soundgrid: 125,  // deep violet — Waves SoundGrid
+  fibreace: 133,   // purple — Allen & Heath fibreACE
   custom: 9,       // cool gray
 };
 

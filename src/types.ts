@@ -93,6 +93,9 @@ export type SignalType =
   | "timecode"
   | "gigaace"
   | "dx5"
+  | "slink"
+  | "soundgrid"
+  | "fibreace"
   | "custom";
 
 export type LineStyle = "solid" | "dashed" | "dotted" | "dash-dot";
@@ -485,6 +488,9 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   timecode: "var(--color-timecode)",
   gigaace: "var(--color-gigaace)",
   dx5: "var(--color-dx5)",
+  slink: "var(--color-slink)",
+  soundgrid: "var(--color-soundgrid)",
+  fibreace: "var(--color-fibreace)",
   custom: "var(--color-custom)",
 };
 
@@ -608,5 +614,8 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   timecode: "Timecode",
   gigaace: "GigaACE",
   dx5: "DX5",
+  slink: "SLink",
+  soundgrid: "SoundGrid",
+  fibreace: "fibreACE",
   custom: "Custom",
 };

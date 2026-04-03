@@ -72,7 +72,7 @@ export default function CsvImportWizard({ onClose }: { onClose: () => void }) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => handleText(reader.result as string);
-    reader.readAsText(file);
+    reader.readAsText(file, "UTF-8");
   }, [handleText]);
 
   const handlePaste = useCallback((text: string) => {

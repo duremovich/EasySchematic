@@ -49,6 +49,9 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   timecode: "bnc",
   gigaace: "ethercon",
   dx5: "ethercon",
+  slink: "ethercon",
+  soundgrid: "ethercon",
+  fibreace: "opticalcon",
   custom: "other",
 };
 
