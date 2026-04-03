@@ -59,7 +59,7 @@ export default function RoomEditor() {
     };
     updateRoom(editingNodeId, data);
     close();
-  }, [editingNodeId, label, color, borderColor, borderStyle, labelSize, updateRoom, close]);
+  }, [editingNodeId, label, color, borderColor, borderStyle, labelSize, isEquipmentRack, updateRoom, close]);
 
   if (!editingNodeId || !node) return null;
 
