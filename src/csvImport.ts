@@ -444,8 +444,18 @@ function autoLayout(
   // Sort within each layer alphabetically for determinism
   for (const group of layerGroups.values()) group.sort();
 
-  // Collect unique rooms (preserving order)
-  const roomNames = [...new Set(deviceRooms.values())];
+  // Collect unique rooms, sorted so all paths under the same top-level room are
+  // consecutive. Without this, CSV row order can interleave bands from different
+  // parent rooms, causing parent room nodes to span across unrelated siblings.
+  const roomNames = [...new Set(deviceRooms.values())].sort((a, b) => {
+    const aParts = a.split(">").map((s) => s.trim());
+    const bParts = b.split(">").map((s) => s.trim());
+    for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+      const cmp = aParts[i].localeCompare(bParts[i]);
+      if (cmp !== 0) return cmp;
+    }
+    return aParts.length - bParts.length;
+  });
   const hasRooms = roomNames.length > 0;
 
   // Position devices with size-aware spacing
