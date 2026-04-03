@@ -52,6 +52,7 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   slink: "#a78bfa",
   soundgrid: "#6d28d9",
   fibreace: "#9333ea",
+  dxlink: "#7e22ce",
   custom: "#64748b",
 };
 

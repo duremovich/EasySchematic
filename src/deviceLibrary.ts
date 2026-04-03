@@ -95,11 +95,17 @@ const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "wireless-presentation": "Switching",
   "cloud-service": "Cloud Services",
   "codec": "Codecs",
-  "expansion-chassis": "Infrastructure",
+  "expansion-chassis": "Audio Expansion",
   "power-mixer": "Powered Mixers",
   "hdmi-splitter": "Distribution",
   "network-router": "Networking",
   "nas": "Storage",
+  "lighting-processor": "Lighting",
+  "network-wifi": "Networking",
+  "intercom-transceiver": "Intercom",
+  "controller": "Control",
+  "dock": "Peripherals",
+  "studio-monitor": "Speakers",
 };
 
 export const DEVICE_TEMPLATES: DeviceTemplate[] = [

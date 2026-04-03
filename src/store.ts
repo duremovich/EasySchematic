@@ -85,8 +85,12 @@ export const CATEGORY_ORDER_DEFAULT: string[] = [
   "Media Servers",
   "Lighting",
   "Control",
+  "Audio Expansion",
+  "Expansion Cards",
   "Storage",
   "Infrastructure",
+  "Intercom",
+  "Cloud Services",
   "Cable Accessories",
 ];
 

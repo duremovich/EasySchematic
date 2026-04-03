@@ -325,6 +325,7 @@ export function computePackList(
       const tgtPort = resolvePort(tgtNode, e.targetHandle);
       if (srcNode?.type === "device" && (srcNode.data as DeviceData).deviceType === "adapter" && srcPort?.directAttach) return false;
       if (tgtNode?.type === "device" && (tgtNode.data as DeviceData).deviceType === "adapter" && tgtPort?.directAttach) return false;
+      if (srcPort?.connectorType === "wireless" || tgtPort?.connectorType === "wireless") return false;
       return true;
     })
     .map((e) => {

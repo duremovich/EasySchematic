@@ -52,6 +52,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   slink: "ethercon",
   soundgrid: "ethercon",
   fibreace: "opticalcon",
+  dxlink: "ethercon",
   custom: "other",
 };
 
@@ -175,6 +176,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   "powercon-true1": "powerCON TRUE1",
   qsfp: "QSFP Fiber",
   mpo: "MPO Fiber",
+  wireless: "Wireless",
   none: "",
   other: "Other",
 };

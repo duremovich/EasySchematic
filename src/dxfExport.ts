@@ -54,6 +54,7 @@ const SIGNAL_ACI: Record<SignalType, number> = {
   slink: 181,      // light violet — Allen & Heath SLink
   soundgrid: 125,  // deep violet — Waves SoundGrid
   fibreace: 133,   // purple — Allen & Heath fibreACE
+  dxlink: 135,     // violet — AMX DXLink
   custom: 9,       // cool gray
 };
 
