@@ -730,11 +730,18 @@ export function buildImportResult(
     .filter((n) => n.type === "room" && !n.parentId)
     .sort((a, b) => a.position.y - b.position.y);
 
-  if (topLevelRooms.length > 1) {
+  if (topLevelRooms.length > 0) {
     const OUTER_GAP = 40;
-    let curY = topLevelRooms[0].position.y;
+    const CANVAS_ORIGIN = 40; // minimum x/y offset from canvas edge
+
+    // Normalize x: shift all top-level rooms so the leftmost starts at CANVAS_ORIGIN
+    const minX = Math.min(...topLevelRooms.map((r) => r.position.x));
+    const xShift = CANVAS_ORIGIN - minX;
+
+    // Stack vertically starting at CANVAS_ORIGIN, applying x normalization
+    let curY = CANVAS_ORIGIN;
     for (const room of topLevelRooms) {
-      room.position = { ...room.position, y: curY };
+      room.position = { x: room.position.x + xShift, y: curY };
       curY += ((room.style as Record<string, number>).height ?? 300) + OUTER_GAP;
     }
   }
