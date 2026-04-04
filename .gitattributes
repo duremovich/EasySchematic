@@ -1,0 +1,21 @@
+# Normalize all text files to LF in the repo and working tree.
+# JS tooling (Node, Prettier, Vite, etc.) produces LF — keeping
+# CRLF out of the picture avoids phantom diffs on Windows.
+* text=auto eol=lf
+
+# Explicitly mark binary files so auto-detection can't misfire
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.mp4   binary
+*.webm  binary
