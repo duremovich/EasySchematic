@@ -231,7 +231,7 @@ html, body, #root {
   --color-bg: #ffffff;
   --color-surface: #ffffff;
   --color-surface-hover: #f3f4f6;
-  --color-border: #e5e7eb;
+  --color-border: #000000;
   --color-text: #374151;
   --color-text-heading: #111827;
   --color-text-muted: #6b7280;
@@ -253,7 +253,7 @@ html, body, #root {
     --color-bg: #ffffff;
     --color-surface: #ffffff;
     --color-surface-hover: #f3f4f6;
-    --color-border: #e5e7eb;
+    --color-border: #000000;
     --color-text: #374151;
     --color-text-heading: #111827;
     --color-text-muted: #6b7280;
@@ -273,8 +273,8 @@ html, body, #root {
   .dark .text-gray-500 { color: #6b7280 !important; }
   .dark .text-gray-400 { color: #9ca3af !important; }
   .dark .text-gray-300 { color: #d1d5db !important; }
-  .dark .border-gray-200 { border-color: #e5e7eb !important; }
-  .dark .border-gray-300 { border-color: #d1d5db !important; }
+  .dark .border-gray-200 { border-color: #000000 !important; }
+  .dark .border-gray-300 { border-color: #000000 !important; }
 
   /* Hide UI chrome */
   [data-print-hide],
