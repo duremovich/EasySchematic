@@ -11,6 +11,8 @@ export interface ReportColumnDef {
   visible: boolean;
 }
 
+export type TableBorderStyle = "none" | "horizontal" | "grid" | "outer";
+
 export interface ReportTableDef {
   id: string;
   label: string;
@@ -19,6 +21,7 @@ export interface ReportTableDef {
   groupByOptions: { key: string; label: string }[];
   sortBy: string | null;
   sortDir: "asc" | "desc";
+  borderStyle?: TableBorderStyle;
 }
 
 export type PaperSize = "letter" | "legal" | "a4" | "tabloid";
@@ -386,12 +389,14 @@ export function createDefaultPowerReportLayout(): ReportLayout {
  * When availableWidthMm is provided, column widths are proportionally scaled
  * so they fill the space — hiding a column lets others expand automatically.
  */
-export function getVisibleColumns(table: ReportTableDef, availableWidthMm?: number): ReportColumnDef[] {
+export function getVisibleColumns(table: ReportTableDef, availableWidthMm?: number, colGap = 0): ReportColumnDef[] {
   const visible = table.columns.filter((c) => c.visible);
   if (!availableWidthMm || visible.length === 0) return visible;
   const totalW = visible.reduce((s, c) => s + c.widthMm, 0);
   if (totalW <= 0) return visible;
-  const scale = availableWidthMm / totalW;
+  // Subtract inter-column gaps from available space so columns + gaps fit exactly
+  const usableW = availableWidthMm - colGap * Math.max(0, visible.length - 1);
+  const scale = usableW / totalW;
   if (Math.abs(scale - 1) < 0.001) return visible; // already fills
   return visible.map((c) => ({ ...c, widthMm: c.widthMm * scale }));
 }

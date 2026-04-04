@@ -1,6 +1,6 @@
 import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { TitleBlock, TitleBlockLayout, TitleBlockCell } from "../types";
-import type { ReportLayout, ReportTableDef, PaperSize } from "../reportLayout";
+import type { ReportLayout, ReportTableDef, PaperSize, TableBorderStyle } from "../reportLayout";
 import {
   getVisibleColumns,
   getPageDimensions,
@@ -49,6 +49,7 @@ function resolveLayout(defaults: ReportLayout, saved: ReportLayout | null): Repo
         groupBy: savedTable.groupBy,
         sortBy: savedTable.sortBy,
         sortDir: savedTable.sortDir,
+        borderStyle: savedTable.borderStyle,
       };
     }),
   };
@@ -65,7 +66,7 @@ type PageItem =
   | { kind: "sectionTitle"; tableId: string; label: string }
   | { kind: "colHeaders"; tableId: string }
   | { kind: "groupHeader"; tableId: string; label: string }
-  | { kind: "dataRow"; tableId: string; row: Record<string, string>; rowIndex: number }
+  | { kind: "dataRow"; tableId: string; row: Record<string, string>; rowIndex: number; isLastRow?: boolean }
   | { kind: "gap"; heightMm: number };
 
 interface PageDesc {
@@ -144,6 +145,22 @@ function computePages(
       }
     } else {
       td.rows.forEach((row, i) => addRow(row, i));
+    }
+
+    // Mark the last data row of this table (for outer border bottom)
+    // Check currentItems first, then previous pages
+    let marked = false;
+    for (let j = currentItems.length - 1; j >= 0 && !marked; j--) {
+      const it = currentItems[j];
+      if (it.kind === "dataRow" && it.tableId === tableDef.id) { it.isLastRow = true; marked = true; }
+    }
+    if (!marked) {
+      for (let p = pages.length - 1; p >= 0 && !marked; p--) {
+        for (let j = pages[p].items.length - 1; j >= 0 && !marked; j--) {
+          const it = pages[p].items[j];
+          if (it.kind === "dataRow" && it.tableId === tableDef.id) { it.isLastRow = true; marked = true; }
+        }
+      }
     }
 
     // Gap between tables
@@ -536,6 +553,23 @@ function ReportPreviewDialog({
                       </button>
                     )}
                   </div>
+                </div>
+                <div className="mt-2">
+                  <label className="text-[10px] text-[var(--color-text-muted)] uppercase tracking-wide">
+                    Borders
+                  </label>
+                  <select
+                    value={tableDef.borderStyle ?? "none"}
+                    onChange={(e) =>
+                      updateTable(tableDef.id, { borderStyle: e.target.value as TableBorderStyle })
+                    }
+                    className="w-full mt-0.5 px-2 py-1 text-xs border border-[var(--color-border)] rounded bg-white text-[var(--color-text)] cursor-pointer"
+                  >
+                    <option value="none">None</option>
+                    <option value="horizontal">Horizontal</option>
+                    <option value="grid">Grid</option>
+                    <option value="outer">Outer</option>
+                  </select>
                 </div>
               </SidebarSection>
             ))}
@@ -953,7 +987,9 @@ function PageContentRenderer({
         y += PDF_HEADER_HEIGHT + 2;
         break;
 
-      case "groupHeader":
+      case "groupHeader": {
+        const ghBorders = tableDef.borderStyle ?? "none";
+        const ghBorderLine = "1px solid #ccc";
         elements.push(
           <div
             key={`gh-${i}`}
@@ -970,6 +1006,9 @@ function PageContentRenderer({
               fontSize: mm(2.8),
               background: "#e6ebf5",
               color: "#333",
+              borderBottom: ghBorders === "horizontal" || ghBorders === "grid" ? ghBorderLine : undefined,
+              borderLeft: ghBorders === "outer" || ghBorders === "grid" ? ghBorderLine : undefined,
+              borderRight: ghBorders === "outer" || ghBorders === "grid" ? ghBorderLine : undefined,
             }}
           >
             {item.label}
@@ -977,6 +1016,7 @@ function PageContentRenderer({
         );
         y += PDF_ROW_HEIGHT + 2;
         break;
+      }
 
       case "dataRow":
         elements.push(
@@ -987,6 +1027,7 @@ function PageContentRenderer({
             tableDef={tableDef}
             mm={mm}
             topMm={y}
+            isLastRow={item.isLastRow}
             contentWidthMm={contentWidthMm}
           />,
         );
@@ -1661,6 +1702,9 @@ function PreviewColumnHeaders({
     }
   }, [resizing, visCols, tableDef.id, setLayout]);
 
+  const borders = tableDef.borderStyle ?? "none";
+  const borderLine = "1px solid #ccc";
+
   return (
     <div
       ref={containerRef}
@@ -1673,6 +1717,10 @@ function PreviewColumnHeaders({
         display: "flex",
         alignItems: "flex-end",
         background: "#f0f0f0",
+        borderBottom: borders !== "none" ? borderLine : undefined,
+        borderTop: borders === "outer" || borders === "grid" ? borderLine : undefined,
+        borderLeft: borders === "outer" || borders === "grid" ? borderLine : undefined,
+        borderRight: borders === "outer" || borders === "grid" ? borderLine : undefined,
       }}
       onPointerMove={resizing ? handleColResizeMove : undefined}
       onPointerUp={resizing ? () => setResizing(null) : undefined}
@@ -1689,6 +1737,7 @@ function PreviewColumnHeaders({
             fontSize: mm(3),
             position: "relative",
             flexShrink: 0,
+            borderRight: borders === "grid" && i < visCols.length - 1 ? borderLine : undefined,
           }}
         >
           {col.header}
@@ -1724,6 +1773,7 @@ function PreviewDataRow({
   mm,
   topMm,
   contentWidthMm,
+  isLastRow,
 }: {
   row: Record<string, string>;
   rowIndex: number;
@@ -1731,10 +1781,13 @@ function PreviewDataRow({
   mm: (v: number) => number;
   topMm: number;
   contentWidthMm: number;
+  isLastRow?: boolean;
 }) {
   const visCols = getVisibleColumns(tableDef, contentWidthMm);
   const colGap = mm(1.5);
   const isSubItem = row._isSubItem === "true";
+  const borders = tableDef.borderStyle ?? "none";
+  const borderLine = "1px solid #ccc";
 
   return (
     <div
@@ -1747,9 +1800,12 @@ function PreviewDataRow({
         display: "flex",
         alignItems: "center",
         background: rowIndex % 2 === 1 ? "#f8f8f8" : "transparent",
+        borderBottom: borders === "horizontal" || borders === "grid" || (borders === "outer" && isLastRow) ? borderLine : undefined,
+        borderLeft: borders === "outer" || borders === "grid" ? borderLine : undefined,
+        borderRight: borders === "outer" || borders === "grid" ? borderLine : undefined,
       }}
     >
-      {visCols.map((col) => {
+      {visCols.map((col, i) => {
         const indent = isSubItem && col.key !== "count" ? mm(4) : 0;
         return (
           <div
@@ -1764,6 +1820,7 @@ function PreviewDataRow({
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
               flexShrink: 0,
+              borderRight: borders === "grid" && i < visCols.length - 1 ? borderLine : undefined,
             }}
           >
             {row[col.key] ?? ""}

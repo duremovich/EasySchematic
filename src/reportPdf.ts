@@ -173,8 +173,57 @@ function drawTableSection(
   bottomLimit: number,
   contentWidthMm: number,
 ): number {
-  const visCols = getVisibleColumns(tableDef, contentWidthMm);
+  const visCols = getVisibleColumns(tableDef, contentWidthMm, COL_GAP);
   if (visCols.length === 0) return startY;
+
+  const borders = tableDef.borderStyle ?? "none";
+  const totalW = visCols.reduce((s, c) => s + c.widthMm + COL_GAP, -COL_GAP);
+  const tableLeft = REPORT_MARGIN_MM - 1;
+  const tableWidth = totalW + 2; // 1mm padding on each side
+  const tableRight = tableLeft + tableWidth;
+
+  // Track the top of the table section on the current page (for outer border)
+  let sectionTopY = 0;
+
+  const setupBorderStyle = () => {
+    doc.setDrawColor(200, 200, 200); // #ccc
+    doc.setLineWidth(0.2);
+  };
+
+  // Draw a horizontal line across the full table width
+  const hLine = (atY: number) => {
+    setupBorderStyle();
+    doc.line(tableLeft, atY, tableRight, atY);
+  };
+
+  // Draw vertical column dividers between two Y positions
+  const vColLines = (fromY: number, toY: number) => {
+    setupBorderStyle();
+    let x = tableLeft;
+    for (let ci = 0; ci < visCols.length - 1; ci++) {
+      x += visCols[ci].widthMm + COL_GAP;
+      doc.line(x - COL_GAP / 2, fromY, x - COL_GAP / 2, toY);
+    }
+  };
+
+  // Draw left and right vertical edges between two Y positions
+  const vEdges = (fromY: number, toY: number) => {
+    setupBorderStyle();
+    doc.line(tableLeft, fromY, tableLeft, toY);
+    doc.line(tableRight, fromY, tableRight, toY);
+  };
+
+  // Close borders at the bottom of a page section before a page break
+  const closeBordersAtY = (atY: number) => {
+    if (borders === "outer") {
+      vEdges(sectionTopY, atY);
+      hLine(atY);
+    } else if (borders === "grid") {
+      vEdges(sectionTopY, atY);
+      vColLines(sectionTopY, atY);
+      hLine(atY);
+    }
+  };
 
   let y = startY;
 
@@ -190,11 +239,13 @@ function drawTableSection(
   drawSectionTitle(tableDef.label);
 
   const drawHeaders = () => {
+    const headerTop = y - HEADER_HEIGHT + 2;
+    sectionTopY = headerTop;
+
     doc.setFontSize(HEADER_FONT_SIZE);
     doc.setFont("Inter", "bold");
     doc.setFillColor(240, 240, 240);
-    const totalW = visCols.reduce((s, c) => s + c.widthMm + COL_GAP, -COL_GAP);
-    doc.rect(REPORT_MARGIN_MM - 1, y - HEADER_HEIGHT + 2, totalW + COL_GAP, HEADER_HEIGHT, "F");
+    doc.rect(tableLeft, headerTop, tableWidth, HEADER_HEIGHT, "F");
     doc.setTextColor(0);
     let x = REPORT_MARGIN_MM;
     for (const col of visCols) {
@@ -204,9 +255,20 @@ function drawTableSection(
     doc.setFont("Inter", "normal");
     doc.setFontSize(FONT_SIZE);
     y += 2;
+
+    // Border under header
+    if (borders !== "none") {
+      hLine(y);
+    }
+    // Top border of table
+    if (borders === "outer" || borders === "grid") {
+      hLine(headerTop);
+    }
   };
 
   const repeatOnNewPage = () => {
+    // Close borders on the current page before breaking
+    closeBordersAtY(y);
     doc.addPage();
     y = REPORT_MARGIN_MM;
     drawSectionTitle(`${tableDef.label} (Cont'd)`);
@@ -220,10 +282,11 @@ function drawTableSection(
       y += ROW_HEIGHT;
     }
 
+    const rowTop = y - ROW_HEIGHT + 2;
+
     if (rowIndex % 2 === 1) {
       doc.setFillColor(248, 248, 248);
-      const totalW = visCols.reduce((s, c) => s + c.widthMm + COL_GAP, -COL_GAP);
-      doc.rect(REPORT_MARGIN_MM - 1, y - ROW_HEIGHT + 2, totalW + COL_GAP, ROW_HEIGHT, "F");
+      doc.rect(tableLeft, rowTop, tableWidth, ROW_HEIGHT, "F");
     }
 
     const isSubItem = row._isSubItem === "true";
@@ -235,6 +298,11 @@ function drawTableSection(
       doc.text(text, x + indent, y, { maxWidth: col.widthMm - indent });
       x += col.widthMm + COL_GAP;
     }
+
+    // Horizontal line under this row
+    if (borders === "horizontal" || borders === "grid") {
+      hLine(rowTop + ROW_HEIGHT);
+    }
   };
 
   const drawGroupHeader = (label: string) => {
@@ -243,14 +311,19 @@ function drawTableSection(
       repeatOnNewPage();
       y += ROW_HEIGHT + 2;
     }
+    const ghTop = y - ROW_HEIGHT + 2;
     doc.setFontSize(FONT_SIZE);
     doc.setFont("Inter", "bold");
     doc.setFillColor(230, 235, 245);
-    const totalW = visCols.reduce((s, c) => s + c.widthMm + COL_GAP, -COL_GAP);
-    doc.rect(REPORT_MARGIN_MM - 1, y - ROW_HEIGHT + 2, totalW + COL_GAP, ROW_HEIGHT, "F");
+    doc.rect(tableLeft, ghTop - 2, tableWidth, ROW_HEIGHT, "F");
     doc.setTextColor(0);
     doc.text(label, REPORT_MARGIN_MM, y);
     doc.setFont("Inter", "normal");
+
+    // Border under group header
+    if (borders === "horizontal" || borders === "grid") {
+      hLine(ghTop + ROW_HEIGHT - 2);
+    }
   };
 
   if (tableData.groupedRows && tableDef.groupBy) {
@@ -262,6 +335,17 @@ function drawTableSection(
   } else {
     drawHeaders();
     tableData.rows.forEach((row, i) => drawRow(row, i));
+  }
+
+  // Final borders at the end of the table
+  const finalY = y + 2; // bottom of last row area
+  if (borders === "outer") {
+    vEdges(sectionTopY, finalY);
+    hLine(finalY);
+  } else if (borders === "grid") {
+    vEdges(sectionTopY, finalY);
+    vColLines(sectionTopY, finalY);
+    // Bottom line already drawn by last row's horizontal line
   }
 
   return y + ROW_HEIGHT;
