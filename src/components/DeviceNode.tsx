@@ -405,6 +405,19 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           })}
         </div>
       )}
+      {data.auxiliaryData?.length ? (
+        <div className="auxiliaryData px-3 py-2 border-t border-[var(--color-border)]">
+          {data.auxiliaryData.map((line, i) => (
+            <div
+              key={i}
+              className="text-[9px] text-[var(--color-text-muted)] leading-4 truncate whitespace-nowrap text-center"
+              title={line}
+            >
+              {line}
+            </div>
+          ))}
+        </div>
+      ) : null}
       </div>
     </div>
   );

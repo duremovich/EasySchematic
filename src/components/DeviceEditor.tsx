@@ -103,6 +103,9 @@ export default function DeviceEditor() {
   const [isVenueProvided, setIsVenueProvided] = useState(false);
   const [adapterVisibility, setAdapterVisibility] = useState<"default" | "force-show" | "force-hide">("default");
 
+  // Auxiliary data lines
+  const [auxiliaryData, setAuxiliaryData] = useState<string[]>([]);
+
   // Login dialog for community submission
   const [showLoginDialog, setShowLoginDialog] = useState(false);
 
@@ -151,6 +154,7 @@ export default function DeviceEditor() {
     setIntegratedWithCable(node.data.integratedWithCable ?? false);
     setIsVenueProvided(node.data.isVenueProvided ?? false);
     setAdapterVisibility(node.data.adapterVisibility ?? "default");
+    setAuxiliaryData(node.data.auxiliaryData ?? []);
   }, [node]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
@@ -204,10 +208,11 @@ export default function DeviceEditor() {
       ...(adapterVisibility !== "default" ? { adapterVisibility } : {}),
       ...(existing?.baseLabel ? { baseLabel: existing.baseLabel } : {}),
       ...(existing?.slots ? { slots: existing.slots } : {}),
+      ...(auxiliaryData.filter((line) => line.trim()).length > 0 ? { auxiliaryData: auxiliaryData.filter((line) => line.trim()) } : {}),
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility]);
+  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
@@ -785,6 +790,31 @@ export default function DeviceEditor() {
                 step={0.01}
                 onKeyDown={(e) => e.stopPropagation()}
               />
+            </div>
+          </details>
+
+          {/* Auxiliary Data */}
+          <details className="text-xs">
+            <summary className="cursor-pointer text-[var(--color-text-secondary)] hover:text-[var(--color-text)] select-none py-1">
+              Auxiliary Data
+            </summary>
+            <div className="flex flex-col gap-1.5 pt-1 pl-2">
+              <p className="text-[10px] text-[var(--color-text-muted)] -mb-0.5">Up to 5 custom lines (displayed at bottom of device)</p>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <input
+                  key={i}
+                  type="text"
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none focus:border-blue-500"
+                  value={auxiliaryData[i] ?? ""}
+                  onChange={(e) => {
+                    const newData = [...auxiliaryData];
+                    newData[i] = e.target.value;
+                    setAuxiliaryData(newData);
+                  }}
+                  placeholder={`Auxiliary Data`}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
+              ))}
             </div>
           </details>
 

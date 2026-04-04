@@ -197,6 +197,8 @@ export interface DeviceData {
   isVenueProvided?: boolean;
   /** Adapter visibility override — only meaningful for deviceType "adapter" */
   adapterVisibility?: "default" | "force-show" | "force-hide";
+  /** User-customizable auxiliary data lines (up to 5) displayed at bottom of device node */
+  auxiliaryData?: string[];
 }
 
 export type DeviceNode = Node<DeviceData, "device">;
