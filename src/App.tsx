@@ -41,7 +41,7 @@ import RoomEditor from "./components/RoomEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
 import RouterCreator from "./components/RouterCreator";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
-import type { DeviceData, DeviceTemplate, SchematicFile, SchematicNode } from "./types";
+import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode } from "./types";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { loadSharedSchematic, checkSession } from "./templateApi";
@@ -295,6 +295,91 @@ function SchematicCanvas() {
 
   // Track physical Ctrl key to distinguish real Ctrl+scroll from trackpad pinch
   const ctrlHeldRef = useRef(false);
+
+  // Shift-selection: bypass RF's selection system via XOR on pointerup.
+  // RF doesn't emit NodeSelectionChange for already-selected nodes, so
+  // onNodesChange interception can't toggle them. Instead we snapshot
+  // selection on shift+mousedown, let RF do its thing, then XOR the
+  // result on pointerup. Works identically for both click and drag.
+  useEffect(() => {
+    const el = rfContainerRef.current;
+    if (!el) return;
+
+    let shiftSnapshot: Map<string, boolean> | null = null;
+    let shiftClickNodeId: string | null = null;
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (!e.shiftKey || e.button !== 0) {
+        shiftSnapshot = null;
+        shiftClickNodeId = null;
+        return;
+      }
+      if (!el.contains(e.target as globalThis.Node)) return;
+      if (isClickConnectMode.current) return;
+
+      const s = useSchematicStore.getState();
+      shiftSnapshot = new Map<string, boolean>([
+        ...s.nodes.map(n => [n.id, !!n.selected] as const),
+        ...s.edges.map(e => [e.id, !!e.selected] as const),
+      ]);
+
+      // Track which node was clicked (null for empty space / drag)
+      const nodeEl = (e.target as HTMLElement).closest('.react-flow__node');
+      shiftClickNodeId = nodeEl?.getAttribute('data-id') ?? null;
+    };
+
+    const onPointerUp = () => {
+      if (!shiftSnapshot) return;
+      const snapshot = shiftSnapshot;
+      const clickedNodeId = shiftClickNodeId;
+      shiftSnapshot = null;
+      shiftClickNodeId = null;
+
+      // Defer so RF's final selection processing completes first
+      requestAnimationFrame(() => {
+        const state = useSchematicStore.getState();
+
+        // Did RF actually change selection? (It won't when clicking an
+        // already-selected node with multiSelectionActive=false.)
+        const rfChanged = state.nodes.some(n =>
+          (!!n.selected) !== (snapshot.get(n.id) ?? false)
+        ) || state.edges.some(e =>
+          (!!e.selected) !== (snapshot.get(e.id) ?? false)
+        );
+
+        if (rfChanged) {
+          // RF changed selection → XOR to toggle items in the box/clicked
+          useSchematicStore.setState({
+            nodes: state.nodes.map(n => ({
+              ...n,
+              selected: (!!n.selected) !== (snapshot.get(n.id) ?? false),
+            })) as SchematicNode[],
+            edges: state.edges.map(e => ({
+              ...e,
+              selected: (!!e.selected) !== (snapshot.get(e.id) ?? false),
+            })) as ConnectionEdge[],
+          });
+        } else if (clickedNodeId) {
+          // RF did nothing (clicked already-selected node) → toggle just that node
+          useSchematicStore.setState({
+            nodes: state.nodes.map(n => ({
+              ...n,
+              selected: n.id === clickedNodeId ? !n.selected : n.selected,
+            })) as SchematicNode[],
+          });
+        }
+
+        useSchematicStore.getState().saveToLocalStorage();
+      });
+    };
+
+    window.addEventListener('mousedown', onMouseDown, true);
+    window.addEventListener('pointerup', onPointerUp);
+    return () => {
+      window.removeEventListener('mousedown', onMouseDown, true);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+  }, []);
 
   // Sticky trackpad detection: once a trackpad gesture is detected, treat all
   // subsequent wheel events as trackpad until 400ms of silence (gesture end).
@@ -1187,7 +1272,7 @@ function SchematicCanvas() {
       elevateEdgesOnSelect={false}
       deleteKeyCode={null}
       selectionKeyCode={null}
-      multiSelectionKeyCode="Shift"
+      multiSelectionKeyCode={null}
       proOptions={{ hideAttribution: true }}
       panOnScroll={false}
       zoomOnScroll={false}

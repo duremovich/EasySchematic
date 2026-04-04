@@ -129,6 +129,12 @@ html, body, #root {
   opacity: 0.2;
 }
 
+/* Hide group-selection bounding box — per-node blue borders are clearer
+   in crowded schematics and don't block shift+click toggle selection */
+.react-flow__nodesselection-rect {
+  display: none !important;
+}
+
 /* AutoCAD-style directional selection */
 /* Window (left→right): blue solid, selects fully-enclosed items */
 .react-flow.selection-window .react-flow__selection {
