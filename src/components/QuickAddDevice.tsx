@@ -172,7 +172,7 @@ export default function QuickAddDevice({
       setTimeout(() => {
         const state = useSchematicStore.getState();
         const lastDevice = state.nodes.filter((n) => n.type === "device").at(-1);
-        if (lastDevice) reparentNode(lastDevice.id, centered);
+        if (lastDevice) reparentNode(lastDevice.id, centered, { skipUndo: true });
       }, 0);
       onClose();
     },

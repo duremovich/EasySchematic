@@ -194,12 +194,13 @@ interface SchematicState {
   toggleRoomLock: (nodeId: string) => void;
   addNote: (position: { x: number; y: number }) => void;
   updateNoteHtml: (nodeId: string, html: string) => void;
-  reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }) => void;
+  reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }, options?: { skipUndo?: boolean }) => void;
 
   // Undo/Redo
   pushSnapshot: () => void;
   setPendingUndoSnapshot: () => void;
   clearPendingUndoSnapshot: () => void;
+  flushPendingSnapshot: () => void;
   undo: () => void;
   redo: () => void;
   canUndo: () => boolean;
@@ -491,10 +492,12 @@ export function setReconnectingEdgeId(id: string | null) {
 }
 
 function pushUndo(snapshot: Snapshot) {
-  undoStack.push(pendingUndoSnapshot ?? snapshot);
+  undoStack.push(structuredClone(pendingUndoSnapshot ?? snapshot));
   pendingUndoSnapshot = null;
   if (undoStack.length > MAX_HISTORY) undoStack.shift();
   redoStack.length = 0; // clear redo on new action
+  // Sync reactive counters so undo/redo buttons stay in sync
+  useSchematicStore.setState({ undoSize: undoStack.length, redoSize: 0 });
 }
 
 function clonePorts(ports: Port[]): Port[] {
@@ -855,7 +858,6 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           const allTemplates = [...DEVICE_TEMPLATES, ...state.customTemplates];
           const adapterMatches = findAdaptersForSignalBridge(srcPort.signalType, tgtPort.signalType, allTemplates);
           if (adapterMatches.length === 1) {
-            pushUndo({ nodes: state.nodes, edges: state.edges });
             set({ pendingIncompatibleConnection: { connection, sourcePort: srcPort, targetPort: tgtPort, reason: "signal-mismatch" } });
             get().insertAdapterBetween(adapterMatches[0]);
             return;
@@ -893,8 +895,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       );
 
       if (adapterMatches.length === 1) {
-        // Auto-insert the single matching adapter
-        pushUndo({ nodes: state.nodes, edges: state.edges });
+        // Auto-insert the single matching adapter (insertAdapterBetween handles its own undo)
         set({ pendingIncompatibleConnection: { connection, sourcePort, targetPort, reason: "connector-mismatch" } });
         get().insertAdapterBetween(adapterMatches[0]);
         return;
@@ -916,7 +917,6 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       );
 
       if (adapterMatches.length === 1) {
-        pushUndo({ nodes: state.nodes, edges: state.edges });
         set({ pendingIncompatibleConnection: { connection, sourcePort, targetPort, reason: "connector-mismatch" } });
         get().insertAdapterBetween(adapterMatches[0]);
         return;
@@ -1591,7 +1591,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
-  reparentNode: (nodeId, absolutePosition) => {
+  reparentNode: (nodeId, absolutePosition, options) => {
     const state = get();
     const node = state.nodes.find((n) => n.id === nodeId);
     if (!node || node.type === "room") return;
@@ -1621,7 +1621,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     if (currentParent === newParent) return; // no change
 
-    pushUndo({ nodes: state.nodes, edges: state.edges });
+    if (!options?.skipUndo) {
+      pushUndo({ nodes: state.nodes, edges: state.edges });
+    }
 
     let updated = state.nodes.map((n) => {
       if (n.id !== nodeId) return n;
@@ -1655,23 +1657,29 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   pushSnapshot: () => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
-    set({ undoSize: undoStack.length, redoSize: 0 });
   },
 
   setPendingUndoSnapshot: () => {
     const state = get();
-    pendingUndoSnapshot = { nodes: state.nodes, edges: state.edges };
+    pendingUndoSnapshot = structuredClone({ nodes: state.nodes, edges: state.edges });
   },
 
   clearPendingUndoSnapshot: () => {
     pendingUndoSnapshot = null;
   },
 
+  flushPendingSnapshot: () => {
+    if (pendingUndoSnapshot) {
+      // pushUndo consumes pendingUndoSnapshot automatically
+      pushUndo({ nodes: get().nodes, edges: get().edges });
+    }
+  },
+
   undo: () => {
     const prev = undoStack.pop();
     if (!prev) return;
     const state = get();
-    redoStack.push({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute });
+    redoStack.push(structuredClone({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute }));
     const edges = prev.edges.map(({ zIndex: _, selected: _s, ...rest }) => ({ ...rest, zIndex: 0 })) as typeof prev.edges;
     const restoreAutoRoute = prev.autoRoute !== undefined ? { autoRoute: prev.autoRoute } : {};
     set({ nodes: prev.nodes, edges, ...restoreAutoRoute, undoSize: undoStack.length, redoSize: redoStack.length });
@@ -1682,7 +1690,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const next = redoStack.pop();
     if (!next) return;
     const state = get();
-    undoStack.push({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute });
+    undoStack.push(structuredClone({ nodes: state.nodes, edges: state.edges, autoRoute: state.autoRoute }));
     const edges = next.edges.map(({ zIndex: _, selected: _s, ...rest }) => ({ ...rest, zIndex: 0 })) as typeof next.edges;
     const restoreAutoRoute = next.autoRoute !== undefined ? { autoRoute: next.autoRoute } : {};
     set({ nodes: next.nodes, edges, ...restoreAutoRoute, undoSize: undoStack.length, redoSize: redoStack.length });

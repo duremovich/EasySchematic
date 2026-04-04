@@ -201,6 +201,8 @@ function SchematicCanvas() {
     copySelected,
     pasteClipboard,
     pushSnapshot,
+    setPendingUndoSnapshot,
+    flushPendingSnapshot,
     reparentNode,
     undo,
     redo,
@@ -552,7 +554,7 @@ function SchematicCanvas() {
       if (e.key === "Control") { ctrlHeldRef.current = true; }
 
       const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement).isContentEditable) return;
 
       if (e.key === "Escape") {
         clearClickConnect();
@@ -668,7 +670,7 @@ function SchematicCanvas() {
         const state = useSchematicStore.getState();
         const lastDevice = state.nodes.filter((n) => n.type === "device").at(-1);
         if (lastDevice) {
-          reparentNode(lastDevice.id, position);
+          reparentNode(lastDevice.id, position, { skipUndo: true });
 
           // Enforce spacing so new device doesn't land on top of another
           const updated = useSchematicStore.getState();
@@ -695,7 +697,7 @@ function SchematicCanvas() {
                   absY += parent.position.y;
                 }
               }
-              reparentNode(device.id, { x: absX, y: absY });
+              reparentNode(device.id, { x: absX, y: absY }, { skipUndo: true });
             }
           }
         }
@@ -960,9 +962,9 @@ function SchematicCanvas() {
   );
 
   const onNodeDragStart = useCallback(() => {
-    pushSnapshot();
+    setPendingUndoSnapshot();
     useSchematicStore.setState({ isDragging: true });
-  }, [pushSnapshot]);
+  }, [setPendingUndoSnapshot]);
 
   const onNodeDrag = useCallback(
     (_event: React.MouseEvent, draggedNode: Node) => {
@@ -1031,7 +1033,10 @@ function SchematicCanvas() {
         useSchematicStore.setState({ isDragging: false, overlapNodeId: null });
       }
 
-      if (draggedNode.type === "room") return;
+      if (draggedNode.type === "room") {
+        flushPendingSnapshot();
+        return;
+      }
       // Compute absolute position for reparenting check
       let absX = finalX;
       let absY = finalY;
@@ -1042,9 +1047,10 @@ function SchematicCanvas() {
           absY += parent.position.y;
         }
       }
-      reparentNode(draggedNode.id, { x: absX, y: absY });
+      reparentNode(draggedNode.id, { x: absX, y: absY }, { skipUndo: true });
+      flushPendingSnapshot();
     },
-    [reparentNode],
+    [reparentNode, flushPendingSnapshot],
   );
 
   // Dynamic minZoom: allow zooming out just enough to see all nodes, with padding
