@@ -13,7 +13,7 @@
 import { createDefaultLayout } from "./titleBlockLayout";
 import { DEFAULT_CONNECTOR } from "./connectorTypes";
 
-export const CURRENT_SCHEMA_VERSION = 23;
+export const CURRENT_SCHEMA_VERSION = 24;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -253,6 +253,13 @@ const migrations: Record<number, Migration> = {
   22: (data) => {
     // v22 → v23: autoRoute on SchematicFile — optional, defaults to true
     data.version = 23;
+    return data;
+  },
+  23: (data) => {
+    // v23 → v24: nested subrooms — rooms may now have a parentId pointing to
+    // another room. No data transform needed; parentId is already a valid
+    // React Flow node field and existing rooms simply have none.
+    data.version = 24;
     return data;
   },
 };

@@ -4,6 +4,19 @@ import type { RoomNode as RoomNodeType, SchematicNode } from "../types";
 import { useSchematicStore } from "../store";
 import { computeResizeSnap } from "../snapUtils";
 
+function RackIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="5" rx="1" />
+      <rect x="2" y="9" width="20" height="5" rx="1" />
+      <rect x="2" y="16" width="20" height="5" rx="1" />
+      <line x1="6" y1="4.5" x2="6" y2="4.5" strokeWidth="3" />
+      <line x1="6" y1="11.5" x2="6" y2="11.5" strokeWidth="3" />
+      <line x1="6" y1="18.5" x2="6" y2="18.5" strokeWidth="3" />
+    </svg>
+  );
+}
+
 function LockIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -26,6 +39,7 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
   const updateRoomLabel = useSchematicStore((s) => s.updateRoomLabel);
   const toggleRoomLock = useSchematicStore((s) => s.toggleRoomLock);
   const setResizeGuides = useSchematicStore((s) => s.setResizeGuides);
+  const isSubroom = useSchematicStore((s) => !!s.nodes.find((n) => n.id === id)?.parentId);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(data.label);
 
@@ -61,9 +75,12 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
     setEditing(false);
   };
 
-  const borderStyleVal = data.borderStyle ?? "dashed";
+  const isRack = data.isEquipmentRack ?? false;
+  const borderStyleVal = isRack ? "solid" : (data.borderStyle ?? (isSubroom ? "solid" : "dashed"));
   const borderColorVal = selected ? undefined : data.borderColor;
   const bgColor = data.color;
+  // Subrooms use a slightly more opaque background so they read as distinct zones
+  const bgAlpha = isSubroom ? "33" : "1a"; // 20% vs 10% opacity
   const fontSize = data.labelSize ?? 12;
 
   return (
@@ -84,8 +101,14 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
         style={{
           pointerEvents: "none",
           borderStyle: borderStyleVal,
-          ...(!selected ? { borderColor: borderColorVal || "var(--color-border)" } : {}),
-          backgroundColor: bgColor ? `${bgColor}1a` : selected ? "rgba(239,246,255,0.3)" : "rgba(var(--color-surface-rgb, 245,245,245),0.3)",
+          ...(!selected ? { borderColor: borderColorVal || (isRack ? "#6b7280" : "var(--color-border)") } : {}),
+          backgroundColor: bgColor
+            ? `${bgColor}${bgAlpha}`
+            : isRack
+            ? "rgba(55,65,81,0.12)"
+            : selected
+            ? "rgba(239,246,255,0.3)"
+            : "rgba(var(--color-surface-rgb, 245,245,245),0.3)",
         }}
       >
         <div
@@ -117,10 +140,11 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
             />
           ) : (
             <span
-              className="font-semibold uppercase tracking-wide cursor-text select-none"
-              style={{ fontSize, color: borderColorVal || "var(--color-text-muted)" }}
+              className="font-semibold uppercase tracking-wide cursor-text select-none flex items-center gap-1"
+              style={{ fontSize, color: borderColorVal || (isRack ? "#374151" : "var(--color-text-muted)") }}
               onDoubleClick={() => { setValue(data.label); setEditing(true); }}
             >
+              {isRack && <RackIcon />}
               {data.label}
             </span>
           )}

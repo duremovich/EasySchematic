@@ -192,6 +192,7 @@ interface SchematicState {
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
   toggleRoomLock: (nodeId: string) => void;
+  toggleEquipmentRack: (nodeId: string) => void;
   addNote: (position: { x: number; y: number }) => void;
   updateNoteHtml: (nodeId: string, html: string) => void;
   reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }, options?: { skipUndo?: boolean }) => void;
@@ -619,15 +620,23 @@ function renumberNodes(nodes: SchematicNode[]): SchematicNode[] {
   });
 }
 
-/** Ensure parent (room) nodes appear before their children in the array. */
+/** Ensure parent nodes appear before their children in the array (topological sort). */
 function sortNodesParentFirst(nodes: SchematicNode[]): SchematicNode[] {
-  const rooms: SchematicNode[] = [];
-  const others: SchematicNode[] = [];
-  for (const n of nodes) {
-    if (n.type === "room") rooms.push(n);
-    else others.push(n);
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  const result: SchematicNode[] = [];
+  const visited = new Set<string>();
+
+  function visit(n: SchematicNode) {
+    if (visited.has(n.id)) return;
+    if (n.parentId && nodeMap.has(n.parentId)) visit(nodeMap.get(n.parentId)!);
+    visited.add(n.id);
+    result.push(n);
   }
-  return [...rooms, ...others];
+
+  // Visit rooms first so all rooms precede non-room nodes
+  for (const n of nodes) if (n.type === "room") visit(n);
+  for (const n of nodes) if (n.type !== "room") visit(n);
+  return result;
 }
 
 function getPortFromHandle(
@@ -1039,6 +1048,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         .map((n) => n.id),
     );
 
+    // Build a map for absolute position resolution (needed for multi-level nesting)
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
+    function computeAbsolutePos(nId: string): { x: number; y: number } {
+      const n = nodeMap.get(nId);
+      if (!n) return { x: 0, y: 0 };
+      if (!n.parentId) return n.position;
+      const p = computeAbsolutePos(n.parentId);
+      return { x: n.position.x + p.x, y: n.position.y + p.y };
+    }
+
     // Also remove edges connected to deleted nodes
     const newEdges = state.edges.filter(
       (e) =>
@@ -1051,15 +1070,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       .filter((n) => !n.selected)
       .map((n) => {
         if (n.parentId && deletedRoomIds.has(n.parentId)) {
-          // Convert to absolute position
-          const room = state.nodes.find((r) => r.id === n.parentId);
+          // Convert to absolute position — walk the full parent chain
           return {
             ...n,
             parentId: undefined,
             extent: undefined,
-            position: room
-              ? { x: n.position.x + room.position.x, y: n.position.y + room.position.y }
-              : n.position,
+            position: computeAbsolutePos(n.id),
           };
         }
         return n;
@@ -1082,12 +1098,21 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   },
 
   deleteNodeAndChildren: (nodeId: string) => {
-    // Select this node and all its children, then removeSelected
+    // Collect all descendants recursively (handles nested subrooms)
+    const nodes = get().nodes;
+    const toDelete = new Set<string>([nodeId]);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (const n of nodes) {
+        if (!toDelete.has(n.id) && n.parentId && toDelete.has(n.parentId)) {
+          toDelete.add(n.id);
+          changed = true;
+        }
+      }
+    }
     set({
-      nodes: get().nodes.map((n) => ({
-        ...n,
-        selected: n.id === nodeId || n.parentId === nodeId,
-      })),
+      nodes: nodes.map((n) => ({ ...n, selected: toDelete.has(n.id) })),
       edges: get().edges.map((e) => ({ ...e, selected: false })),
     });
     get().removeSelected();
@@ -1591,6 +1616,25 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  toggleEquipmentRack: (nodeId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId || n.type !== "room") return n;
+        const wasRack = (n.data as import("./types").RoomData).isEquipmentRack;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            isEquipmentRack: wasRack ? undefined : true,
+          },
+        } as SchematicNode;
+      }),
+    });
+    get().saveToLocalStorage();
+  },
+
   addNote: (position) => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
@@ -1619,22 +1663,46 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   reparentNode: (nodeId, absolutePosition, options) => {
     const state = get();
     const node = state.nodes.find((n) => n.id === nodeId);
-    if (!node || node.type === "room") return;
+    if (!node) return;
 
-    // Find which room (if any) the node's center falls inside
-    const nodeW = node.measured?.width ?? 180;
-    const nodeH = node.measured?.height ?? 60;
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
+
+    /** Compute the full absolute canvas position of a node by walking its parent chain. */
+    function getAbsolutePosition(nId: string): { x: number; y: number } {
+      const n = nodeMap.get(nId);
+      if (!n) return { x: 0, y: 0 };
+      if (!n.parentId) return n.position;
+      const p = getAbsolutePosition(n.parentId);
+      return { x: n.position.x + p.x, y: n.position.y + p.y };
+    }
+
+    /** True if ancestorId is an ancestor of childId (prevents circular nesting). */
+    function isAncestorOf(ancestorId: string, childId: string): boolean {
+      let cur = nodeMap.get(childId);
+      while (cur?.parentId) {
+        if (cur.parentId === ancestorId) return true;
+        cur = nodeMap.get(cur.parentId);
+      }
+      return false;
+    }
+
+    const isRoom = node.type === "room";
+    const nodeW = node.measured?.width ?? (isRoom ? 400 : 180);
+    const nodeH = node.measured?.height ?? (isRoom ? 300 : 60);
     const centerX = absolutePosition.x + nodeW / 2;
     const centerY = absolutePosition.y + nodeH / 2;
 
     let targetRoom: SchematicNode | undefined;
     for (const n of state.nodes) {
       if (n.type !== "room") continue;
+      if (n.id === nodeId) continue; // can't parent to itself
+      if (isRoom && isAncestorOf(nodeId, n.id)) continue; // prevent circular nesting
       const rw = n.measured?.width ?? (n.style?.width as number) ?? (n.width as number) ?? 400;
       const rh = n.measured?.height ?? (n.style?.height as number) ?? (n.height as number) ?? 300;
+      const absPos = getAbsolutePosition(n.id);
       if (
-        centerX >= n.position.x && centerX <= n.position.x + rw &&
-        centerY >= n.position.y && centerY <= n.position.y + rh
+        centerX >= absPos.x && centerX <= absPos.x + rw &&
+        centerY >= absPos.y && centerY <= absPos.y + rh
       ) {
         targetRoom = n;
         break;
@@ -1653,13 +1721,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     let updated = state.nodes.map((n) => {
       if (n.id !== nodeId) return n;
       if (newParent && targetRoom) {
-        // Reparent into room — convert to relative position
+        // Reparent — convert to position relative to new parent
+        const targetAbsPos = getAbsolutePosition(targetRoom.id);
         return {
           ...n,
           parentId: newParent,
           position: {
-            x: absolutePosition.x - targetRoom.position.x,
-            y: absolutePosition.y - targetRoom.position.y,
+            x: absolutePosition.x - targetAbsPos.x,
+            y: absolutePosition.y - targetAbsPos.y,
           },
         };
       } else {

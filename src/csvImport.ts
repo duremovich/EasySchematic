@@ -444,8 +444,18 @@ function autoLayout(
   // Sort within each layer alphabetically for determinism
   for (const group of layerGroups.values()) group.sort();
 
-  // Collect unique rooms (preserving order)
-  const roomNames = [...new Set(deviceRooms.values())];
+  // Collect unique rooms, sorted so all paths under the same top-level room are
+  // consecutive. Without this, CSV row order can interleave bands from different
+  // parent rooms, causing parent room nodes to span across unrelated siblings.
+  const roomNames = [...new Set(deviceRooms.values())].sort((a, b) => {
+    const aParts = a.split(">").map((s) => s.trim());
+    const bParts = b.split(">").map((s) => s.trim());
+    for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+      const cmp = aParts[i].localeCompare(bParts[i]);
+      if (cmp !== 0) return cmp;
+    }
+    return aParts.length - bParts.length;
+  });
   const hasRooms = roomNames.length > 0;
 
   // Position devices with size-aware spacing
@@ -537,31 +547,61 @@ export function buildImportResult(
   }
 
   // Build room assignments
-  const deviceRoom = new Map<string, string>(); // device csvName → room name
+  // deviceRoomPath: device → full room path string (e.g. "Studio A > Control Room")
+  const deviceRoomPath = new Map<string, string>();
   for (const c of connections) {
-    if (c.sourceRoom) deviceRoom.set(c.sourceDevice, c.sourceRoom);
-    if (c.destRoom) deviceRoom.set(c.destDevice, c.destRoom);
+    if (c.sourceRoom) deviceRoomPath.set(c.sourceDevice, c.sourceRoom);
+    if (c.destRoom) deviceRoomPath.set(c.destDevice, c.destRoom);
   }
+
+  // For layout grouping, use the full path as the band key (handles same-name subrooms)
+  const deviceRoom = new Map<string, string>();
+  for (const [device, path] of deviceRoomPath) deviceRoom.set(device, path);
 
   // Compute layout with size + room awareness
   const positions = autoLayout(connections, deviceNames, deviceSizes, deviceRoom);
 
-  // Create room nodes if rooms are specified
-  const roomMap = new Map<string, string>(); // room name → room node ID
-  const uniqueRooms = [...new Set(deviceRoom.values())];
-  for (const roomName of uniqueRooms) {
+  // Build all unique room paths including every ancestor prefix
+  // e.g. "A > B > C" → ["A", "A > B", "A > B > C"]
+  const allRoomPaths = new Set<string>();
+  for (const path of deviceRoomPath.values()) {
+    const parts = path.split(">").map((s) => s.trim()).filter(Boolean);
+    for (let i = 0; i < parts.length; i++) {
+      allRoomPaths.add(parts.slice(0, i + 1).join(" > "));
+    }
+  }
+
+  // Sort shallowest first so parents are created before children
+  const sortedPaths = [...allRoomPaths].sort(
+    (a, b) => a.split(">").length - b.split(">").length,
+  );
+
+  // roomPathMap: full path string → room node ID
+  const roomPathMap = new Map<string, string>();
+  for (const fullPath of sortedPaths) {
+    const parts = fullPath.split(">").map((s) => s.trim());
+    const label = parts[parts.length - 1];
+    const parentPath = parts.length > 1 ? parts.slice(0, -1).join(" > ") : undefined;
+    const parentRoomId = parentPath ? roomPathMap.get(parentPath) : undefined;
+
     const roomId = `room-import-${++importCounter}`;
-    roomMap.set(roomName, roomId);
-    // Room positioning will be computed after devices
+    roomPathMap.set(fullPath, roomId);
     nodes.push({
       id: roomId,
       type: "room",
       position: { x: 0, y: 0 },
-      data: { label: roomName },
+      data: {
+        label,
+        ...(parentRoomId ? { borderStyle: "solid" as const } : {}),
+      },
       style: { width: 400, height: 300 },
       zIndex: -1,
+      ...(parentRoomId ? { parentId: parentRoomId } : {}),
     } as SchematicNode);
   }
+
+  // Legacy alias so the device-creation code below can use roomPathMap uniformly
+  const roomMap = roomPathMap;
 
   // Create device nodes
   for (const name of deviceNames) {
@@ -595,7 +635,7 @@ export function buildImportResult(
       color = "#9ca3af"; // gray for generic
     }
 
-    const room = deviceRoom.get(name);
+    const room = deviceRoomPath.get(name);
     const parentId = room ? roomMap.get(room) : undefined;
 
     const node: DeviceNode = {
@@ -619,34 +659,90 @@ export function buildImportResult(
     deviceNodeMap.set(name, node);
   }
 
-  // Size room nodes to fit their children
-  for (const [, roomId] of roomMap) {
+  // Size room nodes to fit their children — process deepest rooms first so parent
+  // rooms can then be sized to contain their already-sized child rooms.
+  const roomDepthCache = new Map<string, number>();
+  function getRoomDepth(roomId: string): number {
+    if (roomDepthCache.has(roomId)) return roomDepthCache.get(roomId)!;
+    const room = nodes.find((n) => n.id === roomId);
+    const depth = room?.parentId ? 1 + getRoomDepth(room.parentId as string) : 0;
+    roomDepthCache.set(roomId, depth);
+    return depth;
+  }
+
+  const allRoomIds = [...roomPathMap.values()].sort(
+    (a, b) => getRoomDepth(b) - getRoomDepth(a), // deepest first
+  );
+
+  for (const roomId of allRoomIds) {
     const roomNode = nodes.find((n) => n.id === roomId);
     if (!roomNode) continue;
-    const children = nodes.filter((n) => n.type === "device" && (n as DeviceNode).parentId === roomId);
-    if (children.length === 0) continue;
+
+    const deviceChildren = nodes.filter(
+      (n) => n.type === "device" && (n as DeviceNode).parentId === roomId,
+    );
+    const roomChildren = nodes.filter(
+      (n) => n.type === "room" && n.parentId === roomId,
+    );
+
+    if (deviceChildren.length === 0 && roomChildren.length === 0) continue;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const child of children) {
-      const childData = (child as DeviceNode).data;
-      const h = estimateHeight(childData.ports);
+
+    for (const child of deviceChildren) {
+      const h = estimateHeight((child as DeviceNode).data.ports);
       minX = Math.min(minX, child.position.x);
       minY = Math.min(minY, child.position.y);
       maxX = Math.max(maxX, child.position.x + DEVICE_WIDTH);
       maxY = Math.max(maxY, child.position.y + h);
     }
 
-    const pad = 60; // generous padding for room label + routing space
+    for (const subroom of roomChildren) {
+      // subroom positions are still absolute at this point (not yet relativised)
+      const rw = (subroom.style as Record<string, number>).width ?? 400;
+      const rh = (subroom.style as Record<string, number>).height ?? 300;
+      minX = Math.min(minX, subroom.position.x);
+      minY = Math.min(minY, subroom.position.y);
+      maxX = Math.max(maxX, subroom.position.x + rw);
+      maxY = Math.max(maxY, subroom.position.y + rh);
+    }
+
+    const pad = 60;
     roomNode.position = { x: minX - pad, y: minY - pad };
     (roomNode.style as Record<string, number>).width = maxX - minX + pad * 2;
     (roomNode.style as Record<string, number>).height = maxY - minY + pad * 2;
 
-    // Convert child positions to room-relative
-    for (const child of children) {
+    // Convert direct children (devices + subrooms) to room-relative positions
+    for (const child of [...deviceChildren, ...roomChildren]) {
       child.position = {
         x: child.position.x - roomNode.position.x,
         y: child.position.y - roomNode.position.y,
       };
+    }
+  }
+
+  // Re-stack top-level rooms vertically. ROOM_GAP (80px) between layout bands
+  // is far smaller than the parent-room padding on both sides (60px × 2 = 120px
+  // per room), so parent rooms still overlap after sizing. Sort by current y
+  // and stack them cleanly — subrooms stay correct since their positions are
+  // already relative to their parent at this point.
+  const topLevelRooms = nodes
+    .filter((n) => n.type === "room" && !n.parentId)
+    .sort((a, b) => a.position.y - b.position.y);
+
+  if (topLevelRooms.length > 0) {
+    const OUTER_GAP = 40;
+    const CANVAS_ORIGIN = 40; // minimum x/y offset from canvas edge
+
+    // Normalize x: shift all top-level rooms so the leftmost starts at CANVAS_ORIGIN
+    const minX = Math.min(...topLevelRooms.map((r) => r.position.x));
+    const xShift = CANVAS_ORIGIN - minX;
+
+    // Stack vertically starting at CANVAS_ORIGIN, applying x normalization
+    let curY = CANVAS_ORIGIN;
+    for (const room of topLevelRooms) {
+      room.position = { x: room.position.x + xShift, y: curY };
+      curY += ((room.style as Record<string, number>).height ?? 300) + OUTER_GAP;
     }
   }
 
