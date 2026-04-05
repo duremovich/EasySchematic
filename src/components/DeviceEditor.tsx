@@ -701,8 +701,8 @@ export default function DeviceEditor() {
                 value={rackU ?? ""}
                 onChange={(e) => setRackU(e.target.value ? Number(e.target.value) : undefined)}
                 placeholder="e.g. 14"
-                min={0.25}
-                step={0.25}
+                min={1}
+                step={1}
                 onKeyDown={(e) => e.stopPropagation()}
               />
             )}
