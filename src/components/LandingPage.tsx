@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { sponsors } from "../sponsors";
 
 const features = [
   {
@@ -118,6 +119,32 @@ export default function LandingPage() {
             className="w-full rounded-lg shadow-lg border border-slate-200"
             loading="eager"
           />
+        </div>
+      </section>
+
+      {/* Supported by */}
+      <section className="border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-6 py-8 text-center">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
+            Supported by
+          </p>
+          <div className="flex justify-center gap-8">
+            {sponsors.map((s) => (
+              <a
+                key={s.name}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={s.name}
+              >
+                <img
+                  src={s.logo}
+                  alt={s.name}
+                  className="h-16 rounded-lg"
+                />
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 

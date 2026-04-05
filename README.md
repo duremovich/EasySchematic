@@ -8,6 +8,14 @@
 
 <p align="center"><b><a href="https://easyschematic.live">Try it live →</a></b> · <b><a href="https://docs.easyschematic.live">Documentation →</a></b> · <b><a href="https://devices.easyschematic.live">Device Database →</a></b> · <b><a href="https://discord.gg/dxXn3Jk2a6">Discord →</a></b> · <b><a href="https://ko-fi.com/duremovich">Support the project →</a></b></p>
 
+<h3 align="center">Supported by</h3>
+
+<p align="center">
+  <a href="https://cumoratek.com/">
+    <img src="https://avatars.githubusercontent.com/u/137531034?v=4" height="64" alt="Cumoratek AV Solutions" title="Cumoratek AV Solutions"/>
+  </a>
+</p>
+
 ## Features
 
 ### Canvas & Devices
