@@ -99,6 +99,7 @@ export default function DeviceEditor() {
 
   // Rack
   const [rackU, setRackU] = useState<number | undefined>(undefined);
+  const [rackUCustom, setRackUCustom] = useState(false);
 
   // Cable accessory flags
   const [isCableAccessory, setIsCableAccessory] = useState(false);
@@ -153,7 +154,10 @@ export default function DeviceEditor() {
     setVoltage(node.data.voltage);
     setPoeBudgetW(node.data.poeBudgetW);
     setUnitCost(node.data.unitCost);
+    const RACK_U_PRESETS = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const isCustomRackU = node.data.rackU != null && !RACK_U_PRESETS.includes(node.data.rackU);
     setRackU(node.data.rackU);
+    setRackUCustom(isCustomRackU);
     setIsCableAccessory(node.data.isCableAccessory ?? false);
     setIntegratedWithCable(node.data.integratedWithCable ?? false);
     setIsVenueProvided(node.data.isVenueProvided ?? false);
@@ -674,14 +678,34 @@ export default function DeviceEditor() {
             <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">Rack U:</span>
             <select
               className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:border-blue-500"
-              value={rackU ?? ""}
-              onChange={(e) => setRackU(e.target.value ? Number(e.target.value) : undefined)}
+              value={rackUCustom ? "custom" : (rackU != null ? String(rackU) : "")}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === "") { setRackUCustom(false); setRackU(undefined); }
+                else if (val === "custom") { setRackUCustom(true); setRackU(undefined); }
+                else { setRackUCustom(false); setRackU(Number(val)); }
+              }}
             >
               <option value="">—</option>
-              {[0.5, 1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 20, 28, 40].map((u) => (
-                <option key={u} value={u}>{u === 0.5 ? "½U" : `${u}U`}</option>
+              {([0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((u) => (
+                <option key={u} value={u}>
+                  {u === 0.25 ? "¼U" : u === 0.5 ? "½U" : `${u}U`}
+                </option>
               ))}
+              <option value="custom">Custom</option>
             </select>
+            {rackUCustom && (
+              <input
+                type="number"
+                className="w-16 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:border-blue-500"
+                value={rackU ?? ""}
+                onChange={(e) => setRackU(e.target.value ? Number(e.target.value) : undefined)}
+                placeholder="e.g. 14"
+                min={0.25}
+                step={0.25}
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+            )}
             <span className="text-[10px] text-[var(--color-text-muted)] shrink-0 ml-2">Hostname:</span>
             <input
               className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:border-blue-500"
