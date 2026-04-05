@@ -31,7 +31,7 @@ import { computeAlignment, resolveAlignmentOverlaps, type AlignOperation } from 
 import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 import { routeAllEdges, orthogonalize, extractSegments, type RoutedEdge } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath } from "./pathfinding";
-import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, NETWORK_SIGNAL_TYPES } from "./connectorTypes";
+import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, NETWORK_SIGNAL_TYPES, BARE_WIRE_CONNECTORS } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
 import { sanitizeNoteHtml } from "./sanitizeHtml";
@@ -1274,12 +1274,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!sourcePort || !targetPort) return false;
     // Network signal types (ethernet, dante, etc.) can connect in any direction
     const networkBypass = NETWORK_SIGNAL_TYPES.has(sourcePort.signalType) && NETWORK_SIGNAL_TYPES.has(targetPort.signalType);
-    if (!networkBypass) {
+    // Bare-wire connectors (phoenix/terminal-block) bypass signal type checks — if you're
+    // screwing bare wire into screw terminals, you presumably know what signal you're carrying
+    const bareWireBypass = !!sourcePort.connectorType && !!targetPort.connectorType &&
+      BARE_WIRE_CONNECTORS.has(sourcePort.connectorType) && BARE_WIRE_CONNECTORS.has(targetPort.connectorType);
+    if (!networkBypass && !bareWireBypass) {
       const canSource = sourcePort.direction === "output" || sourcePort.direction === "bidirectional";
       const canTarget = targetPort.direction === "input" || targetPort.direction === "bidirectional";
       if (!canSource || !canTarget) return false;
     }
-    if (sourcePort.signalType !== targetPort.signalType) return false;
+    if (sourcePort.signalType !== targetPort.signalType && !networkBypass && !bareWireBypass) return false;
 
     // Multicable ports can only connect to other multicable ports
     const srcIsMulticable = sourcePort.isMulticable ?? false;
