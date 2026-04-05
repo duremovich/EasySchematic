@@ -32,6 +32,7 @@ export default function TagInput({ tags, onChange, suggestions = [], autoSuggest
 
   const show = open && filtered.length > 0;
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset keyboard index when input value changes
   useEffect(() => { setActiveIdx(-1); }, [input]);
 
   useEffect(() => {
