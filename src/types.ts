@@ -201,6 +201,8 @@ export interface DeviceData {
   /** Unit cost in dollars (optional, for BOM/quoting) */
   unitCost?: number;
   isVenueProvided?: boolean;
+  /** Rack unit height (e.g. 1 = 1U, 2 = 2U) — reserved for future rack management */
+  rackU?: number;
   /** Adapter visibility override — only meaningful for deviceType "adapter" */
   adapterVisibility?: "default" | "force-show" | "force-hide";
   /** User-customizable auxiliary data lines (up to 5) displayed at bottom of device node */

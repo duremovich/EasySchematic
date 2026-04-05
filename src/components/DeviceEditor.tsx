@@ -97,6 +97,9 @@ export default function DeviceEditor() {
   // Cost
   const [unitCost, setUnitCost] = useState<number | undefined>(undefined);
 
+  // Rack
+  const [rackU, setRackU] = useState<number | undefined>(undefined);
+
   // Cable accessory flags
   const [isCableAccessory, setIsCableAccessory] = useState(false);
   const [integratedWithCable, setIntegratedWithCable] = useState(false);
@@ -150,6 +153,7 @@ export default function DeviceEditor() {
     setVoltage(node.data.voltage);
     setPoeBudgetW(node.data.poeBudgetW);
     setUnitCost(node.data.unitCost);
+    setRackU(node.data.rackU);
     setIsCableAccessory(node.data.isCableAccessory ?? false);
     setIntegratedWithCable(node.data.integratedWithCable ?? false);
     setIsVenueProvided(node.data.isVenueProvided ?? false);
@@ -202,6 +206,7 @@ export default function DeviceEditor() {
       ...(poeBudgetW != null ? { poeBudgetW } : {}),
       ...(voltage ? { voltage } : {}),
       ...(unitCost != null ? { unitCost } : {}),
+      ...(rackU != null ? { rackU } : {}),
       ...(isCableAccessory ? { isCableAccessory: true } : {}),
       ...(integratedWithCable ? { integratedWithCable: true } : {}),
       ...(isVenueProvided ? { isVenueProvided: true } : {}),
@@ -212,7 +217,7 @@ export default function DeviceEditor() {
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
+  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, rackU, rackUCustom, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
@@ -664,9 +669,20 @@ export default function DeviceEditor() {
             setHiddenPorts={setHiddenPorts}
           />
 
-          {/* Hostname */}
+          {/* Hostname + Rack U */}
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-[10px] text-[var(--color-text-muted)]">Hostname:</span>
+            <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">Rack U:</span>
+            <select
+              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:border-blue-500"
+              value={rackU ?? ""}
+              onChange={(e) => setRackU(e.target.value ? Number(e.target.value) : undefined)}
+            >
+              <option value="">—</option>
+              {[0.5, 1, 2, 3, 4, 6, 8, 10, 12, 14, 16, 20, 28, 40].map((u) => (
+                <option key={u} value={u}>{u === 0.5 ? "½U" : `${u}U`}</option>
+              ))}
+            </select>
+            <span className="text-[10px] text-[var(--color-text-muted)] shrink-0 ml-2">Hostname:</span>
             <input
               className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-xs outline-none focus:border-blue-500"
               value={hostname}
