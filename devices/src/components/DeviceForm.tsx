@@ -25,6 +25,9 @@ export interface DeviceFormData {
   powerCapacityW?: number;
   voltage?: string;
   poeBudgetW?: number;
+  rackHeightU?: number;
+  rackDepthMm?: number;
+  weight?: number;
   isVenueProvided?: boolean;
   submitterNote?: string;
 }
@@ -62,6 +65,9 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
   const [powerCapacityW, setPowerCapacityW] = useState<string>("");
   const [voltage, setVoltage] = useState("");
   const [poeBudgetW, setPoeBudgetW] = useState<string>("");
+  const [rackHeightU, setRackHeightU] = useState<string>("");
+  const [rackDepthMm, setRackDepthMm] = useState<string>("");
+  const [weight, setWeight] = useState<string>("");
   const [isVenueProvided, setIsVenueProvided] = useState(false);
   const [submitterNote, setSubmitterNote] = useState("");
   const [loading, setLoading] = useState(!!id);
@@ -108,6 +114,9 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
         setPowerCapacityW(t.powerCapacityW != null ? String(t.powerCapacityW) : "");
         setVoltage(t.voltage ?? "");
         setPoeBudgetW(t.poeBudgetW != null ? String(t.poeBudgetW) : "");
+        setRackHeightU(t.rackHeightU != null ? String(t.rackHeightU) : "");
+        setRackDepthMm(t.rackDepthMm != null ? String(t.rackDepthMm) : "");
+        setWeight(t.weight != null ? String(t.weight) : "");
         setIsVenueProvided((t as DeviceTemplate & { isVenueProvided?: boolean }).isVenueProvided ?? false);
       })
       .catch((e) => setError(e.message))
@@ -134,6 +143,9 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
         setPowerCapacityW(t.powerCapacityW != null ? String(t.powerCapacityW) : "");
         setVoltage((t.voltage as string) ?? "");
         setPoeBudgetW(t.poeBudgetW != null ? String(t.poeBudgetW) : "");
+        setRackHeightU(t.rackHeightU != null ? String(t.rackHeightU) : "");
+        setRackDepthMm(t.rackDepthMm != null ? String(t.rackDepthMm) : "");
+        setWeight(t.weight != null ? String(t.weight) : "");
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
@@ -178,6 +190,9 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
         ...(powerCapacityW.trim() && { powerCapacityW: Number(powerCapacityW) }),
         ...(voltage.trim() && { voltage: voltage.trim() }),
         ...(poeBudgetW.trim() && { poeBudgetW: Number(poeBudgetW) }),
+        ...(rackHeightU.trim() && { rackHeightU: Number(rackHeightU) }),
+        ...(rackDepthMm.trim() && { rackDepthMm: Number(rackDepthMm) }),
+        ...(weight.trim() && { weight: Number(weight) }),
         ...(isVenueProvided && { isVenueProvided: true }),
         ...(() => {
           const parts: string[] = [];
@@ -319,6 +334,21 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
         <label>
           <span className="block text-sm font-medium text-slate-700 mb-1">Voltage</span>
           <input value={voltage} onChange={(e) => setVoltage(e.target.value)} placeholder="e.g. 100-240V" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </label>
+        <label>
+          <span className="block text-sm font-medium text-slate-700 mb-1">Rack Height (U)</span>
+          <input type="number" min="0.25" step="0.25" value={rackHeightU} onChange={(e) => setRackHeightU(e.target.value)} placeholder="e.g. 1" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <span className="text-xs text-slate-400 mt-1 block">Height in rack units from spec sheet</span>
+        </label>
+        <label>
+          <span className="block text-sm font-medium text-slate-700 mb-1">Rack Depth (mm)</span>
+          <input type="number" min="1" value={rackDepthMm} onChange={(e) => setRackDepthMm(e.target.value)} placeholder="e.g. 482" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <span className="text-xs text-slate-400 mt-1 block">Chassis depth from spec sheet</span>
+        </label>
+        <label>
+          <span className="block text-sm font-medium text-slate-700 mb-1">Weight (kg)</span>
+          <input type="number" min="0" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="e.g. 2.5" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <span className="text-xs text-slate-400 mt-1 block">Device weight from spec sheet</span>
         </label>
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={isVenueProvided} onChange={(e) => setIsVenueProvided(e.target.checked)} className="cursor-pointer" />

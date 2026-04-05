@@ -308,6 +308,9 @@ export interface DeviceTemplate {
   isVenueProvided?: boolean;     // Venue-owned gear — excluded from pack list
   poeBudgetW?: number;           // PoE budget in watts (switches only)
   unitCost?: number;             // MSRP / default unit cost in dollars
+  rackHeightU?: number;          // Rack unit height — reserved for future rack management
+  rackDepthMm?: number;          // Rack depth in millimeters — reserved for future rack management
+  weight?: number;               // Device weight in kilograms — reserved for future rack management
 }
 
 export interface CustomTemplateGroup {
