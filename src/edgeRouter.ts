@@ -8,6 +8,7 @@
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SchematicNode, ConnectionEdge } from "./types";
 import {
+  buildGlobalGrid,
   buildObstacles,
   computeEdgePath,
   createPenaltySpatialIndex,
@@ -642,6 +643,18 @@ export function routeAllEdges(
     });
   }
 
+  // Build one global grid covering all obstacles + endpoints — shared across all A* calls.
+  // Eliminates per-edge grid construction (allocation + obstacle marking).
+  const epGXs: number[] = [];
+  const epGYs: number[] = [];
+  for (const ep of edgeEndpoints) {
+    epGXs.push(px2g(ep.sourceX), px2g(ep.targetX));
+    epGYs.push(px2g(ep.sourceY), px2g(ep.targetY));
+  }
+  const globalGrid = epGXs.length > 0
+    ? buildGlobalGrid(precomputedGridRects, epGXs, epGYs)
+    : undefined;
+
   // Sort order determines corridor priority — edges routed first claim corridors,
   // later edges route around them via penalty zones.
   // Strategy 0 (default): signal-type grouping → shortest Manhattan distance → position
@@ -814,7 +827,7 @@ export function routeAllEdges(
         penalties.length > 0 ? penalties : undefined,
         sigType, noSourceStub, noTargetStub, excludeDir, reservedAtTarget,
         undefined, legSrcExitsRight, legTgtEntersLeft,
-        precomputedGridRects, penaltySpatialIdx,
+        precomputedGridRects, penaltySpatialIdx, globalGrid,
       );
 
       if (!legResult) {
