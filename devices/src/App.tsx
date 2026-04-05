@@ -241,7 +241,7 @@ export default function App() {
           isMod ? <ReviewQueuePage /> : <NoAccess />
         )}
         {route.page === "review-detail" && route.id && (
-          isMod ? <ReviewDetailPage id={route.id} /> : <NoAccess />
+          isMod ? <ReviewDetailPage id={route.id} currentUserId={user?.id} /> : <NoAccess />
         )}
         {route.page === "profile" && (
           authLoading ? null : user ? <ProfilePage user={user} onUpdate={setUser} /> : <LoginRedirect />

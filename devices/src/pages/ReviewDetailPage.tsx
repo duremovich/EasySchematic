@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
-import { fetchSubmission, fetchTemplate, approveSubmission, rejectSubmission } from "../api";
+import { fetchSubmission, fetchTemplate, approveSubmission, rejectSubmission, deferSubmission, claimSubmission } from "../api";
 import type { Submission } from "../api";
 import type { DeviceTemplate, Port, SlotDefinition } from "../../../src/types";
 import { CONNECTOR_LABELS } from "../../../src/types";
 import { linkClick } from "../navigate";
 import StatusBadge from "../components/StatusBadge";
 import SignalBadge from "../components/SignalBadge";
+import ReviewGuidelines from "../components/ReviewGuidelines";
 import PortEditor from "../components/PortEditor";
 
-export default function ReviewDetailPage({ id }: { id: string }) {
+export default function ReviewDetailPage({ id, currentUserId }: { id: string; currentUserId?: string }) {
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [existing, setExisting] = useState<DeviceTemplate | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [rejectNote, setRejectNote] = useState("");
   const [showReject, setShowReject] = useState(false);
+  const [deferNote, setDeferNote] = useState("");
+  const [showDefer, setShowDefer] = useState(false);
   const [acting, setActing] = useState(false);
   const [done, setDone] = useState("");
   const [editing, setEditing] = useState(false);
@@ -38,6 +41,10 @@ export default function ReviewDetailPage({ id }: { id: string }) {
     fetchSubmission(id)
       .then(async (s) => {
         setSubmission(s);
+        // Auto-claim for review if still actionable
+        if (s.status === "pending" || s.status === "deferred") {
+          claimSubmission(id);
+        }
         if (s.action === "update" && s.templateId) {
           try {
             const t = await fetchTemplate(s.templateId);
@@ -116,6 +123,19 @@ export default function ReviewDetailPage({ id }: { id: string }) {
     }
   };
 
+  const handleDefer = async () => {
+    if (!deferNote.trim()) return;
+    setActing(true);
+    try {
+      await deferSubmission(id, deferNote);
+      setDone("deferred");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to defer");
+    } finally {
+      setActing(false);
+    }
+  };
+
   if (loading) return <div className="p-8 text-center text-slate-500">Loading...</div>;
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
   if (!submission) return <div className="p-8 text-center text-slate-500">Not found</div>;
@@ -123,10 +143,14 @@ export default function ReviewDetailPage({ id }: { id: string }) {
   if (done) {
     return (
       <div className="max-w-4xl mx-auto p-6 text-center">
-        <div className={`w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center ${done === "approved" ? "bg-green-100" : "bg-red-100"}`}>
+        <div className={`w-12 h-12 mx-auto mb-4 rounded-full flex items-center justify-center ${done === "approved" ? "bg-green-100" : done === "deferred" ? "bg-purple-100" : "bg-red-100"}`}>
           {done === "approved" ? (
             <svg className="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : done === "deferred" ? (
+            <svg className="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
             <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -149,6 +173,24 @@ export default function ReviewDetailPage({ id }: { id: string }) {
         <StatusBadge status={submission.status} />
         <span className="text-xs text-slate-400 capitalize">{submission.action}</span>
       </div>
+
+      <ReviewGuidelines />
+
+      {/* Claim warning — someone else is reviewing */}
+      {submission.claimedBy && submission.claimedAt && submission.claimedBy !== currentUserId && (() => {
+        const ms = Date.now() - new Date(submission.claimedAt + "Z").getTime();
+        if (ms > 30 * 60 * 1000) return null; // expired
+        const min = Math.floor(ms / 60000);
+        const name = submission.claimerName || submission.claimerEmail || "Another moderator";
+        const ago = min < 1 ? "just now" : `${min} minute${min !== 1 ? "s" : ""} ago`;
+        return (
+          <div className="mb-4 border border-yellow-300 rounded-lg p-4 bg-yellow-50">
+            <p className="text-sm text-yellow-800">
+              <strong>{name}</strong> started reviewing this {ago}. They may already be working on it.
+            </p>
+          </div>
+        );
+      })()}
 
       {submission.submitterNote && (
         <div className="mb-6 border border-amber-200 rounded-lg p-4 bg-amber-50">
@@ -296,8 +338,14 @@ export default function ReviewDetailPage({ id }: { id: string }) {
       )}
 
       {/* Actions */}
-      {submission.status === "pending" && !editing && (
+      {(submission.status === "pending" || submission.status === "deferred") && !editing && (
         <div className="border-t border-slate-200 pt-6">
+          {submission.status === "deferred" && submission.reviewerNote && (
+            <div className="mb-4 border border-purple-200 rounded-lg p-4 bg-purple-50">
+              <div className="text-xs font-semibold text-purple-700 mb-1">Deferred — Requires Codebase Changes</div>
+              <p className="text-sm text-purple-900 whitespace-pre-wrap">{submission.reviewerNote}</p>
+            </div>
+          )}
           {showReject ? (
             <div className="space-y-3">
               <label className="block">
@@ -323,6 +371,31 @@ export default function ReviewDetailPage({ id }: { id: string }) {
                 </button>
               </div>
             </div>
+          ) : showDefer ? (
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">What codebase changes are needed? *</span>
+                <textarea
+                  value={deferNote}
+                  onChange={(e) => setDeferNote(e.target.value)}
+                  placeholder="e.g. Needs new device type &quot;audio-delay&quot; added to DEVICE_TYPE_TO_CATEGORY, or needs new connector type &quot;speakon-nl4&quot;..."
+                  className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  rows={3}
+                />
+              </label>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleDefer}
+                  disabled={acting || !deferNote.trim()}
+                  className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                >
+                  {acting ? "Deferring..." : "Confirm Defer"}
+                </button>
+                <button onClick={() => setShowDefer(false)} className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100 transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
           ) : (
             <div className="flex flex-wrap items-center gap-3">
               <button
@@ -337,6 +410,12 @@ export default function ReviewDetailPage({ id }: { id: string }) {
                 className="px-6 py-2 rounded-lg border border-blue-300 text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors"
               >
                 Edit & Approve
+              </button>
+              <button
+                onClick={() => setShowDefer(true)}
+                className="px-6 py-2 rounded-lg border border-purple-300 text-purple-600 text-sm font-medium hover:bg-purple-50 transition-colors"
+              >
+                Defer — Needs Code Change
               </button>
               <button
                 onClick={() => setShowReject(true)}

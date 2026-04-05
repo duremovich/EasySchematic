@@ -216,7 +216,7 @@ export interface Submission {
   action: "create" | "update";
   templateId: string | null;
   data: Omit<DeviceTemplate, "id" | "version">;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "deferred";
   reviewerId: string | null;
   reviewerNote: string | null;
   createdAt: string;
@@ -224,6 +224,10 @@ export interface Submission {
   submitterEmail?: string;
   submitterName?: string;
   submitterNote?: string;
+  claimedBy: string | null;
+  claimedAt: string | null;
+  claimerEmail?: string;
+  claimerName?: string;
 }
 
 export async function createSubmission(
@@ -292,6 +296,24 @@ export async function rejectSubmission(id: string, note?: string): Promise<void>
     body: JSON.stringify({ note }),
   });
   if (!res.ok) throw new Error(`Failed to reject: ${res.status}`);
+}
+
+export async function claimSubmission(id: string): Promise<void> {
+  await fetch(`${API_URL}/submissions/${id}/claim`, {
+    method: "POST",
+    credentials: "include",
+  });
+  // Silently ignore errors — claim is advisory, not critical
+}
+
+export async function deferSubmission(id: string, note: string): Promise<void> {
+  const res = await fetch(`${API_URL}/submissions/${id}/defer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ note }),
+  });
+  if (!res.ok) throw new Error(`Failed to defer: ${res.status}`);
 }
 
 // ==================== USER MANAGEMENT (admin) ====================

@@ -743,9 +743,12 @@ app.get("/submissions/pending", async (c) => {
 
   const { results } = await c.env.easyschematic_db
     .prepare(
-      `SELECT s.*, u.email as submitter_email, u.name as submitter_name
-       FROM submissions s JOIN users u ON s.user_id = u.id
-       WHERE s.status = 'pending' ORDER BY s.created_at ASC`,
+      `SELECT s.*, u.email as submitter_email, u.name as submitter_name,
+              c.email as claimer_email, c.name as claimer_name
+       FROM submissions s
+       JOIN users u ON s.user_id = u.id
+       LEFT JOIN users c ON s.claimed_by = c.id
+       WHERE s.status IN ('pending', 'deferred') ORDER BY s.status DESC, s.created_at ASC`,
     )
     .all();
 
@@ -758,7 +761,11 @@ app.get("/submissions/:id", async (c) => {
   if (!auth && !user) return c.json({ error: "Not authenticated" }, 401);
 
   const id = c.req.param("id");
-  const row = await c.env.easyschematic_db.prepare("SELECT * FROM submissions WHERE id = ?").bind(id).first();
+  const row = await c.env.easyschematic_db.prepare(
+    `SELECT s.*, c.email as claimer_email, c.name as claimer_name
+     FROM submissions s LEFT JOIN users c ON s.claimed_by = c.id
+     WHERE s.id = ?`
+  ).bind(id).first();
 
   if (!row) return c.json({ error: "Submission not found" }, 404);
 
@@ -771,6 +778,21 @@ app.get("/submissions/:id", async (c) => {
   return c.json(formatSubmission(submission));
 });
 
+// Soft-claim a submission while reviewing (advisory, not blocking)
+app.post("/submissions/:id/claim", async (c) => {
+  const auth = requireModeratorOrToken(c);
+  if (!auth) return c.json({ error: "Moderator access required" }, 403);
+  if (auth === "token") return c.json({ error: "Token auth cannot claim" }, 400);
+
+  const id = c.req.param("id");
+  await c.env.easyschematic_db
+    .prepare("UPDATE submissions SET claimed_by = ?, claimed_at = datetime('now') WHERE id = ? AND status IN ('pending', 'deferred')")
+    .bind(auth.id, id)
+    .run();
+
+  return c.json({ ok: true }, 200, NO_CACHE_HEADERS);
+});
+
 app.post("/submissions/:id/approve", async (c) => {
   const auth = requireModeratorOrToken(c);
   if (!auth) return c.json({ error: "Moderator access required" }, 403);
@@ -779,8 +801,8 @@ app.post("/submissions/:id/approve", async (c) => {
   const id = c.req.param("id");
   const db = c.env.easyschematic_db;
 
-  const row = await db.prepare("SELECT * FROM submissions WHERE id = ? AND status = 'pending'").bind(id).first();
-  if (!row) return c.json({ error: "Pending submission not found" }, 404);
+  const row = await db.prepare("SELECT * FROM submissions WHERE id = ? AND status IN ('pending', 'deferred')").bind(id).first();
+  if (!row) return c.json({ error: "Submission not found or already resolved" }, 404);
 
   const submission = row as unknown as SubmissionRow;
 
@@ -867,7 +889,7 @@ app.post("/submissions/:id/approve", async (c) => {
 
   // Mark submission approved (and backfill template_id for create actions)
   await db
-    .prepare("UPDATE submissions SET status = 'approved', reviewer_id = ?, reviewed_at = datetime('now'), template_id = COALESCE(template_id, ?) WHERE id = ?")
+    .prepare("UPDATE submissions SET status = 'approved', reviewer_id = ?, reviewed_at = datetime('now'), template_id = COALESCE(template_id, ?), claimed_by = NULL, claimed_at = NULL WHERE id = ?")
     .bind(reviewerId, templateId, id)
     .run();
 
@@ -883,20 +905,46 @@ app.post("/submissions/:id/reject", async (c) => {
   const body = await c.req.json<{ note?: string }>();
 
   const row = await c.env.easyschematic_db
-    .prepare("SELECT id FROM submissions WHERE id = ? AND status = 'pending'")
+    .prepare("SELECT id FROM submissions WHERE id = ? AND status IN ('pending', 'deferred')")
     .bind(id)
     .first();
 
-  if (!row) return c.json({ error: "Pending submission not found" }, 404);
+  if (!row) return c.json({ error: "Submission not found or already resolved" }, 404);
 
   await c.env.easyschematic_db
     .prepare(
-      "UPDATE submissions SET status = 'rejected', reviewer_id = ?, reviewer_note = ?, reviewed_at = datetime('now') WHERE id = ?",
+      "UPDATE submissions SET status = 'rejected', reviewer_id = ?, reviewer_note = ?, reviewed_at = datetime('now'), claimed_by = NULL, claimed_at = NULL WHERE id = ?",
     )
     .bind(reviewerId, body.note ?? null, id)
     .run();
 
   return c.json({ ok: true, status: "rejected" }, 200, NO_CACHE_HEADERS);
+});
+
+// Defer submission — requires codebase changes before approval
+app.post("/submissions/:id/defer", async (c) => {
+  const auth = requireModeratorOrToken(c);
+  if (!auth) return c.json({ error: "Moderator access required" }, 403);
+  const reviewerId = auth === "token" ? null : auth.id;
+
+  const id = c.req.param("id");
+  const body = await c.req.json<{ note?: string }>();
+
+  const row = await c.env.easyschematic_db
+    .prepare("SELECT id FROM submissions WHERE id = ? AND status IN ('pending', 'deferred')")
+    .bind(id)
+    .first();
+
+  if (!row) return c.json({ error: "Submission not found or already resolved" }, 404);
+
+  await c.env.easyschematic_db
+    .prepare(
+      "UPDATE submissions SET status = 'deferred', reviewer_id = ?, reviewer_note = ?, reviewed_at = datetime('now'), claimed_by = NULL, claimed_at = NULL WHERE id = ?",
+    )
+    .bind(reviewerId, body.note ?? null, id)
+    .run();
+
+  return c.json({ ok: true, status: "deferred" }, 200, NO_CACHE_HEADERS);
 });
 
 // ==================== USER MANAGEMENT (ADMIN) ====================
@@ -1767,9 +1815,13 @@ interface SubmissionRow {
   submitter_note: string | null;
   created_at: string;
   reviewed_at: string | null;
+  claimed_by: string | null;
+  claimed_at: string | null;
   // Joined fields (optional)
   submitter_email?: string;
   submitter_name?: string;
+  claimer_email?: string;
+  claimer_name?: string;
 }
 
 
@@ -1788,5 +1840,9 @@ function formatSubmission(row: SubmissionRow) {
     ...(row.submitter_email && { submitterEmail: row.submitter_email }),
     ...(row.submitter_name && { submitterName: row.submitter_name }),
     ...(row.submitter_note && { submitterNote: row.submitter_note }),
+    claimedBy: row.claimed_by ?? null,
+    claimedAt: row.claimed_at ?? null,
+    ...(row.claimer_email && { claimerEmail: row.claimer_email }),
+    ...(row.claimer_name && { claimerName: row.claimer_name }),
   };
 }

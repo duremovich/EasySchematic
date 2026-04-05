@@ -2,7 +2,18 @@ import { useState, useEffect } from "react";
 import { fetchPendingSubmissions } from "../api";
 import type { Submission } from "../api";
 import StatusBadge from "../components/StatusBadge";
+import ReviewGuidelines from "../components/ReviewGuidelines";
 import { linkClick } from "../navigate";
+
+const CLAIM_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
+
+function claimAge(claimedAt: string | null): { expired: boolean; label: string } | null {
+  if (!claimedAt) return null;
+  const ms = Date.now() - new Date(claimedAt + "Z").getTime();
+  if (ms > CLAIM_EXPIRY_MS) return { expired: true, label: "" };
+  const min = Math.floor(ms / 60000);
+  return { expired: false, label: min < 1 ? "just now" : `${min}m ago` };
+}
 
 export default function ReviewQueuePage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -22,6 +33,8 @@ export default function ReviewQueuePage() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Review Queue</h1>
+
+      <ReviewGuidelines />
 
       {submissions.length === 0 ? (
         <div className="text-center py-12 text-slate-500">
@@ -47,6 +60,12 @@ export default function ReviewQueuePage() {
                     {s.data.deviceType}
                     {s.data.manufacturer && ` \u00b7 ${s.data.manufacturer}`}
                   </p>
+                  {(() => {
+                    const claim = claimAge(s.claimedAt);
+                    if (!claim || claim.expired) return null;
+                    const name = s.claimerName || s.claimerEmail || "Someone";
+                    return <p className="text-xs text-amber-600 mt-0.5">{name} reviewing ({claim.label})</p>;
+                  })()}
                 </div>
                 <div className="sm:text-right">
                   <p className="text-sm text-slate-500">{s.submitterEmail}</p>
