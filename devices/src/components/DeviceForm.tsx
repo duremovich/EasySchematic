@@ -3,6 +3,7 @@ import type { Port, SlotDefinition, DeviceTemplate } from "../../../src/types";
 import { fetchTemplate, fetchSearchTerms, fetchTemplates, fetchDraft, fetchManufacturers } from "../api";
 import { linkClick } from "../navigate";
 import PortEditor from "./PortEditor";
+import AutocompleteInput from "./AutocompleteInput";
 import SearchableSelect from "./SearchableSelect";
 import TagInput from "./TagInput";
 import { DEVICE_TYPE_TO_CATEGORY, DEVICE_TYPE_LABELS, ALL_CATEGORIES, DEVICE_TYPES_BY_CATEGORY } from "../../../src/deviceTypeCategories";
