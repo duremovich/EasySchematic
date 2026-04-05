@@ -99,7 +99,6 @@ export default function DeviceEditor() {
 
   // Rack
   const [rackHeightU, setRackHeightU] = useState<number | undefined>(undefined);
-  const [rackHeightUCustom, setRackHeightUCustom] = useState(false);
   const [rackDepthMm, setRackDepthMm] = useState<number | undefined>(undefined);
   const [weight, setWeight] = useState<number | undefined>(undefined);
 
@@ -156,10 +155,7 @@ export default function DeviceEditor() {
     setVoltage(node.data.voltage);
     setPoeBudgetW(node.data.poeBudgetW);
     setUnitCost(node.data.unitCost);
-    const RACK_U_PRESETS = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
-    const isCustomRackU = node.data.rackHeightU != null && !RACK_U_PRESETS.includes(node.data.rackHeightU);
     setRackHeightU(node.data.rackHeightU);
-    setRackHeightUCustom(isCustomRackU);
     setRackDepthMm(node.data.rackDepthMm);
     setWeight(node.data.weight);
     setIsCableAccessory(node.data.isCableAccessory ?? false);
@@ -227,7 +223,7 @@ export default function DeviceEditor() {
     };
     updateDevice(editingNodeId, data);
     close();
-  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, rackHeightU, rackHeightUCustom, rackDepthMm, weight, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
+  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, rackHeightU, rackDepthMm, weight, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
@@ -701,38 +697,17 @@ export default function DeviceEditor() {
                 <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
                   Height
                 </label>
-                <div className="flex items-center gap-1">
-                  <select
-                    className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-1 text-xs outline-none focus:border-blue-500"
-                    value={rackHeightUCustom ? "custom" : (rackHeightU != null ? String(rackHeightU) : "")}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "") { setRackHeightUCustom(false); setRackHeightU(undefined); }
-                      else if (val === "custom") { setRackHeightUCustom(true); setRackHeightU(undefined); }
-                      else { setRackHeightUCustom(false); setRackHeightU(Number(val)); }
-                    }}
-                  >
-                    <option value="">—</option>
-                    {([0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const).map((u) => (
-                      <option key={u} value={u}>
-                        {u === 0.25 ? "¼U" : u === 0.5 ? "½U" : `${u}U`}
-                      </option>
-                    ))}
-                    <option value="custom">Custom</option>
-                  </select>
-                </div>
-                {rackHeightUCustom && (
-                  <input
-                    type="number"
-                    className="mt-1 w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-1 text-xs outline-none focus:border-blue-500"
-                    value={rackHeightU ?? ""}
-                    onChange={(e) => setRackHeightU(e.target.value ? Number(e.target.value) : undefined)}
-                    placeholder="e.g. 14"
-                    min={1}
-                    step={1}
-                    onKeyDown={(e) => e.stopPropagation()}
-                  />
-                )}
+                <input
+                  type="number"
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-1 text-xs outline-none focus:border-blue-500"
+                  value={rackHeightU ?? ""}
+                  onChange={(e) => setRackHeightU(e.target.value ? Number(e.target.value) : undefined)}
+                  placeholder="e.g. 2"
+                  min={1}
+                  max={20}
+                  step={1}
+                  onKeyDown={(e) => e.stopPropagation()}
+                />
               </div>
               <div>
                 <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
