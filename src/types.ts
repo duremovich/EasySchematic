@@ -202,7 +202,11 @@ export interface DeviceData {
   unitCost?: number;
   isVenueProvided?: boolean;
   /** Rack unit height (e.g. 1 = 1U, 2 = 2U) — reserved for future rack management */
-  rackU?: number;
+  rackHeightU?: number;
+  /** Rack depth in millimeters — reserved for future rack management */
+  rackDepthMm?: number;
+  /** Device weight in kilograms — reserved for future rack management */
+  weight?: number;
   /** Adapter visibility override — only meaningful for deviceType "adapter" */
   adapterVisibility?: "default" | "force-show" | "force-hide";
   /** User-customizable auxiliary data lines (up to 5) displayed at bottom of device node */
