@@ -13,7 +13,7 @@ export type ConnectorType =
   | "mini-din-4" | "mini-din-7"
   | "mini-hdmi" | "mini-displayport"
   | "rj11" | "rj12" | "usb-mini" | "usb-micro" | "trs-2.5mm"
-  | "reverse-tnc" | "db37"
+  | "reverse-tnc" | "sma" | "db37"
   | "wireless"
   | "none" | "other";
 
@@ -573,6 +573,7 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "usb-micro": "Micro USB",
   "trs-2.5mm": "2.5mm TRS",
   "reverse-tnc": "Reverse TNC",
+  sma: "SMA",
   db37: "DB37",
   wireless: "Wireless",
   none: "None",

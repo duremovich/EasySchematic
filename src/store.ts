@@ -75,6 +75,8 @@ export const CATEGORY_ORDER_DEFAULT: string[] = [
   "Mixing Consoles",
   "Powered Mixers",
   "Audio",
+  "Audio I/O",
+  "Microphones",
   "Speakers",
   "Amplifiers",
   "Networking",
@@ -90,6 +92,7 @@ export const CATEGORY_ORDER_DEFAULT: string[] = [
   "Storage",
   "Infrastructure",
   "Intercom",
+  "Monitoring",
   "Cloud Services",
   "Cable Accessories",
 ];

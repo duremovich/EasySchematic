@@ -184,6 +184,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   wireless: "Wireless",
   "usb-micro": "Micro USB",
   "reverse-tnc": "Reverse TNC",
+  sma: "SMA",
   db37: "DB37",
   none: "",
   other: "Other",
