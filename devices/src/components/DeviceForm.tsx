@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import type { Port, SlotDefinition, DeviceTemplate } from "../../../src/types";
-import { fetchTemplate, fetchSearchTerms, fetchTemplates, fetchDraft } from "../api";
+import { fetchTemplate, fetchSearchTerms, fetchTemplates, fetchDraft, fetchManufacturers } from "../api";
 import { linkClick } from "../navigate";
 import PortEditor from "./PortEditor";
 import SearchableSelect from "./SearchableSelect";
@@ -72,11 +72,13 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
   const [customDeviceType, setCustomDeviceType] = useState(false);
   const [customDeviceTypeText, setCustomDeviceTypeText] = useState("");
   const [knownSearchTerms, setKnownSearchTerms] = useState<string[]>([]);
+  const [knownManufacturers, setKnownManufacturers] = useState<string[]>([]);
   const [allTemplates, setAllTemplates] = useState<DeviceTemplate[]>([]);
   const categoryAutoRef = useRef(true);
 
   useEffect(() => {
     fetchSearchTerms().then(setKnownSearchTerms);
+    fetchManufacturers().then(setKnownManufacturers);
     fetchTemplates().then(setAllTemplates).catch(() => {});
   }, []);
 
@@ -282,7 +284,7 @@ export default function DeviceForm({ id, draftId, onSubmit, submitLabel = "Save"
         </div>
         <label>
           <span className="block text-sm font-medium text-slate-700 mb-1">Manufacturer *</span>
-          <input value={manufacturer} onChange={(e) => setManufacturer(e.target.value)} placeholder="e.g. Blackmagic Design, or Generic" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <AutocompleteInput value={manufacturer} onChange={setManufacturer} suggestions={knownManufacturers} placeholder="e.g. Blackmagic Design, or Generic" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </label>
         <label>
           <span className="block text-sm font-medium text-slate-700 mb-1">Model Number {!isGenericMfr ? "*" : ""}</span>

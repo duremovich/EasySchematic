@@ -54,6 +54,12 @@ export async function fetchSearchTerms(): Promise<string[]> {
   return res.json();
 }
 
+export async function fetchManufacturers(): Promise<string[]> {
+  const res = await fetch(`${API_URL}/templates/manufacturers`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 // ==================== DRAFTS ====================
 
 export async function fetchDraft(id: string): Promise<Record<string, unknown>> {

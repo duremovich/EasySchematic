@@ -1075,6 +1075,13 @@ app.get("/templates/device-types", async (c) => {
   return c.json(results.map((r) => (r as { device_type: string }).device_type), 200, CACHE_HEADERS);
 });
 
+app.get("/templates/manufacturers", async (c) => {
+  const { results } = await c.env.easyschematic_db
+    .prepare("SELECT DISTINCT manufacturer FROM templates WHERE manufacturer IS NOT NULL ORDER BY manufacturer")
+    .all();
+  return c.json(results.map((r) => (r as { manufacturer: string }).manufacturer), 200, CACHE_HEADERS);
+});
+
 app.get("/templates/search-terms", async (c) => {
   const { results } = await c.env.easyschematic_db
     .prepare("SELECT search_terms FROM templates WHERE search_terms IS NOT NULL")
