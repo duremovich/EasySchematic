@@ -180,11 +180,46 @@ function OffsetEdgeComponent({
   });
 
   // Cable ID label from pre-computed map
-  const showConnectionLabels = useSchematicStore((s) => s.showConnectionLabels);
+  const showCableIdLabels = useSchematicStore((s) => s.showCableIdLabels);
+  const showCustomLabels = useSchematicStore((s) => s.showCustomLabels);
+  const globalCableIdGap = useSchematicStore((s) => s.cableIdGap);
+  const globalCustomLabelGap = useSchematicStore((s) => s.customLabelGap);
+  const globalCableIdMidOffset = useSchematicStore((s) => s.cableIdMidOffset);
+  const globalCustomLabelMidOffset = useSchematicStore((s) => s.customLabelMidOffset);
+  const globalCableIdLabelMode = useSchematicStore((s) => s.cableIdLabelMode);
+  const globalCustomLabelMode = useSchematicStore((s) => s.customLabelMode);
   const cableId = useSchematicStore((s) => s.cableIdMap[id] ?? "");
-  const hideLabel = useSchematicStore((s) => {
+  const hideCableId = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
-    return edge?.data?.hideLabel === true;
+    return edge?.data?.hideCableId === true || edge?.data?.hideLabel === true;
+  });
+  const hideCustomLabel = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.hideCustomLabel === true;
+  });
+  const edgeCableIdGap = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.cableIdGap as number | undefined;
+  });
+  const edgeCustomLabelGap = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.customLabelGap as number | undefined;
+  });
+  const edgeCableIdMidOffset = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.cableIdMidOffset as number | undefined;
+  });
+  const edgeCustomLabelMidOffset = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.customLabelMidOffset as number | undefined;
+  });
+  const edgeCableIdLabelMode = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.cableIdLabelMode as "endpoint" | "midpoint" | undefined;
+  });
+  const edgeCustomLabelMode = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.customLabelMode as "endpoint" | "midpoint" | undefined;
   });
 
   // Read stubbed flag and custom endpoints (stable primitive selectors)
@@ -684,33 +719,58 @@ function OffsetEdgeComponent({
     };
   }
 
-  // User-defined connection label rendered at the midpoint (via EdgeLabelRenderer)
-  const connectionLabel = edgeLabel && routeStr ? (
-    <div
-      style={{
-        position: "absolute",
-        transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)`,
-        pointerEvents: "none",
-        fontSize: 10,
-        fontFamily: "Inter, system-ui, sans-serif",
-        fontWeight: 500,
-        color: "#374151",
-        background: "rgba(255,255,255,0.92)",
-        padding: "1px 4px",
-        borderRadius: 3,
-        whiteSpace: "nowrap",
-        border: "1px solid #e5e7eb",
-      }}
-    >
-      {edgeLabel}
-    </div>
-  ) : null;
-
-  // Cable ID labels at both ends of the connection, positioned along cable direction
+  // --- Label rendering (#5, #61) ---
   const signalColor = (style?.stroke as string) ?? "#6b7280";
   const labelText = cableId;
+  const cableIdGap = edgeCableIdGap ?? globalCableIdGap;
+  const customGap = edgeCustomLabelGap ?? globalCustomLabelGap;
+  const cableIdLabelMode = edgeCableIdLabelMode ?? globalCableIdLabelMode;
+  const customLabelMode = edgeCustomLabelMode ?? globalCustomLabelMode;
+  const cidMidOff = edgeCableIdMidOffset ?? globalCableIdMidOffset;
+  const clblMidOff = edgeCustomLabelMidOffset ?? globalCustomLabelMidOffset;
 
-  const LABEL_GAP = 4;
+  // Build cumulative distances along the routed path (shared by midpoint calculations)
+  let pathWps: { x: number; y: number }[] = [];
+  let cumDist: number[] = [];
+  let totalLen = 0;
+  if (routeWpStr) {
+    pathWps = routeWpStr.split("|").map((s) => {
+      const [wx, wy] = s.split(",");
+      return { x: Number(wx), y: Number(wy) };
+    });
+    if (pathWps.length >= 2) {
+      cumDist = [0];
+      for (let i = 1; i < pathWps.length; i++) {
+        const ddx = pathWps[i].x - pathWps[i - 1].x;
+        const ddy = pathWps[i].y - pathWps[i - 1].y;
+        cumDist.push(cumDist[i - 1] + Math.sqrt(ddx * ddx + ddy * ddy));
+      }
+      totalLen = cumDist[cumDist.length - 1];
+    }
+  }
+
+  // Interpolate a point + direction along the path at a given distance from the start
+  const pointAtDistance = (dist: number): { x: number; y: number; dx: number; dy: number } => {
+    const d = Math.max(0, Math.min(totalLen, dist));
+    for (let i = 1; i < cumDist.length; i++) {
+      if (cumDist[i] >= d) {
+        const segLen = cumDist[i] - cumDist[i - 1];
+        const t = segLen > 0 ? (d - cumDist[i - 1]) / segLen : 0;
+        const sdx = pathWps[i].x - pathWps[i - 1].x;
+        const sdy = pathWps[i].y - pathWps[i - 1].y;
+        const len = Math.sqrt(sdx * sdx + sdy * sdy);
+        return {
+          x: pathWps[i - 1].x + t * sdx,
+          y: pathWps[i - 1].y + t * sdy,
+          dx: len > 0 ? sdx / len : 1,
+          dy: len > 0 ? sdy / len : 0,
+        };
+      }
+    }
+    const last = pathWps.length > 0 ? pathWps[pathWps.length - 1] : { x: lx, y: ly };
+    return { ...last, dx: 1, dy: 0 };
+  };
+
   const cableIdLabelStyle: React.CSSProperties = {
     position: "absolute",
     pointerEvents: "none",
@@ -725,28 +785,62 @@ function OffsetEdgeComponent({
     border: `1px solid ${signalColor}`,
   };
 
-  // Build a positioned cable ID label div for EdgeLabelRenderer
-  const makeCableIdLabel = (
-    ex: number, ey: number, dx: number, dy: number, key: string,
+  const customLabelStyle: React.CSSProperties = {
+    position: "absolute",
+    pointerEvents: "none",
+    fontSize: 10,
+    fontFamily: "Inter, system-ui, sans-serif",
+    fontWeight: 500,
+    color: "#374151",
+    background: "rgba(255,255,255,0.92)",
+    padding: "1px 4px",
+    borderRadius: 3,
+    whiteSpace: "nowrap",
+    border: "1px solid #e5e7eb",
+  };
+
+  // Estimate badge width from text length (for offset positioning)
+  const estimateBadgeWidth = (text: string, fontSize: number, paddingH: number) =>
+    text.length * fontSize * 0.58 + paddingH * 2 + 2; // +2 for border
+
+  // Build a positioned endpoint label that follows the cable path
+  const makeEndpointLabel = (
+    fromSource: boolean, offset: number,
+    text: string, labelStyle: React.CSSProperties, key: string,
+    // Fallbacks when no routed path is available
+    fallbackX: number, fallbackY: number, fallbackDx: number, fallbackDy: number,
   ) => {
-    // Determine dominant axis (orthogonal cables: one of dx/dy is ~1, other ~0)
-    const isHoriz = Math.abs(dx) >= Math.abs(dy);
-    // Offset along the cable direction from the endpoint
-    const px = isHoriz ? ex + Math.sign(dx) * LABEL_GAP : ex;
-    const py = isHoriz ? ey : ey + Math.sign(dy) * LABEL_GAP;
-    // CSS translate: place at (px, py) then anchor appropriately
-    const anchorX = isHoriz ? (dx < 0 ? "-100%" : "0%") : "-50%";
-    const anchorY = isHoriz ? "-50%" : (dy < 0 ? "-100%" : "0%");
+    let px: number, py: number, dirDx: number, dirDy: number;
+    if (totalLen > 0) {
+      // Walk along the path from source or target end
+      const dist = fromSource ? offset : totalLen - offset;
+      const pt = pointAtDistance(dist);
+      px = pt.x;
+      py = pt.y;
+      // Direction pointing away from the endpoint (for anchor alignment)
+      dirDx = fromSource ? pt.dx : -pt.dx;
+      dirDy = fromSource ? pt.dy : -pt.dy;
+    } else {
+      // No route yet — fall back to straight-line offset
+      const isHoriz = Math.abs(fallbackDx) >= Math.abs(fallbackDy);
+      px = isHoriz ? fallbackX + Math.sign(fallbackDx) * offset : fallbackX;
+      py = isHoriz ? fallbackY : fallbackY + Math.sign(fallbackDy) * offset;
+      dirDx = fallbackDx;
+      dirDy = fallbackDy;
+    }
+    const isHoriz = Math.abs(dirDx) >= Math.abs(dirDy);
+    const anchorX = isHoriz ? (dirDx < 0 ? "-100%" : "0%") : "-50%";
+    const anchorY = isHoriz ? "-50%" : (dirDy < 0 ? "-100%" : "0%");
 
     return (
       <div
         key={key}
         style={{
-          ...cableIdLabelStyle,
+          ...labelStyle,
           transform: `translate(${anchorX}, ${anchorY}) translate(${px}px, ${py}px)`,
         }}
       >
-        {labelText}
+        {text}
       </div>
     );
   };
@@ -766,11 +860,63 @@ function OffsetEdgeComponent({
     }
   }
 
-  const cableIdLabels = showConnectionLabels && !hideLabel && labelText && routeStr ? (
-    <>
-      {makeCableIdLabel(sourceX, sourceY, srcDx, srcDy, "lbl-src")}
-      {makeCableIdLabel(tgtLabelX, tgtLabelY, -tgtDx, -tgtDy, "lbl-tgt")}
-    </>
+  // Determine which labels to show
+  const showCableId = showCableIdLabels && !hideCableId && labelText && routeStr;
+  const showCustom = showCustomLabels && !hideCustomLabel && edgeLabel && routeStr;
+
+  // Calculate custom label endpoint offset (past cable ID badge if both visible at endpoints)
+  const cableIdBadgeWidth = labelText ? estimateBadgeWidth(labelText, 9, 3) : 0;
+  const bothAtEndpoints = showCableId && cableIdLabelMode === "endpoint"
+    && showCustom && customLabelMode === "endpoint";
+  const customEndpointOffset = bothAtEndpoints
+    ? cableIdGap + cableIdBadgeWidth + 3 + (customGap - 4) // base gap + badge + 3px padding + user adjustment
+    : customGap;
+
+  // Compute midpoint positions along the path with user offsets
+  const cidMidPt = totalLen > 0 ? pointAtDistance(totalLen / 2 + cidMidOff) : { x: lx, y: ly };
+  const clblMidPt = totalLen > 0 ? pointAtDistance(totalLen / 2 + clblMidOff) : { x: lx, y: ly };
+
+  // Cable ID labels — at endpoints or midpoint depending on mode
+  const cableIdLabels = showCableId ? (
+    cableIdLabelMode === "endpoint" ? (
+      <>
+        {makeEndpointLabel(true, cableIdGap, labelText, cableIdLabelStyle, "cid-src",
+          sourceX, sourceY, srcDx, srcDy)}
+        {makeEndpointLabel(false, cableIdGap, labelText, cableIdLabelStyle, "cid-tgt",
+          tgtLabelX, tgtLabelY, -tgtDx, -tgtDy)}
+      </>
+    ) : (
+      <div
+        key="cid-mid"
+        style={{
+          ...cableIdLabelStyle,
+          transform: `translate(-50%, -50%) translate(${cidMidPt.x}px, ${cidMidPt.y}px)`,
+        }}
+      >
+        {labelText}
+      </div>
+    )
+  ) : null;
+
+  // Custom labels — at endpoints or midpoint depending on mode
+  const customLabels = showCustom ? (
+    customLabelMode === "endpoint" ? (
+      <>
+        {makeEndpointLabel(true, customEndpointOffset, edgeLabel, customLabelStyle, "clbl-src",
+          sourceX, sourceY, srcDx, srcDy)}
+        {makeEndpointLabel(false, customEndpointOffset, edgeLabel, customLabelStyle, "clbl-tgt",
+          tgtLabelX, tgtLabelY, -tgtDx, -tgtDy)}
+      </>
+    ) : (
+      <div
+        style={{
+          ...customLabelStyle,
+          transform: `translate(-50%, -50%) translate(${clblMidPt.x}px, ${clblMidPt.y}px)`,
+        }}
+      >
+        {edgeLabel}
+      </div>
+    )
   ) : null;
 
   // Visual-only reconnect circles + tooltip — rendered in HTML layer above cable labels.
@@ -805,11 +951,11 @@ function OffsetEdgeComponent({
   ) : null;
 
   // All labels + reconnect visuals rendered via EdgeLabelRenderer (HTML layer above all SVG edges)
-  const hasPortalContent = connectionLabel || cableIdLabels || reconnectVisuals;
+  const hasPortalContent = customLabels || cableIdLabels || reconnectVisuals;
   const edgeLabelsPortal = hasPortalContent ? (
     <EdgeLabelRenderer>
       {cableIdLabels}
-      {connectionLabel}
+      {customLabels}
       {reconnectVisuals}
     </EdgeLabelRenderer>
   ) : null;

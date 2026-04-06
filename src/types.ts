@@ -278,8 +278,24 @@ export interface ConnectionData {
   stubTargetWaypoints?: { x: number; y: number }[];
   /** Allow connection between incompatible connector types (#6) */
   allowIncompatible?: boolean;
-  /** When true, hide cable ID labels on this specific connection (#5) */
+  /** @deprecated Use hideCableId + hideCustomLabel instead. Migrated in schema v25. */
   hideLabel?: boolean;
+  /** Per-edge: hide cable ID label (#61) */
+  hideCableId?: boolean;
+  /** Per-edge: hide custom label (#61) */
+  hideCustomLabel?: boolean;
+  /** Per-edge: cable ID endpoint spacing override in pixels (#61) */
+  cableIdGap?: number;
+  /** Per-edge: custom label endpoint spacing override in pixels (#61) */
+  customLabelGap?: number;
+  /** Per-edge: cable ID midpoint offset along path in pixels (#61) */
+  cableIdMidOffset?: number;
+  /** Per-edge: custom label midpoint offset along path in pixels (#61) */
+  customLabelMidOffset?: number;
+  /** Per-edge: cable ID label display mode override (#61) */
+  cableIdLabelMode?: "endpoint" | "midpoint";
+  /** Per-edge: custom label display mode override (#61) */
+  customLabelMode?: "endpoint" | "midpoint";
   /** Edge represents a direct physical attachment, not a separate cable */
   directAttach?: boolean;
   /** Visual line style — solid (default), dashed, dotted, or dash-dot */
@@ -416,8 +432,24 @@ export interface SchematicFile {
   cableNamingScheme?: "sequential" | "type-prefix";
   /** Show line jump arcs where connections cross (#18) */
   showLineJumps?: boolean;
-  /** Show cable ID labels at connection endpoints (#5) */
+  /** @deprecated Use showCableIdLabels instead. Kept for backwards compatibility. */
   showConnectionLabels?: boolean;
+  /** Show cable ID labels at connection endpoints (#61) */
+  showCableIdLabels?: boolean;
+  /** Show custom labels on connections (#61) */
+  showCustomLabels?: boolean;
+  /** Cable ID endpoint spacing in pixels (#61) */
+  cableIdGap?: number;
+  /** Custom label endpoint spacing in pixels (#61) */
+  customLabelGap?: number;
+  /** Cable ID midpoint offset along path in pixels (#61) */
+  cableIdMidOffset?: number;
+  /** Custom label midpoint offset along path in pixels (#61) */
+  customLabelMidOffset?: number;
+  /** Cable ID label display mode — at endpoints or midpoint (#61) */
+  cableIdLabelMode?: "endpoint" | "midpoint";
+  /** Custom label display mode — at endpoints or midpoint (#61) */
+  customLabelMode?: "endpoint" | "midpoint";
   /** Global toggle: when true, all adapters default to hidden on schematic */
   hideAdapters?: boolean;
   /** When false, edges use simple orthogonal L-shapes instead of A* routing */

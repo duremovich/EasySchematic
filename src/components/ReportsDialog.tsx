@@ -1447,11 +1447,11 @@ function CableScheduleTabInline() {
         const changes = Array.from(selectedRows)
           .map((ri) => sorted[ri])
           .filter(Boolean)
-          .map((r) => ({ edgeId: r.edgeId, patch: { hideLabel: newValue } as Partial<ConnectionData> }));
+          .map((r) => ({ edgeId: r.edgeId, patch: { hideCableId: newValue, hideCustomLabel: newValue } as Partial<ConnectionData> }));
         if (changes.length > 0) batchPatchEdgeData(changes);
       } else {
         const row = sorted[rowIndex];
-        if (row) patchEdgeData(row.edgeId, { hideLabel: newValue });
+        if (row) patchEdgeData(row.edgeId, { hideCableId: newValue, hideCustomLabel: newValue });
       }
     },
     [sorted, spreadsheet.selectedCells, patchEdgeData, batchPatchEdgeData],
@@ -1624,7 +1624,7 @@ const CableScheduleRow_ = memo(function CableScheduleRow_({
   const hasSelection = labelProps.isSelected || cableIdProps.isSelected || lengthProps.isSelected;
   const hideLabel = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === row.edgeId);
-    return edge?.data?.hideLabel === true;
+    return edge?.data?.hideCableId === true;
   });
 
   return (

@@ -13,7 +13,7 @@
 import { createDefaultLayout } from "./titleBlockLayout";
 import { DEFAULT_CONNECTOR } from "./connectorTypes";
 
-export const CURRENT_SCHEMA_VERSION = 24;
+export const CURRENT_SCHEMA_VERSION = 25;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -260,6 +260,27 @@ const migrations: Record<number, Migration> = {
     // another room. No data transform needed; parentId is already a valid
     // React Flow node field and existing rooms simply have none.
     data.version = 24;
+    return data;
+  },
+
+  24: (data) => {
+    // v24 → v25: Split label visibility into cable ID / custom label controls (#61)
+    // Migrate top-level showConnectionLabels → showCableIdLabels
+    if (data.showConnectionLabels !== undefined) {
+      data.showCableIdLabels = data.showConnectionLabels;
+      delete data.showConnectionLabels;
+    }
+    // Migrate per-edge hideLabel → hideCableId + hideCustomLabel
+    if (data.edges) {
+      for (const edge of data.edges) {
+        if (edge.data?.hideLabel !== undefined) {
+          edge.data.hideCableId = edge.data.hideLabel;
+          edge.data.hideCustomLabel = edge.data.hideLabel;
+          delete edge.data.hideLabel;
+        }
+      }
+    }
+    data.version = 25;
     return data;
   },
 };

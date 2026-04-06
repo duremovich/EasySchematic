@@ -265,12 +265,41 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
-  const toggleHideLabel = useCallback(() => {
+  const toggleHideCableId = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
     const edge = store.edges.find((e) => e.id === menu.edgeId);
-    const current = edge?.data?.hideLabel === true;
-    store.patchEdgeData(menu.edgeId, { hideLabel: current ? undefined : true });
+    const current = edge?.data?.hideCableId === true;
+    store.patchEdgeData(menu.edgeId, { hideCableId: current ? undefined : true });
+    useSchematicStore.setState({ edgeContextMenu: null });
+  }, [menu]);
+
+  const toggleHideCustomLabel = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    const current = edge?.data?.hideCustomLabel === true;
+    store.patchEdgeData(menu.edgeId, { hideCustomLabel: current ? undefined : true });
+    useSchematicStore.setState({ edgeContextMenu: null });
+  }, [menu]);
+
+  const toggleEdgeCableIdMode = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    const current = (edge?.data?.cableIdLabelMode as string) ?? store.cableIdLabelMode;
+    const next = current === "endpoint" ? "midpoint" : "endpoint";
+    store.patchEdgeData(menu.edgeId, { cableIdLabelMode: next });
+    useSchematicStore.setState({ edgeContextMenu: null });
+  }, [menu]);
+
+  const toggleEdgeCustomLabelMode = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    const current = (edge?.data?.customLabelMode as string) ?? store.customLabelMode;
+    const next = current === "endpoint" ? "midpoint" : "endpoint";
+    store.patchEdgeData(menu.edgeId, { customLabelMode: next });
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
@@ -325,7 +354,11 @@ export default function EdgeContextMenu() {
   const edge = store.edges.find((e) => e.id === menu.edgeId);
   const hasManual = !!(edge?.data?.manualWaypoints?.length);
   const isStubbed = edge?.data?.stubbed === true;
-  const isLabelHidden = edge?.data?.hideLabel === true;
+  const isCableIdHidden = edge?.data?.hideCableId === true;
+  const isCustomLabelHidden = edge?.data?.hideCustomLabel === true;
+  const hasCustomLabel = !!(edge?.data?.label);
+  const edgeCableIdMode = (edge?.data?.cableIdLabelMode as string) ?? useSchematicStore.getState().cableIdLabelMode;
+  const edgeCustomLabelMode = (edge?.data?.customLabelMode as string) ?? useSchematicStore.getState().customLabelMode;
   const currentLineStyle: LineStyle = (edge?.data?.lineStyle as LineStyle) ?? "solid";
   const hasMismatch = edge?.data?.connectorMismatch === true;
   const allowIncompatible = edge?.data?.allowIncompatible === true;
@@ -424,9 +457,25 @@ export default function EdgeContextMenu() {
         <MenuItem label="Set Cable Label..." onClick={setCableLabel} />
       )}
       <MenuItem
-        label={isLabelHidden ? "Show Label" : "Hide Label"}
-        onClick={toggleHideLabel}
+        label={isCableIdHidden ? "Show Cable ID" : "Hide Cable ID"}
+        onClick={toggleHideCableId}
       />
+      <MenuItem
+        label={edgeCableIdMode === "endpoint" ? "Cable ID at Midpoint" : "Cable ID at Endpoints"}
+        onClick={toggleEdgeCableIdMode}
+      />
+      {hasCustomLabel && (
+        <MenuItem
+          label={isCustomLabelHidden ? "Show Custom Label" : "Hide Custom Label"}
+          onClick={toggleHideCustomLabel}
+        />
+      )}
+      {hasCustomLabel && (
+        <MenuItem
+          label={edgeCustomLabelMode === "endpoint" ? "Label at Midpoint" : "Label at Endpoints"}
+          onClick={toggleEdgeCustomLabelMode}
+        />
+      )}
       <MenuItem
         label={isStubbed ? "Show Full Connection" : "Stub Connection"}
         onClick={toggleStubbed}
