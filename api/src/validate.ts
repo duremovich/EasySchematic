@@ -38,7 +38,7 @@ type ValidationResult =
   | { ok: false; error: string };
 
 const MAX_STRING = 200;
-const MAX_PORTS = 200;
+const MAX_PORTS = 500;
 const MAX_SEARCH_TERMS = 20;
 const HEX_COLOR_RE = /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/;
 
