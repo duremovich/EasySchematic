@@ -78,6 +78,8 @@ export default function DeviceDetailPage({ id }: { id: string }) {
             {template.manufacturer && <span>{template.manufacturer}</span>}
             {template.modelNumber && <span>Model: {template.modelNumber}</span>}
             <span className="capitalize">{template.deviceType.replace(/-/g, " ")}</span>
+            {template.hostname && <span>Hostname: {template.hostname}</span>}
+            {template.isVenueProvided && <span className="px-2 py-0.5 bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded text-xs font-medium">Venue Provided</span>}
           </div>
           {template.referenceUrl && (
             <a href={template.referenceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 mt-2 text-sm text-blue-600 hover:text-blue-800">
@@ -126,6 +128,41 @@ export default function DeviceDetailPage({ id }: { id: string }) {
             <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Voltage</div>
               <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{template.voltage}</div>
+            </div>
+          )}
+          {template.poeBudgetW != null && (
+            <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">PoE Budget</div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{template.poeBudgetW}W</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {(template.heightMm != null || template.widthMm != null || template.depthMm != null || template.weightKg != null) && (
+        <div className="mb-6 flex flex-wrap gap-4">
+          {template.heightMm != null && (
+            <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Height</div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{template.heightMm} mm</div>
+            </div>
+          )}
+          {template.widthMm != null && (
+            <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Width</div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{template.widthMm} mm</div>
+            </div>
+          )}
+          {template.depthMm != null && (
+            <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Depth</div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{template.depthMm} mm</div>
+            </div>
+          )}
+          {template.weightKg != null && (
+            <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Weight</div>
+              <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{template.weightKg} kg</div>
             </div>
           )}
         </div>
