@@ -11,6 +11,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.cisco.com/c/en/us/products/collateral/collaboration-endpoints/spark-room-kit-series/datasheet-c78-738729.html",
     searchTerms: ["cisco", "room kit", "video conferencing", "webex", "collaboration"],
     powerDrawW: 100, // typical
+    heightMm: 106,
+    widthMm: 700,
+    depthMm: 88,
+    weightKg: 3.2,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Out 1", "hdmi", "output"),
@@ -30,6 +34,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://help.webex.com/article/n86suwx/Get-started-with-your-Cisco-Codec-Pro",
     searchTerms: ["cisco", "codec pro", "video conferencing", "webex", "collaboration", "sdi"],
     powerDrawW: 200, // typical
+    heightMm: 66,
+    widthMm: 436,
+    depthMm: 231,
+    weightKg: 3.3,
     ports: [
       port("HDMI Cam In 1", "hdmi", "input"),
       port("HDMI Cam In 2", "hdmi", "input"),

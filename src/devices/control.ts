@@ -13,6 +13,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.crestron.com/Products/Catalog/Control-and-Management/Control-System/Rack-Mount/CP4N",
     searchTerms: ["crestron", "control", "processor", "automation", "cp4"],
     powerDrawW: 50, // typical
+    heightMm: 44,
+    widthMm: 483,
+    depthMm: 167,
+    weightKg: 1.4,
     ports: [
       port("LAN", "ethernet", "bidirectional"),
       port("Control Subnet", "ethernet", "bidirectional"),
@@ -36,6 +40,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemconstellation/techspecs/W-ATC-03",
     searchTerms: ["blackmagic", "tally", "gpi", "gpio", "indicator"],
     powerDrawW: 5, // typical
+    heightMm: 65,
+    widthMm: 145,
+    depthMm: 139,
+    weightKg: 0.4,
     ports: [
       port("Ethernet In", "ethernet", "bidirectional"),
       port("Ethernet Loop", "ethernet", "bidirectional"),
@@ -54,6 +62,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://dsanproducts.com/",
     searchTerms: ["dsan", "perfect cue", "speaker timer", "presentation"],
     powerDrawW: 10, // typical
+    heightMm: 83,
+    widthMm: 178,
+    depthMm: 102,
+    weightKg: 4.5,
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
       port("RS-232", "serial", "bidirectional"),
@@ -69,6 +81,9 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.brainstormtime.com/products/sr-112/",
     searchTerms: ["brainstorm", "sr-112", "timecode", "smpte", "ltc", "generator"],
     powerDrawW: 15, // typical
+    heightMm: 44,
+    widthMm: 483,
+    depthMm: 206,
     ports: [
       port("LTC Out 1", "analog-audio", "output"),
       port("LTC Out 2", "analog-audio", "output"),

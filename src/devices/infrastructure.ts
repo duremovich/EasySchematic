@@ -138,6 +138,10 @@ export const templates: DeviceTemplate[] = [
     searchTerms: ["lex", "db100", "100 amp", "distro", "cam-lok", "power distribution"],
     powerCapacityW: 20800,
     voltage: "208V",
+    heightMm: 359,
+    widthMm: 362,
+    depthMm: 362,
+    weightKg: 14.5,
     ports: [
       ...camLokSet("input", "Cam-Lok In", "3-Phase Input"),
       port("L5-20 Out 1", "power", "output", "l5-20"),
@@ -163,6 +167,10 @@ export const templates: DeviceTemplate[] = [
     searchTerms: ["lex", "db200", "200 amp", "distro", "cam-lok", "power distribution"],
     powerCapacityW: 41600,
     voltage: "208V",
+    heightMm: 359,
+    widthMm: 362,
+    depthMm: 362,
+    weightKg: 15.9,
     ports: [
       ...camLokSet("input", "Cam-Lok In", "3-Phase Input"),
       port("L5-20 Out 1", "power", "output", "l5-20"),
@@ -190,6 +198,10 @@ export const templates: DeviceTemplate[] = [
     searchTerms: ["lex", "hammerhead", "cam-lok", "400 amp", "breakout", "splitter", "power distribution"],
     powerCapacityW: 83200,
     voltage: "208V",
+    heightMm: 559,
+    widthMm: 457,
+    depthMm: 381,
+    weightKg: 34,
     ports: [
       ...camLokSet("input", "Cam-Lok In", "400A Input"),
       ...camLokSet("output", "100A Out 1", "100A Feed 1"),

@@ -18,6 +18,10 @@ export const templates: DeviceTemplate[] = [
       { id: "d3-4x4-vfc-c", label: "VFC Slot C", defaultCardId: "vfc-card-dp12", slotFamily: "disguise-vfc" },
       { id: "d3-4x4-vfc-d", label: "VFC Slot D", defaultCardId: "vfc-card-dp12", slotFamily: "disguise-vfc" },
     ],
+    heightMm: 178,
+    widthMm: 445,
+    depthMm: 593,
+    weightKg: 19.5,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -39,6 +43,10 @@ export const templates: DeviceTemplate[] = [
     slots: [
       { id: "d3-solo-vfc-a", label: "VFC Slot A", defaultCardId: "vfc-card-dp12", slotFamily: "disguise-vfc" },
     ],
+    heightMm: 88,
+    widthMm: 430,
+    depthMm: 495,
+    weightKg: 15,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -57,6 +65,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.dataton.com/watchpax/watchpax-64",
     searchTerms: ["dataton", "watchpax", "watchout", "media server"],
     powerDrawW: 200, // typical
+    heightMm: 90,
+    widthMm: 448,
+    depthMm: 335,
+    weightKg: 10.2,
     ports: [
       ...ports("HDMI Out", "hdmi", "output", 4),
       port("HDMI In", "hdmi", "input"),
@@ -75,6 +87,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.dataton.com/watchpax/watchpax-64",
     searchTerms: ["dataton", "watchpax", "watchout", "media server", "compact"],
     powerDrawW: 120, // typical
+    heightMm: 43,
+    widthMm: 214,
+    depthMm: 276,
+    weightKg: 3,
     ports: [
       port("HDMI Out 1", "hdmi", "output"),
       port("HDMI Out 2", "hdmi", "output"),
@@ -104,6 +120,10 @@ export const templates: DeviceTemplate[] = [
       { id: "sfp-1", label: "10GbE SFP+ 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
       { id: "sfp-2", label: "10GbE SFP+ 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
+    heightMm: 178,
+    widthMm: 445,
+    depthMm: 593,
+    weightKg: 28,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -126,6 +146,10 @@ export const templates: DeviceTemplate[] = [
     slots: [
       { id: "vx1-vfc-a", label: "VFC Slot A", defaultCardId: "vfc-card-hdmi20", slotFamily: "disguise-vfc" },
     ],
+    heightMm: 178,
+    widthMm: 435,
+    depthMm: 593,
+    weightKg: 16.3,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -151,6 +175,10 @@ export const templates: DeviceTemplate[] = [
       { id: "sfp-1", label: "10GbE SFP+ 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
       { id: "sfp-2", label: "10GbE SFP+ 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
+    heightMm: 178,
+    widthMm: 435,
+    depthMm: 593,
+    weightKg: 16.5,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -177,6 +205,10 @@ export const templates: DeviceTemplate[] = [
       { id: "sfp-1", label: "10GbE SFP+ 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
       { id: "sfp-2", label: "10GbE SFP+ 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
+    heightMm: 178,
+    widthMm: 445,
+    depthMm: 593,
+    weightKg: 17.8,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -199,6 +231,10 @@ export const templates: DeviceTemplate[] = [
     slots: [
       { id: "gx1-vfc-a", label: "VFC Slot A", defaultCardId: "vfc-card-hdmi20", slotFamily: "disguise-vfc" },
     ],
+    heightMm: 178,
+    widthMm: 445,
+    depthMm: 593,
+    weightKg: 16,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -224,6 +260,10 @@ export const templates: DeviceTemplate[] = [
       { id: "sfp-1", label: "10GbE SFP+ 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
       { id: "sfp-2", label: "10GbE SFP+ 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
+    heightMm: 178,
+    widthMm: 445,
+    depthMm: 593,
+    weightKg: 16.2,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -249,6 +289,10 @@ export const templates: DeviceTemplate[] = [
       { id: "sfp-1", label: "10GbE SFP+ 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
       { id: "sfp-2", label: "10GbE SFP+ 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
+    heightMm: 178,
+    widthMm: 445,
+    depthMm: 593,
+    weightKg: 24.9,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -274,6 +318,10 @@ export const templates: DeviceTemplate[] = [
       { id: "sfp-1", label: "10GbE SFP+ 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
       { id: "sfp-2", label: "10GbE SFP+ 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
+    heightMm: 178,
+    widthMm: 445,
+    depthMm: 593,
+    weightKg: 14.4,
     ports: [
       port("GUI Output", "displayport", "output"),
       port("Genlock In", "genlock", "input"),
@@ -293,6 +341,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.disguise.one/en/products/ex-range/",
     searchTerms: ["disguise", "ex2", "media server", "d3"],
     powerDrawW: 400, // typical
+    heightMm: 88,
+    widthMm: 441,
+    depthMm: 645,
+    weightKg: 11.4,
     ports: [
       port("DP Out 1", "displayport", "output"),
       port("DP Out 2", "displayport", "output"),
@@ -341,6 +393,10 @@ export const templates: DeviceTemplate[] = [
       { id: "sfp-3", label: "25GbE SFP+ 1", slotFamily: "sfp", defaultCardId: "sfp-25g-sr" },
       { id: "sfp-4", label: "25GbE SFP+ 2", slotFamily: "sfp", defaultCardId: "sfp-25g-sr" },
     ],
+    heightMm: 89,
+    widthMm: 439,
+    depthMm: 789,
+    weightKg: 20.5,
     ports: [
       ...ports("DP Out", "displayport", "output", 3),
       port("Genlock In", "genlock", "input"),
@@ -360,6 +416,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.disguise.one/en/products/ex-range/",
     searchTerms: ["disguise", "ex3+", "media server", "playback"],
     powerDrawW: 1200, // typical
+    heightMm: 88,
+    widthMm: 441,
+    depthMm: 645,
+    weightKg: 11.5,
     ports: [
       ...ports("DP Out", "displayport", "output", 3),
       port("HDMI In", "hdmi", "input"),
@@ -396,6 +456,9 @@ export const templates: DeviceTemplate[] = [
       { id: "qsfp-1", label: "100GbE QSFP28 E", slotFamily: "qsfp", defaultCardId: "qsfp-40g-sr4" },
       { id: "qsfp-2", label: "100GbE QSFP28 F", slotFamily: "qsfp", defaultCardId: "qsfp-40g-sr4" },
     ],
+    heightMm: 178,
+    widthMm: 445,
+    depthMm: 593,
     ports: [
       ...ports("12G-SDI In", "sdi", "input", 3),
       port("XLR In 1", "analog-audio", "input"),
@@ -416,6 +479,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://follow-me.com/hardware-product/follow-me-rack-server/",
     searchTerms: ["follow-me", "follow me", "tracking", "follow spot", "rack server"],
     powerDrawW: 300, // typical
+    heightMm: 44,
+    widthMm: 483,
+    depthMm: 210,
+    weightKg: 4.2,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("SDI In", "sdi", "input"),

@@ -42,6 +42,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "Mac Studio (M4)",
     referenceUrl: "https://www.apple.com/mac-studio/specs/",
     powerDrawW: 150, // typical
+    heightMm: 95,
+    widthMm: 197,
+    depthMm: 197,
+    weightKg: 2.7,
     ports: [
       port("TB5 1", "thunderbolt", "bidirectional"),
       port("TB5 2", "thunderbolt", "bidirectional"),
@@ -84,6 +88,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://ptzoptics.com/move-se/",
     searchTerms: ["ptz", "ptzoptics", "pt30x", "move se"],
     powerDrawW: 25, // typical
+    heightMm: 164,
+    widthMm: 142,
+    depthMm: 169,
+    weightKg: 1.5,
     ports: [
       port("3.5mm Audio In", "analog-audio", "input", "trs-eighth"),
       port("Ethernet", "ethernet", "bidirectional"),
@@ -110,6 +118,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://docs.brightsign.biz/hardware/xd235-xd1035",
     searchTerms: ["brightsign", "digital signage", "media player", "signage"],
     powerDrawW: 15, // typical
+    heightMm: 19,
+    widthMm: 206,
+    depthMm: 186,
+    weightKg: 0.6,
     ports: [
       port("HDMI Out", "hdmi", "output"),
       port("Audio Out", "analog-audio", "output", "trs-eighth"),
@@ -131,6 +143,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicstudiocamera",
     searchTerms: ["blackmagic", "studio camera", "4k", "g2"],
     powerDrawW: 60, // typical
+    heightMm: 170,
+    widthMm: 274,
+    depthMm: 167,
+    weightKg: 1.9,
     ports: [
       port("12G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -159,6 +175,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicstudiocamera",
     searchTerms: ["blackmagic", "studio camera", "6k"],
     powerDrawW: 60, // typical
+    heightMm: 199,
+    widthMm: 274,
+    depthMm: 114,
+    weightKg: 1.9,
     ports: [
       port("12G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -187,6 +207,7 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicursabroadcast",
     searchTerms: ["blackmagic", "ursa", "broadcast", "cinema camera"],
     powerDrawW: 75, // typical
+    weightKg: 2.6,
     ports: [
       port("SDI Out", "sdi", "output"),
       port("SDI In", "sdi", "input"),
@@ -210,6 +231,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicpocketcinemacamera",
     searchTerms: ["blackmagic", "pocket", "cinema camera", "6k"],
     powerDrawW: 30, // typical
+    heightMm: 112,
+    widthMm: 180,
+    depthMm: 123,
+    weightKg: 1.2,
     ports: [
       port("HDMI Out", "hdmi", "output"),
       port("USB-C", "usb", "bidirectional", "usb-c"),
@@ -228,6 +253,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://pro.sony/en_US/products/system-cameras/hdc-5500",
     searchTerms: ["sony", "hdc", "system camera", "4k", "broadcast"],
     powerDrawW: 75, // typical
+    heightMm: 109,
+    widthMm: 165,
+    depthMm: 221,
+    weightKg: 5,
     ports: [
       port("12G-SDI Out 1", "sdi", "output"),
       port("12G-SDI Out 2", "sdi", "output"),
@@ -248,6 +277,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://pro.sony/en_US/products/system-cameras/hdc-3500",
     searchTerms: ["sony", "hdc", "system camera", "hd", "broadcast"],
     powerDrawW: 65, // typical
+    heightMm: 268,
+    widthMm: 138,
+    depthMm: 363,
+    weightKg: 4.9,
     ports: [
       port("3G-SDI Out 1", "sdi", "output"),
       port("3G-SDI Out 2", "sdi", "output"),
@@ -268,6 +301,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://pro.sony/en_US/products/camcorders/pxw-fx9",
     searchTerms: ["sony", "fx9", "cinema", "full frame", "camcorder"],
     powerDrawW: 35, // typical
+    heightMm: 143,
+    widthMm: 146,
+    depthMm: 229,
+    weightKg: 2,
     ports: [
       port("SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -294,6 +331,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://na.panasonic.com/us/audio-video-solutions/broadcast-cinema/ptz-cameras/aw-ue160",
     searchTerms: ["panasonic", "ptz", "ue160", "4k", "st2110", "ndi"],
     powerDrawW: 40, // typical
+    heightMm: 277,
+    widthMm: 213,
+    depthMm: 240,
+    weightKg: 4.6,
     ports: [
       port("12G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -326,6 +367,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://na.panasonic.com/us/audio-video-solutions/broadcast-cinema/ptz-cameras/aw-ue150",
     searchTerms: ["panasonic", "ptz", "ue150", "4k", "ndi"],
     powerDrawW: 38, // typical
+    heightMm: 267,
+    widthMm: 213,
+    depthMm: 219,
+    weightKg: 4.3,
     ports: [
       port("12G-SDI Out", "sdi", "output"),
       port("3G-SDI Out", "sdi", "output"),
@@ -357,6 +402,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://na.panasonic.com/us/audio-video-solutions/broadcast-cinema/ptz-cameras/aw-ue100",
     searchTerms: ["panasonic", "ptz", "ue100", "4k", "ndi", "srt"],
     powerDrawW: 32, // typical
+    heightMm: 205,
+    widthMm: 169,
+    depthMm: 171,
+    weightKg: 2.2,
     ports: [
       port("12G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -380,6 +429,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://na.panasonic.com/us/audio-video-solutions/broadcast-cinema/ptz-cameras/aw-ue80",
     searchTerms: ["panasonic", "ptz", "ue80", "4k", "ndi|hx"],
     powerDrawW: 23, // typical
+    heightMm: 211,
+    widthMm: 170,
+    depthMm: 171,
+    weightKg: 2.2,
     ports: [
       port("3G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -402,6 +455,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://na.panasonic.com/us/audio-video-solutions/broadcast-cinema/ptz-cameras/aw-ue50",
     searchTerms: ["panasonic", "ptz", "ue50", "4k"],
     powerDrawW: 20, // typical
+    heightMm: 192,
+    widthMm: 160,
+    depthMm: 166,
+    weightKg: 1.8,
     ports: [
       port("3G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -423,6 +480,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://na.panasonic.com/us/audio-video-solutions/broadcast-cinema/ptz-cameras/aw-he145",
     searchTerms: ["panasonic", "ptz", "he145", "hd"],
     powerDrawW: 25, // typical
+    heightMm: 267,
+    widthMm: 213,
+    depthMm: 219,
+    weightKg: 4.1,
     ports: [
       port("3G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -443,6 +504,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://ptzoptics.com/move-4k/",
     searchTerms: ["ptzoptics", "ptz", "move 4k", "ndi"],
     powerDrawW: 30, // typical
+    heightMm: 228,
+    widthMm: 170,
+    depthMm: 181,
+    weightKg: 2,
     ports: [
       port("SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -465,6 +530,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://na.panasonic.com/us/audio-video-solutions/broadcast-cinema/studio-cameras/ak-uc4000",
     searchTerms: ["panasonic", "studio camera", "4k", "broadcast"],
     powerDrawW: 70, // typical
+    heightMm: 267,
+    widthMm: 151,
+    depthMm: 372,
+    weightKg: 4.5,
     ports: [
       port("12G-SDI Out 1", "sdi", "output"),
       port("12G-SDI Out 2", "sdi", "output"),
@@ -487,6 +556,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicmicrostudiocamera4k",
     searchTerms: ["blackmagic", "micro studio", "camera", "compact"],
     powerDrawW: 12, // typical
+    heightMm: 66,
+    widthMm: 84,
+    depthMm: 70,
+    weightKg: 0.3,
     ports: [
       port("SDI Out", "sdi", "output"),
       port("SDI In", "sdi", "input"),
@@ -504,6 +577,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://pro.sony/en_US/products/ptz-network-cameras/brc-x400",
     searchTerms: ["sony", "brc", "ptz", "camera", "ndi"],
     powerDrawW: 30, // typical
+    heightMm: 178,
+    widthMm: 157,
+    depthMm: 201,
+    weightKg: 1.8,
     ports: [
       port("12G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),

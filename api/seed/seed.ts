@@ -35,9 +35,13 @@ allTemplates.forEach((t, i) => {
   const powerCapacityW = t.powerCapacityW != null ? `${t.powerCapacityW}` : "NULL";
   const voltage = t.voltage ? `'${escapeSQL(t.voltage)}'` : "NULL";
   const isVenueProvided = t.isVenueProvided ? "1" : "NULL";
+  const heightMm = t.heightMm != null ? `${t.heightMm}` : "NULL";
+  const widthMm = t.widthMm != null ? `${t.widthMm}` : "NULL";
+  const depthMm = t.depthMm != null ? `${t.depthMm}` : "NULL";
+  const weightKg = t.weightKg != null ? `${t.weightKg}` : "NULL";
 
   lines.push(
-    `INSERT OR REPLACE INTO templates (id, version, device_type, category, label, manufacturer, model_number, color, image_url, reference_url, search_terms, ports, slots, slot_family, power_draw_w, power_capacity_w, voltage, is_venue_provided, sort_order) VALUES ('${escapeSQL(id)}', ${version}, '${deviceType}', '${category}', '${label}', ${manufacturer}, ${modelNumber}, ${color}, ${imageUrl}, ${referenceUrl}, ${searchTerms}, '${ports}', ${slots}, ${slotFamily}, ${powerDrawW}, ${powerCapacityW}, ${voltage}, ${isVenueProvided}, ${i});`
+    `INSERT OR REPLACE INTO templates (id, version, device_type, category, label, manufacturer, model_number, color, image_url, reference_url, search_terms, ports, slots, slot_family, power_draw_w, power_capacity_w, voltage, is_venue_provided, height_mm, width_mm, depth_mm, weight_kg, sort_order) VALUES ('${escapeSQL(id)}', ${version}, '${deviceType}', '${category}', '${label}', ${manufacturer}, ${modelNumber}, ${color}, ${imageUrl}, ${referenceUrl}, ${searchTerms}, '${ports}', ${slots}, ${slotFamily}, ${powerDrawW}, ${powerCapacityW}, ${voltage}, ${isVenueProvided}, ${heightMm}, ${widthMm}, ${depthMm}, ${weightKg}, ${i});`
   );
 });
 

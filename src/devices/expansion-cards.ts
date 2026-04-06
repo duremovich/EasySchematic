@@ -218,6 +218,9 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "MY8-AE",
     referenceUrl: "https://usa.yamaha.com/products/proaudio/interfaces/digital_cards/index.html",
     searchTerms: ["yamaha", "my8", "aes", "expansion", "card"],
+    heightMm: 40,
+    widthMm: 120,
+    depthMm: 176,
     ports: [
       ...ports("AES In", "aes", "input", 8),
       ...ports("AES Out", "aes", "output", 8),
@@ -232,6 +235,9 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "MY16-AE",
     referenceUrl: "https://usa.yamaha.com/products/proaudio/interfaces/digital_cards/index.html",
     searchTerms: ["yamaha", "my16", "aes", "expansion", "card"],
+    heightMm: 40,
+    widthMm: 120,
+    depthMm: 176,
     ports: [
       ...ports("AES In", "aes", "input", 16),
       ...ports("AES Out", "aes", "output", 16),
@@ -246,6 +252,9 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "MY8-LAKE",
     referenceUrl: "https://usa.yamaha.com/products/proaudio/interfaces/my8-lake/index.html",
     searchTerms: ["yamaha", "my8", "lake", "processing", "expansion", "card"],
+    heightMm: 40,
+    widthMm: 120,
+    depthMm: 176,
     ports: [
       ...ports("AES In", "aes", "input", 8),
       ...ports("AES Out", "aes", "output", 8),
@@ -261,6 +270,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "Dugan-MY16",
     referenceUrl: "https://usa.yamaha.com/products/proaudio/interfaces/dugan-my16/index.html",
     searchTerms: ["yamaha", "dugan", "auto-mix", "expansion", "card"],
+    heightMm: 40,
+    widthMm: 120,
+    depthMm: 176,
+    weightKg: 0.2,
     ports: [
       port("ADAT 1", "adat", "bidirectional"),
       port("ADAT 2", "adat", "bidirectional"),
@@ -276,6 +289,9 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "DMI-Dante",
     referenceUrl: "https://digico.biz/dmi_cards/dmi-dante64/",
     searchTerms: ["digico", "dmi", "dante", "expansion", "card"],
+    heightMm: 58,
+    widthMm: 126,
+    depthMm: 176,
     ports: [
       port("Dante Primary", "dante", "bidirectional"),
       port("Dante Secondary", "dante", "bidirectional"),
@@ -290,6 +306,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "DMI-MADI",
     referenceUrl: "https://digico.biz/dmi_cards/dmi-madi-b/",
     searchTerms: ["digico", "dmi", "madi", "expansion", "card"],
+    heightMm: 58,
+    widthMm: 126,
+    depthMm: 176,
+    weightKg: 0.3,
     ports: [
       port("MADI 1", "madi", "bidirectional"),
       port("MADI 2", "madi", "bidirectional"),
@@ -304,6 +324,9 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "DMI-Waves",
     referenceUrl: "https://digico.biz/dmi_cards/",
     searchTerms: ["digico", "dmi", "waves", "soundgrid", "expansion", "card"],
+    heightMm: 58,
+    widthMm: 126,
+    depthMm: 176,
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
     ],
@@ -546,6 +569,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "MY16-MD64",
     referenceUrl: "https://usa.yamaha.com/products/proaudio/interfaces/digital_cards/index.html",
     searchTerms: ["yamaha", "my16", "madi", "expansion", "card"],
+    heightMm: 40,
+    widthMm: 120,
+    depthMm: 176,
+    weightKg: 0.5,
     ports: [
       port("MADI In", "madi", "input", "bnc"),
       port("MADI Out", "madi", "output", "bnc"),
@@ -560,6 +587,9 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "MY16-AT",
     referenceUrl: "https://usa.yamaha.com/products/proaudio/interfaces/digital_cards/index.html",
     searchTerms: ["yamaha", "my16", "adat", "expansion", "card"],
+    heightMm: 40,
+    widthMm: 120,
+    depthMm: 176,
     ports: [
       ...ports("ADAT In", "adat", "input", 2),
       ...ports("ADAT Out", "adat", "output", 2),

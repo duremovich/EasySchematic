@@ -26,6 +26,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/hyperdeckextreme/techspecs",
     searchTerms: ["blackmagic", "hyperdeck", "4k", "hdr", "recorder", "player"],
     powerDrawW: 80, // typical
+    heightMm: 131,
+    widthMm: 210,
+    depthMm: 334,
+    weightKg: 3.7,
     ports: [
       port("SDI In 1", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -72,6 +76,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.atomos.com/products/shogun-ultra",
     searchTerms: ["atomos", "shogun", "ultra", "monitor recorder", "12g"],
     powerDrawW: 30, // typical
+    heightMm: 133,
+    widthMm: 198,
+    depthMm: 40,
+    weightKg: 0.7,
     ports: [
       port("12G-SDI In 1", "sdi", "input"),
       port("12G-SDI In 2", "sdi", "input"),
@@ -99,6 +107,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.atomos.com/products/ninja-v",
     searchTerms: ["atomos", "ninja", "monitor recorder", "hdmi"],
     powerDrawW: 20, // typical
+    heightMm: 92,
+    widthMm: 151,
+    depthMm: 31,
+    weightKg: 0.4,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Out", "hdmi", "output"),
@@ -116,6 +128,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/hyperdeckstudio",
     searchTerms: ["blackmagic", "hyperdeck", "mini", "recorder"],
     powerDrawW: 12, // typical
+    heightMm: 44,
+    widthMm: 177,
+    depthMm: 140,
+    weightKg: 0.8,
     ports: [
       port("SDI In", "sdi", "input"),
       port("SDI Out", "sdi", "output"),
@@ -147,6 +163,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/hyperdeckstudio",
     searchTerms: ["blackmagic", "hyperdeck", "plus", "recorder"],
     powerDrawW: 30, // typical
+    heightMm: 44,
+    widthMm: 210,
+    depthMm: 177,
+    weightKg: 1.1,
     ports: [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -180,6 +200,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/hyperdeckstudio",
     searchTerms: ["blackmagic", "hyperdeck", "4k pro", "recorder"],
     powerDrawW: 40, // typical
+    heightMm: 44,
+    widthMm: 483,
+    depthMm: 236,
+    weightKg: 2.5,
     ports: [
       port("12G-SDI In 1", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -212,6 +236,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.aja.com/products/ki-pro-ultra-12g",
     searchTerms: ["aja", "ki pro", "ultra", "12g", "recorder", "player"],
     powerDrawW: 60, // typical
+    heightMm: 84,
+    widthMm: 237,
+    depthMm: 220,
+    weightKg: 2.5,
     ports: [
       port("12G-SDI In 1", "sdi", "input"),
       port("12G-SDI In 2", "sdi", "input"),
@@ -239,6 +267,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.sounddevices.com/product/pix-270i/",
     searchTerms: ["sound devices", "pix", "270i", "recorder"],
     powerDrawW: 30, // typical
+    heightMm: 84,
+    widthMm: 218,
+    depthMm: 262,
+    weightKg: 3.4,
     ports: [
       port("SDI In", "sdi", "input"),
       port("SDI Out", "sdi", "output"),
@@ -270,6 +302,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicvideoassist",
     searchTerms: ["blackmagic", "video assist", "monitor recorder", "12g", "hdr"],
     powerDrawW: 25, // typical
+    heightMm: 131,
+    widthMm: 193,
+    depthMm: 37,
+    weightKg: 0.8,
     ports: [
       port("12G-SDI In", "sdi", "input"),
       port("12G-SDI Out", "sdi", "output"),
@@ -291,6 +327,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicvideoassist",
     searchTerms: ["blackmagic", "video assist", "monitor recorder", "5 inch", "12g"],
     powerDrawW: 20, // typical
+    heightMm: 90,
+    widthMm: 148,
+    depthMm: 37,
+    weightKg: 0.4,
     ports: [
       port("12G-SDI In", "sdi", "input"),
       port("12G-SDI Out", "sdi", "output"),
@@ -310,6 +350,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.atomos.com/product/ninja-ultra/",
     searchTerms: ["atomos", "ninja", "ultra", "monitor recorder", "5 inch"],
     powerDrawW: 25, // typical
+    heightMm: 92,
+    widthMm: 151,
+    depthMm: 31,
+    weightKg: 0.4,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Out", "hdmi", "output"),
@@ -329,6 +373,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.aja.com/products/ki-pro-go2",
     searchTerms: ["aja", "ki pro", "go2", "multi-channel", "recorder", "h265", "hevc"],
     powerDrawW: 50, // typical
+    heightMm: 84,
+    widthMm: 220,
+    depthMm: 269,
+    weightKg: 2.3,
     ports: [
       ...ports("3G-SDI In", "sdi", "input", 4),
       ...ports("HDMI In", "hdmi", "input", 4),

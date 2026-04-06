@@ -13,6 +13,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://teradek.com/products/bolt-4k-750-set",
     searchTerms: ["teradek", "bolt", "wireless", "transmitter", "zero delay"],
     powerDrawW: 14, // typical
+    heightMm: 27,
+    widthMm: 91,
+    depthMm: 132,
+    weightKg: 0.4,
     ports: [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -30,6 +34,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://teradek.com/products/bolt-4k-750-rx-only",
     searchTerms: ["teradek", "bolt", "wireless", "receiver", "zero delay"],
     powerDrawW: 14, // typical
+    heightMm: 27,
+    widthMm: 139,
+    depthMm: 112,
+    weightKg: 0.4,
     ports: [
       port("SDI Out 1", "sdi", "output"),
       port("SDI Out 2", "sdi", "output"),
@@ -48,6 +56,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.clearcom.com/Products/Products-By-Name/Station-IC/fsii-base-ii",
     searchTerms: ["clearcom", "clear-com", "freespeak", "wireless intercom", "base station"],
     powerDrawW: 60, // typical
+    heightMm: 43,
+    widthMm: 483,
+    depthMm: 259,
+    weightKg: 2.5,
     ports: [
       port("Partyline 1", "analog-audio", "bidirectional"),
       port("Partyline 2", "analog-audio", "bidirectional"),
@@ -72,6 +84,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://teradek.com/products/bolt-4k-max",
     searchTerms: ["teradek", "bolt", "max", "wireless", "transmitter"],
     powerDrawW: 18, // typical
+    heightMm: 27,
+    widthMm: 91,
+    depthMm: 132,
+    weightKg: 0.7,
     ports: [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -88,6 +104,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://teradek.com/products/bolt-4k-max",
     searchTerms: ["teradek", "bolt", "max", "wireless", "receiver"],
     powerDrawW: 18, // typical
+    heightMm: 27,
+    widthMm: 139,
+    depthMm: 112,
+    weightKg: 0.7,
     ports: [
       port("SDI Out 1", "sdi", "output"),
       port("SDI Out 2", "sdi", "output"),
@@ -105,6 +125,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.riedel.net/products-solutions/intercom/artist/",
     searchTerms: ["riedel", "artist", "matrix intercom", "digital"],
     powerDrawW: 200, // typical
+    heightMm: 88,
+    widthMm: 483,
+    depthMm: 404,
+    weightKg: 6.3,
     ports: [
       port("MADI 1", "madi", "bidirectional"),
       port("MADI 2", "madi", "bidirectional"),
@@ -144,6 +168,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.clearcom.com/Products/Products-By-Name/Station-IC/eclipse-hx-median",
     searchTerms: ["clearcom", "clear-com", "eclipse", "matrix intercom"],
     powerDrawW: 150, // typical
+    heightMm: 264,
+    widthMm: 482,
+    depthMm: 410,
+    weightKg: 20,
     ports: [
       ...ports("4-Wire", "analog-audio", "bidirectional", 4),
       port("MADI", "madi", "bidirectional"),
@@ -161,6 +189,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.clearcom.com/Products/Products-By-Name/Wireless/FreeSpeak-Edge",
     searchTerms: ["clearcom", "clear-com", "freespeak", "edge", "wireless intercom"],
     powerDrawW: 70, // typical
+    heightMm: 44,
+    widthMm: 483,
+    depthMm: 354,
+    weightKg: 3.3,
     ports: [
       ...ports("Partyline", "analog-audio", "bidirectional", 4),
       port("4-Wire In", "analog-audio", "input"),

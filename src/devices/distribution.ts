@@ -26,6 +26,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.datapath.co.uk/datapath-products/video-wall-controllers/datapath-fx4-sdi/",
     searchTerms: ["datapath", "video wall"],
     powerDrawW: 35,
+    heightMm: 42,
+    widthMm: 316,
+    depthMm: 172,
+    weightKg: 1.9,
     ports: [
       port("SDI In", "sdi", "input"),
       port("DP In", "displayport", "input"),
@@ -54,6 +58,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "FX4 HDMI",
     referenceUrl: "https://www.datapath.co.uk/datapath-products/video-wall-controllers/datapath-fx4/",
     powerDrawW: 35,
+    heightMm: 42,
+    widthMm: 316,
+    depthMm: 172,
+    weightKg: 1.9,
     ports: [
       port("DP In", "displayport", "input"),
       port("HDMI In 1", "hdmi", "input"),
@@ -82,6 +90,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/miniconverters",
     searchTerms: ["blackmagic", "mini converter", "distribution", "da", "1x8"],
     powerDrawW: 5,
+    heightMm: 28,
+    widthMm: 92,
+    depthMm: 72,
+    weightKg: 0.1,
     ports: [
       port("SDI In", "sdi", "input"),
       ...ports("SDI Out", "sdi", "output", 8),
@@ -97,6 +109,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/miniconverters",
     searchTerms: ["blackmagic", "mini converter", "distribution", "4k", "6g", "da"],
     powerDrawW: 5,
+    heightMm: 28,
+    widthMm: 92,
+    depthMm: 72,
+    weightKg: 0.1,
     ports: [
       port("SDI In", "sdi", "input"),
       ...ports("SDI Out", "sdi", "output", 8),
@@ -113,6 +129,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/teranexmini",
     searchTerms: ["blackmagic", "teranex", "distribution", "da", "12g"],
     powerDrawW: 16,
+    heightMm: 45,
+    widthMm: 140,
+    depthMm: 170,
+    weightKg: 0.6,
     ports: [
       port("SDI In", "sdi", "input"),
       ...ports("SDI Out", "sdi", "output", 8),
@@ -130,6 +150,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.datapath.co.uk/products/video-wall-controllers/hx4/",
     searchTerms: ["datapath", "hx4", "video wall", "4k"],
     powerDrawW: 35, // typical
+    heightMm: 42,
+    widthMm: 316,
+    depthMm: 172,
+    weightKg: 1.9,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("DP In", "displayport", "input"),
@@ -154,6 +178,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.aja.com/products/12gda",
     searchTerms: ["aja", "12gda", "distribution amplifier", "da", "12g", "sdi"],
     powerDrawW: 7, // typical
+    heightMm: 25,
+    widthMm: 147,
+    depthMm: 79,
+    weightKg: 0.3,
     ports: [
       port("12G-SDI In", "sdi", "input"),
       ...ports("12G-SDI Out", "sdi", "output", 6),
@@ -169,6 +197,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "T2G-D3D-IF",
     referenceUrl: "https://www.matrox.com/en/video/products/graphics-expansion-modules/triplehead2go/digital-edition",
     searchTerms: ["matrox", "triplehead2go", "triple head", "th2go", "multi-monitor", "graphics expansion"],
+    heightMm: 27,
+    widthMm: 140,
+    depthMm: 113,
+    weightKg: 0.3,
     ports: [
       port("DVI In", "hdmi", "input", "dvi"),
       port("DVI Out 1", "hdmi", "output", "dvi"),
@@ -186,6 +218,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "T2G-DP3D-IF",
     referenceUrl: "https://www.matrox.com/en/video/products/graphics-expansion-modules/triplehead2go/digital-se",
     searchTerms: ["matrox", "triplehead2go", "triple head", "th2go", "digital se", "multi-monitor", "graphics expansion"],
+    heightMm: 28,
+    widthMm: 64,
+    depthMm: 135,
+    weightKg: 0.2,
     ports: [
       port("DP In", "displayport", "input"),
       port("DVI Out 1", "hdmi", "output", "dvi"),
@@ -203,6 +239,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "T2G-DP-MIF",
     referenceUrl: "https://www.matrox.com/en/video/products/graphics-expansion-modules/triplehead2go/dp-edition",
     searchTerms: ["matrox", "triplehead2go", "triple head", "th2go", "displayport", "multi-monitor", "graphics expansion"],
+    heightMm: 28,
+    widthMm: 89,
+    depthMm: 97,
+    weightKg: 0.1,
     ports: [
       port("DP In", "displayport", "input"),
       port("DP Out 1", "displayport", "output"),
@@ -222,6 +262,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.matrox.com/en/video/products/video-wall/quadhead2go/q155-appliance",
     searchTerms: ["matrox", "quadhead2go", "quad head", "qh2go", "q155", "video wall", "hdmi"],
     powerDrawW: 15,
+    heightMm: 32,
+    widthMm: 140,
+    depthMm: 181,
+    weightKg: 0.5,
     ports: [
       port("HDMI In", "hdmi", "input"),
       ...ports("HDMI Out", "hdmi", "output", 4),
@@ -238,6 +282,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "Q2G-H4K-C",
     referenceUrl: "https://www.matrox.com/en/video/products/video-wall/quadhead2go/q155-card",
     searchTerms: ["matrox", "quadhead2go", "quad head", "qh2go", "q155", "video wall", "pcie", "card"],
+    heightMm: 127,
+    widthMm: 22,
+    depthMm: 158,
+    weightKg: 0.2,
     ports: [
       port("Mini HDMI In", "hdmi", "input", "mini-hdmi"),
       port("Mini HDMI Out 1", "hdmi", "output", "mini-hdmi"),
@@ -256,6 +304,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.matrox.com/en/video/products/video-wall/quadhead2go/q185-appliance",
     searchTerms: ["matrox", "quadhead2go", "quad head", "qh2go", "q185", "video wall", "displayport"],
     powerDrawW: 15,
+    heightMm: 32,
+    widthMm: 140,
+    depthMm: 181,
+    weightKg: 0.5,
     ports: [
       port("DP In", "displayport", "input"),
       ...ports("HDMI Out", "hdmi", "output", 4),
@@ -272,6 +324,10 @@ export const templates: DeviceTemplate[] = [
     modelNumber: "Q2G-DP4K-C",
     referenceUrl: "https://www.matrox.com/en/video/products/video-wall/quadhead2go/q185-card",
     searchTerms: ["matrox", "quadhead2go", "quad head", "qh2go", "q185", "video wall", "displayport", "pcie", "card"],
+    heightMm: 127,
+    widthMm: 22,
+    depthMm: 158,
+    weightKg: 0.2,
     ports: [
       port("Mini DP In", "displayport", "input", "mini-displayport"),
       port("Mini HDMI Out 1", "hdmi", "output", "mini-hdmi"),

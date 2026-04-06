@@ -10,6 +10,10 @@ export const templates: DeviceTemplate[] = [
     manufacturer: "Adder",
     modelNumber: "XDIP",
     referenceUrl: "https://www.adder.com/en/kvm-solutions/adderlink-xdip",
+    heightMm: 31,
+    widthMm: 169,
+    depthMm: 120,
+    weightKg: 0.6,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Out", "hdmi", "output"),
@@ -36,6 +40,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.extron.com/product/dtpthd24k230",
     searchTerms: ["extron", "dtp", "hdbaset", "transmitter", "extender"],
     powerDrawW: 12, // typical
+    heightMm: 25,
+    widthMm: 109,
+    depthMm: 152,
+    weightKg: 0.2,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Loop", "hdmi", "output"),
@@ -54,6 +62,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.extron.com/product/dtphdmi230rx",
     searchTerms: ["extron", "dtp", "hdbaset", "receiver", "extender"],
     powerDrawW: 12, // typical
+    heightMm: 25,
+    widthMm: 109,
+    depthMm: 152,
+    weightKg: 0.5,
     ports: [
       port("HDBaseT In", "hdbaset", "input"),
       port("HDMI Out", "hdmi", "output"),

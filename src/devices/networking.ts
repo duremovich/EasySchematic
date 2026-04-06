@@ -77,6 +77,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://teradek.com/pages/prism-flex",
     searchTerms: ["teradek", "prism", "streaming", "encoder", "rtmp", "srt", "hevc"],
     powerDrawW: 30, // typical
+    heightMm: 35,
+    widthMm: 162,
+    depthMm: 92,
+    weightKg: 0.3,
     ports: [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -103,6 +107,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.crestron.com/Products/Catalog/AV-Over-IP/DM-NVX-AV-Over-IP/Video-Endpoint/DM-NVX-351",
     searchTerms: ["crestron", "nvx", "av-over-ip", "networked av", "encoder", "decoder"],
     powerDrawW: 30, // typical
+    heightMm: 39,
+    widthMm: 236,
+    depthMm: 219,
+    weightKg: 0.9,
     ports: [
       port("HDMI In 1", "hdmi", "input"),
       port("HDMI In 2", "hdmi", "input"),
@@ -127,6 +135,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.magewell.com/products/pro-convert-hdmi-plus",
     searchTerms: ["magewell", "pro convert", "ndi", "encoder", "hdmi"],
     powerDrawW: 13,
+    heightMm: 23,
+    widthMm: 67,
+    depthMm: 118,
+    weightKg: 0.5,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Loop", "hdmi", "output"),
@@ -142,6 +154,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.magewell.com/products/pro-convert-hdmi-4k-plus",
     searchTerms: ["magewell", "pro convert", "ndi", "encoder", "4k"],
     powerDrawW: 13,
+    heightMm: 23,
+    widthMm: 67,
+    depthMm: 118,
+    weightKg: 0.5,
     ports: [
       port("HDMI 2.0 In", "hdmi", "input"),
       port("HDMI Loop", "hdmi", "output"),
@@ -157,6 +173,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.magewell.com/products/pro-convert-for-ndi-to-hdmi",
     searchTerms: ["magewell", "pro convert", "ndi", "decoder"],
     powerDrawW: 13,
+    heightMm: 23,
+    widthMm: 60,
+    depthMm: 101,
+    weightKg: 0.4,
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
       port("HDMI Out", "hdmi", "output"),
@@ -172,6 +192,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicwebpresenter",
     searchTerms: ["blackmagic", "web presenter", "streaming", "webcam"],
     powerDrawW: 18,
+    heightMm: 44,
+    widthMm: 140,
+    depthMm: 176,
+    weightKg: 0.8,
     ports: [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -189,6 +213,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicwebpresenter",
     searchTerms: ["blackmagic", "web presenter", "4k", "streaming"],
     powerDrawW: 18,
+    heightMm: 44,
+    widthMm: 140,
+    depthMm: 176,
+    weightKg: 0.8,
     ports: [
       port("12G-SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -208,6 +236,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://teradek.com/products/cube-755",
     searchTerms: ["teradek", "cube", "encoder", "hevc", "h265"],
     powerDrawW: 12, // typical
+    heightMm: 28,
+    widthMm: 121,
+    depthMm: 76,
+    weightKg: 0.3,
     ports: [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -224,6 +256,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://teradek.com/products/cube-775",
     searchTerms: ["teradek", "cube", "decoder", "hevc"],
     powerDrawW: 12, // typical
+    heightMm: 28,
+    widthMm: 121,
+    depthMm: 76,
+    weightKg: 0.3,
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
       port("SDI Out", "sdi", "output"),
@@ -241,6 +277,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.extron.com/product/nave101",
     searchTerms: ["extron", "nav", "encoder", "av over ip", "streaming", "pure3"],
     powerDrawW: 12, // typical
+    heightMm: 25,
+    widthMm: 222,
+    depthMm: 152,
+    weightKg: 0.7,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Loop", "hdmi", "output"),
@@ -260,6 +300,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.extron.com/product/navsd101",
     searchTerms: ["extron", "nav", "decoder", "av over ip", "scaling", "pure3"],
     powerDrawW: 12, // typical
+    heightMm: 25,
+    widthMm: 222,
+    depthMm: 152,
+    weightKg: 0.7,
     ports: [
       port("HDMI Out", "hdmi", "output"),
       port("Network", "ethernet", "bidirectional"),
@@ -279,6 +323,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicwebpresenter",
     searchTerms: ["blackmagic", "streaming", "decoder", "srt", "rtmp"],
     powerDrawW: 18, // typical
+    heightMm: 44,
+    widthMm: 140,
+    depthMm: 176,
+    weightKg: 0.8,
     ports: [
       port("12G-SDI Out", "sdi", "output"),
       port("HDMI Out", "hdmi", "output"),
@@ -298,6 +346,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://birddog.tv/mini-overview/",
     searchTerms: ["birddog", "mini", "ndi", "encoder", "hdmi", "poe"],
     powerDrawW: 7, // PoE powered
+    heightMm: 22,
+    widthMm: 98,
+    depthMm: 110,
+    weightKg: 0.2,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("Ethernet", "ethernet", "bidirectional"),
@@ -313,6 +365,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.kiloview.com/en/ndi/ndi-wired/",
     searchTerms: ["kiloview", "e2", "ndi", "encoder", "hdmi"],
     powerDrawW: 12, // typical
+    heightMm: 28,
+    widthMm: 125,
+    depthMm: 89,
+    weightKg: 0.4,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("Ethernet", "ethernet", "bidirectional"),
@@ -328,6 +384,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.magewell.com/products/usb-capture-hdmi-plus",
     searchTerms: ["magewell", "usb capture", "hdmi", "capture card"],
     powerDrawW: 0, // USB bus-powered
+    heightMm: 17,
+    widthMm: 57,
+    depthMm: 98,
+    weightKg: 0.2,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("HDMI Loop", "hdmi", "output"),
@@ -346,6 +406,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.magewell.com/products/pro-convert-sdi-plus",
     searchTerms: ["magewell", "pro convert", "ndi", "encoder", "sdi"],
     powerDrawW: 13,
+    heightMm: 23,
+    widthMm: 67,
+    depthMm: 118,
+    weightKg: 0.4,
     ports: [
       port("SDI In", "sdi", "input"),
       port("SDI Loop", "sdi", "output"),

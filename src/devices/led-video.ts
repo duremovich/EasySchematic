@@ -12,6 +12,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.bromptontech.com/product/sx40/",
     searchTerms: ["brompton", "tessera", "sx40", "led processor", "led wall"],
     powerDrawW: 250, // typical
+    heightMm: 89,
+    widthMm: 483,
+    depthMm: 406,
+    weightKg: 7.5,
     ports: [
       port("12G-SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -37,6 +41,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.bromptontech.com/product/s4/",
     searchTerms: ["brompton", "tessera", "s4", "led processor"],
     powerDrawW: 60, // typical
+    heightMm: 50,
+    widthMm: 483,
+    depthMm: 384,
+    weightKg: 4.5,
     ports: [
       port("DVI-D In", "hdmi", "input", "dvi"),
       port("LED Out 1", "ethernet", "output", "rj45"),
@@ -56,6 +64,9 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.bromptontech.com/product/r2-plus/",
     searchTerms: ["brompton", "tessera", "m2", "receiver card", "led"],
     powerDrawW: 5, // typical — powered via LED panel
+    heightMm: 89,
+    widthMm: 483,
+    depthMm: 508,
     ports: [
       port("LED Data In", "ethernet", "input"),
       port("LED Data Link", "ethernet", "output"),
@@ -70,6 +81,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.novastar.tech/product/detail.html?catid=3&id=36",
     searchTerms: ["novastar", "novapro", "led processor", "led wall"],
     powerDrawW: 120, // typical
+    heightMm: 88,
+    widthMm: 483,
+    depthMm: 389,
+    weightKg: 6,
     ports: [
       port("SDI In", "sdi", "input"),
       port("HDMI In", "hdmi", "input"),
@@ -99,6 +114,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.novastar.tech/product/detail.html?catid=3&id=34",
     searchTerms: ["novastar", "vx2000", "led processor", "all-in-one"],
     powerDrawW: 300, // typical
+    heightMm: 95,
+    widthMm: 483,
+    depthMm: 409,
+    weightKg: 7,
     ports: [
       port("HDMI 2.0 In 1", "hdmi", "input"),
       port("HDMI 2.0 In 2", "hdmi", "input"),
@@ -124,6 +143,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.novastar.tech/product/detail.html?catid=3&id=36",
     searchTerms: ["novastar", "novapro", "uhd", "led processor"],
     powerDrawW: 150, // typical
+    heightMm: 139,
+    widthMm: 483,
+    depthMm: 396,
+    weightKg: 6.3,
     ports: [
       port("HDMI In 1", "hdmi", "input"),
       port("HDMI In 2", "hdmi", "input"),
@@ -145,6 +168,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.bromptontech.com/product/s8/",
     searchTerms: ["brompton", "tessera", "s8", "led processor"],
     powerDrawW: 120, // typical
+    heightMm: 89,
+    widthMm: 483,
+    depthMm: 508,
+    weightKg: 7.5,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("DP In", "displayport", "input"),
@@ -172,6 +199,8 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.bromptontech.com/product/r2-plus/",
     searchTerms: ["brompton", "tessera", "r2", "receiver", "led"],
     powerDrawW: 5, // typical — powered via LED panel
+    widthMm: 68,
+    depthMm: 32,
     ports: [
       port("Data In", "ethernet", "input", "ethercon"),
       port("Data Out", "ethernet", "output", "ethercon"),
@@ -187,6 +216,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.bromptontech.com/product/xd/",
     searchTerms: ["brompton", "tessera", "xd", "10g", "distribution", "led"],
     powerDrawW: 80, // typical
+    heightMm: 89,
+    widthMm: 483,
+    depthMm: 210,
+    weightKg: 10,
     ports: [
       port("10G Copper In", "ethernet", "input", "rj45"),
       ...ports("LED Out", "ethernet", "output", 10, "rj45"),
@@ -207,6 +240,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://megapixelvr.com/helios/",
     searchTerms: ["megapixel", "helios", "led processor", "led wall", "virtual production"],
     powerDrawW: 500, // typical
+    heightMm: 184,
+    widthMm: 533,
+    depthMm: 597,
+    weightKg: 8.2,
     ports: [
       port("HDMI In", "hdmi", "input"),
       port("DP In", "displayport", "input"),

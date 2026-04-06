@@ -37,6 +37,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/smartview",
     searchTerms: ["blackmagic", "smartview", "rack monitor", "17 inch"],
     powerDrawW: 55, // typical
+    heightMm: 266,
+    widthMm: 483,
+    depthMm: 35,
+    weightKg: 2.3,
     ports: [
       port("SDI In", "sdi", "input"),
       port("SDI Loop", "sdi", "output"),
@@ -52,6 +56,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/smartview",
     searchTerms: ["blackmagic", "smartview", "4k", "12g", "rack monitor"],
     powerDrawW: 60, // typical
+    heightMm: 266,
+    widthMm: 482,
+    depthMm: 70,
+    weightKg: 3.6,
     ports: [
       port("12G-SDI In", "sdi", "input"),
       port("SDI Loop", "sdi", "output"),
@@ -71,6 +79,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/smartview",
     searchTerms: ["blackmagic", "smartview", "duo", "dual", "rack monitor"],
     powerDrawW: 40, // typical
+    heightMm: 133,
+    widthMm: 483,
+    depthMm: 35,
+    weightKg: 1.4,
     ports: [
       port("SDI In 1", "sdi", "input"),
       port("SDI In 2", "sdi", "input"),
@@ -88,6 +100,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.smallhd.com/cine-13",
     searchTerms: ["smallhd", "cine", "13 inch", "production monitor"],
     powerDrawW: 65, // typical
+    heightMm: 257,
+    widthMm: 335,
+    depthMm: 58,
+    weightKg: 3.1,
     ports: [
       ...ports("12G-SDI In", "sdi", "input", 4),
       port("HDMI In", "hdmi", "input"),
@@ -114,6 +130,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.smallhd.com/cine-24",
     searchTerms: ["smallhd", "cine", "24 inch", "production monitor"],
     powerDrawW: 90, // typical
+    heightMm: 445,
+    widthMm: 591,
+    depthMm: 51,
+    weightKg: 7.5,
     ports: [
       ...ports("12G-SDI In", "sdi", "input", 4),
       port("HDMI In", "hdmi", "input"),
@@ -142,6 +162,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.marshall-usa.com/cameras-monitors/rack-mount-monitors/ml-702.php",
     searchTerms: ["marshall", "dual", "7 inch", "rack monitor"],
     powerDrawW: 20, // typical
+    heightMm: 130,
+    widthMm: 483,
+    depthMm: 44,
+    weightKg: 2.4,
     ports: [
       port("SDI In 1", "sdi", "input"),
       port("SDI In 2", "sdi", "input"),
@@ -172,6 +196,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicaudiomonitor",
     searchTerms: ["blackmagic", "audio monitor", "speakers", "12g"],
     powerDrawW: 50, // typical
+    heightMm: 44,
+    widthMm: 483,
+    depthMm: 242,
+    weightKg: 2.6,
     ports: [
       port("12G-SDI In", "sdi", "input"),
       port("SDI Loop", "sdi", "output"),
@@ -196,6 +224,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.smallhd.com/cine-18",
     searchTerms: ["smallhd", "cine", "18 inch", "production monitor"],
     powerDrawW: 80, // typical
+    heightMm: 323,
+    widthMm: 467,
+    depthMm: 64,
+    weightKg: 5.4,
     ports: [
       port("12G-SDI In 1", "sdi", "input"),
       port("12G-SDI In 2", "sdi", "input"),
@@ -221,6 +253,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.leader.co.jp/en/products/discontinuation/lv5333/",
     searchTerms: ["leader", "lv5333", "waveform", "vectorscope", "monitor", "test"],
     powerDrawW: 40, // typical
+    heightMm: 128,
+    widthMm: 215,
+    depthMm: 63,
+    weightKg: 1.5,
     ports: [
       port("SDI In 1", "sdi", "input"),
       port("SDI In 2", "sdi", "input"),

@@ -22,6 +22,10 @@ interface TemplateInput {
   powerCapacityW?: number;
   voltage?: string;
   isVenueProvided?: boolean;
+  heightMm?: number;
+  widthMm?: number;
+  depthMm?: number;
+  weightKg?: number;
   sortOrder?: number;
 }
 
@@ -198,6 +202,20 @@ export function validateTemplate(body: unknown): ValidationResult {
     if (vErr) return { ok: false, error: vErr };
   }
 
+  // Physical dimension fields — optional positive numbers
+  if (obj.heightMm != null && (typeof obj.heightMm !== "number" || obj.heightMm < 0)) {
+    return { ok: false, error: "heightMm must be a non-negative number" };
+  }
+  if (obj.widthMm != null && (typeof obj.widthMm !== "number" || obj.widthMm < 0)) {
+    return { ok: false, error: "widthMm must be a non-negative number" };
+  }
+  if (obj.depthMm != null && (typeof obj.depthMm !== "number" || obj.depthMm < 0)) {
+    return { ok: false, error: "depthMm must be a non-negative number" };
+  }
+  if (obj.weightKg != null && (typeof obj.weightKg !== "number" || obj.weightKg < 0)) {
+    return { ok: false, error: "weightKg must be a non-negative number" };
+  }
+
   return {
     ok: true,
     data: {
@@ -217,6 +235,10 @@ export function validateTemplate(body: unknown): ValidationResult {
       ...(obj.powerCapacityW != null && { powerCapacityW: obj.powerCapacityW as number }),
       ...(obj.voltage != null && { voltage: obj.voltage as string }),
       ...(obj.isVenueProvided != null && { isVenueProvided: obj.isVenueProvided as boolean }),
+      ...(obj.heightMm != null && { heightMm: obj.heightMm as number }),
+      ...(obj.widthMm != null && { widthMm: obj.widthMm as number }),
+      ...(obj.depthMm != null && { depthMm: obj.depthMm as number }),
+      ...(obj.weightKg != null && { weightKg: obj.weightKg as number }),
       ...(obj.sortOrder != null && { sortOrder: obj.sortOrder as number }),
     },
   };

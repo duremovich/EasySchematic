@@ -48,6 +48,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicvideohub/techspecs",
     searchTerms: ["blackmagic", "smart videohub", "videohub", "20x20", "matrix"],
     powerDrawW: 28,
+    heightMm: 44,
+    widthMm: 482,
+    depthMm: 236,
+    weightKg: 3.6,
     ports: [
       port("In 1", "sdi", "input"),
       port("In 2", "sdi", "input"),
@@ -107,6 +111,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/blackmagicvideohub/techspecs/W-VHS-06",
     searchTerms: ["blackmagic", "videohub", "cleanswitch", "clean switch", "12x12"],
     powerDrawW: 30, // typical
+    heightMm: 44,
+    widthMm: 482,
+    depthMm: 160,
+    weightKg: 1.9,
     ports: [
       port("In 1", "sdi", "input"),
       port("In 2", "sdi", "input"),
@@ -150,6 +158,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www1.kramerav.com/us/product/vs-88h2",
     searchTerms: ["kramer", "hdmi", "matrix", "8x8", "switcher"],
     powerDrawW: 66,
+    heightMm: 44,
+    widthMm: 436,
+    depthMm: 183,
+    weightKg: 2.4,
     ports: [
       port("HDMI In 1", "hdmi", "input"),
       port("HDMI In 2", "hdmi", "input"),
@@ -182,6 +194,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemmini",
     searchTerms: ["blackmagic", "atem", "mini", "hdmi switcher"],
     powerDrawW: 30,
+    heightMm: 35,
+    widthMm: 238,
+    depthMm: 104,
+    weightKg: 0.6,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 4),
       port("HDMI Out", "hdmi", "output"),
@@ -199,6 +215,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemmini",
     searchTerms: ["blackmagic", "atem", "mini pro", "streaming"],
     powerDrawW: 30,
+    heightMm: 35,
+    widthMm: 238,
+    depthMm: 104,
+    weightKg: 0.6,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 4),
       port("HDMI Out", "hdmi", "output"),
@@ -217,6 +237,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemmini",
     searchTerms: ["blackmagic", "atem", "mini pro iso", "recording"],
     powerDrawW: 36,
+    heightMm: 35,
+    widthMm: 238,
+    depthMm: 104,
+    weightKg: 0.6,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 4),
       port("HDMI Out", "hdmi", "output"),
@@ -235,6 +259,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemmini",
     searchTerms: ["blackmagic", "atem", "mini extreme", "8 input"],
     powerDrawW: 36,
+    heightMm: 40,
+    widthMm: 370,
+    depthMm: 137,
+    weightKg: 0.9,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 8),
       port("HDMI Out 1", "hdmi", "output"),
@@ -256,6 +284,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemmini",
     searchTerms: ["blackmagic", "atem", "mini extreme iso", "8 input", "recording"],
     powerDrawW: 120,
+    heightMm: 40,
+    widthMm: 370,
+    depthMm: 137,
+    weightKg: 0.9,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 8),
       port("HDMI Out 1", "hdmi", "output"),
@@ -277,6 +309,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemsdi",
     searchTerms: ["blackmagic", "atem", "sdi switcher"],
     powerDrawW: 18,
+    heightMm: 35,
+    widthMm: 238,
+    depthMm: 119,
+    weightKg: 0.7,
     ports: [
       ...ports("SDI In", "sdi", "input", 4),
       port("SDI Out 1", "sdi", "output"),
@@ -299,6 +335,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemsdi",
     searchTerms: ["blackmagic", "atem", "sdi pro iso"],
     powerDrawW: 36,
+    heightMm: 35,
+    widthMm: 238,
+    depthMm: 119,
+    weightKg: 0.7,
     ports: [
       ...ports("SDI In", "sdi", "input", 4),
       port("SDI Out 1", "sdi", "output"),
@@ -320,6 +360,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemsdi",
     searchTerms: ["blackmagic", "atem", "sdi extreme iso", "8 input"],
     powerDrawW: 36,
+    heightMm: 40,
+    widthMm: 370,
+    depthMm: 151,
+    weightKg: 1.4,
     ports: [
       ...ports("SDI In", "sdi", "input", 8),
       port("SDI Out 1", "sdi", "output"),
@@ -349,6 +393,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemtelevisionstudio",
     searchTerms: ["blackmagic", "atem", "television studio", "hd8"],
     powerDrawW: 100,
+    heightMm: 161,
+    widthMm: 585,
+    depthMm: 375,
+    weightKg: 6.8,
     ports: [
       ...ports("SDI In", "sdi", "input", 8),
       port("PGM Out", "sdi", "output"),
@@ -401,6 +449,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemconstellation",
     searchTerms: ["blackmagic", "atem", "constellation", "1me", "12g"],
     powerDrawW: 36,
+    heightMm: 44,
+    widthMm: 482,
+    depthMm: 176,
+    weightKg: 1.9,
     ports: [
       ...ports("SDI In", "sdi", "input", 10),
       ...ports("SDI Out", "sdi", "output", 6),
@@ -424,6 +476,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemconstellation",
     searchTerms: ["blackmagic", "atem", "constellation", "2me"],
     powerDrawW: 52,
+    heightMm: 44,
+    widthMm: 482,
+    depthMm: 182,
+    weightKg: 3,
     ports: [
       ...ports("SDI In", "sdi", "input", 20),
       ...ports("SDI Out", "sdi", "output", 12),
@@ -449,6 +505,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/atemconstellation",
     searchTerms: ["blackmagic", "atem", "constellation", "4me"],
     powerDrawW: 147,
+    heightMm: 88,
+    widthMm: 482,
+    depthMm: 231,
+    weightKg: 5.2,
     ports: [
       ...ports("SDI In", "sdi", "input", 40),
       ...ports("SDI Out", "sdi", "output", 24),
@@ -484,6 +544,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://proav.roland.com/global/products/v-60hd/",
     searchTerms: ["roland", "v60hd", "multi-format", "switcher"],
     powerDrawW: 37,
+    heightMm: 96,
+    widthMm: 356,
+    depthMm: 221,
+    weightKg: 3,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 4),
       ...ports("SDI In", "sdi", "input", 4),
@@ -542,6 +606,10 @@ export const templates: DeviceTemplate[] = [
       { id: "e2-out-3", label: "Output Slot 3", slotFamily: "barco-em-output" },
       { id: "e2-out-4", label: "Output Slot 4", slotFamily: "barco-em-output" },
     ],
+    heightMm: 178,
+    widthMm: 483,
+    depthMm: 622,
+    weightKg: 31,
     ports: [
       port("Ref In", "genlock", "input"),
       port("Ref Loop Out", "genlock", "output"),
@@ -569,6 +637,10 @@ export const templates: DeviceTemplate[] = [
       { id: "s3-out-3", label: "Output Slot 3", slotFamily: "barco-em-output" },
       { id: "s3-mvr-1", label: "MVR/Output Slot", slotFamily: "barco-em-output" },
     ],
+    heightMm: 133,
+    widthMm: 483,
+    depthMm: 540,
+    weightKg: 24,
     ports: [
       port("Ref In", "genlock", "input"),
       port("Ref Loop Out", "genlock", "output"),
@@ -596,6 +668,10 @@ export const templates: DeviceTemplate[] = [
       { id: "aql-out-3", label: "Output Slot 3", slotFamily: "aw-aql-output" },
       { id: "aql-out-4", label: "Output Slot 4", slotFamily: "aw-aql-output" },
     ],
+    heightMm: 221,
+    widthMm: 482,
+    depthMm: 713,
+    weightKg: 30,
     ports: [
       port("Dante", "dante", "bidirectional"),
       port("Ref In", "genlock", "input"),
@@ -613,6 +689,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/smartvideohub",
     searchTerms: ["blackmagic", "videohub", "12g", "10x10"],
     powerDrawW: 20, // typical
+    heightMm: 44,
+    widthMm: 483,
+    depthMm: 236,
+    weightKg: 3,
     ports: [
       ...ports("In", "sdi", "input", 10),
       ...ports("Out", "sdi", "output", 10),
@@ -631,6 +711,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.blackmagicdesign.com/products/smartvideohub",
     searchTerms: ["blackmagic", "videohub", "12g", "40x40"],
     powerDrawW: 80, // typical
+    heightMm: 88,
+    widthMm: 482,
+    depthMm: 238,
+    weightKg: 5.6,
     ports: [
       ...ports("In", "sdi", "input", 40),
       ...ports("Out", "sdi", "output", 40),
@@ -660,6 +744,10 @@ export const templates: DeviceTemplate[] = [
       "matrix",
     ],
     powerDrawW: 50,
+    heightMm: 221,
+    widthMm: 482,
+    depthMm: 161,
+    weightKg: 6.4,
     ports: [
       ...ports("SDI In", "sdi", "input", 72, "bnc"),
       ...ports("SDI Out", "sdi", "output", 72, "bnc"),
@@ -688,6 +776,10 @@ export const templates: DeviceTemplate[] = [
       "matrix",
     ],
     powerDrawW: 92,
+    heightMm: 177,
+    widthMm: 483,
+    depthMm: 238,
+    weightKg: 10.9,
     ports: [
       ...ports("SDI In", "sdi", "input", 80, "bnc"),
       ...ports("SDI Out", "sdi", "output", 80, "bnc"),
@@ -706,6 +798,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://lightware.com/mx2-8x8-hdmi20",
     searchTerms: ["lightware", "mx2", "hdmi", "8x8", "matrix"],
     powerDrawW: 50, // typical
+    heightMm: 44,
+    widthMm: 442,
+    depthMm: 278,
+    weightKg: 3.2,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 8),
       ...ports("HDMI Out", "hdmi", "output", 8),
@@ -723,6 +819,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://lightware.com/mx2-16x16-hdmi20",
     searchTerms: ["lightware", "mx2", "hdmi", "16x16", "matrix"],
     powerDrawW: 80, // typical
+    heightMm: 133,
+    widthMm: 441,
+    depthMm: 280,
+    weightKg: 8.5,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 16),
       ...ports("HDMI Out", "hdmi", "output", 16),
@@ -741,6 +841,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.aja.com/products/kumo-1616-12g",
     searchTerms: ["aja", "kumo", "router", "16x16", "12g", "sdi"],
     powerDrawW: 35, // typical
+    heightMm: 44,
+    widthMm: 442,
+    depthMm: 39,
+    weightKg: 0.6,
     ports: [
       ...ports("In", "sdi", "input", 16),
       ...ports("Out", "sdi", "output", 16),
@@ -773,6 +877,10 @@ export const templates: DeviceTemplate[] = [
       { id: "dm8-out-3", label: "Output Slot 3", slotFamily: "crestron-dm-output" },
       { id: "dm8-out-4", label: "Output Slot 4", slotFamily: "crestron-dm-output" },
     ],
+    heightMm: 177,
+    widthMm: 485,
+    depthMm: 459,
+    weightKg: 9.1,
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
@@ -805,6 +913,10 @@ export const templates: DeviceTemplate[] = [
       { id: "dm16-out-7", label: "Output Slot 7", slotFamily: "crestron-dm-output" },
       { id: "dm16-out-8", label: "Output Slot 8", slotFamily: "crestron-dm-output" },
     ],
+    heightMm: 311,
+    widthMm: 485,
+    depthMm: 398,
+    weightKg: 12.9,
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
@@ -833,6 +945,9 @@ export const templates: DeviceTemplate[] = [
       { id: "mx2m-out-5", label: "Video Output Slot 5", slotFamily: "lightware-mx2m-video-out" },
       { id: "mx2m-out-6", label: "Video Output Slot 6", slotFamily: "lightware-mx2m-video-out" },
     ],
+    heightMm: 355,
+    widthMm: 483,
+    depthMm: 473,
     ports: [
       port("Ethernet", "ethernet", "bidirectional"),
       port("AC Power", "power", "input"),
@@ -848,6 +963,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.extron.com/product/dtpcp4k84",
     searchTerms: ["extron", "dtp", "crosspoint", "84", "4k", "matrix"],
     powerDrawW: 60, // typical
+    heightMm: 89,
+    widthMm: 432,
+    depthMm: 389,
+    weightKg: 5.2,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 6),
       ...ports("HDBaseT In", "hdbaset", "input", 2),
@@ -866,6 +985,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.extron.com/product/dtpcp4k108",
     searchTerms: ["extron", "dtp", "crosspoint", "108", "4k", "matrix"],
     powerDrawW: 80, // typical
+    heightMm: 133,
+    widthMm: 432,
+    depthMm: 389,
+    weightKg: 7.4,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 6),
       ...ports("HDBaseT In", "hdbaset", "input", 4),
@@ -897,6 +1020,10 @@ export const templates: DeviceTemplate[] = [
       { id: "ufr5-slot-8", label: "Slot 8", slotFamily: "ross-ultrix" },
       { id: "ufr5-slot-9", label: "Slot 9", slotFamily: "ross-ultrix" },
     ],
+    heightMm: 221,
+    widthMm: 445,
+    depthMm: 201,
+    weightKg: 6.4,
     ports: [
       ...ports("Ethernet", "ethernet", "bidirectional", 2, "ethercon"),
       port("Ref In", "genlock", "input", "bnc"),
@@ -920,6 +1047,10 @@ export const templates: DeviceTemplate[] = [
       { id: "ufr2-sfp-1", label: "AUX SFP 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
       { id: "ufr2-sfp-2", label: "AUX SFP 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
+    heightMm: 88,
+    widthMm: 445,
+    depthMm: 201,
+    weightKg: 5.4,
     ports: [
       ...ports("SDI In", "sdi", "input", 16, "bnc"),
       ...ports("SDI Out", "sdi", "output", 16, "bnc"),
@@ -943,6 +1074,10 @@ export const templates: DeviceTemplate[] = [
       { id: "ufr1-sfp-1", label: "AUX SFP 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
       { id: "ufr1-sfp-2", label: "AUX SFP 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
     ],
+    heightMm: 44,
+    widthMm: 445,
+    depthMm: 201,
+    weightKg: 4.1,
     ports: [
       ...ports("SDI In", "sdi", "input", 16, "bnc"),
       ...ports("SDI Out", "sdi", "output", 16, "bnc"),
@@ -969,6 +1104,10 @@ export const templates: DeviceTemplate[] = [
       "switcher",
     ],
     powerDrawW: 250, // typical
+    heightMm: 89,
+    widthMm: 481,
+    depthMm: 437,
+    weightKg: 7,
     ports: [
       ...ports("SDI In", "sdi", "input", 36, "bnc"),
       ...ports("SDI Out", "sdi", "output", 22, "bnc"),
@@ -997,6 +1136,10 @@ export const templates: DeviceTemplate[] = [
       "switcher",
     ],
     powerDrawW: 80, // typical
+    heightMm: 161,
+    widthMm: 426,
+    depthMm: 373,
+    weightKg: 4.9,
     ports: [
       ...ports("SDI In", "sdi", "input", 8, "bnc"),
       ...ports("SDI PGM Out", "sdi", "output", 9, "bnc"),
@@ -1025,6 +1168,10 @@ export const templates: DeviceTemplate[] = [
       "panel",
     ],
     powerDrawW: 30, // typical
+    heightMm: 166,
+    widthMm: 725,
+    depthMm: 483,
+    weightKg: 11,
     ports: [
       ...ports("Ethernet", "ethernet", "bidirectional", 4, "rj45"),
       port("USB-C", "usb", "bidirectional", "usb-c"),
@@ -1041,6 +1188,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.aja.com/products/kumo-3232-12g",
     searchTerms: ["aja", "kumo", "3232", "32x32", "12g", "sdi", "router"],
     powerDrawW: 75, // typical
+    heightMm: 89,
+    widthMm: 442,
+    depthMm: 39,
+    weightKg: 1,
     ports: [
       ...ports("SDI In", "sdi", "input", 32, "bnc"),
       ...ports("SDI Out", "sdi", "output", 32, "bnc"),
@@ -1058,6 +1209,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.aja.com/products/kumo-cp",
     searchTerms: ["aja", "kumo", "cp", "control", "panel", "router"],
     powerDrawW: 10, // typical
+    heightMm: 44,
+    widthMm: 442,
+    depthMm: 33,
+    weightKg: 0.5,
     ports: [
       port("Ethernet", "ethernet", "bidirectional", "rj45"),
       port("RS-422", "serial", "bidirectional", "db9"),
@@ -1073,6 +1228,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.aja.com/products/kumo-cp2",
     searchTerms: ["aja", "kumo", "cp2", "control", "panel", "router", "2ru"],
     powerDrawW: 12, // typical
+    heightMm: 89,
+    widthMm: 442,
+    depthMm: 33,
+    weightKg: 1,
     ports: [
       port("Ethernet", "ethernet", "bidirectional", "rj45"),
       port("DC Power", "power", "input"),
@@ -1096,6 +1255,10 @@ export const templates: DeviceTemplate[] = [
       "router",
     ],
     powerDrawW: 350, // typical
+    heightMm: 266,
+    widthMm: 483,
+    depthMm: 142,
+    weightKg: 15,
     ports: [
       ...ports("SDI In", "sdi", "input", 120, "bnc"),
       ...ports("SDI Out", "sdi", "output", 120, "bnc"),
@@ -1124,6 +1287,10 @@ export const templates: DeviceTemplate[] = [
       "4k",
     ],
     powerDrawW: 120, // typical
+    heightMm: 177,
+    widthMm: 441,
+    depthMm: 280,
+    weightKg: 9.3,
     ports: [
       ...ports("HDMI In", "hdmi", "input", 24),
       ...ports("HDMI Out", "hdmi", "output", 24),
@@ -1227,6 +1394,10 @@ export const templates: DeviceTemplate[] = [
       "midra",
     ],
     powerDrawW: 25, // typical
+    heightMm: 123,
+    widthMm: 570,
+    depthMm: 382,
+    weightKg: 8,
     ports: [
       port("Ethernet", "ethernet", "bidirectional", "ethercon"),
       port("USB", "usb", "bidirectional", "usb-a"),

@@ -12,6 +12,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/leopard/",
     searchTerms: ["meyer", "leopard", "line array", "powered"],
     powerDrawW: 450, // typical
+    heightMm: 282,
+    widthMm: 684,
+    depthMm: 550,
+    weightKg: 34,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -28,6 +32,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/kiva-ii/",
     searchTerms: ["l-acoustics", "kiva", "line array", "passive"],
     powerDrawW: 0,
+    heightMm: 202,
+    widthMm: 525,
+    depthMm: 357,
+    weightKg: 14,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -42,6 +50,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://jblpro.com/products/vrx928la",
     searchTerms: ["jbl", "vrx", "line array", "passive", "compact"],
     powerDrawW: 0,
+    heightMm: 230,
+    widthMm: 420,
+    depthMm: 270,
+    weightKg: 12.7,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -56,6 +68,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/upm-1p/",
     searchTerms: ["meyer", "upm", "powered", "fill", "delay"],
     powerDrawW: 200, // typical
+    heightMm: 457,
+    widthMm: 176,
+    depthMm: 193,
+    weightKg: 10,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -71,6 +87,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/upa-1p/",
     searchTerms: ["meyer", "upa", "powered", "loudspeaker"],
     powerDrawW: 400, // typical
+    heightMm: 569,
+    widthMm: 368,
+    depthMm: 363,
+    weightKg: 34.9,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -86,6 +106,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.qsc.com/products-solutions/loudspeakers/powered-loudspeakers/k2-series/k122/",
     searchTerms: ["qsc", "k12", "k series", "powered", "portable"],
     powerDrawW: 200, // typical
+    heightMm: 602,
+    widthMm: 356,
+    depthMm: 351,
+    weightKg: 17.7,
     ports: [
       port("Combo In 1", "analog-audio", "input", "combo-xlr-trs"),
       port("Combo In 2", "analog-audio", "input", "combo-xlr-trs"),
@@ -102,6 +126,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/900-lfc/",
     searchTerms: ["meyer", "900", "lfc", "subwoofer", "powered"],
     powerDrawW: 1100, // typical
+    heightMm: 621,
+    widthMm: 697,
+    depthMm: 632,
+    weightKg: 61.7,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -118,6 +146,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/sb15m/",
     searchTerms: ["l-acoustics", "sb15", "subwoofer", "passive"],
     powerDrawW: 0,
+    heightMm: 493,
+    widthMm: 579,
+    depthMm: 520,
+    weightKg: 36,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -132,6 +164,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/mjf-210/",
     searchTerms: ["meyer", "mjf", "wedge", "monitor", "stage"],
     powerDrawW: 200, // typical
+    heightMm: 353,
+    widthMm: 589,
+    depthMm: 531,
+    weightKg: 30.4,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -147,6 +183,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.qsc.com/products-solutions/power-amplifiers/installed/pld-series/pld-4-5/",
     searchTerms: ["qsc", "pld", "amplifier", "dsp", "4 channel"],
     powerDrawW: 1800, // typical
+    heightMm: 89,
+    widthMm: 482,
+    depthMm: 406,
+    weightKg: 10,
     ports: [
       ...ports("Analog In", "analog-audio", "input", 4),
       port("Dante Primary", "dante", "bidirectional"),
@@ -165,6 +205,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/la4x/",
     searchTerms: ["l-acoustics", "la4x", "amplified controller", "4 channel"],
     powerDrawW: 1800, // typical
+    heightMm: 88,
+    widthMm: 483,
+    depthMm: 398,
+    weightKg: 11.3,
     ports: [
       ...ports("Analog In", "analog-audio", "input", 4),
       ...ports("Speaker Out", "analog-audio", "output", 4, "speakon"),
@@ -203,6 +247,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/k3/",
     searchTerms: ["l-acoustics", "k3", "line array", "passive", "k series"],
     powerDrawW: 0,
+    heightMm: 355,
+    widthMm: 950,
+    depthMm: 402,
+    weightKg: 43,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -217,6 +265,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/syva/",
     searchTerms: ["l-acoustics", "syva", "column", "passive", "segment source"],
     powerDrawW: 0,
+    heightMm: 1304,
+    widthMm: 144,
+    depthMm: 208,
+    weightKg: 21,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -231,6 +283,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/x15-hiq/",
     searchTerms: ["l-acoustics", "x15", "hiq", "coaxial", "stage monitor", "passive"],
     powerDrawW: 0,
+    heightMm: 375,
+    widthMm: 430,
+    depthMm: 471,
+    weightKg: 21,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -245,6 +301,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/x8/",
     searchTerms: ["l-acoustics", "x8", "coaxial", "passive", "compact"],
     powerDrawW: 0,
+    heightMm: 249,
+    widthMm: 424,
+    depthMm: 305,
+    weightKg: 12,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -259,6 +319,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/x12/",
     searchTerms: ["l-acoustics", "x12", "coaxial", "passive", "point source"],
     powerDrawW: 0,
+    heightMm: 430,
+    widthMm: 496,
+    depthMm: 471,
+    weightKg: 20,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -273,6 +337,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/ks28/",
     searchTerms: ["l-acoustics", "ks28", "subwoofer", "passive", "k series"],
     powerDrawW: 0,
+    heightMm: 719,
+    widthMm: 1340,
+    depthMm: 565,
+    weightKg: 79,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
     ],
@@ -286,6 +354,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/k2/",
     searchTerms: ["l-acoustics", "k2", "line array", "passive", "k series"],
     powerDrawW: 0,
+    heightMm: 350,
+    widthMm: 1350,
+    depthMm: 520,
+    weightKg: 56,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -300,6 +372,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/kara-ii/",
     searchTerms: ["l-acoustics", "kara", "line array", "passive", "k series"],
     powerDrawW: 0,
+    heightMm: 287,
+    widthMm: 733,
+    depthMm: 383,
+    weightKg: 26,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -314,6 +390,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/5xt/",
     searchTerms: ["l-acoustics", "5xt", "coaxial", "passive", "ultra-compact"],
     powerDrawW: 0,
+    heightMm: 165,
+    widthMm: 165,
+    depthMm: 165,
+    weightKg: 3.5,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -328,6 +408,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/sb18/",
     searchTerms: ["l-acoustics", "sb18", "subwoofer", "passive"],
     powerDrawW: 0,
+    heightMm: 707,
+    widthMm: 750,
+    depthMm: 540,
+    weightKg: 52,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -344,6 +428,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.l-acoustics.com/products/la7-16/",
     searchTerms: ["l-acoustics", "la7", "amplified controller", "16 channel", "milan", "avb"],
     powerDrawW: 3700, // typical
+    heightMm: 88,
+    widthMm: 483,
+    depthMm: 510,
+    weightKg: 15.8,
     ports: [
       port("Analog In", "analog-audio", "input"),
       port("AES In 1-2", "aes", "input"),
@@ -385,6 +473,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/750-lfc/",
     searchTerms: ["meyer", "750", "lfc", "subwoofer", "powered", "low frequency"],
     powerDrawW: 900, // typical
+    heightMm: 515,
+    widthMm: 554,
+    depthMm: 530,
+    weightKg: 40.3,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -401,6 +493,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/lina/",
     searchTerms: ["meyer", "lina", "line array", "powered", "compact"],
     powerDrawW: 350, // typical
+    heightMm: 213,
+    widthMm: 515,
+    depthMm: 389,
+    weightKg: 19.5,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -417,6 +513,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/ultra-x23/",
     searchTerms: ["meyer", "ultra", "x23", "powered", "point source", "compact"],
     powerDrawW: 200, // typical
+    heightMm: 483,
+    widthMm: 191,
+    depthMm: 218,
+    weightKg: 12.2,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -432,6 +532,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/upm-1p/",
     searchTerms: ["meyer", "upm", "um-1p", "powered", "ultracompact"],
     powerDrawW: 200, // typical
+    heightMm: 457,
+    widthMm: 176,
+    depthMm: 193,
+    weightKg: 10,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -447,6 +551,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/mm-4xp/",
     searchTerms: ["meyer", "mm-4xp", "miniature", "powered", "self-powered"],
     powerDrawW: 30, // typical
+    heightMm: 103,
+    widthMm: 103,
+    depthMm: 145,
+    weightKg: 1.9,
     ports: [
       port("Audio/Power In", "analog-audio", "input", "other"),
     ],
@@ -460,6 +568,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/products/",
     searchTerms: ["meyer", "m1d", "miniature", "line array", "powered", "curvilinear"],
     powerDrawW: 100, // typical
+    heightMm: 181,
+    widthMm: 585,
+    depthMm: 216,
+    weightKg: 14.1,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -475,6 +587,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/ultra-x40/",
     searchTerms: ["meyer", "ultra", "x40", "powered", "point source"],
     powerDrawW: 300, // typical
+    heightMm: 567,
+    widthMm: 318,
+    depthMm: 356,
+    weightKg: 23.6,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -490,6 +606,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://meyersound.com/product/upj-1p/",
     searchTerms: ["meyer", "upj", "powered", "compact", "vario"],
     powerDrawW: 350, // typical
+    heightMm: 570,
+    widthMm: 283,
+    depthMm: 311,
+    weightKg: 20.9,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -507,6 +627,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.dbaudio.com/global/en/products/series/y-series/y7p/",
     searchTerms: ["d&b", "y7p", "point source", "passive", "y series"],
     powerDrawW: 0,
+    heightMm: 580,
+    widthMm: 257,
+    depthMm: 341,
+    weightKg: 18,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -521,6 +645,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.dbaudio.com/global/en/products/series/v-series/v8/",
     searchTerms: ["d&b", "v8", "line array", "passive", "v series"],
     powerDrawW: 0,
+    heightMm: 310,
+    widthMm: 700,
+    depthMm: 460,
+    weightKg: 34,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -535,6 +663,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.dbaudio.com/global/en/products/series/v-series/v-sub/",
     searchTerms: ["d&b", "v-sub", "subwoofer", "passive", "v series"],
     powerDrawW: 0,
+    heightMm: 606,
+    widthMm: 700,
+    depthMm: 728,
+    weightKg: 64,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -549,6 +681,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.dbaudio.com/global/en/products/series/e-series/e8/",
     searchTerms: ["d&b", "e8", "coaxial", "passive", "point source", "e series"],
     powerDrawW: 0,
+    heightMm: 390,
+    widthMm: 232,
+    depthMm: 223,
+    weightKg: 7.3,
     ports: [
       port("Input", "analog-audio", "input", "speakon"),
       port("Link", "analog-audio", "output", "speakon"),
@@ -563,6 +699,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.dbaudio.com/global/en/products/amplifiers/d20/",
     searchTerms: ["d&b", "d20", "amplifier", "4 channel"],
     powerDrawW: 3200, // typical
+    heightMm: 88,
+    widthMm: 483,
+    depthMm: 460,
+    weightKg: 13.5,
     ports: [
       ...ports("Analog In", "analog-audio", "input", 4),
       port("AES In 1-2", "aes", "input"),
@@ -584,6 +724,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://jblpro.com/en/products/eon610",
     searchTerms: ["jbl", "eon", "610", "powered", "portable", "bluetooth"],
     powerDrawW: 250, // typical
+    heightMm: 558,
+    widthMm: 322,
+    depthMm: 295,
+    weightKg: 11.8,
     ports: [
       port("Combo In 1", "analog-audio", "input", "combo-xlr-trs"),
       port("Combo In 2", "analog-audio", "input", "combo-xlr-trs"),
@@ -601,6 +745,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://jblpro.com/en/products/vrx932lap",
     searchTerms: ["jbl", "vrx", "932", "line array", "powered"],
     powerDrawW: 720, // typical
+    heightMm: 349,
+    widthMm: 597,
+    depthMm: 444,
+    weightKg: 23.6,
     ports: [
       port("Audio In", "analog-audio", "input"),
       port("Audio Link", "analog-audio", "output"),
@@ -616,6 +764,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://jblpro.com/en-US/products/305p-mkii",
     searchTerms: ["jbl", "305p", "studio monitor", "powered", "3 series"],
     powerDrawW: 82,
+    heightMm: 298,
+    widthMm: 185,
+    depthMm: 231,
+    weightKg: 4.5,
     ports: [
       port("XLR In", "analog-audio", "input"),
       port("TRS In", "analog-audio", "input", "trs-quarter"),
@@ -633,6 +785,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://products.electrovoice.com/na/en/evolve-50",
     searchTerms: ["electro-voice", "ev", "evolve", "50", "column", "powered", "portable"],
     powerDrawW: 150, // typical
+    heightMm: 530,
+    widthMm: 345,
+    depthMm: 471,
+    weightKg: 20.2,
     ports: [
       port("Combo In 1", "analog-audio", "input", "combo-xlr-trs"),
       port("Combo In 2", "analog-audio", "input", "combo-xlr-trs"),
@@ -650,6 +806,10 @@ export const templates: DeviceTemplate[] = [
     referenceUrl: "https://www.fostex.jp/en/products/6301b-h/",
     searchTerms: ["fostex", "6301", "monitor", "powered", "broadcast", "compact"],
     powerDrawW: 30,
+    heightMm: 188,
+    widthMm: 120,
+    depthMm: 118,
+    weightKg: 3,
     ports: [
       port("XLR In", "analog-audio", "input"),
       port("TRS In", "analog-audio", "input", "trs-quarter"),
