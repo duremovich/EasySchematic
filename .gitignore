@@ -41,6 +41,7 @@ edge-debug.log
 
 # Generated seed data
 api/seed/seed-data.sql
+src/deviceLibrary.fallback.json
 
 # DB backups
 api/backup-*.sql
