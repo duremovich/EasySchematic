@@ -7,13 +7,13 @@ import { scoreTemplate } from "../templateSearch";
 
 const MAX_RESULTS = 12;
 
-type SpecialItem = { kind: "note" } | { kind: "room" } | { kind: "router" };
+type SpecialItem = { kind: "note" } | { kind: "room" } | { kind: "create" };
 type ResultItem = { type: "device"; template: DeviceTemplate } | { type: "special"; item: SpecialItem; label: string; subtitle: string };
 
 const SPECIAL_ITEMS: { item: SpecialItem; label: string; subtitle: string; keywords: string[] }[] = [
   { item: { kind: "note" }, label: "Note", subtitle: "Text annotation", keywords: ["note", "text", "annotation", "label", "comment"] },
   { item: { kind: "room" }, label: "Room", subtitle: "Grouping container", keywords: ["room", "group", "area", "zone", "container"] },
-  { item: { kind: "router" }, label: "Quick Create Router", subtitle: "Custom matrix router", keywords: ["router", "matrix", "routing", "crosspoint", "custom router"] },
+  { item: { kind: "create" }, label: "Create New Device", subtitle: "Blank or copy from existing", keywords: ["create", "new", "custom", "blank", "device", "empty"] },
 ];
 
 function scoreSpecial(keywords: string[], query: string): number {
@@ -29,11 +29,11 @@ function scoreSpecial(keywords: string[], query: string): number {
 export default function QuickAddDevice({
   position,
   onClose,
-  onOpenRouterCreator,
+  onOpenDeviceCreator,
 }: {
   position: { x: number; y: number };
   onClose: () => void;
-  onOpenRouterCreator?: () => void;
+  onOpenDeviceCreator?: () => void;
 }) {
   const [search, setSearch] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -193,12 +193,12 @@ export default function QuickAddDevice({
           y: Math.round((position.y - 150) / GRID_SIZE) * GRID_SIZE,
         };
         addRoom("Room", centered);
-      } else if (item.kind === "router") {
-        onOpenRouterCreator?.();
+      } else if (item.kind === "create") {
+        onOpenDeviceCreator?.();
       }
       onClose();
     },
-    [addNote, addRoom, position, onClose, onOpenRouterCreator],
+    [addNote, addRoom, position, onClose, onOpenDeviceCreator],
   );
 
   const selectResult = useCallback(

@@ -39,7 +39,7 @@ import RoomContextMenu from "./components/RoomContextMenu";
 import DeviceContextMenu from "./components/DeviceContextMenu";
 import RoomEditor from "./components/RoomEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
-import RouterCreator from "./components/RouterCreator";
+import DeviceCreatorPicker from "./components/DeviceCreatorPicker";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
 import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode } from "./types";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
@@ -403,8 +403,8 @@ function SchematicCanvas() {
 
   // Quick-add device dialog state
   const [quickAddPos, setQuickAddPos] = useState<{ x: number; y: number } | null>(null);
-  const [showRouterCreator, setShowRouterCreator] = useState(false);
-  const routerCreatorPosRef = useRef<{ x: number; y: number } | undefined>(undefined);
+  const [showDeviceCreator, setShowDeviceCreator] = useState(false);
+  const deviceCreatorPosRef = useRef<{ x: number; y: number } | undefined>(undefined);
   const lastPaneClickRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
 
   // Viewport transform for rendering flow-space overlays
@@ -1366,10 +1366,10 @@ function SchematicCanvas() {
       <QuickAddDevice
         position={quickAddPos}
         onClose={() => setQuickAddPos(null)}
-        onOpenRouterCreator={() => { routerCreatorPosRef.current = quickAddPos ?? undefined; setShowRouterCreator(true); }}
+        onOpenDeviceCreator={() => { deviceCreatorPosRef.current = quickAddPos ?? undefined; setShowDeviceCreator(true); }}
       />
     )}
-    {showRouterCreator && <RouterCreator position={routerCreatorPosRef.current} onClose={() => { setShowRouterCreator(false); routerCreatorPosRef.current = undefined; }} />}
+    {showDeviceCreator && deviceCreatorPosRef.current && <DeviceCreatorPicker position={deviceCreatorPosRef.current} onClose={() => { setShowDeviceCreator(false); deviceCreatorPosRef.current = undefined; }} />}
     </>
   );
 }

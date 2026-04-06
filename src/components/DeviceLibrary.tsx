@@ -4,7 +4,7 @@ import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate, CustomTemplateGroup } from "../types";
 import { useSchematicStore, CATEGORY_ORDER_DEFAULT } from "../store";
 import { scoreTemplate } from "../templateSearch";
-import RouterCreator from "./RouterCreator";
+import DeviceCreatorPicker from "./DeviceCreatorPicker";
 
 const APP_VERSION = __APP_VERSION__;
 const BUILD_HASH = __BUILD_HASH__;
@@ -728,7 +728,7 @@ export default function DeviceLibrary() {
   const categoryOrder = useSchematicStore((s) => s.categoryOrder);
   const reorderCategory = useSchematicStore((s) => s.reorderCategory);
   const [search, setSearch] = useState("");
-  const [showRouterCreator, setShowRouterCreator] = useState(false);
+  const [showDeviceCreator, setShowDeviceCreator] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [templates, setTemplates] = useState(getBundledTemplates);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
@@ -1011,7 +1011,7 @@ export default function DeviceLibrary() {
         )}
       </div>
 
-      {showRouterCreator && <RouterCreator onClose={() => setShowRouterCreator(false)} />}
+      {showDeviceCreator && <DeviceCreatorPicker onClose={() => setShowDeviceCreator(false)} />}
 
       {/* Device list */}
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
@@ -1055,18 +1055,18 @@ export default function DeviceLibrary() {
           </div>
         )}
 
-        {/* Quick Create Router */}
-        {!hasFilter && (!query || "router".includes(query.toLowerCase())) && (
+        {/* Create New Device */}
+        {!hasFilter && (!query || "create new device".includes(query.toLowerCase())) && (
           <button
-            onClick={() => setShowRouterCreator(true)}
+            onClick={() => setShowDeviceCreator(true)}
             className="w-full flex items-center gap-2 px-2 py-1.5 rounded border border-dashed border-blue-400/50 bg-blue-50/50 hover:bg-blue-50 text-xs text-blue-600 hover:text-blue-700 cursor-pointer transition-colors"
           >
             <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-              <rect x="1" y="3" width="14" height="10" rx="1.5" />
-              <line x1="1" y1="8" x2="15" y2="8" />
-              <line x1="5.5" y1="3" x2="5.5" y2="13" />
+              <rect x="2" y="2" width="12" height="12" rx="2" />
+              <line x1="8" y1="5" x2="8" y2="11" />
+              <line x1="5" y1="8" x2="11" y2="8" />
             </svg>
-            Quick Create Router
+            Create New Device
           </button>
         )}
 

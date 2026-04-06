@@ -61,9 +61,12 @@ const MIME = "application/easyschematic-port";
 
 export default function DeviceEditor() {
   const editingNodeId = useSchematicStore((s) => s.editingNodeId);
+  const creatingNodeId = useSchematicStore((s) => s.creatingNodeId);
   const nodes = useSchematicStore((s) => s.nodes);
   const updateDevice = useSchematicStore((s) => s.updateDevice);
   const setEditingNodeId = useSchematicStore((s) => s.setEditingNodeId);
+  const setCreatingNodeId = useSchematicStore((s) => s.setCreatingNodeId);
+  const undo = useSchematicStore((s) => s.undo);
   const addCustomTemplate = useSchematicStore((s) => s.addCustomTemplate);
   const customTemplates = useSchematicStore((s) => s.customTemplates);
   const templateHiddenSignals = useSchematicStore((s) => s.templateHiddenSignals);
@@ -168,7 +171,14 @@ export default function DeviceEditor() {
   }, [node]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  const close = useCallback(() => setEditingNodeId(null), [setEditingNodeId]);
+  const close = useCallback(() => {
+    if (editingNodeId && editingNodeId === creatingNodeId) {
+      // Provisional node — user cancelled without saving, undo the addDevice
+      undo();
+      setCreatingNodeId(null);
+    }
+    setEditingNodeId(null);
+  }, [editingNodeId, creatingNodeId, undo, setCreatingNodeId, setEditingNodeId]);
 
   const handleSave = useCallback(() => {
     if (!editingNodeId) return;
@@ -225,8 +235,9 @@ export default function DeviceEditor() {
       ...(auxiliaryData.filter((line) => line.trim()).length > 0 ? { auxiliaryData: auxiliaryData.filter((line) => line.trim()) } : {}),
     };
     updateDevice(editingNodeId, data);
+    setCreatingNodeId(null); // commit the node — close won't undo it
     close();
-  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, heightMm, widthMm, depthMm, weightKg, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
+  }, [editingNodeId, ports, label, hostname, deviceType, color, headerColor, node, updateDevice, close, setCreatingNodeId, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, unitCost, heightMm, widthMm, depthMm, weightKg, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {

@@ -167,6 +167,7 @@ interface SchematicState {
   edges: ConnectionEdge[];
   schematicName: string;
   editingNodeId: string | null;
+  creatingNodeId: string | null;
   customTemplates: DeviceTemplate[];
 
   // React Flow handlers
@@ -191,6 +192,8 @@ interface SchematicState {
   /** Swap or remove a card in a modular slot. Pass null cardTemplateId to empty the slot. */
   swapCard: (nodeId: string, slotId: string, cardTemplateId: string | null) => void;
   setEditingNodeId: (id: string | null) => void;
+  setCreatingNodeId: (id: string | null) => void;
+  createAndEditDevice: (template: DeviceTemplate, position: { x: number; y: number }) => void;
   addRoom: (label: string, position: { x: number; y: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
@@ -756,6 +759,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   edges: [],
   schematicName: "Untitled Schematic",
   editingNodeId: null,
+  creatingNodeId: null,
   customTemplates: _initCustomTemplates,
   customTemplateGroups: _initCustomMeta.groups,
   customTemplateOrder: _initCustomMeta.order,
@@ -1577,6 +1581,17 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   setEditingNodeId: (id) => {
     set({ editingNodeId: id });
+  },
+
+  setCreatingNodeId: (id) => {
+    set({ creatingNodeId: id });
+  },
+
+  createAndEditDevice: (template, position) => {
+    get().addDevice(template, position);
+    const nodes = get().nodes;
+    const newNodeId = nodes[nodes.length - 1].id;
+    set({ editingNodeId: newNodeId, creatingNodeId: newNodeId });
   },
 
   addRoom: (label, position) => {
