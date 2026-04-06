@@ -385,7 +385,7 @@ function SideViewRack({ rack, placements, deviceDataMap }: { rack: RackData; pla
         const heightU = inferRackHeightU(dd);
         const y = uToY(pl.uPosition + heightU - 1, rack.heightU);
         const h = heightU * PX_PER_U - 1;
-        const deviceDepth = (dd.rackDepthMm ?? rack.depthMm * 0.6) * depthScale;
+        const deviceDepth = (dd.depthMm ?? rack.depthMm * 0.6) * depthScale;
         // 2-post: everything hangs from the front post
         const x = (is2Post || pl.face === "front") ? 4 : SIDE_VIEW_WIDTH - 4 - deviceDepth;
         return (

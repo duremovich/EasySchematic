@@ -185,10 +185,12 @@ export interface DeviceData {
   isVenueProvided?: boolean;
   /** Adapter visibility override — only meaningful for deviceType "adapter" */
   adapterVisibility?: "default" | "force-show" | "force-hide";
-  /** Rack height in rack units (e.g. 1, 2, 3, 4) */
-  rackHeightU?: number;
-  /** Rack depth in mm */
-  rackDepthMm?: number;
+  /** Physical height in millimeters */
+  heightMm?: number;
+  /** Physical width in millimeters */
+  widthMm?: number;
+  /** Physical depth in millimeters */
+  depthMm?: number;
   /** Device weight in kg */
   weightKg?: number;
   /** Custom face-plate connector layout (overrides auto-layout) */
@@ -302,8 +304,9 @@ export interface DeviceTemplate {
   voltage?: string;              // Informational: "100-240V", "208V", "120V"
   isVenueProvided?: boolean;     // Venue-owned gear — excluded from pack list
   poeBudgetW?: number;           // PoE budget in watts (switches only)
-  rackHeightU?: number;          // Rack height in rack units
-  rackDepthMm?: number;          // Rack depth in mm
+  heightMm?: number;             // Physical height in millimeters
+  widthMm?: number;              // Physical width in millimeters
+  depthMm?: number;              // Physical depth in millimeters
   weightKg?: number;             // Weight in kg
   facePlateLayout?: FacePlateLayout; // Custom face-plate connector positions
 }

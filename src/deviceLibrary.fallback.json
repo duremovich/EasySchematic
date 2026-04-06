@@ -196,9 +196,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2.7
+    "weightKg": 2.7,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0027-4000-8000-000000000039",
@@ -329,9 +330,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.45
+    "weightKg": 1.45,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0034-4000-8000-000000000052",
@@ -406,9 +408,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.3
+    "weightKg": 0.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-007c-4000-8000-000000000124",
@@ -518,9 +521,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.77
+    "weightKg": 1.77,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-007d-4000-8000-000000000125",
@@ -629,9 +633,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.82
+    "weightKg": 1.82,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-007e-4000-8000-000000000126",
@@ -713,9 +718,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 3.69
+    "weightKg": 3.69,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-007f-4000-8000-000000000127",
@@ -776,9 +782,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.24
+    "weightKg": 1.24,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0080-4000-8000-000000000128",
@@ -854,9 +861,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 5
+    "weightKg": 5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0081-4000-8000-000000000129",
@@ -932,9 +940,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 4.6
+    "weightKg": 4.6,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0082-4000-8000-000000000130",
@@ -1024,9 +1033,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2
+    "weightKg": 2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0083-4000-8000-000000000131",
@@ -1132,9 +1142,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 5.2
+    "weightKg": 5.2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0084-4000-8000-000000000132",
@@ -1239,9 +1250,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 4.3
+    "weightKg": 4.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0085-4000-8000-000000000133",
@@ -1318,9 +1330,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2.4
+    "weightKg": 2.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0086-4000-8000-000000000134",
@@ -1389,9 +1402,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2.2
+    "weightKg": 2.2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0087-4000-8000-000000000135",
@@ -1459,9 +1473,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.8
+    "weightKg": 1.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0088-4000-8000-000000000136",
@@ -1522,9 +1537,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 3.4
+    "weightKg": 3.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0089-4000-8000-000000000137",
@@ -1599,9 +1615,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2
+    "weightKg": 2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-008a-4000-8000-000000000138",
@@ -1683,9 +1700,10 @@
       }
     ],
     "category": "Sources",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 4.2
+    "weightKg": 4.2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00fc-4000-8000-000000000328",
@@ -1732,9 +1750,10 @@
         "connectorType": "trs-eighth"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.31
+    "weightKg": 0.31,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0104-4000-8000-000000000336",
@@ -1803,9 +1822,10 @@
         "connectorType": "barrel"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.8
+    "weightKg": 1.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0002-4000-8000-000000000002",
@@ -2277,9 +2297,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 160,
-    "weightKg": 2
+    "weightKg": 2,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 160
   },
   {
     "id": "c0a80101-0016-4000-8000-000000000022",
@@ -2495,9 +2516,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 160,
-    "weightKg": 1.88
+    "weightKg": 1.88,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 160
   },
   {
     "id": "c0a80101-0017-4000-8000-000000000023",
@@ -2650,9 +2672,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 366,
-    "weightKg": 3.3
+    "weightKg": 3.3,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 366
   },
   {
     "id": "c0a80101-003d-4000-8000-000000000061",
@@ -2727,9 +2750,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 237,
-    "weightKg": 0.55
+    "weightKg": 0.55,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 237
   },
   {
     "id": "c0a80101-003e-4000-8000-000000000062",
@@ -2811,9 +2835,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 237,
-    "weightKg": 0.55
+    "weightKg": 0.55,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 237
   },
   {
     "id": "c0a80101-003f-4000-8000-000000000063",
@@ -2895,9 +2920,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 237,
-    "weightKg": 0.55
+    "weightKg": 0.55,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 237
   },
   {
     "id": "c0a80101-0040-4000-8000-000000000064",
@@ -3028,9 +3054,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 375,
-    "weightKg": 1.17
+    "weightKg": 1.17,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 375
   },
   {
     "id": "c0a80101-0041-4000-8000-000000000065",
@@ -3162,9 +3189,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 375,
-    "weightKg": 1.17
+    "weightKg": 1.17,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 375
   },
   {
     "id": "c0a80101-0042-4000-8000-000000000066",
@@ -3252,9 +3280,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 237,
-    "weightKg": 0.51
+    "weightKg": 0.51,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 237
   },
   {
     "id": "c0a80101-0043-4000-8000-000000000067",
@@ -3342,9 +3371,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 237,
-    "weightKg": 0.51
+    "weightKg": 0.51,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 237
   },
   {
     "id": "c0a80101-0044-4000-8000-000000000068",
@@ -3489,9 +3519,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 375,
-    "weightKg": 1.1
+    "weightKg": 1.1,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 375
   },
   {
     "id": "c0a80101-0045-4000-8000-000000000069",
@@ -3734,9 +3765,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 375,
-    "weightKg": 6.76
+    "weightKg": 6.76,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 375
   },
   {
     "id": "c0a80101-0046-4000-8000-000000000070",
@@ -3910,9 +3942,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 389,
-    "weightKg": 1.87
+    "weightKg": 1.87,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 389
   },
   {
     "id": "c0a80101-0047-4000-8000-000000000071",
@@ -4204,9 +4237,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 182,
-    "weightKg": 2.97
+    "weightKg": 2.97,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 182
   },
   {
     "id": "c0a80101-0048-4000-8000-000000000072",
@@ -4757,9 +4791,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 2,
-    "rackDepthMm": 350,
-    "weightKg": 6.5
+    "weightKg": 6.5,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 350
   },
   {
     "id": "c0a80101-0049-4000-8000-000000000073",
@@ -4988,9 +5023,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 3
+    "weightKg": 3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-004a-4000-8000-000000000074",
@@ -5106,9 +5142,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 4,
-    "rackDepthMm": 594,
-    "weightKg": 22
+    "weightKg": 22,
+    "heightMm": 178,
+    "widthMm": 482,
+    "depthMm": 594
   },
   {
     "id": "c0a80101-004b-4000-8000-000000000075",
@@ -5205,9 +5242,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 500,
-    "weightKg": 7.5
+    "weightKg": 7.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 500
   },
   {
     "id": "c0a80101-004c-4000-8000-000000000076",
@@ -5296,9 +5334,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 6,
-    "rackDepthMm": 600,
-    "weightKg": 30
+    "weightKg": 30,
+    "heightMm": 267,
+    "widthMm": 482,
+    "depthMm": 600
   },
   {
     "id": "c0a80101-004d-4000-8000-000000000077",
@@ -5478,9 +5517,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 160,
-    "weightKg": 1.35
+    "weightKg": 1.35,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 160
   },
   {
     "id": "c0a80101-004e-4000-8000-000000000078",
@@ -6080,9 +6120,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 2,
-    "rackDepthMm": 160,
-    "weightKg": 4.5
+    "weightKg": 4.5,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 160
   },
   {
     "id": "c0a80101-004f-4000-8000-000000000079",
@@ -7131,9 +7172,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 5,
-    "rackDepthMm": 161,
-    "weightKg": 6.4
+    "weightKg": 6.4,
+    "heightMm": 222,
+    "widthMm": 482,
+    "depthMm": 161
   },
   {
     "id": "c0a80101-0050-4000-8000-000000000080",
@@ -7286,9 +7328,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 350,
-    "weightKg": 3.5
+    "weightKg": 3.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 350
   },
   {
     "id": "c0a80101-0051-4000-8000-000000000081",
@@ -7553,9 +7596,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 2,
-    "rackDepthMm": 400,
-    "weightKg": 6
+    "weightKg": 6,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 400
   },
   {
     "id": "c0a80101-0103-4000-8000-000000000335",
@@ -7821,9 +7865,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 260,
-    "weightKg": 2.3
+    "weightKg": 2.3,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 260
   },
   {
     "id": "c0a80101-0115-4000-8000-000000000353",
@@ -7920,9 +7965,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 3,
-    "rackDepthMm": 406,
-    "weightKg": 8.2
+    "weightKg": 8.2,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 406
   },
   {
     "id": "c0a80101-0116-4000-8000-000000000354",
@@ -8039,9 +8085,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 6,
-    "rackDepthMm": 406,
-    "weightKg": 14.5
+    "weightKg": 14.5,
+    "heightMm": 267,
+    "widthMm": 482,
+    "depthMm": 406
   },
   {
     "id": "c0a80101-0117-4000-8000-000000000355",
@@ -8138,9 +8185,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 4,
-    "rackDepthMm": 400,
-    "weightKg": 9
+    "weightKg": 9,
+    "heightMm": 178,
+    "widthMm": 482,
+    "depthMm": 400
   },
   {
     "id": "c0a80101-0118-4000-8000-000000000356",
@@ -8259,9 +8307,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 2,
-    "rackDepthMm": 437,
-    "weightKg": 5.4
+    "weightKg": 5.4,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 437
   },
   {
     "id": "c0a80101-0119-4000-8000-000000000357",
@@ -8422,9 +8471,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 3,
-    "rackDepthMm": 437,
-    "weightKg": 7.3
+    "weightKg": 7.3,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 437
   },
   {
     "id": "c0a80101-0167-4000-8000-000000000359",
@@ -8520,9 +8570,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 5,
-    "rackDepthMm": 457,
-    "weightKg": 18
+    "weightKg": 18,
+    "heightMm": 222,
+    "widthMm": 482,
+    "depthMm": 457
   },
   {
     "id": "c0a80101-0168-4000-8000-000000000360",
@@ -8824,9 +8875,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 2,
-    "rackDepthMm": 457,
-    "weightKg": 7.5
+    "weightKg": 7.5,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 457
   },
   {
     "id": "c0a80101-0169-4000-8000-000000000361",
@@ -9118,9 +9170,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 1,
-    "rackDepthMm": 457,
-    "weightKg": 4.5
+    "weightKg": 4.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 457
   },
   {
     "id": "c0a80101-016a-4000-8000-000000000362",
@@ -9603,9 +9656,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 2,
-    "rackDepthMm": 370,
-    "weightKg": 6
+    "weightKg": 6,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 370
   },
   {
     "id": "c0a80101-016b-4000-8000-000000000363",
@@ -9794,9 +9848,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 0,
-    "rackDepthMm": 375,
-    "weightKg": 4.5
+    "weightKg": 4.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 375
   },
   {
     "id": "c0a80101-016c-4000-8000-000000000364",
@@ -9859,9 +9914,10 @@
       }
     ],
     "category": "Control",
-    "rackHeightU": 0,
-    "rackDepthMm": 725,
-    "weightKg": 11
+    "weightKg": 11,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 725
   },
   {
     "id": "c0a80101-016d-4000-8000-000000000365",
@@ -10352,9 +10408,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 2,
-    "rackDepthMm": 260,
-    "weightKg": 4.5
+    "weightKg": 4.5,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 260
   },
   {
     "id": "c0a80101-016e-4000-8000-000000000366",
@@ -10396,9 +10453,10 @@
       }
     ],
     "category": "Control",
-    "rackHeightU": 1,
-    "rackDepthMm": 100,
-    "weightKg": 0.9
+    "weightKg": 0.9,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 100
   },
   {
     "id": "c0a80101-016f-4000-8000-000000000367",
@@ -10434,9 +10492,10 @@
       }
     ],
     "category": "Control",
-    "rackHeightU": 2,
-    "rackDepthMm": 100,
-    "weightKg": 1.5
+    "weightKg": 1.5,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 100
   },
   {
     "id": "c0a80101-0170-4000-8000-000000000368",
@@ -12179,9 +12238,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 4,
-    "rackDepthMm": 400,
-    "weightKg": 14.5
+    "weightKg": 14.5,
+    "heightMm": 178,
+    "widthMm": 482,
+    "depthMm": 400
   },
   {
     "id": "c0a80101-0171-4000-8000-000000000369",
@@ -12566,9 +12626,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 4,
-    "rackDepthMm": 400,
-    "weightKg": 9.5
+    "weightKg": 9.5,
+    "heightMm": 178,
+    "widthMm": 482,
+    "depthMm": 400
   },
   {
     "id": "c0a80101-0172-4000-8000-000000000370",
@@ -12690,9 +12751,10 @@
       }
     ],
     "category": "Switching",
-    "rackHeightU": 6,
-    "rackDepthMm": 600,
-    "weightKg": 28
+    "weightKg": 28,
+    "heightMm": 267,
+    "widthMm": 482,
+    "depthMm": 600
   },
   {
     "id": "c0a80101-0173-4000-8000-000000000371",
@@ -12733,9 +12795,10 @@
       }
     ],
     "category": "Control",
-    "rackHeightU": 2,
-    "rackDepthMm": 350,
-    "weightKg": 4.5
+    "weightKg": 4.5,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 350
   },
   {
     "id": "c0a80101-0003-4000-8000-000000000003",
@@ -12840,9 +12903,10 @@
       }
     ],
     "category": "Monitoring",
-    "rackHeightU": 6,
-    "rackDepthMm": 44,
-    "weightKg": 2.2
+    "weightKg": 2.2,
+    "heightMm": 267,
+    "widthMm": 482,
+    "depthMm": 44
   },
   {
     "id": "c0a80101-0063-4000-8000-000000000099",
@@ -12897,9 +12961,10 @@
       }
     ],
     "category": "Monitoring",
-    "rackHeightU": 6,
-    "rackDepthMm": 50,
-    "weightKg": 3.6
+    "weightKg": 3.6,
+    "heightMm": 267,
+    "widthMm": 482,
+    "depthMm": 50
   },
   {
     "id": "c0a80101-0064-4000-8000-000000000100",
@@ -12954,9 +13019,10 @@
       }
     ],
     "category": "Monitoring",
-    "rackHeightU": 3,
-    "rackDepthMm": 44,
-    "weightKg": 1.6
+    "weightKg": 1.6,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 44
   },
   {
     "id": "c0a80101-0065-4000-8000-000000000101",
@@ -13059,9 +13125,10 @@
       }
     ],
     "category": "Monitoring",
-    "rackHeightU": 0,
-    "rackDepthMm": 50,
-    "weightKg": 3.08
+    "weightKg": 3.08,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 50
   },
   {
     "id": "c0a80101-0066-4000-8000-000000000102",
@@ -13171,9 +13238,10 @@
       }
     ],
     "category": "Monitoring",
-    "rackHeightU": 0,
-    "rackDepthMm": 51,
-    "weightKg": 7.5
+    "weightKg": 7.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 51
   },
   {
     "id": "c0a80101-0067-4000-8000-000000000103",
@@ -13269,9 +13337,10 @@
       }
     ],
     "category": "Monitoring",
-    "rackHeightU": 3,
-    "rackDepthMm": 44,
-    "weightKg": 2.27
+    "weightKg": 2.27,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 44
   },
   {
     "id": "c0a80101-00fa-4000-8000-000000000326",
@@ -13367,9 +13436,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 242,
-    "weightKg": 2.6
+    "weightKg": 2.6,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 242
   },
   {
     "id": "c0a80101-0102-4000-8000-000000000334",
@@ -13472,9 +13542,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 64,
-    "weightKg": 5.44
+    "weightKg": 5.44,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 64
   },
   {
     "id": "c0a80101-0197-4000-8000-000000000407",
@@ -13558,9 +13629,10 @@
         "connectorType": "other"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 63,
-    "weightKg": 1.5
+    "weightKg": 1.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 63
   },
   {
     "id": "c0a80101-0005-4000-8000-000000000005",
@@ -13708,9 +13780,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 109,
-    "weightKg": 0.45
+    "weightKg": 0.45,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 109
   },
   {
     "id": "c0a80101-0032-4000-8000-000000000050",
@@ -13785,9 +13858,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 109,
-    "weightKg": 0.45
+    "weightKg": 0.45,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 109
   },
   {
     "id": "c0a80101-0035-4000-8000-000000000053",
@@ -13871,9 +13945,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 274,
-    "weightKg": 3.45
+    "weightKg": 3.45,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 274
   },
   {
     "id": "c0a80101-0036-4000-8000-000000000054",
@@ -13950,9 +14025,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 373,
-    "weightKg": 4.56
+    "weightKg": 4.56,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 373
   },
   {
     "id": "c0a80101-0037-4000-8000-000000000055",
@@ -14049,9 +14125,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 352,
-    "weightKg": 5
+    "weightKg": 5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 352
   },
   {
     "id": "c0a80101-008b-4000-8000-000000000139",
@@ -14269,9 +14346,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 36
+    "weightKg": 36,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-008c-4000-8000-000000000140",
@@ -14489,9 +14567,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 29
+    "weightKg": 29,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-008d-4000-8000-000000000141",
@@ -14709,9 +14788,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 24
+    "weightKg": 24,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-008e-4000-8000-000000000142",
@@ -15085,9 +15165,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 21.8
+    "weightKg": 21.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-008f-4000-8000-000000000143",
@@ -15349,9 +15430,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 14.7
+    "weightKg": 14.7,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0090-4000-8000-000000000144",
@@ -15756,9 +15838,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 20
+    "weightKg": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0091-4000-8000-000000000145",
@@ -16106,9 +16189,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 13.5
+    "weightKg": 13.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0092-4000-8000-000000000146",
@@ -16400,9 +16484,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 13.5
+    "weightKg": 13.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0093-4000-8000-000000000147",
@@ -16627,9 +16712,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 41
+    "weightKg": 41,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0094-4000-8000-000000000148",
@@ -17040,9 +17126,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 17.8
+    "weightKg": 17.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0095-4000-8000-000000000149",
@@ -17341,9 +17428,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 10.5
+    "weightKg": 10.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0096-4000-8000-000000000150",
@@ -17619,9 +17707,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 141
+    "weightKg": 141,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-011a-4000-8000-000000000358",
@@ -17728,9 +17817,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 42
+    "weightKg": 42,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0097-4000-8000-000000000151",
@@ -18191,9 +18281,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 5,
-    "rackDepthMm": 368,
-    "weightKg": 13.5
+    "weightKg": 13.5,
+    "heightMm": 222,
+    "widthMm": 482,
+    "depthMm": 368
   },
   {
     "id": "c0a80101-0098-4000-8000-000000000152",
@@ -18402,9 +18493,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 3,
-    "rackDepthMm": 368,
-    "weightKg": 9.6
+    "weightKg": 9.6,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 368
   },
   {
     "id": "c0a80101-0099-4000-8000-000000000153",
@@ -18592,9 +18684,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 283,
-    "weightKg": 5
+    "weightKg": 5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 283
   },
   {
     "id": "c0a80101-009a-4000-8000-000000000154",
@@ -18894,9 +18987,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 3,
-    "rackDepthMm": 445,
-    "weightKg": 8.2
+    "weightKg": 8.2,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 445
   },
   {
     "id": "c0a80101-009b-4000-8000-000000000155",
@@ -18930,9 +19024,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.15
+    "weightKg": 0.15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-009c-4000-8000-000000000156",
@@ -18973,9 +19068,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.16
+    "weightKg": 0.16,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-009d-4000-8000-000000000157",
@@ -19016,9 +19112,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.16
+    "weightKg": 0.16,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-009e-4000-8000-000000000158",
@@ -19051,9 +19148,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.16
+    "weightKg": 0.16,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-009f-4000-8000-000000000159",
@@ -19137,9 +19235,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 333,
-    "weightKg": 4.8
+    "weightKg": 4.8,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 333
   },
   {
     "id": "c0a80101-00a0-4000-8000-000000000160",
@@ -19179,9 +19278,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.78
+    "weightKg": 0.78,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00a1-4000-8000-000000000161",
@@ -19221,9 +19321,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.82
+    "weightKg": 0.82,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00a2-4000-8000-000000000162",
@@ -19305,9 +19406,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 373,
-    "weightKg": 5.2
+    "weightKg": 5.2,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 373
   },
   {
     "id": "c0a80101-00b2-4000-8000-000000000178",
@@ -19530,9 +19632,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 2,
-    "rackDepthMm": 410,
-    "weightKg": 7.6
+    "weightKg": 7.6,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 410
   },
   {
     "id": "c0a80101-0107-4000-8000-000000000339",
@@ -19760,9 +19863,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 23.5
+    "weightKg": 23.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0108-4000-8000-000000000340",
@@ -19824,9 +19928,10 @@
         "connectorType": "rj45"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.67
+    "weightKg": 0.67,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0109-4000-8000-000000000341",
@@ -19888,9 +19993,10 @@
         "connectorType": "rj45"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.66
+    "weightKg": 0.66,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01aa-4000-8000-000000000426",
@@ -20114,9 +20220,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 38
+    "weightKg": 38,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01ab-4000-8000-000000000427",
@@ -20410,9 +20517,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 42
+    "weightKg": 42,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01ac-4000-8000-000000000428",
@@ -20650,9 +20758,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 6.5
+    "weightKg": 6.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01ad-4000-8000-000000000429",
@@ -21001,9 +21110,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 15.4
+    "weightKg": 15.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01ae-4000-8000-000000000430",
@@ -21213,9 +21323,10 @@
       }
     ],
     "category": "Mixing Consoles",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 5.9
+    "weightKg": 5.9,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01af-4000-8000-000000000431",
@@ -21399,9 +21510,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 1,
-    "rackDepthMm": 343,
-    "weightKg": 4.7
+    "weightKg": 4.7,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 343
   },
   {
     "id": "c0a80101-01b1-4000-8000-000000000433",
@@ -21429,9 +21541,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.49
+    "weightKg": 0.49,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01b2-4000-8000-000000000434",
@@ -21460,9 +21573,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.22
+    "weightKg": 0.22,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01b3-4000-8000-000000000435",
@@ -21490,9 +21604,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.14
+    "weightKg": 0.14,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01b4-4000-8000-000000000436",
@@ -21521,9 +21636,10 @@
       }
     ],
     "category": "Audio",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.16
+    "weightKg": 0.16,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0006-4000-8000-000000000006",
@@ -21562,9 +21678,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 49,
-    "weightKg": 0.07
+    "weightKg": 0.07,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 49
   },
   {
     "id": "c0a80101-0007-4000-8000-000000000007",
@@ -21603,9 +21720,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 49,
-    "weightKg": 0.07
+    "weightKg": 0.07,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 49
   },
   {
     "id": "c0a80101-0008-4000-8000-000000000008",
@@ -21651,9 +21769,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 57,
-    "weightKg": 0.1
+    "weightKg": 0.1,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 57
   },
   {
     "id": "c0a80101-0009-4000-8000-000000000009",
@@ -21700,9 +21819,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 49,
-    "weightKg": 0.07
+    "weightKg": 0.07,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 49
   },
   {
     "id": "c0a80101-000a-4000-8000-000000000010",
@@ -21778,9 +21898,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 79,
-    "weightKg": 0.22
+    "weightKg": 0.22,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 79
   },
   {
     "id": "c0a80101-000b-4000-8000-000000000011",
@@ -21856,9 +21977,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 79,
-    "weightKg": 0.22
+    "weightKg": 0.22,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 79
   },
   {
     "id": "c0a80101-000c-4000-8000-000000000012",
@@ -21899,9 +22021,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 57,
-    "weightKg": 0.14
+    "weightKg": 0.14,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 57
   },
   {
     "id": "c0a80101-000d-4000-8000-000000000013",
@@ -21942,9 +22065,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 57,
-    "weightKg": 0.14
+    "weightKg": 0.14,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 57
   },
   {
     "id": "c0a80101-000e-4000-8000-000000000014",
@@ -22033,9 +22157,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 145,
-    "weightKg": 0.4
+    "weightKg": 0.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 145
   },
   {
     "id": "c0a80101-000f-4000-8000-000000000015",
@@ -22090,9 +22215,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 77,
-    "weightKg": 0.17
+    "weightKg": 0.17,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 77
   },
   {
     "id": "c0a80101-0010-4000-8000-000000000016",
@@ -22174,9 +22300,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 1,
-    "rackDepthMm": 224,
-    "weightKg": 1.1
+    "weightKg": 1.1,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 224
   },
   {
     "id": "c0a80101-0011-4000-8000-000000000017",
@@ -22430,9 +22557,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 177,
-    "weightKg": 1.2
+    "weightKg": 1.2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 177
   },
   {
     "id": "c0a80101-0052-4000-8000-000000000082",
@@ -22472,9 +22600,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 53,
-    "weightKg": 0.08
+    "weightKg": 0.08,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 53
   },
   {
     "id": "c0a80101-0053-4000-8000-000000000083",
@@ -22514,9 +22643,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 53,
-    "weightKg": 0.08
+    "weightKg": 0.08,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 53
   },
   {
     "id": "c0a80101-0054-4000-8000-000000000084",
@@ -22563,9 +22693,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 53,
-    "weightKg": 0.08
+    "weightKg": 0.08,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 53
   },
   {
     "id": "c0a80101-0057-4000-8000-000000000087",
@@ -22633,9 +22764,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 1,
-    "rackDepthMm": 109,
-    "weightKg": 0.45
+    "weightKg": 0.45,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 109
   },
   {
     "id": "c0a80101-0058-4000-8000-000000000088",
@@ -22682,9 +22814,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 1,
-    "rackDepthMm": 109,
-    "weightKg": 0.45
+    "weightKg": 0.45,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 109
   },
   {
     "id": "c0a80101-0059-4000-8000-000000000089",
@@ -22746,9 +22879,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 79,
-    "weightKg": 0.22
+    "weightKg": 0.22,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 79
   },
   {
     "id": "c0a80101-005a-4000-8000-000000000090",
@@ -22810,9 +22944,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 79,
-    "weightKg": 0.22
+    "weightKg": 0.22,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 79
   },
   {
     "id": "c0a80101-005b-4000-8000-000000000091",
@@ -22917,9 +23052,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 1,
-    "rackDepthMm": 406,
-    "weightKg": 3.6
+    "weightKg": 3.6,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 406
   },
   {
     "id": "c0a80101-005c-4000-8000-000000000092",
@@ -22972,9 +23108,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 77,
-    "weightKg": 0.17
+    "weightKg": 0.17,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 77
   },
   {
     "id": "c0a80101-005d-4000-8000-000000000093",
@@ -23070,9 +23207,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 1,
-    "rackDepthMm": 170,
-    "weightKg": 0.58
+    "weightKg": 0.58,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 170
   },
   {
     "id": "c0a80101-005e-4000-8000-000000000094",
@@ -23251,9 +23389,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 1,
-    "rackDepthMm": 153,
-    "weightKg": 2.3
+    "weightKg": 2.3,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 153
   },
   {
     "id": "c0a80101-005f-4000-8000-000000000095",
@@ -23342,9 +23481,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 77,
-    "weightKg": 0.17
+    "weightKg": 0.17,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 77
   },
   {
     "id": "c0a80101-0060-4000-8000-000000000096",
@@ -23426,9 +23566,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 77,
-    "weightKg": 0.17
+    "weightKg": 0.17,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 77
   },
   {
     "id": "c0a80101-0061-4000-8000-000000000097",
@@ -23700,9 +23841,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 104,
-    "weightKg": 0.35
+    "weightKg": 0.35,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 104
   },
   {
     "id": "c0a80101-006f-4000-8000-000000000111",
@@ -23749,9 +23891,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.08
+    "weightKg": 0.08,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0070-4000-8000-000000000112",
@@ -23806,9 +23949,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.08
+    "weightKg": 0.08,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0071-4000-8000-000000000113",
@@ -23891,9 +24035,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.08
+    "weightKg": 0.08,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0072-4000-8000-000000000114",
@@ -24053,9 +24198,10 @@
       }
     ],
     "category": "Processing",
-    "rackHeightU": 2,
-    "rackDepthMm": 234,
-    "weightKg": 3.8
+    "weightKg": 3.8,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 234
   },
   {
     "id": "c0a80101-00c8-4000-8000-000000000200",
@@ -25718,9 +25864,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 95,
-    "weightKg": 0.21
+    "weightKg": 0.21,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 95
   },
   {
     "id": "c0a80101-0194-4000-8000-000000000404",
@@ -25796,9 +25943,10 @@
         "connectorType": "hdmi"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 130,
-    "weightKg": 1.04
+    "weightKg": 1.04,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 130
   },
   {
     "id": "c0a80101-0195-4000-8000-000000000405",
@@ -25930,9 +26078,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 372,
-    "weightKg": 2.8
+    "weightKg": 2.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 372
   },
   {
     "id": "c0a80101-0012-4000-8000-000000000018",
@@ -26264,9 +26413,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 0,
-    "rackDepthMm": 92,
-    "weightKg": 0.33
+    "weightKg": 0.33,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 92
   },
   {
     "id": "c0a80101-003a-4000-8000-000000000058",
@@ -26358,9 +26508,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 1,
-    "rackDepthMm": 200,
-    "weightKg": 0.9
+    "weightKg": 0.9,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 200
   },
   {
     "id": "c0a80101-0073-4000-8000-000000000115",
@@ -26401,9 +26552,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 0,
-    "rackDepthMm": 118,
-    "weightKg": 0.54
+    "weightKg": 0.54,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 118
   },
   {
     "id": "c0a80101-0074-4000-8000-000000000116",
@@ -26444,9 +26596,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 0,
-    "rackDepthMm": 118,
-    "weightKg": 0.54
+    "weightKg": 0.54,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 118
   },
   {
     "id": "c0a80101-0075-4000-8000-000000000117",
@@ -26479,9 +26632,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 0,
-    "rackDepthMm": 118,
-    "weightKg": 0.54
+    "weightKg": 0.54,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 118
   },
   {
     "id": "c0a80101-0076-4000-8000-000000000118",
@@ -26535,9 +26689,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 0,
-    "rackDepthMm": 170,
-    "weightKg": 0.62
+    "weightKg": 0.62,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 170
   },
   {
     "id": "c0a80101-0077-4000-8000-000000000119",
@@ -26598,9 +26753,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 0,
-    "rackDepthMm": 170,
-    "weightKg": 0.72
+    "weightKg": 0.72,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 170
   },
   {
     "id": "c0a80101-0078-4000-8000-000000000120",
@@ -26648,9 +26804,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 0,
-    "rackDepthMm": 76,
-    "weightKg": 0.33
+    "weightKg": 0.33,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 76
   },
   {
     "id": "c0a80101-0079-4000-8000-000000000121",
@@ -26697,9 +26854,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 0,
-    "rackDepthMm": 76,
-    "weightKg": 0.33
+    "weightKg": 0.33,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 76
   },
   {
     "id": "c0a80101-00f3-4000-8000-000000000319",
@@ -26769,9 +26927,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 1,
-    "rackDepthMm": 188,
-    "weightKg": 0.7
+    "weightKg": 0.7,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 188
   },
   {
     "id": "c0a80101-00f4-4000-8000-000000000320",
@@ -26834,9 +26993,10 @@
       }
     ],
     "category": "Networking",
-    "rackHeightU": 1,
-    "rackDepthMm": 188,
-    "weightKg": 0.7
+    "weightKg": 0.7,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 188
   },
   {
     "id": "c0a80101-00fb-4000-8000-000000000327",
@@ -26891,9 +27051,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 176,
-    "weightKg": 0.76
+    "weightKg": 0.76,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 176
   },
   {
     "id": "c0a80101-00ff-4000-8000-000000000331",
@@ -26928,9 +27089,10 @@
         "connectorType": "rj45"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 113,
-    "weightKg": 0.2
+    "weightKg": 0.2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 113
   },
   {
     "id": "c0a80101-0100-4000-8000-000000000332",
@@ -26964,9 +27126,10 @@
         "connectorType": "rj45"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 89,
-    "weightKg": 0.38
+    "weightKg": 0.38,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 89
   },
   {
     "id": "c0a80101-0105-4000-8000-000000000337",
@@ -27020,9 +27183,10 @@
         "connectorType": "usb-b"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 85,
-    "weightKg": 0.12
+    "weightKg": 0.12,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 85
   },
   {
     "id": "c0a80101-0106-4000-8000-000000000338",
@@ -27063,9 +27227,10 @@
         "connectorType": "rj45"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 118,
-    "weightKg": 0.54
+    "weightKg": 0.54,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 118
   },
   {
     "id": "c0a80101-001a-4000-8000-000000000026",
@@ -27270,9 +27435,10 @@
       }
     ],
     "category": "Recording",
-    "rackHeightU": 3,
-    "rackDepthMm": 335,
-    "weightKg": 7.6
+    "weightKg": 7.6,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 335
   },
   {
     "id": "c0a80101-0068-4000-8000-000000000104",
@@ -27369,9 +27535,10 @@
       }
     ],
     "category": "Recording",
-    "rackHeightU": 0,
-    "rackDepthMm": 40,
-    "weightKg": 0.73
+    "weightKg": 0.73,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 40
   },
   {
     "id": "c0a80101-0069-4000-8000-000000000105",
@@ -27411,9 +27578,10 @@
       }
     ],
     "category": "Recording",
-    "rackHeightU": 0,
-    "rackDepthMm": 31,
-    "weightKg": 0.32
+    "weightKg": 0.32,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 31
   },
   {
     "id": "c0a80101-006a-4000-8000-000000000106",
@@ -27509,9 +27677,10 @@
       }
     ],
     "category": "Recording",
-    "rackHeightU": 1,
-    "rackDepthMm": 170,
-    "weightKg": 0.72
+    "weightKg": 0.72,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 170
   },
   {
     "id": "c0a80101-006b-4000-8000-000000000107",
@@ -27628,9 +27797,10 @@
       }
     ],
     "category": "Recording",
-    "rackHeightU": 1,
-    "rackDepthMm": 237,
-    "weightKg": 1.4
+    "weightKg": 1.4,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 237
   },
   {
     "id": "c0a80101-006c-4000-8000-000000000108",
@@ -27747,9 +27917,10 @@
       }
     ],
     "category": "Recording",
-    "rackHeightU": 1,
-    "rackDepthMm": 375,
-    "weightKg": 3.2
+    "weightKg": 3.2,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 375
   },
   {
     "id": "c0a80101-006d-4000-8000-000000000109",
@@ -27868,9 +28039,10 @@
       }
     ],
     "category": "Recording",
-    "rackHeightU": 2,
-    "rackDepthMm": 241,
-    "weightKg": 3
+    "weightKg": 3,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 241
   },
   {
     "id": "c0a80101-006e-4000-8000-000000000110",
@@ -27987,9 +28159,10 @@
       }
     ],
     "category": "Recording",
-    "rackHeightU": 2,
-    "rackDepthMm": 262,
-    "weightKg": 3.4
+    "weightKg": 3.4,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 262
   },
   {
     "id": "c0a80101-00f8-4000-8000-000000000324",
@@ -28065,9 +28238,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 38,
-    "weightKg": 0.66
+    "weightKg": 0.66,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 38
   },
   {
     "id": "c0a80101-00f9-4000-8000-000000000325",
@@ -28129,9 +28303,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 35,
-    "weightKg": 0.37
+    "weightKg": 0.37,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 35
   },
   {
     "id": "c0a80101-0101-4000-8000-000000000333",
@@ -28193,9 +28368,10 @@
         "connectorType": "usb-c"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 31,
-    "weightKg": 0.36
+    "weightKg": 0.36,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 31
   },
   {
     "id": "c0a80101-0192-4000-8000-000000000402",
@@ -28350,9 +28526,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 2,
-    "rackDepthMm": 145,
-    "weightKg": 1
+    "weightKg": 1,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 145
   },
   {
     "id": "c0a80101-0193-4000-8000-000000000403",
@@ -28506,9 +28683,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 335,
-    "weightKg": 3.6
+    "weightKg": 3.6,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 335
   },
   {
     "id": "c0a80101-001d-4000-8000-000000000029",
@@ -28660,9 +28838,10 @@
       }
     ],
     "category": "Distribution",
-    "rackHeightU": 0,
-    "rackDepthMm": 130,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 130
   },
   {
     "id": "c0a80101-0021-4000-8000-000000000033",
@@ -28766,9 +28945,10 @@
       }
     ],
     "category": "Distribution",
-    "rackHeightU": 0,
-    "rackDepthMm": 130,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 130
   },
   {
     "id": "c0a80101-0055-4000-8000-000000000085",
@@ -28858,9 +29038,10 @@
       }
     ],
     "category": "Distribution",
-    "rackHeightU": 0,
-    "rackDepthMm": 95,
-    "weightKg": 0.21
+    "weightKg": 0.21,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 95
   },
   {
     "id": "c0a80101-0056-4000-8000-000000000086",
@@ -28951,9 +29132,10 @@
       }
     ],
     "category": "Distribution",
-    "rackHeightU": 0,
-    "rackDepthMm": 95,
-    "weightKg": 0.21
+    "weightKg": 0.21,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 95
   },
   {
     "id": "c0a80101-00fd-4000-8000-000000000329",
@@ -29043,9 +29225,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 109,
-    "weightKg": 0.45
+    "weightKg": 0.45,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 109
   },
   {
     "id": "c0a80101-0113-4000-8000-000000000351",
@@ -29141,9 +29324,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 130,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 130
   },
   {
     "id": "c0a80101-0196-4000-8000-000000000406",
@@ -29213,9 +29397,10 @@
         "connectorType": "bnc"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 79,
-    "weightKg": 0.3
+    "weightKg": 0.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 79
   },
   {
     "id": "c0a80101-0304-4000-8000-000000000704",
@@ -29270,10 +29455,11 @@
         "connectorType": "usb-b"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 140,
     "weightKg": 0.28,
-    "powerDrawW": 5
+    "powerDrawW": 5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 140
   },
   {
     "id": "c0a80101-0305-4000-8000-000000000705",
@@ -29329,10 +29515,11 @@
         "connectorType": "usb-b"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 140,
     "weightKg": 0.28,
-    "powerDrawW": 5
+    "powerDrawW": 5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 140
   },
   {
     "id": "c0a80101-0306-4000-8000-000000000706",
@@ -29388,10 +29575,11 @@
         "connectorType": "usb-b"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 140,
     "weightKg": 0.28,
-    "powerDrawW": 5
+    "powerDrawW": 5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 140
   },
   {
     "id": "c0a80101-0307-4000-8000-000000000707",
@@ -29462,9 +29650,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 181,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 181
   },
   {
     "id": "c0a80101-0308-4000-8000-000000000708",
@@ -29521,10 +29710,11 @@
         "connectorType": "mini-hdmi"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 181,
     "weightKg": 0.5,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 181
   },
   {
     "id": "c0a80101-0309-4000-8000-000000000709",
@@ -29595,9 +29785,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 181,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 181
   },
   {
     "id": "c0a80101-030a-4000-8000-000000000710",
@@ -29655,10 +29846,11 @@
         "connectorType": "mini-hdmi"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 181,
     "weightKg": 0.5,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 181
   },
   {
     "id": "c0a80101-0022-4000-8000-000000000034",
@@ -29748,9 +29940,10 @@
       }
     ],
     "category": "Projection",
-    "rackHeightU": 0,
-    "rackDepthMm": 549,
-    "weightKg": 24
+    "weightKg": 24,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 549
   },
   {
     "id": "c0a80101-0023-4000-8000-000000000035",
@@ -29840,9 +30033,10 @@
       }
     ],
     "category": "Projection",
-    "rackHeightU": 0,
-    "rackDepthMm": 700,
-    "weightKg": 49
+    "weightKg": 49,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 700
   },
   {
     "id": "c0a80101-00ce-4000-8000-000000000206",
@@ -29924,9 +30118,10 @@
       }
     ],
     "category": "Projection",
-    "rackHeightU": 0,
-    "rackDepthMm": 739,
-    "weightKg": 44
+    "weightKg": 44,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 739
   },
   {
     "id": "c0a80101-0189-4000-8000-000000000393",
@@ -29997,9 +30192,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 690,
-    "weightKg": 38
+    "weightKg": 38,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 690
   },
   {
     "id": "c0a80101-018a-4000-8000-000000000394",
@@ -30091,9 +30287,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 750,
-    "weightKg": 62
+    "weightKg": 62,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 750
   },
   {
     "id": "c0a80101-018b-4000-8000-000000000395",
@@ -30185,9 +30382,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 750,
-    "weightKg": 65
+    "weightKg": 65,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 750
   },
   {
     "id": "c0a80101-018c-4000-8000-000000000396",
@@ -30279,9 +30477,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 750,
-    "weightKg": 65
+    "weightKg": 65,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 750
   },
   {
     "id": "c0a80101-018d-4000-8000-000000000397",
@@ -30358,9 +30557,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 780,
-    "weightKg": 68.6
+    "weightKg": 68.6,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 780
   },
   {
     "id": "c0a80101-018e-4000-8000-000000000398",
@@ -30430,9 +30630,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 700,
-    "weightKg": 35
+    "weightKg": 35,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 700
   },
   {
     "id": "c0a80101-018f-4000-8000-000000000399",
@@ -30509,9 +30710,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 780,
-    "weightKg": 69.8
+    "weightKg": 69.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 780
   },
   {
     "id": "c0a80101-0190-4000-8000-000000000400",
@@ -30595,9 +30797,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 23
+    "weightKg": 23,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0191-4000-8000-000000000401",
@@ -30681,9 +30884,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 22
+    "weightKg": 22,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0028-4000-8000-000000000040",
@@ -30816,9 +31020,10 @@
     ],
     "powerDrawW": 12,
     "category": "KVM / Extenders",
-    "rackHeightU": 0,
-    "rackDepthMm": 140,
-    "weightKg": 0.4
+    "weightKg": 0.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 140
   },
   {
     "id": "c0a80101-002c-4000-8000-000000000044",
@@ -30873,9 +31078,10 @@
       }
     ],
     "category": "KVM / Extenders",
-    "rackHeightU": 0,
-    "rackDepthMm": 130,
-    "weightKg": 0.3
+    "weightKg": 0.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 130
   },
   {
     "id": "c0a80101-002d-4000-8000-000000000045",
@@ -30923,9 +31129,10 @@
       }
     ],
     "category": "KVM / Extenders",
-    "rackHeightU": 0,
-    "rackDepthMm": 130,
-    "weightKg": 0.3
+    "weightKg": 0.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 130
   },
   {
     "id": "c0a80101-002e-4000-8000-000000000046",
@@ -30973,9 +31180,10 @@
       }
     ],
     "category": "Wireless",
-    "rackHeightU": 0,
-    "rackDepthMm": 103,
-    "weightKg": 0.43
+    "weightKg": 0.43,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 103
   },
   {
     "id": "c0a80101-002f-4000-8000-000000000047",
@@ -31023,9 +31231,10 @@
       }
     ],
     "category": "Wireless",
-    "rackHeightU": 0,
-    "rackDepthMm": 139,
-    "weightKg": 0.43
+    "weightKg": 0.43,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 139
   },
   {
     "id": "c0a80101-0030-4000-8000-000000000048",
@@ -31129,9 +31338,10 @@
       }
     ],
     "category": "Intercom",
-    "rackHeightU": 1,
-    "rackDepthMm": 300,
-    "weightKg": 2.5
+    "weightKg": 2.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 300
   },
   {
     "id": "c0a80101-007a-4000-8000-000000000122",
@@ -31179,9 +31389,10 @@
       }
     ],
     "category": "Wireless",
-    "rackHeightU": 0,
-    "rackDepthMm": 113,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 113
   },
   {
     "id": "c0a80101-007b-4000-8000-000000000123",
@@ -31229,9 +31440,10 @@
       }
     ],
     "category": "Wireless",
-    "rackHeightU": 0,
-    "rackDepthMm": 139,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 139
   },
   {
     "id": "c0a80101-00a3-4000-8000-000000000163",
@@ -31320,9 +31532,10 @@
       }
     ],
     "category": "Intercom",
-    "rackHeightU": 2,
-    "rackDepthMm": 404,
-    "weightKg": 6.3
+    "weightKg": 6.3,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 404
   },
   {
     "id": "c0a80101-00a4-4000-8000-000000000164",
@@ -31397,9 +31610,10 @@
       }
     ],
     "category": "Intercom",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.14
+    "weightKg": 1.14,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00a5-4000-8000-000000000165",
@@ -31474,9 +31688,10 @@
       }
     ],
     "category": "Intercom",
-    "rackHeightU": 3,
-    "rackDepthMm": 445,
-    "weightKg": 11
+    "weightKg": 11,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 445
   },
   {
     "id": "c0a80101-00a6-4000-8000-000000000166",
@@ -31573,9 +31788,10 @@
       }
     ],
     "category": "Intercom",
-    "rackHeightU": 1,
-    "rackDepthMm": 300,
-    "weightKg": 3
+    "weightKg": 3,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 300
   },
   {
     "id": "c0a80101-0038-4000-8000-000000000056",
@@ -31658,9 +31874,10 @@
       }
     ],
     "category": "Control",
-    "rackHeightU": 1,
-    "rackDepthMm": 254,
-    "weightKg": 1.4
+    "weightKg": 1.4,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 254
   },
   {
     "id": "c0a80101-0039-4000-8000-000000000057",
@@ -31719,9 +31936,10 @@
       }
     ],
     "category": "Control",
-    "rackHeightU": 0,
-    "rackDepthMm": 65,
-    "weightKg": 0.42
+    "weightKg": 0.42,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 65
   },
   {
     "id": "c0a80101-00cf-4000-8000-000000000207",
@@ -31761,9 +31979,10 @@
       }
     ],
     "category": "Control",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00d0-4000-8000-000000000208",
@@ -31833,9 +32052,10 @@
       }
     ],
     "category": "Control",
-    "rackHeightU": 1,
-    "rackDepthMm": 150,
-    "weightKg": 0.9
+    "weightKg": 0.9,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 150
   },
   {
     "id": "c0a80101-00d1-4000-8000-000000000209",
@@ -32629,10 +32849,11 @@
       }
     ],
     "category": "Infrastructure",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 4.5,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-021c-4000-8000-000000000540",
@@ -32791,10 +33012,11 @@
       }
     ],
     "category": "Infrastructure",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 5.4,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-021d-4000-8000-000000000541",
@@ -33016,10 +33238,11 @@
       }
     ],
     "category": "Infrastructure",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 9.1,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-021e-4000-8000-000000000542",
@@ -36228,9 +36451,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 34
+    "weightKg": 34,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00a8-4000-8000-000000000168",
@@ -36263,9 +36487,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 14
+    "weightKg": 14,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00a9-4000-8000-000000000169",
@@ -36299,9 +36524,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 13
+    "weightKg": 13,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00aa-4000-8000-000000000170",
@@ -36342,9 +36568,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 10
+    "weightKg": 10,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00ab-4000-8000-000000000171",
@@ -36384,9 +36611,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 34.9
+    "weightKg": 34.9,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00ac-4000-8000-000000000172",
@@ -36434,9 +36662,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 21.7
+    "weightKg": 21.7,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00ad-4000-8000-000000000173",
@@ -36484,9 +36713,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 61.7
+    "weightKg": 61.7,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00ae-4000-8000-000000000174",
@@ -36519,9 +36749,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 36
+    "weightKg": 36,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00af-4000-8000-000000000175",
@@ -36562,9 +36793,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 30.4
+    "weightKg": 30.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00b0-4000-8000-000000000176",
@@ -36668,9 +36900,10 @@
       }
     ],
     "category": "Amplifiers",
-    "rackHeightU": 2,
-    "rackDepthMm": 391,
-    "weightKg": 10
+    "weightKg": 10,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 391
   },
   {
     "id": "c0a80101-00b1-4000-8000-000000000177",
@@ -36780,9 +37013,10 @@
       }
     ],
     "category": "Amplifiers",
-    "rackHeightU": 2,
-    "rackDepthMm": 380,
-    "weightKg": 11.3
+    "weightKg": 11.3,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 380
   },
   {
     "id": "c0a80101-01c3-4000-8000-000000000451",
@@ -36817,9 +37051,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 33
+    "weightKg": 33,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01c4-4000-8000-000000000452",
@@ -36853,9 +37088,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 43
+    "weightKg": 43,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01c5-4000-8000-000000000453",
@@ -36889,9 +37125,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 21
+    "weightKg": 21,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01c6-4000-8000-000000000454",
@@ -36926,9 +37163,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 21
+    "weightKg": 21,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01c7-4000-8000-000000000455",
@@ -36962,9 +37200,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 12
+    "weightKg": 12,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01c8-4000-8000-000000000456",
@@ -36998,9 +37237,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 20
+    "weightKg": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01c9-4000-8000-000000000457",
@@ -37027,9 +37267,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 79
+    "weightKg": 79,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01ca-4000-8000-000000000458",
@@ -37063,9 +37304,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 56
+    "weightKg": 56,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01cb-4000-8000-000000000459",
@@ -37099,9 +37341,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 26
+    "weightKg": 26,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01cc-4000-8000-000000000460",
@@ -37135,9 +37378,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 3.5
+    "weightKg": 3.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01cd-4000-8000-000000000461",
@@ -37170,9 +37414,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 52
+    "weightKg": 52,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01ce-4000-8000-000000000462",
@@ -37235,9 +37480,10 @@
       }
     ],
     "category": "Amplifiers",
-    "rackHeightU": 2,
-    "rackDepthMm": 400,
-    "weightKg": 15
+    "weightKg": 15,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 400
   },
   {
     "id": "c0a80101-01cf-4000-8000-000000000463",
@@ -37434,9 +37680,10 @@
       }
     ],
     "category": "Amplifiers",
-    "rackHeightU": 9,
-    "rackDepthMm": 600,
-    "weightKg": 88
+    "weightKg": 88,
+    "heightMm": 400,
+    "widthMm": 482,
+    "depthMm": 600
   },
   {
     "id": "c0a80101-01d0-4000-8000-000000000464",
@@ -37485,9 +37732,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 40.3
+    "weightKg": 40.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01d1-4000-8000-000000000465",
@@ -37535,9 +37783,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 19.5
+    "weightKg": 19.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01d2-4000-8000-000000000466",
@@ -37579,9 +37828,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 12.3
+    "weightKg": 12.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01d3-4000-8000-000000000467",
@@ -37648,9 +37898,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.8
+    "weightKg": 1.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01d5-4000-8000-000000000469",
@@ -37692,9 +37943,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 16
+    "weightKg": 16,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01d6-4000-8000-000000000470",
@@ -37735,9 +37987,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 23.6
+    "weightKg": 23.6,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01d7-4000-8000-000000000471",
@@ -37778,9 +38031,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 20.9
+    "weightKg": 20.9,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01d8-4000-8000-000000000472",
@@ -37814,9 +38068,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 18
+    "weightKg": 18,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01d9-4000-8000-000000000473",
@@ -37850,9 +38105,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 34
+    "weightKg": 34,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01da-4000-8000-000000000474",
@@ -37886,9 +38142,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 64
+    "weightKg": 64,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01db-4000-8000-000000000475",
@@ -37923,9 +38180,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 7.3
+    "weightKg": 7.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01dc-4000-8000-000000000476",
@@ -38035,9 +38293,10 @@
       }
     ],
     "category": "Amplifiers",
-    "rackHeightU": 2,
-    "rackDepthMm": 460,
-    "weightKg": 13.5
+    "weightKg": 13.5,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 460
   },
   {
     "id": "c0a80101-01dd-4000-8000-000000000477",
@@ -38093,9 +38352,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 11.8
+    "weightKg": 11.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01de-4000-8000-000000000478",
@@ -38136,9 +38396,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 24
+    "weightKg": 24,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01df-4000-8000-000000000479",
@@ -38179,9 +38440,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 4.7
+    "weightKg": 4.7,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01e0-4000-8000-000000000480",
@@ -38238,9 +38500,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 27.4
+    "weightKg": 27.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01e1-4000-8000-000000000481",
@@ -38282,9 +38545,10 @@
       }
     ],
     "category": "Speakers",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 3
+    "weightKg": 3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00b3-4000-8000-000000000179",
@@ -38395,9 +38659,10 @@
       }
     ],
     "category": "LED Video",
-    "rackHeightU": 1,
-    "rackDepthMm": 310,
-    "weightKg": 3.4
+    "weightKg": 3.4,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 310
   },
   {
     "id": "c0a80101-00b4-4000-8000-000000000180",
@@ -38465,9 +38730,10 @@
       }
     ],
     "category": "LED Video",
-    "rackHeightU": 1,
-    "rackDepthMm": 230,
-    "weightKg": 1.5
+    "weightKg": 1.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 230
   },
   {
     "id": "c0a80101-00b5-4000-8000-000000000181",
@@ -38501,9 +38767,10 @@
       }
     ],
     "category": "LED Video",
-    "rackHeightU": 0,
-    "rackDepthMm": 130,
-    "weightKg": 0.7
+    "weightKg": 0.7,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 130
   },
   {
     "id": "c0a80101-00b6-4000-8000-000000000182",
@@ -38641,9 +38908,10 @@
       }
     ],
     "category": "LED Video",
-    "rackHeightU": 1,
-    "rackDepthMm": 362,
-    "weightKg": 4.5
+    "weightKg": 4.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 362
   },
   {
     "id": "c0a80101-00b7-4000-8000-000000000183",
@@ -38879,9 +39147,10 @@
       }
     ],
     "category": "LED Video",
-    "rackHeightU": 3,
-    "rackDepthMm": 430,
-    "weightKg": 8
+    "weightKg": 8,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 430
   },
   {
     "id": "c0a80101-010d-4000-8000-000000000345",
@@ -39061,9 +39330,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 356,
-    "weightKg": 3.5
+    "weightKg": 3.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 356
   },
   {
     "id": "c0a80101-010e-4000-8000-000000000346",
@@ -39180,9 +39450,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 310,
-    "weightKg": 3
+    "weightKg": 3,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 310
   },
   {
     "id": "c0a80101-010f-4000-8000-000000000347",
@@ -39216,9 +39487,10 @@
         "connectorType": "ethercon"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 130,
-    "weightKg": 0.6
+    "weightKg": 0.6,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 130
   },
   {
     "id": "c0a80101-0187-4000-8000-000000000391",
@@ -39337,9 +39609,10 @@
         "defaultCardId": "sfp-10g-sr"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 310,
-    "weightKg": 3.2
+    "weightKg": 3.2,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 310
   },
   {
     "id": "c0a80101-0188-4000-8000-000000000392",
@@ -39467,9 +39740,10 @@
         "defaultCardId": "sfp-10g-sr"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 340,
-    "weightKg": 4
+    "weightKg": 4,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 340
   },
   {
     "id": "c0a80101-00b8-4000-8000-000000000184",
@@ -39556,9 +39830,10 @@
       }
     ],
     "category": "Media Servers",
-    "rackHeightU": 4,
-    "rackDepthMm": 660,
-    "weightKg": 25
+    "weightKg": 25,
+    "heightMm": 178,
+    "widthMm": 482,
+    "depthMm": 660
   },
   {
     "id": "c0a80101-00b9-4000-8000-000000000185",
@@ -39628,9 +39903,10 @@
       }
     ],
     "category": "Media Servers",
-    "rackHeightU": 2,
-    "rackDepthMm": 600,
-    "weightKg": 12
+    "weightKg": 12,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 600
   },
   {
     "id": "c0a80101-00ba-4000-8000-000000000186",
@@ -39712,9 +39988,10 @@
       }
     ],
     "category": "Media Servers",
-    "rackHeightU": 1,
-    "rackDepthMm": 394,
-    "weightKg": 5.5
+    "weightKg": 5.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 394
   },
   {
     "id": "c0a80101-00bb-4000-8000-000000000187",
@@ -39783,9 +40060,10 @@
       }
     ],
     "category": "Media Servers",
-    "rackHeightU": 1,
-    "rackDepthMm": 394,
-    "weightKg": 5
+    "weightKg": 5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 394
   },
   {
     "id": "c0a80101-010a-4000-8000-000000000342",
@@ -39884,9 +40162,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 4,
-    "rackDepthMm": 660,
-    "weightKg": 24
+    "weightKg": 24,
+    "heightMm": 178,
+    "widthMm": 482,
+    "depthMm": 660
   },
   {
     "id": "c0a80101-010c-4000-8000-000000000344",
@@ -39955,9 +40234,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 600,
-    "weightKg": 10
+    "weightKg": 10,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 600
   },
   {
     "id": "c0a80101-010d-4000-8000-000000000345",
@@ -40044,9 +40324,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 2,
-    "rackDepthMm": 620,
-    "weightKg": 14
+    "weightKg": 14,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 620
   },
   {
     "id": "c0a80101-010e-4000-8000-000000000346",
@@ -40139,9 +40420,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 3,
-    "rackDepthMm": 650,
-    "weightKg": 18
+    "weightKg": 18,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 650
   },
   {
     "id": "c0a80101-010f-4000-8000-000000000347",
@@ -40210,9 +40492,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 600,
-    "weightKg": 10
+    "weightKg": 10,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 600
   },
   {
     "id": "c0a80101-0110-4000-8000-000000000348",
@@ -40299,9 +40582,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 2,
-    "rackDepthMm": 620,
-    "weightKg": 15
+    "weightKg": 15,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 620
   },
   {
     "id": "c0a80101-0111-4000-8000-000000000349",
@@ -40389,9 +40673,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 2,
-    "rackDepthMm": 620,
-    "weightKg": 15
+    "weightKg": 15,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 620
   },
   {
     "id": "c0a80101-0112-4000-8000-000000000350",
@@ -40478,9 +40763,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 3,
-    "rackDepthMm": 650,
-    "weightKg": 20
+    "weightKg": 20,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 650
   },
   {
     "id": "c0a80101-010b-4000-8000-000000000343",
@@ -40555,9 +40841,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 2,
-    "rackDepthMm": 620,
-    "weightKg": 14
+    "weightKg": 14,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 620
   },
   {
     "id": "c0a80101-010c-4000-8000-000000000344",
@@ -40632,9 +40919,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 2,
-    "rackDepthMm": 475,
-    "weightKg": 8
+    "weightKg": 8,
+    "heightMm": 89,
+    "widthMm": 482,
+    "depthMm": 475
   },
   {
     "id": "c0a80101-0182-4000-8000-000000000386",
@@ -40735,9 +41023,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 3,
-    "rackDepthMm": 650,
-    "weightKg": 18
+    "weightKg": 18,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 650
   },
   {
     "id": "c0a80101-0183-4000-8000-000000000387",
@@ -40861,9 +41150,10 @@
         "defaultCardId": "qsfp-40g-sr4"
       }
     ],
-    "rackHeightU": 3,
-    "rackDepthMm": 650,
-    "weightKg": 19
+    "weightKg": 19,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 650
   },
   {
     "id": "c0a80101-0184-4000-8000-000000000388",
@@ -41001,9 +41291,10 @@
         "connectorType": "powercon"
       }
     ],
-    "rackHeightU": 3,
-    "rackDepthMm": 650,
-    "weightKg": 21
+    "weightKg": 21,
+    "heightMm": 133,
+    "widthMm": 482,
+    "depthMm": 650
   },
   {
     "id": "c0a80101-0185-4000-8000-000000000389",
@@ -41065,9 +41356,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 1,
-    "rackDepthMm": 450,
-    "weightKg": 5
+    "weightKg": 5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 450
   },
   {
     "id": "c0a80101-0186-4000-8000-000000000390",
@@ -41121,9 +41413,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0
+    "weightKg": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00bc-4000-8000-000000000188",
@@ -41163,9 +41456,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 4.5
+    "weightKg": 4.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00bd-4000-8000-000000000189",
@@ -41275,9 +41569,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 28
+    "weightKg": 28,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00be-4000-8000-000000000190",
@@ -41388,9 +41683,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 27.2
+    "weightKg": 27.2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00bf-4000-8000-000000000191",
@@ -41507,9 +41803,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 25
+    "weightKg": 25,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00c0-4000-8000-000000000192",
@@ -41558,9 +41855,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 7.5
+    "weightKg": 7.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00c1-4000-8000-000000000193",
@@ -41601,9 +41899,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 25
+    "weightKg": 25,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00c2-4000-8000-000000000194",
@@ -41643,9 +41942,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 10.5
+    "weightKg": 10.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00c3-4000-8000-000000000195",
@@ -41694,9 +41994,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 7.7
+    "weightKg": 7.7,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00c4-4000-8000-000000000196",
@@ -41731,9 +42032,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2.4
+    "weightKg": 2.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00c5-4000-8000-000000000197",
@@ -41767,9 +42069,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.8
+    "weightKg": 1.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00c6-4000-8000-000000000198",
@@ -42024,9 +42327,10 @@
         "connectorType": "iec"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 29.5
+    "weightKg": 29.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0111-4000-8000-000000000349",
@@ -42157,9 +42461,10 @@
         "connectorType": "powercon"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 52
+    "weightKg": 52,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0112-4000-8000-000000000350",
@@ -42277,9 +42582,10 @@
         "connectorType": "powercon"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 22
+    "weightKg": 22,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0114-4000-8000-000000000352",
@@ -42326,9 +42632,10 @@
         "connectorType": "powercon"
       }
     ],
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 36
+    "weightKg": 36,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01f5-4000-8000-000000000501",
@@ -42438,9 +42745,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 46
+    "weightKg": 46,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01f6-4000-8000-000000000502",
@@ -42536,9 +42844,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 4,
-    "rackDepthMm": 460,
-    "weightKg": 15
+    "weightKg": 15,
+    "heightMm": 178,
+    "widthMm": 482,
+    "depthMm": 460
   },
   {
     "id": "c0a80101-01f7-4000-8000-000000000503",
@@ -42607,9 +42916,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 5.5
+    "weightKg": 5.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01f8-4000-8000-000000000504",
@@ -42754,9 +43064,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 32
+    "weightKg": 32,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01f9-4000-8000-000000000505",
@@ -42810,9 +43121,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 7.3
+    "weightKg": 7.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01fa-4000-8000-000000000506",
@@ -42916,9 +43228,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 18.1
+    "weightKg": 18.1,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01fb-4000-8000-000000000507",
@@ -43008,9 +43321,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 7.5
+    "weightKg": 7.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01fc-4000-8000-000000000508",
@@ -43101,9 +43415,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 6.4
+    "weightKg": 6.4,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01fd-4000-8000-000000000509",
@@ -43151,9 +43466,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 0.5
+    "weightKg": 0.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-01fe-4000-8000-000000000510",
@@ -43215,9 +43531,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 1,
-    "rackDepthMm": 178,
-    "weightKg": 1.4
+    "weightKg": 1.4,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 178
   },
   {
     "id": "c0a80101-01ff-4000-8000-000000000511",
@@ -43251,9 +43568,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 5
+    "weightKg": 5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0200-4000-8000-000000000512",
@@ -43343,9 +43661,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 35
+    "weightKg": 35,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0201-4000-8000-000000000513",
@@ -43407,9 +43726,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 7.3
+    "weightKg": 7.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0202-4000-8000-000000000514",
@@ -43513,9 +43833,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 1,
-    "rackDepthMm": 305,
-    "weightKg": 2.7
+    "weightKg": 2.7,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 305
   },
   {
     "id": "c0a80101-0203-4000-8000-000000000515",
@@ -43571,9 +43892,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 3.5
+    "weightKg": 3.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0204-4000-8000-000000000516",
@@ -43601,9 +43923,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2
+    "weightKg": 2,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0205-4000-8000-000000000517",
@@ -43631,9 +43954,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2.5
+    "weightKg": 2.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0206-4000-8000-000000000518",
@@ -43691,9 +44015,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 25.5
+    "weightKg": 25.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0207-4000-8000-000000000519",
@@ -43749,9 +44074,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 43
+    "weightKg": 43,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0208-4000-8000-000000000520",
@@ -43799,9 +44125,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 25
+    "weightKg": 25,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0209-4000-8000-000000000521",
@@ -43849,9 +44176,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 37
+    "weightKg": 37,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-020a-4000-8000-000000000522",
@@ -43906,9 +44234,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 25.5
+    "weightKg": 25.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-020b-4000-8000-000000000523",
@@ -43963,9 +44292,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 27.5
+    "weightKg": 27.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-020c-4000-8000-000000000524",
@@ -44007,9 +44337,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 12
+    "weightKg": 12,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-020d-4000-8000-000000000525",
@@ -44065,9 +44396,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 17.5
+    "weightKg": 17.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-020e-4000-8000-000000000526",
@@ -44116,9 +44448,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 32
+    "weightKg": 32,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-020f-4000-8000-000000000527",
@@ -44159,9 +44492,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 22.5
+    "weightKg": 22.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0210-4000-8000-000000000528",
@@ -44211,9 +44545,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 9.5
+    "weightKg": 9.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0211-4000-8000-000000000529",
@@ -44268,9 +44603,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 39.5
+    "weightKg": 39.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0212-4000-8000-000000000530",
@@ -44326,9 +44662,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 35
+    "weightKg": 35,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0213-4000-8000-000000000531",
@@ -44382,9 +44719,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 37
+    "weightKg": 37,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0214-4000-8000-000000000532",
@@ -44440,9 +44778,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 13
+    "weightKg": 13,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0215-4000-8000-000000000533",
@@ -44498,9 +44837,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 43
+    "weightKg": 43,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0216-4000-8000-000000000534",
@@ -44529,9 +44869,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 1.5
+    "weightKg": 1.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0217-4000-8000-000000000535",
@@ -44582,9 +44923,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 2.9
+    "weightKg": 2.9,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0218-4000-8000-000000000536",
@@ -44633,9 +44975,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 6.8
+    "weightKg": 6.8,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-0219-4000-8000-000000000537",
@@ -44685,9 +45028,10 @@
       }
     ],
     "category": "Lighting",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 7.3
+    "weightKg": 7.3,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00e0-4000-8000-000000000300",
@@ -46173,10 +46517,11 @@
       }
     ],
     "category": "Cloud Services",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00f6-4000-8000-000000000322",
@@ -46262,10 +46607,11 @@
       }
     ],
     "category": "Cloud Services",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00f7-4000-8000-000000000323",
@@ -46323,10 +46669,11 @@
       }
     ],
     "category": "Cloud Services",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00f1-4000-8000-000000000317",
@@ -46395,9 +46742,10 @@
       }
     ],
     "category": "Codecs",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
-    "weightKg": 5.5
+    "weightKg": 5.5,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-00f2-4000-8000-000000000318",
@@ -46642,9 +46990,10 @@
       }
     ],
     "category": "Codecs",
-    "rackHeightU": 1,
-    "rackDepthMm": 300,
-    "weightKg": 4.5
+    "weightKg": 4.5,
+    "heightMm": 44,
+    "widthMm": 482,
+    "depthMm": 300
   },
   {
     "id": "vfc-card-hdmi20",
@@ -46670,10 +47019,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "vfc-card-dp14",
@@ -46700,10 +47050,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "vfc-card-dp12",
@@ -46730,10 +47081,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "vfc-card-quad-sdi",
@@ -46781,10 +47133,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "vfc-card-quad-dvi",
@@ -46832,10 +47185,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "vfc-card-ip",
@@ -46880,10 +47234,11 @@
     ],
     "ports": [],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "barco-em-tricombo-in",
@@ -46945,10 +47300,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "barco-em-tricombo-out",
@@ -47010,10 +47366,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "barco-em-hdmi-quad-in",
@@ -47062,10 +47419,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "barco-em-hdmi-quad-out",
@@ -47114,10 +47472,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "barco-em-dp-quad-in",
@@ -47166,10 +47525,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "barco-em-dp-quad-out",
@@ -47218,10 +47578,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "aw-aql-in-dp",
@@ -47269,10 +47630,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "aw-aql-in-sdi",
@@ -47320,10 +47682,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "aw-aql-out-sdi",
@@ -47371,10 +47734,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "yamaha-my8-ae",
@@ -47506,10 +47870,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "yamaha-my16-ae",
@@ -47753,10 +48118,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "yamaha-my8-lake",
@@ -47896,10 +48262,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "yamaha-dugan-my16",
@@ -47933,10 +48300,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "digico-dmi-dante",
@@ -47970,10 +48338,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "digico-dmi-madi",
@@ -48007,10 +48376,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "digico-dmi-waves",
@@ -48038,10 +48408,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "barco-em-sdi-quad-in",
@@ -48090,10 +48461,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "barco-em-sdi-quad-out",
@@ -48142,10 +48514,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "aw-aql-in-hdmi",
@@ -48193,10 +48566,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "aw-aql-out-hdmi",
@@ -48244,10 +48618,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "aw-aql-out-dp",
@@ -48295,10 +48670,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "aw-aql-in-fiber",
@@ -48346,10 +48722,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "aw-aql-out-fiber",
@@ -48397,10 +48774,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 20
+    "powerDrawW": 20,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "crestron-dmc-4kz-hd",
@@ -48436,10 +48814,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "crestron-dmc-4kz-hdmi",
@@ -48475,10 +48854,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "crestron-dmc-4kz-c",
@@ -48514,10 +48894,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "crestron-dmco-4kz-hd",
@@ -48553,10 +48934,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "crestron-dmco-4kz-hdmi",
@@ -48592,10 +48974,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "lightware-mx2m-hdmi-ib",
@@ -48643,10 +49026,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "lightware-mx2m-hdmi-ob",
@@ -48694,10 +49078,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "lightware-mx2m-dp-ib",
@@ -48745,10 +49130,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "lightware-mx2m-fiber-ib",
@@ -48796,10 +49182,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "lightware-mx2m-fiber-ob",
@@ -48847,10 +49234,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 15
+    "powerDrawW": 15,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "yamaha-my16-md64",
@@ -48884,10 +49272,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "yamaha-my16-at",
@@ -48935,10 +49324,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.3,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "ah-dlive-dante128",
@@ -48973,10 +49363,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.4,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "ah-dlive-madi",
@@ -49010,10 +49401,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.4,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "ah-dlive-waves",
@@ -49041,10 +49433,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.4,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "ah-sq-slink-card",
@@ -49071,10 +49464,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.2,
-    "powerDrawW": 0
+    "powerDrawW": 0,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "ross-ultrix-hdx-io",
@@ -49320,10 +49714,11 @@
       }
     ],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.5,
-    "powerDrawW": 30
+    "powerDrawW": 30,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "ross-ultrix-ipx-io",
@@ -49371,10 +49766,11 @@
     ],
     "ports": [],
     "category": "Expansion Cards",
-    "rackHeightU": 0,
-    "rackDepthMm": 0,
     "weightKg": 0.5,
-    "powerDrawW": 40
+    "powerDrawW": 40,
+    "heightMm": 0,
+    "widthMm": 0,
+    "depthMm": 0
   },
   {
     "id": "c0a80101-ffff-4000-8000-ffffffffffff",
@@ -49382,7 +49778,6 @@
     "label": "Connector Test Card",
     "manufacturer": "EasySchematic",
     "modelNumber": "CTC-60",
-    "rackHeightU": 8,
     "color": "#334155",
     "searchTerms": [
       "test",
@@ -49804,6 +50199,8 @@
         "connectorType": "l21-30"
       }
     ],
-    "category": "Test Equipment"
+    "category": "Test Equipment",
+    "heightMm": 356,
+    "widthMm": 482
   }
 ]

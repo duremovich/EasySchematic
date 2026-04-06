@@ -1,11 +1,17 @@
 import type { DeviceData, Port, ConnectorType } from "./types";
 
+/** Millimeters per standard rack unit */
+export const MM_PER_U = 44.45;
+
+/** Convert millimeters to rack units (rounded to nearest whole U) */
+export const mmToU = (mm: number): number => Math.round(mm / MM_PER_U);
+
 /**
- * Infer a reasonable rack height in U for a device that doesn't have one explicitly set.
- * Based on port count and device type heuristics common in AV equipment.
+ * Get or infer a rack height in U for a device.
+ * If heightMm is set, converts to U. Otherwise uses port count / device type heuristics.
  */
 export function inferRackHeightU(data: DeviceData): number {
-  if (data.rackHeightU) return data.rackHeightU;
+  if (data.heightMm) return Math.max(1, mmToU(data.heightMm));
 
   const portCount = data.ports?.length ?? 0;
   const dt = data.deviceType?.toLowerCase() ?? "";
