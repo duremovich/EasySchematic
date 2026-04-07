@@ -49,6 +49,7 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   serial: "SL",
   thunderbolt: "TB",
   composite: "CO",
+  "component-video": "CV",
   "s-video": "SV",
   vga: "V",
   dvi: "D",

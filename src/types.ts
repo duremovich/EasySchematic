@@ -14,6 +14,7 @@ export type ConnectorType =
   | "mini-hdmi" | "mini-displayport"
   | "rj11" | "rj12" | "usb-mini" | "usb-micro" | "trs-2.5mm"
   | "reverse-tnc" | "sma" | "db37"
+  | "d-tap" | "v-mount" | "f-connector"
   | "wireless"
   | "none" | "other";
 
@@ -104,6 +105,7 @@ export type SignalType =
   | "rtmp"
   | "rtsp"
   | "mpeg-ts"
+  | "component-video"
   | "custom";
 
 export type LineStyle = "solid" | "dashed" | "dotted" | "dash-dot";
@@ -515,6 +517,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   serial: "var(--color-serial)",
   thunderbolt: "var(--color-thunderbolt)",
   composite: "var(--color-composite)",
+  "component-video": "var(--color-component-video)",
   "s-video": "var(--color-s-video)",
   vga: "var(--color-vga)",
   dvi: "var(--color-dvi)",
@@ -619,6 +622,9 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   "reverse-tnc": "Reverse TNC",
   sma: "SMA",
   db37: "DB37",
+  "d-tap": "D-Tap",
+  "v-mount": "V-Mount",
+  "f-connector": "F-Connector",
   wireless: "Wireless",
   none: "None",
   other: "Other",
@@ -688,6 +694,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   rtmp: "RTMP",
   rtsp: "RTSP",
   "mpeg-ts": "MPEG-TS",
+  "component-video": "Component Video",
   custom: "Custom",
 };
 

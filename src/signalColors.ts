@@ -22,6 +22,7 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   serial: "#525252",
   thunderbolt: "#4f46e5",
   composite: "#ca8a04",
+  "component-video": "#92700c",
   "s-video": "#b45309",
   vga: "#0369a1",
   dvi: "#1e40af",

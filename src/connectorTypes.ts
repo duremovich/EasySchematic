@@ -58,6 +58,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   rtmp: "rj45",
   rtsp: "rj45",
   "mpeg-ts": "rj45",
+  "component-video": "bnc",
   custom: "other",
 };
 
@@ -165,6 +166,9 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   rj12: "RJ12",
   toslink: "TOSLINK",
   barrel: "DC Barrel",
+  "d-tap": "D-Tap",
+  "v-mount": "V-Mount",
+  "f-connector": "F-Conn",
   banana: "Speaker Wire",
   "binding-post": "Speaker Wire",
   "binding-post-banana": "Speaker Wire",
