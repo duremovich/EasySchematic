@@ -417,6 +417,7 @@ export interface SchematicFile {
   titleBlock?: TitleBlock;
   titleBlockLayout?: TitleBlockLayout;
   hiddenSignalTypes?: SignalType[];
+  hiddenPinSignalTypes?: SignalType[];
   hideDeviceTypes?: boolean;
   hideUnconnectedPorts?: boolean;
   templateHiddenSignals?: Record<string, SignalType[]>;

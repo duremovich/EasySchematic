@@ -351,10 +351,12 @@ interface SchematicState {
 
   // View options
   hiddenSignalTypes: string;
+  hiddenPinSignalTypes: string;
   hideDeviceTypes: boolean;
   hideUnconnectedPorts: boolean;
   templateHiddenSignals: Record<string, SignalType[]>;
   toggleSignalTypeVisibility: (type: SignalType) => void;
+  togglePinSignalTypeVisibility: (type: SignalType) => void;
   setHideDeviceTypes: (hide: boolean) => void;
   setHideUnconnectedPorts: (hide: boolean) => void;
   setTemplateHiddenSignals: (templateId: string, hidden: SignalType[]) => void;
@@ -811,6 +813,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   globalReportHeaderLayout: null,
   globalReportFooterLayout: null,
   hiddenSignalTypes: "",
+  hiddenPinSignalTypes: "",
   hideDeviceTypes: false,
   hideUnconnectedPorts: false,
   templateHiddenSignals: {},
@@ -2208,6 +2211,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  togglePinSignalTypeVisibility: (type) => {
+    const current = get().hiddenPinSignalTypes;
+    const set_ = new Set(current ? current.split(",").filter(Boolean) : []);
+    if (set_.has(type)) set_.delete(type);
+    else set_.add(type);
+    const next = [...set_].sort().join(",");
+    set({ hiddenPinSignalTypes: next });
+    get().saveToLocalStorage();
+  },
+
   setHideDeviceTypes: (hide) => {
     set({ hideDeviceTypes: hide });
     get().saveToLocalStorage();
@@ -2249,7 +2262,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   },
 
   showAllSignalTypes: () => {
-    set({ hiddenSignalTypes: "" });
+    set({ hiddenSignalTypes: "", hiddenPinSignalTypes: "" });
     get().saveToLocalStorage();
   },
 
@@ -2398,6 +2411,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       titleBlock: state.titleBlock,
       titleBlockLayout: state.titleBlockLayout,
       hiddenSignalTypes: state.hiddenSignalTypes ? state.hiddenSignalTypes.split(",") as SignalType[] : undefined,
+      hiddenPinSignalTypes: state.hiddenPinSignalTypes ? state.hiddenPinSignalTypes.split(",") as SignalType[] : undefined,
       hideDeviceTypes: state.hideDeviceTypes || undefined,
       hideUnconnectedPorts: state.hideUnconnectedPorts || undefined,
       templateHiddenSignals: Object.keys(state.templateHiddenSignals).length > 0 ? state.templateHiddenSignals : undefined,
@@ -2475,6 +2489,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
             titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
             hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
+            hiddenPinSignalTypes: data.hiddenPinSignalTypes?.length ? [...data.hiddenPinSignalTypes].sort().join(",") : "",
             hideDeviceTypes: data.hideDeviceTypes ?? false,
             hideUnconnectedPorts: data.hideUnconnectedPorts ?? false,
             templateHiddenSignals: data.templateHiddenSignals ?? {},
@@ -2537,6 +2552,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
         titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
         hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
+        hiddenPinSignalTypes: data.hiddenPinSignalTypes?.length ? [...data.hiddenPinSignalTypes].sort().join(",") : "",
         hideDeviceTypes: data.hideDeviceTypes ?? false,
         hideUnconnectedPorts: data.hideUnconnectedPorts ?? false,
         templateHiddenSignals: data.templateHiddenSignals ?? {},
@@ -2599,6 +2615,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       titleBlock: state.titleBlock,
       titleBlockLayout: state.titleBlockLayout,
       hiddenSignalTypes: state.hiddenSignalTypes ? state.hiddenSignalTypes.split(",") as SignalType[] : undefined,
+      hiddenPinSignalTypes: state.hiddenPinSignalTypes ? state.hiddenPinSignalTypes.split(",") as SignalType[] : undefined,
       hideDeviceTypes: state.hideDeviceTypes || undefined,
       hideUnconnectedPorts: state.hideUnconnectedPorts || undefined,
       templateHiddenSignals: Object.keys(state.templateHiddenSignals).length > 0 ? state.templateHiddenSignals : undefined,
@@ -2678,6 +2695,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       titleBlock: data.titleBlock ?? { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
       titleBlockLayout: data.titleBlockLayout ?? createDefaultLayout(),
       hiddenSignalTypes: data.hiddenSignalTypes?.length ? [...data.hiddenSignalTypes].sort().join(",") : "",
+      hiddenPinSignalTypes: data.hiddenPinSignalTypes?.length ? [...data.hiddenPinSignalTypes].sort().join(",") : "",
       hideDeviceTypes: data.hideDeviceTypes ?? false,
       hideUnconnectedPorts: data.hideUnconnectedPorts ?? false,
       templateHiddenSignals: data.templateHiddenSignals ?? {},
@@ -2761,6 +2779,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         titleBlock: { showName: "", venue: "", designer: "", engineer: "", date: "", drawingTitle: "", company: "", revision: "", logo: "", customFields: [] },
         titleBlockLayout: createDefaultLayout(),
         hiddenSignalTypes: "",
+        hiddenPinSignalTypes: "",
         hideDeviceTypes: false,
         hideUnconnectedPorts: false,
         templateHiddenSignals: {},

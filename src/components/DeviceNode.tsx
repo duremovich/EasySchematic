@@ -24,14 +24,14 @@ function buildColumnItems(ports: Port[]): ColumnItem[] {
 
 function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) {
   const setEditingNodeId = useSchematicStore((s) => s.setEditingNodeId);
-  const hiddenSignalTypesStr = useSchematicStore((s) => s.hiddenSignalTypes);
+  const hiddenPinSignalTypesStr = useSchematicStore((s) => s.hiddenPinSignalTypes);
   const hideDeviceTypes = useSchematicStore((s) => s.hideDeviceTypes);
   const isHiddenAdapter = useSchematicStore((s) => s.hiddenAdapterNodeIds.has(id));
   const isOverlapping = useSchematicStore((s) => s.overlapNodeId === id);
 
-  const hiddenSignalTypes = useMemo(
-    () => (hiddenSignalTypesStr ? new Set(hiddenSignalTypesStr.split(",")) : null),
-    [hiddenSignalTypesStr],
+  const hiddenPinSignalTypes = useMemo(
+    () => (hiddenPinSignalTypesStr ? new Set(hiddenPinSignalTypesStr.split(",")) : null),
+    [hiddenPinSignalTypesStr],
   );
 
   const hideUnconnectedPorts = useSchematicStore((s) => s.hideUnconnectedPorts);
@@ -56,8 +56,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
 
   const visiblePorts = useMemo(() => {
     if (data.showAllPorts) {
-      return hiddenSignalTypes
-        ? data.ports.filter((p) => !hiddenSignalTypes.has(p.signalType))
+      return hiddenPinSignalTypes
+        ? data.ports.filter((p) => !hiddenPinSignalTypes.has(p.signalType))
         : data.ports;
     }
 
@@ -65,7 +65,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     const devHiddenPorts = data.hiddenPorts?.length ? new Set(data.hiddenPorts) : null;
 
     return data.ports.filter((p) => {
-      if (hiddenSignalTypes?.has(p.signalType)) return false;
+      if (hiddenPinSignalTypes?.has(p.signalType)) return false;
       if (tplHidden?.has(p.signalType)) return false;
       if (devHiddenPorts?.has(p.id)) return false;
       if (hideUnconnectedPorts) {
@@ -77,7 +77,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       return true;
     });
   }, [data.ports, data.showAllPorts, data.hiddenPorts,
-      hiddenSignalTypes, templateHiddenStr, hideUnconnectedPorts, connectedHandles]);
+      hiddenPinSignalTypes, templateHiddenStr, hideUnconnectedPorts, connectedHandles]);
 
   const openPortMenu = useCallback((e: React.MouseEvent, port: Port) => {
     e.preventDefault();

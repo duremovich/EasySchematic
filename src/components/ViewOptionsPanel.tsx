@@ -17,9 +17,11 @@ const LINE_STYLE_TIPS: Record<LineStyle, string> = {
 export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean; onClose?: () => void } = {}) {
   const [collapsed, setCollapsed] = useState(true);
   const hiddenSignalTypesStr = useSchematicStore((s) => s.hiddenSignalTypes);
+  const hiddenPinSignalTypesStr = useSchematicStore((s) => s.hiddenPinSignalTypes);
   const hideDeviceTypes = useSchematicStore((s) => s.hideDeviceTypes);
   const hideUnconnectedPorts = useSchematicStore((s) => s.hideUnconnectedPorts);
   const toggleSignalTypeVisibility = useSchematicStore((s) => s.toggleSignalTypeVisibility);
+  const togglePinSignalTypeVisibility = useSchematicStore((s) => s.togglePinSignalTypeVisibility);
   const setHideDeviceTypes = useSchematicStore((s) => s.setHideDeviceTypes);
   const setHideUnconnectedPorts = useSchematicStore((s) => s.setHideUnconnectedPorts);
   const showLineJumps = useSchematicStore((s) => s.showLineJumps);
@@ -84,7 +86,12 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
     [hiddenSignalTypesStr],
   );
 
-  const anyHidden = hiddenSet.size > 0;
+  const hiddenPinSet = useMemo(
+    () => (hiddenPinSignalTypesStr ? new Set(hiddenPinSignalTypesStr.split(",")) : new Set<string>()),
+    [hiddenPinSignalTypesStr],
+  );
+
+  const anyHidden = hiddenSet.size > 0 || hiddenPinSet.size > 0;
   const hasCustomizations = !!(signalColors && Object.keys(signalColors).length > 0) ||
     !!(signalLineStyles && Object.keys(signalLineStyles).length > 0);
 
@@ -227,17 +234,46 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
         ) : (
           displayedSignalTypes.map((type) => {
             const ls = signalLineStyles?.[type] ?? "solid";
+            const wireHidden = hiddenSet.has(type);
+            const pinHidden = hiddenPinSet.has(type);
             return (
               <div
                 key={type}
-                className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-[var(--color-surface-hover)]"
+                className="flex items-center gap-1 px-1 py-0.5 rounded hover:bg-[var(--color-surface-hover)]"
               >
-                <input
-                  type="checkbox"
-                  checked={!hiddenSet.has(type)}
-                  onChange={() => toggleSignalTypeVisibility(type)}
-                  className="w-3 h-3 accent-blue-500 cursor-pointer shrink-0"
-                />
+                {/* Wire visibility toggle */}
+                <button
+                  className="shrink-0 cursor-pointer rounded hover:bg-[var(--color-surface)] p-0.5 transition-colors"
+                  onClick={() => toggleSignalTypeVisibility(type)}
+                  title={wireHidden ? "Show wires" : "Hide wires"}
+                >
+                  <svg width="14" height="10" viewBox="0 0 14 10" className="block">
+                    <path
+                      d="M1 5 L5 5 L9 5 L13 5"
+                      fill="none"
+                      stroke={wireHidden ? "var(--color-text-muted)" : SIGNAL_COLORS[type]}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      opacity={wireHidden ? 0.3 : 1}
+                    />
+                  </svg>
+                </button>
+                {/* Pin visibility toggle */}
+                <button
+                  className="shrink-0 cursor-pointer rounded hover:bg-[var(--color-surface)] p-0.5 transition-colors"
+                  onClick={() => togglePinSignalTypeVisibility(type)}
+                  title={pinHidden ? "Show pins" : "Hide pins"}
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" className="block">
+                    <rect
+                      x="2" y="2" width="8" height="8" rx="1.5"
+                      fill={pinHidden ? "none" : SIGNAL_COLORS[type]}
+                      stroke={pinHidden ? "var(--color-text-muted)" : SIGNAL_COLORS[type]}
+                      strokeWidth="1.5"
+                      opacity={pinHidden ? 0.3 : 1}
+                    />
+                  </svg>
+                </button>
                 <button
                   className="w-2.5 h-2.5 rounded-full shrink-0 cursor-pointer border border-transparent hover:border-[var(--color-text-muted)] transition-colors"
                   style={{ background: SIGNAL_COLORS[type] }}
