@@ -81,12 +81,14 @@ function CloneSearch({ cloneId, onSelect }: { cloneId?: string; onSelect: (id?: 
   }, []);
 
   // Resolve label for URL-based cloneId
+  /* eslint-disable react-hooks/set-state-in-effect -- one-time sync of URL param + fetched data → local state */
   useEffect(() => {
     if (cloneId && templates.length > 0 && !selectedLabel) {
       const t = templates.find((t) => t.id === cloneId);
       if (t) setSelectedLabel(`${t.label}${t.manufacturer ? ` (${t.manufacturer})` : ""}`);
     }
   }, [cloneId, templates, selectedLabel]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Close dropdown on outside click
   useEffect(() => {

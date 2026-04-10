@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { SIGNAL_LABELS } from "../../../src/types";
 import type { SignalType } from "../../../src/types";
 import { fetchTemplateSummaries } from "../api";
@@ -45,8 +45,10 @@ export default function BrowsePage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const matchesSignalFilter = (t: TemplateSummary) =>
-    selectedSignalTypes.size === 0 || t.signalTypes.some((st) => selectedSignalTypes.has(st));
+  const matchesSignalFilter = useCallback(
+    (t: TemplateSummary) => selectedSignalTypes.size === 0 || t.signalTypes.some((st) => selectedSignalTypes.has(st)),
+    [selectedSignalTypes],
+  );
 
   // Cross-filtered: categories narrowed by selected brands + signals
   const categories = useMemo(() => {
@@ -54,7 +56,7 @@ export default function BrowsePage() {
     if (selectedBrands.size > 0) source = source.filter((t) => t.manufacturer && selectedBrands.has(t.manufacturer));
     if (selectedSignalTypes.size > 0) source = source.filter(matchesSignalFilter);
     return [...new Set(source.map((t) => t.category).filter(Boolean))].sort() as string[];
-  }, [templates, selectedBrands, selectedSignalTypes]);
+  }, [templates, selectedBrands, selectedSignalTypes, matchesSignalFilter]);
 
   // Cross-filtered: brands narrowed by selected categories + signals
   const brandList = useMemo(() => {
@@ -62,7 +64,7 @@ export default function BrowsePage() {
     if (selectedCategories.size > 0) source = source.filter((t) => t.category && selectedCategories.has(t.category));
     if (selectedSignalTypes.size > 0) source = source.filter(matchesSignalFilter);
     return [...new Set(source.map((t) => t.manufacturer).filter(Boolean))].sort() as string[];
-  }, [templates, selectedCategories, selectedSignalTypes]);
+  }, [templates, selectedCategories, selectedSignalTypes, matchesSignalFilter]);
 
   // Cross-filtered: signals narrowed by selected categories + brands
   const signalTypeList = useMemo(() => {
@@ -127,7 +129,7 @@ export default function BrowsePage() {
     }
 
     return result;
-  }, [templates, search, selectedCategories, selectedBrands, selectedSignalTypes]);
+  }, [templates, search, selectedCategories, selectedBrands, selectedSignalTypes, matchesSignalFilter]);
 
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
 
