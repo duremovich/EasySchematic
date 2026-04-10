@@ -235,7 +235,7 @@ export default function QuickAddDevice({
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="absolute bg-white border border-[var(--color-border)] rounded-lg shadow-2xl w-72 flex flex-col overflow-hidden"
+        className="absolute bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg shadow-2xl w-72 flex flex-col overflow-hidden"
         style={{ left: "50%", top: "30%", transform: "translateX(-50%)" }}
       >
         <div className="px-2 pt-2 pb-1.5">
@@ -253,9 +253,9 @@ export default function QuickAddDevice({
           <div className="flex gap-1.5">
             <div className={`flex-1 min-w-0 flex items-center rounded border transition-colors ${
                 openPanel === "category"
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  ? "border-blue-500 bg-blue-500/15 text-blue-600"
                   : selectedCategories.size > 0
-                    ? "border-blue-400 bg-blue-50 text-blue-700"
+                    ? "border-blue-400 bg-blue-500/15 text-blue-600"
                     : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
               }`}>
               <button
@@ -275,9 +275,9 @@ export default function QuickAddDevice({
             </div>
             <div className={`flex-1 min-w-0 flex items-center rounded border transition-colors ${
                 openPanel === "brand"
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
+                  ? "border-blue-500 bg-blue-500/15 text-blue-600"
                   : selectedBrands.size > 0
-                    ? "border-blue-400 bg-blue-50 text-blue-700"
+                    ? "border-blue-400 bg-blue-500/15 text-blue-600"
                     : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
               }`}>
               <button
@@ -346,7 +346,7 @@ export default function QuickAddDevice({
                   onMouseEnter={() => setSelectedIndex(i)}
                   className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-colors ${
                     i === selectedIndex
-                      ? "bg-blue-50 text-[var(--color-text-heading)]"
+                      ? "bg-blue-500/15 text-[var(--color-text-heading)]"
                       : "text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
                   }`}
                 >
@@ -372,7 +372,7 @@ export default function QuickAddDevice({
                 onMouseEnter={() => setSelectedIndex(i)}
                 className={`flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-colors ${
                   i === selectedIndex
-                    ? "bg-blue-50 text-[var(--color-text-heading)]"
+                    ? "bg-blue-500/15 text-[var(--color-text-heading)]"
                     : "text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
                 }`}
               >
