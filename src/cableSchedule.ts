@@ -80,6 +80,7 @@ const SIGNAL_PREFIX: Record<SignalType, string> = {
   slink: "SL",
   soundgrid: "SG",
   fibreace: "FA",
+  dsnake: "DS",
   dxlink: "DL",
   gps: "GPS",
   dars: "DA",

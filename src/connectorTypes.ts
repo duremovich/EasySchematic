@@ -52,6 +52,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   slink: "ethercon",
   soundgrid: "ethercon",
   fibreace: "opticalcon",
+  dsnake: "ethercon",
   dxlink: "ethercon",
   gps: "db9",
   dars: "bnc",

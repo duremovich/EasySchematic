@@ -99,6 +99,7 @@ export type SignalType =
   | "slink"
   | "soundgrid"
   | "fibreace"
+  | "dsnake"
   | "dxlink"
   | "gps"
   | "dars"
@@ -550,6 +551,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   slink: "var(--color-slink)",
   soundgrid: "var(--color-soundgrid)",
   fibreace: "var(--color-fibreace)",
+  dsnake: "var(--color-dsnake)",
   dxlink: "var(--color-dxlink)",
   gps: "var(--color-gps)",
   dars: "var(--color-dars)",
@@ -690,6 +692,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   slink: "SLink",
   soundgrid: "SoundGrid",
   fibreace: "fibreACE",
+  dsnake: "dSnake",
   dxlink: "DX Link",
   gps: "GPS",
   dars: "DARS",
@@ -704,7 +707,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
 export const SIGNAL_GROUPS: Record<string, SignalType[]> = {
   "Video": ["sdi", "hdmi", "displayport", "dvi", "composite", "s-video", "vga"],
   "Video over IP": ["ndi", "srt", "hdbaset", "st2110"],
-  "Audio": ["analog-audio", "aes", "dante", "aes67", "madi", "spdif", "adat", "ultranet", "aes50", "stageconnect", "ydif", "soundgrid", "gigaace", "dx5", "slink", "fibreace"],
+  "Audio": ["analog-audio", "aes", "dante", "aes67", "madi", "spdif", "adat", "ultranet", "aes50", "stageconnect", "ydif", "soundgrid", "gigaace", "dx5", "dsnake", "slink", "fibreace"],
   "Network": ["ethernet", "fiber"],
   "Control / Data": ["dmx", "artnet", "sacn", "rs422", "serial", "gpio", "ir", "midi", "tally", "usb", "thunderbolt", "dxlink"],
   "Sync / Clock": ["genlock", "wordclock", "timecode", "dars", "gps"],

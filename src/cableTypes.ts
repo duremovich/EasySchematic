@@ -55,6 +55,7 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   slink: "Ethercon",
   soundgrid: "Ethercon",
   fibreace: "Fiber - opticalCON",
+  dsnake: "Ethercon",
   dxlink: "Ethercon",
   gps: "BNC",
   dars: "BNC",
