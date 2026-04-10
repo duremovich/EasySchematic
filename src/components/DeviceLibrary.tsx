@@ -871,7 +871,7 @@ function OwnedGearTab({ query }: { query: string }) {
             <div className="text-xs font-semibold text-[var(--color-text-heading)]">{totals.used}</div>
           </div>
           <div className="rounded bg-white px-1 py-1">
-            <div className="text-[9px] uppercase tracking-wide text-[var(--color-text-muted)]">To Buy</div>
+            <div className="text-[9px] uppercase tracking-wide text-[var(--color-text-muted)]">Need</div>
             <div className={`text-xs font-semibold ${totals.missing > 0 ? "text-amber-600" : "text-emerald-600"}`}>{totals.missing}</div>
           </div>
         </div>

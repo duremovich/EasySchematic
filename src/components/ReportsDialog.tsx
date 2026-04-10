@@ -25,7 +25,7 @@ import { getNetworkReportTableData } from "../networkReport";
 import { computePowerReport, exportPowerReportCsv, getPowerReportTableData } from "../powerReport";
 import ReportPreviewDialog from "./ReportPreviewDialog";
 import IpInput from "./IpInput";
-import type { DeviceData, SchematicNode, ConnectionData } from "../types";
+import type { DeviceData, SchematicNode, ConnectionData, OwnedGearItem, DeviceTemplate } from "../types";
 import { useSpreadsheetSelection } from "../spreadsheet/useSpreadsheetSelection";
 import type { SpreadsheetColumn } from "../spreadsheet/types";
 import FillSeriesDialog from "../spreadsheet/FillSeriesDialog";
@@ -66,10 +66,11 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
     "px-3 py-1 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] hover:bg-[var(--color-surface-hover)] border border-[var(--color-border)] transition-colors cursor-pointer";
 
   const handleCsvExport = useCallback(() => {
+    const ownedGear = useSchematicStore.getState().ownedGear;
     if (tab === "network") {
       exportNetworkCsv(nodes, edges, schematicName);
     } else if (tab === "devices") {
-      exportDevicesCsv(nodes, schematicName);
+      exportDevicesCsv(nodes, ownedGear, schematicName);
     } else if (tab === "cableSchedule") {
       const cableNamingScheme = useSchematicStore.getState().cableNamingScheme;
       const rows = computeCableSchedule(nodes, edges, cableNamingScheme);
@@ -959,15 +960,44 @@ interface DeviceReportRow {
   portCount: number;
   unitCost: number;
   color: string;
+  ownedCount: number;
+  neededCount: number;
 }
 
-function computeDeviceReport(nodes: SchematicNode[]): DeviceReportRow[] {
+function getInventoryReportKey(item: Pick<DeviceTemplate, "label" | "manufacturer" | "modelNumber">): string {
+  return `${item.manufacturer ?? ""}|${item.modelNumber ?? ""}|${item.label}`;
+}
+
+function getDeviceInventoryCounts(nodes: SchematicNode[], ownedGear: OwnedGearItem[]) {
+  const usedCounts = new Map<string, number>();
+  for (const node of nodes) {
+    if (node.type !== "device") continue;
+    const data = node.data as DeviceData;
+    if (data.isCableAccessory) continue;
+    const key = `${data.manufacturer ?? ""}|${data.modelNumber ?? ""}|${data.model ?? data.label}`;
+    usedCounts.set(key, (usedCounts.get(key) ?? 0) + 1);
+  }
+
+  const ownedCounts = new Map<string, number>();
+  for (const item of ownedGear) {
+    const key = getInventoryReportKey(item.template);
+    ownedCounts.set(key, (ownedCounts.get(key) ?? 0) + item.quantity);
+  }
+
+  return { usedCounts, ownedCounts };
+}
+
+function computeDeviceReport(nodes: SchematicNode[], ownedGear: OwnedGearItem[]): DeviceReportRow[] {
+  const { usedCounts, ownedCounts } = getDeviceInventoryCounts(nodes, ownedGear);
   const rows: DeviceReportRow[] = [];
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
     if (data.isCableAccessory) continue;
     const room = getRoomLabel(nodes, node.parentId);
+    const inventoryKey = `${data.manufacturer ?? ""}|${data.modelNumber ?? ""}|${data.model ?? data.label}`;
+    const ownedCount = ownedCounts.get(inventoryKey) ?? 0;
+    const neededCount = Math.max((usedCounts.get(inventoryKey) ?? 0) - ownedCount, 0);
 
     rows.push({
       nodeId: node.id,
@@ -980,12 +1010,14 @@ function computeDeviceReport(nodes: SchematicNode[]): DeviceReportRow[] {
       portCount: data.ports.length,
       unitCost: data.unitCost ?? 0,
       color: data.color ?? "#6366f1",
+      ownedCount,
+      neededCount,
     });
   }
   return rows;
 }
 
-type DeviceSortKey = "label" | "deviceType" | "manufacturer" | "model" | "modelNumber" | "room" | "portCount" | "unitCost";
+type DeviceSortKey = "label" | "deviceType" | "manufacturer" | "model" | "modelNumber" | "room" | "portCount" | "unitCost" | "ownedCount" | "neededCount";
 
 const deviceColumns: SpreadsheetColumn<DeviceReportRow>[] = [
   { id: "label", header: "Device", getValue: (r) => r.label, editable: true, fillType: "deviceName" },
@@ -994,13 +1026,16 @@ const deviceColumns: SpreadsheetColumn<DeviceReportRow>[] = [
 
 function DeviceReportTab() {
   const nodes = useSchematicStore((s) => s.nodes);
+  const ownedGear = useSchematicStore((s) => s.ownedGear);
+  const showOwnedGearPane = useSchematicStore((s) => s.showOwnedGearPane);
   const patchDeviceData = useSchematicStore((s) => s.patchDeviceData);
 
   const [filter, setFilter] = useState("");
   const [sortKey, setSortKey] = useState<DeviceSortKey>("label");
   const [sortAsc, setSortAsc] = useState(true);
+  const showInventoryColumns = showOwnedGearPane || ownedGear.length > 0;
 
-  const rows = useMemo(() => computeDeviceReport(nodes), [nodes]);
+  const rows = useMemo(() => computeDeviceReport(nodes, ownedGear), [nodes, ownedGear]);
 
   const filtered = useMemo(() => {
     const q = filter.toLowerCase();
@@ -1019,7 +1054,7 @@ function DeviceReportTab() {
     const copy = [...filtered];
     copy.sort((a, b) => {
       let cmp: number;
-      if (sortKey === "portCount" || sortKey === "unitCost") {
+      if (sortKey === "portCount" || sortKey === "unitCost" || sortKey === "ownedCount" || sortKey === "neededCount") {
         cmp = (a[sortKey] as number) - (b[sortKey] as number);
       } else {
         cmp = (a[sortKey] as string).localeCompare(b[sortKey] as string);
@@ -1175,6 +1210,16 @@ function DeviceReportTab() {
               <th className={thClass} onClick={() => toggleSort("portCount")}>
                 Ports{sortArrow("portCount")}
               </th>
+              {showInventoryColumns && (
+                <th className={thClass} onClick={() => toggleSort("ownedCount")}>
+                  Owned{sortArrow("ownedCount")}
+                </th>
+              )}
+              {showInventoryColumns && (
+                <th className={thClass} onClick={() => toggleSort("neededCount")}>
+                  Need{sortArrow("neededCount")}
+                </th>
+              )}
               <th className={thClass} onClick={() => toggleSort("unitCost")}>
                 Unit Cost{sortArrow("unitCost")}
               </th>
@@ -1189,6 +1234,7 @@ function DeviceReportTab() {
                 rowIndex={i}
                 altClass={rowClass(i)}
                 spreadsheet={spreadsheet}
+                showInventoryColumns={showInventoryColumns}
                 onColorChange={handleColorChange}
               />
             ))}
@@ -1214,12 +1260,14 @@ const DeviceRow = memo(function DeviceRow({
   rowIndex,
   altClass,
   spreadsheet,
+  showInventoryColumns,
   onColorChange,
 }: {
   row: DeviceReportRow;
   rowIndex: number;
   altClass: string;
   spreadsheet: ReturnType<typeof useSpreadsheetSelection<DeviceReportRow>>;
+  showInventoryColumns: boolean;
   onColorChange: (nodeId: string, color: string) => void;
 }) {
   const cellProps = spreadsheet.getCellProps(rowIndex, "label");
@@ -1259,6 +1307,8 @@ const DeviceRow = memo(function DeviceRow({
       <td className={tdClass}>{row.modelNumber || "—"}</td>
       <td className={tdClass}>{row.room}</td>
       <td className={tdClass}>{row.portCount}</td>
+      {showInventoryColumns && <td className={tdClass}>{row.ownedCount}</td>}
+      {showInventoryColumns && <td className={tdClass}>{row.neededCount}</td>}
       {(() => {
         const costCellProps = spreadsheet.getCellProps(rowIndex, "unitCost");
         if (costCellProps.isEditing) {
@@ -2045,26 +2095,29 @@ function exportNetworkCsv(nodes: SchematicNode[], edges: import("../types").Conn
   downloadCsv(lines.join("\n"), `${schematicName} - Network Report.csv`);
 }
 
-function exportDevicesCsv(nodes: SchematicNode[], schematicName: string) {
-  const rows = computeDeviceReport(nodes);
+function exportDevicesCsv(nodes: SchematicNode[], ownedGear: OwnedGearItem[], schematicName: string) {
+  const showInventoryColumns = useSchematicStore.getState().showOwnedGearPane || ownedGear.length > 0;
+  const rows = computeDeviceReport(nodes, ownedGear);
   // Group identical devices (same model, manufacturer, type, room) for quantity column
-  const grouped = new Map<string, { row: DeviceReportRow; count: number }>();
+  const grouped = new Map<string, { row: DeviceReportRow; count: number; owned: number; need: number }>();
   for (const r of rows) {
     const key = `${r.model}|${r.manufacturer}|${r.deviceType}|${r.room}`;
     const existing = grouped.get(key);
     if (existing) {
       existing.count++;
     } else {
-      grouped.set(key, { row: r, count: 1 });
+      grouped.set(key, { row: r, count: 1, owned: r.ownedCount, need: r.neededCount });
     }
   }
-  const header = ["Qty", "Device", "Manufacturer", "Model #", "Type", "Room", "Ports", "Unit Cost", "Extended Cost"];
+  const header = showInventoryColumns
+    ? ["Qty", "Device", "Manufacturer", "Model #", "Type", "Room", "Ports", "Owned", "Need", "Unit Cost", "Extended Cost"]
+    : ["Qty", "Device", "Manufacturer", "Model #", "Type", "Room", "Ports", "Unit Cost", "Extended Cost"];
   const groupedValues = [...grouped.values()];
   const lines = [
     header.join(","),
-    ...groupedValues.map(({ row: r, count }) => {
+    ...groupedValues.map(({ row: r, count, owned, need }) => {
       const extCost = r.unitCost > 0 ? r.unitCost * count : 0;
-      return [
+      const cells = [
         count,
         csvEscape(r.model),
         csvEscape(r.manufacturer),
@@ -2074,14 +2127,21 @@ function exportDevicesCsv(nodes: SchematicNode[], schematicName: string) {
         r.portCount,
         r.unitCost > 0 ? r.unitCost.toFixed(2) : "",
         extCost > 0 ? extCost.toFixed(2) : "",
-      ].join(",");
+      ];
+      if (showInventoryColumns) cells.splice(7, 0, owned, need);
+      return cells.join(",");
     }),
   ];
   const totalCost = groupedValues.reduce(
     (sum, { row, count }) => sum + (row.unitCost > 0 ? row.unitCost * count : 0), 0,
   );
   if (totalCost > 0) {
-    lines.push(["", "", "", "", "", "", "", "TOTAL", totalCost.toFixed(2)].join(","));
+    lines.push(
+      (showInventoryColumns
+        ? ["", "", "", "", "", "", "", "", "", "TOTAL", totalCost.toFixed(2)]
+        : ["", "", "", "", "", "", "", "TOTAL", totalCost.toFixed(2)]
+      ).join(","),
+    );
   }
   downloadCsv(lines.join("\n"), `${schematicName} - Device List.csv`);
 }
