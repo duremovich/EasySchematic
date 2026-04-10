@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
-import { getBundledTemplates } from "../templateApi";
+import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate } from "../types";
 import { useSchematicStore, GRID_SIZE } from "../store";
@@ -50,9 +50,13 @@ export default function QuickAddDevice({
   const customTemplates = useSchematicStore((s) => s.customTemplates);
   const favoriteTemplates = useSchematicStore((s) => s.favoriteTemplates);
 
-  const templates = useMemo(() => getBundledTemplates(), []);
+  const [templates, setTemplates] = useState(getBundledTemplates);
   const favoriteSet = useMemo(() => new Set(favoriteTemplates), [favoriteTemplates]);
   const allTemplates = useMemo(() => [...templates, ...customTemplates], [templates, customTemplates]);
+
+  useEffect(() => {
+    fetchTemplates().then(setTemplates).catch(() => {});
+  }, []);
 
   // Cross-filtered dropdown options
   const categories = useMemo(() => {
