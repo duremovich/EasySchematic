@@ -120,6 +120,7 @@ export default function MenuBar() {
   } = useSchematicStore();
 
   const printView = useSchematicStore((s) => s.printView);
+  const showOwnedGearPane = useSchematicStore((s) => s.showOwnedGearPane);
   const undoSize = useSchematicStore((s) => s.undoSize);
   const redoSize = useSchematicStore((s) => s.redoSize);
 
@@ -539,6 +540,15 @@ export default function MenuBar() {
         shortcut: "F9",
         checked: printView,
         onClick: () => useSchematicStore.getState().setPrintView(!printView),
+      },
+      {
+        type: "item",
+        label: "Show Owned Gear",
+        checked: showOwnedGearPane,
+        onClick: () => {
+          const s = useSchematicStore.getState();
+          s.setShowOwnedGearPane(!s.showOwnedGearPane);
+        },
       },
       {
         type: "item",

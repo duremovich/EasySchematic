@@ -13,6 +13,7 @@ import type {
   SchematicNode,
   ConnectionEdge,
   DeviceTemplate,
+  OwnedGearItem,
   Port,
   SchematicFile,
   TitleBlock,
@@ -169,6 +170,9 @@ interface SchematicState {
   editingNodeId: string | null;
   creatingNodeId: string | null;
   customTemplates: DeviceTemplate[];
+  ownedGear: OwnedGearItem[];
+  showOwnedGearPane: boolean;
+  libraryActiveTab: "devices" | "owned";
 
   // React Flow handlers
   onNodesChange: OnNodesChange<SchematicNode>;
@@ -221,6 +225,12 @@ interface SchematicState {
   // Custom templates
   addCustomTemplate: (template: DeviceTemplate) => void;
   removeCustomTemplate: (deviceType: string) => void;
+  addOwnedGear: (template: DeviceTemplate, quantity?: number) => void;
+  setOwnedGear: (items: OwnedGearItem[]) => void;
+  updateOwnedGearQuantity: (templateKey: string, quantity: number) => void;
+  removeOwnedGear: (templateKey: string) => void;
+  setShowOwnedGearPane: (show: boolean) => void;
+  setLibraryActiveTab: (tab: "devices" | "owned") => void;
 
   // Custom template organization (#62)
   customTemplateGroups: CustomTemplateGroup[];
@@ -765,6 +775,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   editingNodeId: null,
   creatingNodeId: null,
   customTemplates: _initCustomTemplates,
+  ownedGear: [],
+  showOwnedGearPane: false,
+  libraryActiveTab: "devices",
   customTemplateGroups: _initCustomMeta.groups,
   customTemplateOrder: _initCustomMeta.order,
   customTemplateGroupAssignments: _initCustomMeta.groupAssignments,
@@ -1868,6 +1881,62 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     saveCustomTemplateMeta({ groups: get().customTemplateGroups, order, groupAssignments: get().customTemplateGroupAssignments });
   },
 
+  addOwnedGear: (template, quantity = 1) => {
+    const normalizedQuantity = Math.max(1, Math.floor(quantity));
+    const key = templateKey(template);
+    const ownedGear = [...get().ownedGear];
+    const existing = ownedGear.find((item) => templateKey(item.template) === key);
+    if (existing) {
+      existing.quantity += normalizedQuantity;
+    } else {
+      ownedGear.push({ template: structuredClone(template), quantity: normalizedQuantity });
+    }
+    set({ ownedGear, showOwnedGearPane: true });
+    get().saveToLocalStorage();
+  },
+
+  setOwnedGear: (items) => {
+    const ownedGear = items
+      .map((item) => ({
+        template: structuredClone(item.template),
+        quantity: Math.max(1, Math.floor(item.quantity)),
+      }))
+      .filter((item) => item.template && item.quantity > 0);
+    set({ ownedGear, showOwnedGearPane: true });
+    get().saveToLocalStorage();
+  },
+
+  updateOwnedGearQuantity: (key, quantity) => {
+    const nextQuantity = Math.max(0, Math.floor(quantity));
+    const ownedGear = nextQuantity === 0
+      ? get().ownedGear.filter((item) => templateKey(item.template) !== key)
+      : get().ownedGear.map((item) =>
+          templateKey(item.template) === key
+            ? { ...item, quantity: nextQuantity }
+            : item,
+        );
+    set({ ownedGear });
+    get().saveToLocalStorage();
+  },
+
+  removeOwnedGear: (key) => {
+    set({ ownedGear: get().ownedGear.filter((item) => templateKey(item.template) !== key) });
+    get().saveToLocalStorage();
+  },
+
+  setShowOwnedGearPane: (show) => {
+    set({
+      showOwnedGearPane: show,
+      libraryActiveTab: show ? get().libraryActiveTab : "devices",
+    });
+    get().saveToLocalStorage();
+  },
+
+  setLibraryActiveTab: (tab) => {
+    set({ libraryActiveTab: tab });
+    get().saveToLocalStorage();
+  },
+
   removeCustomTemplate: (key) => {
     const updated = get().customTemplates.filter((t) => templateKey(t) !== key);
     const order = get().customTemplateOrder.filter((k) => k !== key);
@@ -2407,6 +2476,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       name: state.schematicName,
       nodes: state.nodes,
       edges: state.edges.map(({ zIndex: _, selected: _s, ...rest }) => rest) as ConnectionEdge[],
+      ownedGear: state.ownedGear.length > 0 ? state.ownedGear : undefined,
       signalColors: state.signalColors,
       signalLineStyles: state.signalLineStyles,
       printPaperId: state.printPaperId,
@@ -2444,6 +2514,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       autoRoute: state.autoRoute === false ? false : undefined,
       edgeHitboxSize: state.edgeHitboxSize !== 10 ? state.edgeHitboxSize : undefined,
       categoryOrder: state.categoryOrder ?? undefined,
+      showOwnedGearPane: state.showOwnedGearPane || undefined,
+      libraryActiveTab: state.libraryActiveTab !== "devices" ? state.libraryActiveTab : undefined,
       colorKeyEnabled: state.colorKeyEnabled || undefined,
       colorKeyCorner: state.colorKeyCorner !== "bottom-left" ? state.colorKeyCorner : undefined,
       colorKeyColumns: state.colorKeyColumns !== 1 ? state.colorKeyColumns : undefined,
@@ -2486,6 +2558,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             edges: data.edges,
             isDemo: true,
             schematicName: data.name ?? "Demo Schematic",
+            ownedGear: data.ownedGear ?? [],
             signalColors: data.signalColors,
             signalLineStyles: data.signalLineStyles,
             printPaperId: data.printPaperId ?? "arch-d",
@@ -2524,6 +2597,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             customLabelMode: data.customLabelMode ?? "endpoint",
             hideAdapters: data.hideAdapters ?? false,
             categoryOrder: data.categoryOrder ?? null,
+            showOwnedGearPane: data.showOwnedGearPane ?? false,
+            libraryActiveTab: data.showOwnedGearPane ? (data.libraryActiveTab ?? "devices") : "devices",
             colorKeyEnabled: data.colorKeyEnabled ?? false,
             colorKeyCorner: data.colorKeyCorner ?? "bottom-left",
             colorKeyColumns: data.colorKeyColumns ?? 1,
@@ -2550,6 +2625,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         nodes: data.nodes,
         edges: data.edges,
         schematicName: data.name ?? "Untitled Schematic",
+        ownedGear: data.ownedGear ?? [],
         signalColors: data.signalColors,
         signalLineStyles: data.signalLineStyles,
         printPaperId: data.printPaperId ?? "arch-d",
@@ -2588,6 +2664,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         autoRoute: data.autoRoute ?? true,
         edgeHitboxSize: data.edgeHitboxSize ?? 10,
         categoryOrder: data.categoryOrder ?? null,
+        showOwnedGearPane: data.showOwnedGearPane ?? false,
+        libraryActiveTab: data.showOwnedGearPane ? (data.libraryActiveTab ?? "devices") : "devices",
         colorKeyEnabled: data.colorKeyEnabled ?? false,
         colorKeyCorner: data.colorKeyCorner ?? "bottom-left",
         colorKeyColumns: data.colorKeyColumns ?? 1,
@@ -2614,6 +2692,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       nodes: state.nodes,
       edges: state.edges.map(({ zIndex: _, selected: _s, ...rest }) => rest) as ConnectionEdge[],
       customTemplates: state.customTemplates.length > 0 ? state.customTemplates : undefined,
+      ownedGear: state.ownedGear.length > 0 ? state.ownedGear : undefined,
       signalColors: state.signalColors,
       signalLineStyles: state.signalLineStyles,
       printPaperId: state.printPaperId,
@@ -2651,6 +2730,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       autoRoute: state.autoRoute === false ? false : undefined,
       edgeHitboxSize: state.edgeHitboxSize !== 10 ? state.edgeHitboxSize : undefined,
       categoryOrder: state.categoryOrder ?? undefined,
+      showOwnedGearPane: state.showOwnedGearPane || undefined,
+      libraryActiveTab: state.libraryActiveTab !== "devices" ? state.libraryActiveTab : undefined,
       colorKeyEnabled: state.colorKeyEnabled || undefined,
       colorKeyCorner: state.colorKeyCorner !== "bottom-left" ? state.colorKeyCorner : undefined,
       colorKeyColumns: state.colorKeyColumns !== 1 ? state.colorKeyColumns : undefined,
@@ -2695,6 +2776,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       edges,
       schematicName: data.name ?? "Imported Schematic",
       isDemo: false,
+      ownedGear: data.ownedGear ?? [],
       signalColors: data.signalColors,
       signalLineStyles: data.signalLineStyles,
       printPaperId: data.printPaperId ?? "arch-d",
@@ -2733,6 +2815,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       autoRoute: data.autoRoute ?? true,
       edgeHitboxSize: data.edgeHitboxSize ?? 10,
       categoryOrder: data.categoryOrder ?? null,
+      showOwnedGearPane: data.showOwnedGearPane ?? false,
+      libraryActiveTab: data.showOwnedGearPane ? (data.libraryActiveTab ?? "devices") : "devices",
       colorKeyEnabled: data.colorKeyEnabled ?? false,
       colorKeyCorner: data.colorKeyCorner ?? "bottom-left",
       colorKeyColumns: data.colorKeyColumns ?? 1,
@@ -2786,6 +2870,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         edges: [],
         schematicName: "Untitled Schematic",
         isDemo: false,
+        ownedGear: [],
         cloudSchematicId: null,
         cloudSavedAt: null,
         fileHandle: null,
@@ -2816,6 +2901,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         customLabelMode: "endpoint" as "endpoint" | "midpoint",
         autoRoute: true,
         edgeHitboxSize: 10,
+        showOwnedGearPane: false,
+        libraryActiveTab: "devices" as "devices" | "owned",
         undoSize: 0,
         redoSize: 0,
       });
