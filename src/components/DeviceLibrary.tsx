@@ -80,7 +80,7 @@ function TemplateItem({
       onDragStart={(e) => onDragStart(e, template)}
     >
       {(onToggleFavorite || onAddToOwned) && (
-        <div className="shrink-0 flex flex-col items-center gap-0.5 self-start min-w-[1.25rem]">
+        <div className="shrink-0 flex flex-col items-center gap-1 self-start min-w-[1.25rem]">
           {onToggleFavorite && (
             <button
               onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
@@ -317,7 +317,7 @@ function DraggableTemplateItem({
         {/* Drag handle */}
         <span className="text-[10px] text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 cursor-grab select-none shrink-0 leading-none" title="Drag to reorder">⠿</span>
         {(onToggleFavorite || onAddToOwned) && (
-          <div className="shrink-0 flex flex-col items-center gap-0.5 self-start min-w-[1.25rem]">
+          <div className="shrink-0 flex flex-col items-center gap-1 self-start min-w-[1.25rem]">
             {onToggleFavorite && (
               <button
                 onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
@@ -943,10 +943,10 @@ function OwnedGearTab({ query }: { query: string }) {
                   &times;
                 </button>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 min-h-6">
                 <button
                   onClick={() => updateOwnedGearQuantity(key, item.quantity - 1)}
-                  className="w-6 h-6 rounded border border-[var(--color-border)] bg-white text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors"
+                  className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--color-border)] bg-white text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors"
                   title="Decrease quantity"
                 >
                   -
@@ -956,11 +956,11 @@ function OwnedGearTab({ query }: { query: string }) {
                   min={0}
                   value={item.quantity}
                   onChange={(e) => updateOwnedGearQuantity(key, Number.parseInt(e.target.value || "0", 10))}
-                  className="w-14 rounded border border-[var(--color-border)] bg-white px-1 py-1 text-xs text-center text-[var(--color-text)] outline-none focus:border-blue-500"
+                  className="w-14 h-6 rounded border border-[var(--color-border)] bg-white px-1 py-1 text-xs text-center text-[var(--color-text)] outline-none focus:border-blue-500 appearance-none [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
                 />
                 <button
                   onClick={() => updateOwnedGearQuantity(key, item.quantity + 1)}
-                  className="w-6 h-6 rounded border border-[var(--color-border)] bg-white text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors"
+                  className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--color-border)] bg-white text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors"
                   title="Increase quantity"
                 >
                   +
