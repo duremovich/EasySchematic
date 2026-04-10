@@ -56,6 +56,7 @@ function TemplateItem({
   onDelete,
   hasPreset,
   isFavorite,
+  ownedQuantity,
   onToggleFavorite,
   onAddToOwned,
 }: {
@@ -64,6 +65,7 @@ function TemplateItem({
   onDelete?: () => void;
   hasPreset?: boolean;
   isFavorite?: boolean;
+  ownedQuantity?: number;
   onToggleFavorite?: () => void;
   onAddToOwned?: () => void;
 }) {
@@ -77,27 +79,35 @@ function TemplateItem({
       draggable
       onDragStart={(e) => onDragStart(e, template)}
     >
-      {onToggleFavorite && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          className={`shrink-0 text-xs cursor-pointer transition-colors ${
-            isFavorite
-              ? "text-amber-400"
-              : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
-          }`}
-          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          {isFavorite ? "★" : "☆"}
-        </button>
-      )}
-      {onAddToOwned && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onAddToOwned(); }}
-          className="shrink-0 text-[9px] uppercase tracking-wide text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 hover:text-blue-600 transition-all cursor-pointer px-1"
-          title="Add to owned gear"
-        >
-          Inv
-        </button>
+      {(onToggleFavorite || onAddToOwned) && (
+        <div className="shrink-0 flex flex-col items-center gap-0.5 self-start min-w-[1.25rem]">
+          {onToggleFavorite && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+              className={`leading-none text-xs cursor-pointer transition-colors ${
+                isFavorite
+                  ? "text-amber-400"
+                  : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
+              }`}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              {isFavorite ? "★" : "☆"}
+            </button>
+          )}
+          {onAddToOwned && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAddToOwned(); }}
+              className={`min-w-[1.1rem] rounded px-1 py-0 leading-none text-[9px] font-medium transition-all cursor-pointer ${
+                (ownedQuantity ?? 0) > 0
+                  ? "bg-blue-100 text-blue-700 opacity-100"
+                  : "uppercase tracking-wide text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 hover:text-blue-600"
+              }`}
+              title={(ownedQuantity ?? 0) > 0 ? `Owned: ${ownedQuantity}` : "Add to owned gear"}
+            >
+              {(ownedQuantity ?? 0) > 0 ? ownedQuantity : "Inv"}
+            </button>
+          )}
+        </div>
       )}
       <div className="flex flex-col gap-0.5 flex-1 min-w-0">
         <span className="text-xs text-[var(--color-text-heading)] font-medium truncate flex items-center gap-1">
@@ -144,6 +154,7 @@ function CategorySection({
   onDelete,
   presetIds,
   favoriteSet,
+  ownedQuantityMap,
   onToggleFavorite,
   onAddToOwned,
   categoryIndex,
@@ -156,6 +167,7 @@ function CategorySection({
   onDelete?: (deviceType: string) => void;
   presetIds?: Set<string>;
   favoriteSet?: Set<string>;
+  ownedQuantityMap?: Map<string, number>;
   onToggleFavorite?: (key: string) => void;
   onAddToOwned?: (template: DeviceTemplate) => void;
   categoryIndex?: number;
@@ -227,6 +239,7 @@ function CategorySection({
                 onDelete={onDelete ? () => onDelete(template.deviceType) : undefined}
                 hasPreset={!!(template.id && presetIds?.has(template.id))}
                 isFavorite={favoriteSet?.has(key)}
+                ownedQuantity={ownedQuantityMap?.get(key)}
                 onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(key) : undefined}
                 onAddToOwned={onAddToOwned ? () => onAddToOwned(template) : undefined}
               />
@@ -245,6 +258,7 @@ function DraggableTemplateItem({
   query,
   onDelete,
   isFavorite,
+  ownedQuantity,
   onToggleFavorite,
   onAddToOwned,
   index,
@@ -254,6 +268,7 @@ function DraggableTemplateItem({
   query: string;
   onDelete: () => void;
   isFavorite?: boolean;
+  ownedQuantity?: number;
   onToggleFavorite?: () => void;
   onAddToOwned?: () => void;
   index: number;
@@ -301,27 +316,35 @@ function DraggableTemplateItem({
       >
         {/* Drag handle */}
         <span className="text-[10px] text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 cursor-grab select-none shrink-0 leading-none" title="Drag to reorder">⠿</span>
-        {onToggleFavorite && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-            className={`shrink-0 text-xs cursor-pointer transition-colors ${
-              isFavorite
-                ? "text-amber-400"
-                : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
-            }`}
-            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          >
-            {isFavorite ? "★" : "☆"}
-          </button>
-        )}
-        {onAddToOwned && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddToOwned(); }}
-            className="shrink-0 text-[9px] uppercase tracking-wide text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 hover:text-blue-600 transition-all cursor-pointer px-1"
-            title="Add to owned gear"
-          >
-            Inv
-          </button>
+        {(onToggleFavorite || onAddToOwned) && (
+          <div className="shrink-0 flex flex-col items-center gap-0.5 self-start min-w-[1.25rem]">
+            {onToggleFavorite && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+                className={`leading-none text-xs cursor-pointer transition-colors ${
+                  isFavorite
+                    ? "text-amber-400"
+                    : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
+                }`}
+                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              >
+                {isFavorite ? "★" : "☆"}
+              </button>
+            )}
+            {onAddToOwned && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onAddToOwned(); }}
+                className={`min-w-[1.1rem] rounded px-1 py-0 leading-none text-[9px] font-medium transition-all cursor-pointer ${
+                  (ownedQuantity ?? 0) > 0
+                    ? "bg-blue-100 text-blue-700 opacity-100"
+                    : "uppercase tracking-wide text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 hover:text-blue-600"
+                }`}
+                title={(ownedQuantity ?? 0) > 0 ? `Owned: ${ownedQuantity}` : "Add to owned gear"}
+              >
+                {(ownedQuantity ?? 0) > 0 ? ownedQuantity : "Inv"}
+              </button>
+            )}
+          </div>
         )}
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
           <span className="text-xs text-[var(--color-text-heading)] font-medium truncate">
@@ -526,11 +549,13 @@ function CustomTemplatesSection({
   customTemplates,
   query,
   favoriteSet,
+  ownedQuantityMap,
   onAddToOwned,
 }: {
   customTemplates: DeviceTemplate[];
   query: string;
   favoriteSet: Set<string>;
+  ownedQuantityMap?: Map<string, number>;
   onAddToOwned?: (template: DeviceTemplate) => void;
 }) {
   const groups = useSchematicStore((s) => s.customTemplateGroups);
@@ -676,6 +701,7 @@ function CustomTemplatesSection({
                         query={query}
                         onDelete={() => removeCustomTemplate(t.id ?? t.deviceType)}
                         isFavorite={favoriteSet.has(key)}
+                        ownedQuantity={ownedQuantityMap?.get(key)}
                         onToggleFavorite={() => toggleFavoriteTemplate(key)}
                         onAddToOwned={onAddToOwned ? () => onAddToOwned(t) : undefined}
                         index={i}
@@ -707,6 +733,7 @@ function CustomTemplatesSection({
                             query={query}
                             onDelete={() => removeCustomTemplate(t.id ?? t.deviceType)}
                             isFavorite={favoriteSet.has(key)}
+                            ownedQuantity={ownedQuantityMap?.get(key)}
                             onToggleFavorite={() => toggleFavoriteTemplate(key)}
                             onAddToOwned={onAddToOwned ? () => onAddToOwned(t) : undefined}
                             index={i}
@@ -744,6 +771,7 @@ function CustomTemplatesSection({
                           query={query}
                           onDelete={() => removeCustomTemplate(t.id ?? t.deviceType)}
                           isFavorite={favoriteSet.has(key)}
+                          ownedQuantity={ownedQuantityMap?.get(key)}
                           onToggleFavorite={() => toggleFavoriteTemplate(key)}
                           onAddToOwned={onAddToOwned ? () => onAddToOwned(t) : undefined}
                           index={i}
@@ -981,6 +1009,10 @@ export default function DeviceLibrary() {
 
   const presetIds = useMemo(() => new Set(Object.keys(templatePresets)), [templatePresets]);
   const favoriteSet = useMemo(() => new Set(favoriteTemplates), [favoriteTemplates]);
+  const ownedQuantityMap = useMemo(
+    () => new Map(ownedGear.map((item) => [getTemplateKey(item.template), item.quantity])),
+    [ownedGear],
+  );
 
   // Non-expansion templates for filter option derivation
   const libraryTemplates = useMemo(
@@ -1430,6 +1462,7 @@ export default function DeviceLibrary() {
                       onDelete={customTemplates.includes(template) ? () => removeCustomTemplate(template.id ?? template.deviceType) : undefined}
                       hasPreset={!!(template.id && presetIds.has(template.id))}
                       isFavorite={favoriteSet.has(key)}
+                      ownedQuantity={ownedQuantityMap.get(key)}
                       onToggleFavorite={() => toggleFavoriteTemplate(key)}
                       onAddToOwned={() => handleAddToOwned(template)}
                     />
@@ -1452,6 +1485,7 @@ export default function DeviceLibrary() {
                 defaultOpen={true}
                 presetIds={presetIds}
                 favoriteSet={favoriteSet}
+                ownedQuantityMap={ownedQuantityMap}
                 onToggleFavorite={toggleFavoriteTemplate}
                 onAddToOwned={handleAddToOwned}
               />
@@ -1461,6 +1495,7 @@ export default function DeviceLibrary() {
               customTemplates={customTemplates}
               query={query}
               favoriteSet={favoriteSet}
+              ownedQuantityMap={ownedQuantityMap}
               onAddToOwned={handleAddToOwned}
             />
 
@@ -1473,6 +1508,7 @@ export default function DeviceLibrary() {
                 defaultOpen={false}
                 presetIds={presetIds}
                 favoriteSet={favoriteSet}
+                ownedQuantityMap={ownedQuantityMap}
                 onToggleFavorite={toggleFavoriteTemplate}
                 onAddToOwned={handleAddToOwned}
                 categoryIndex={i}
