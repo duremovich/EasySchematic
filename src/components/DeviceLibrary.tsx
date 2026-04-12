@@ -1,7 +1,7 @@
-import { type DragEvent, useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { type DragEvent, type ChangeEvent, useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { SIGNAL_LABELS } from "../types";
-import type { DeviceTemplate, CustomTemplateGroup } from "../types";
+import type { DeviceTemplate, CustomTemplateGroup, OwnedGearFile, OwnedGearItem, SchematicNode, DeviceData } from "../types";
 import { useSchematicStore, CATEGORY_ORDER_DEFAULT } from "../store";
 import { scoreTemplate } from "../templateSearch";
 import DeviceCreatorPicker from "./DeviceCreatorPicker";
@@ -20,6 +20,19 @@ function onDragStart(event: DragEvent, template: DeviceTemplate) {
 function getUniqueSignalTypes(template: DeviceTemplate): string[] {
   const types = new Set(template.ports.map((p) => p.signalType));
   return [...types];
+}
+
+function getTemplateKey(template: DeviceTemplate): string {
+  return template.id ?? template.deviceType;
+}
+
+function getInventoryMatchKey(template: Pick<DeviceTemplate, "label" | "manufacturer" | "modelNumber">): string {
+  return `${template.manufacturer ?? ""}|${template.modelNumber ?? ""}|${template.label}`;
+}
+
+function matchesOwnedGearQuery(item: OwnedGearItem, query: string): boolean {
+  if (!query) return true;
+  return scoreTemplate(item.template, query) > 0;
 }
 
 function HighlightedText({ text, query }: { text: string; query: string }) {
@@ -43,14 +56,18 @@ function TemplateItem({
   onDelete,
   hasPreset,
   isFavorite,
+  ownedQuantity,
   onToggleFavorite,
+  onAddToOwned,
 }: {
   template: DeviceTemplate;
   query: string;
   onDelete?: () => void;
   hasPreset?: boolean;
   isFavorite?: boolean;
+  ownedQuantity?: number;
   onToggleFavorite?: () => void;
+  onAddToOwned?: () => void;
 }) {
   const signalText = getUniqueSignalTypes(template)
     .map((t) => SIGNAL_LABELS[t as keyof typeof SIGNAL_LABELS])
@@ -62,18 +79,35 @@ function TemplateItem({
       draggable
       onDragStart={(e) => onDragStart(e, template)}
     >
-      {onToggleFavorite && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-          className={`shrink-0 text-xs cursor-pointer transition-colors ${
-            isFavorite
-              ? "text-amber-400"
-              : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
-          }`}
-          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          {isFavorite ? "★" : "☆"}
-        </button>
+      {(onToggleFavorite || onAddToOwned) && (
+        <div className="shrink-0 flex flex-col items-center gap-1 self-start min-w-[1.25rem]">
+          {onToggleFavorite && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+              className={`leading-none text-xs cursor-pointer transition-colors ${
+                isFavorite
+                  ? "text-amber-400"
+                  : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
+              }`}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              {isFavorite ? "★" : "☆"}
+            </button>
+          )}
+          {onAddToOwned && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAddToOwned(); }}
+              className={`min-w-[1.1rem] rounded px-1 py-0 leading-none text-[9px] font-medium transition-all cursor-pointer ${
+                (ownedQuantity ?? 0) > 0
+                  ? "bg-blue-100 text-blue-700 opacity-100"
+                  : "uppercase tracking-wide text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 hover:text-blue-600"
+              }`}
+              title={(ownedQuantity ?? 0) > 0 ? `Owned: ${ownedQuantity}` : "Add to owned gear"}
+            >
+              {(ownedQuantity ?? 0) > 0 ? ownedQuantity : "Inv"}
+            </button>
+          )}
+        </div>
       )}
       <div className="flex flex-col gap-0.5 flex-1 min-w-0">
         <span className="text-xs text-[var(--color-text-heading)] font-medium truncate flex items-center gap-1">
@@ -120,7 +154,9 @@ function CategorySection({
   onDelete,
   presetIds,
   favoriteSet,
+  ownedQuantityMap,
   onToggleFavorite,
+  onAddToOwned,
   categoryIndex,
   onCategoryReorder,
 }: {
@@ -131,7 +167,9 @@ function CategorySection({
   onDelete?: (deviceType: string) => void;
   presetIds?: Set<string>;
   favoriteSet?: Set<string>;
+  ownedQuantityMap?: Map<string, number>;
   onToggleFavorite?: (key: string) => void;
+  onAddToOwned?: (template: DeviceTemplate) => void;
   categoryIndex?: number;
   onCategoryReorder?: (category: string, targetIndex: number) => void;
 }) {
@@ -201,7 +239,9 @@ function CategorySection({
                 onDelete={onDelete ? () => onDelete(template.deviceType) : undefined}
                 hasPreset={!!(template.id && presetIds?.has(template.id))}
                 isFavorite={favoriteSet?.has(key)}
+                ownedQuantity={ownedQuantityMap?.get(key)}
                 onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(key) : undefined}
+                onAddToOwned={onAddToOwned ? () => onAddToOwned(template) : undefined}
               />
             );
           })}
@@ -218,7 +258,9 @@ function DraggableTemplateItem({
   query,
   onDelete,
   isFavorite,
+  ownedQuantity,
   onToggleFavorite,
+  onAddToOwned,
   index,
   onReorder,
 }: {
@@ -226,7 +268,9 @@ function DraggableTemplateItem({
   query: string;
   onDelete: () => void;
   isFavorite?: boolean;
+  ownedQuantity?: number;
   onToggleFavorite?: () => void;
+  onAddToOwned?: () => void;
   index: number;
   onReorder: (deviceType: string, targetIndex: number) => void;
 }) {
@@ -272,18 +316,35 @@ function DraggableTemplateItem({
       >
         {/* Drag handle */}
         <span className="text-[10px] text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 cursor-grab select-none shrink-0 leading-none" title="Drag to reorder">⠿</span>
-        {onToggleFavorite && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
-            className={`shrink-0 text-xs cursor-pointer transition-colors ${
-              isFavorite
-                ? "text-amber-400"
-                : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
-            }`}
-            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          >
-            {isFavorite ? "★" : "☆"}
-          </button>
+        {(onToggleFavorite || onAddToOwned) && (
+          <div className="shrink-0 flex flex-col items-center gap-1 self-start min-w-[1.25rem]">
+            {onToggleFavorite && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onToggleFavorite(); }}
+                className={`leading-none text-xs cursor-pointer transition-colors ${
+                  isFavorite
+                    ? "text-amber-400"
+                    : "text-[var(--color-text-muted)]/30 opacity-0 group-hover:opacity-100"
+                }`}
+                title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              >
+                {isFavorite ? "★" : "☆"}
+              </button>
+            )}
+            {onAddToOwned && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onAddToOwned(); }}
+                className={`min-w-[1.1rem] rounded px-1 py-0 leading-none text-[9px] font-medium transition-all cursor-pointer ${
+                  (ownedQuantity ?? 0) > 0
+                    ? "bg-blue-100 text-blue-700 opacity-100"
+                    : "uppercase tracking-wide text-[var(--color-text-muted)]/40 opacity-0 group-hover:opacity-100 hover:text-blue-600"
+                }`}
+                title={(ownedQuantity ?? 0) > 0 ? `Owned: ${ownedQuantity}` : "Add to owned gear"}
+              >
+                {(ownedQuantity ?? 0) > 0 ? ownedQuantity : "Inv"}
+              </button>
+            )}
+          </div>
         )}
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
           <span className="text-xs text-[var(--color-text-heading)] font-medium truncate">
@@ -488,10 +549,14 @@ function CustomTemplatesSection({
   customTemplates,
   query,
   favoriteSet,
+  ownedQuantityMap,
+  onAddToOwned,
 }: {
   customTemplates: DeviceTemplate[];
   query: string;
   favoriteSet: Set<string>;
+  ownedQuantityMap?: Map<string, number>;
+  onAddToOwned?: (template: DeviceTemplate) => void;
 }) {
   const groups = useSchematicStore((s) => s.customTemplateGroups);
   const order = useSchematicStore((s) => s.customTemplateOrder);
@@ -636,7 +701,9 @@ function CustomTemplatesSection({
                         query={query}
                         onDelete={() => removeCustomTemplate(t.id ?? t.deviceType)}
                         isFavorite={favoriteSet.has(key)}
+                        ownedQuantity={ownedQuantityMap?.get(key)}
                         onToggleFavorite={() => toggleFavoriteTemplate(key)}
+                        onAddToOwned={onAddToOwned ? () => onAddToOwned(t) : undefined}
                         index={i}
                         onReorder={(dt, targetIdx) => handleReorder(dt, targetIdx, sectionIdx)}
                       />
@@ -666,7 +733,9 @@ function CustomTemplatesSection({
                             query={query}
                             onDelete={() => removeCustomTemplate(t.id ?? t.deviceType)}
                             isFavorite={favoriteSet.has(key)}
+                            ownedQuantity={ownedQuantityMap?.get(key)}
                             onToggleFavorite={() => toggleFavoriteTemplate(key)}
+                            onAddToOwned={onAddToOwned ? () => onAddToOwned(t) : undefined}
                             index={i}
                             onReorder={(dt, targetIdx) => handleReorder(dt, targetIdx, sectionIdx)}
                           />
@@ -702,7 +771,9 @@ function CustomTemplatesSection({
                           query={query}
                           onDelete={() => removeCustomTemplate(t.id ?? t.deviceType)}
                           isFavorite={favoriteSet.has(key)}
+                          ownedQuantity={ownedQuantityMap?.get(key)}
                           onToggleFavorite={() => toggleFavoriteTemplate(key)}
+                          onAddToOwned={onAddToOwned ? () => onAddToOwned(t) : undefined}
                           index={i}
                           onReorder={(dt, targetIdx) => handleReorder(dt, targetIdx, sectionIdx)}
                         />
@@ -719,14 +790,214 @@ function CustomTemplatesSection({
   );
 }
 
+function getUsedInventoryCounts(nodes: SchematicNode[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const node of nodes) {
+    if (node.type !== "device") continue;
+    const data = node.data as DeviceData;
+    const key = `${data.manufacturer ?? ""}|${data.modelNumber ?? ""}|${data.model ?? data.baseLabel ?? data.label}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function OwnedGearTab({ query }: { query: string }) {
+  const ownedGear = useSchematicStore((s) => s.ownedGear);
+  const setOwnedGear = useSchematicStore((s) => s.setOwnedGear);
+  const updateOwnedGearQuantity = useSchematicStore((s) => s.updateOwnedGearQuantity);
+  const removeOwnedGear = useSchematicStore((s) => s.removeOwnedGear);
+  const nodes = useSchematicStore((s) => s.nodes);
+  const schematicName = useSchematicStore((s) => s.schematicName);
+  const addToast = useSchematicStore((s) => s.addToast);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const usedCounts = useMemo(() => getUsedInventoryCounts(nodes), [nodes]);
+
+  const filteredOwnedGear = useMemo(() => {
+    const items = ownedGear.filter((item) => matchesOwnedGearQuery(item, query));
+    return [...items].sort((a, b) => {
+      const aMissing = Math.max((usedCounts.get(getInventoryMatchKey(a.template)) ?? 0) - a.quantity, 0);
+      const bMissing = Math.max((usedCounts.get(getInventoryMatchKey(b.template)) ?? 0) - b.quantity, 0);
+      return bMissing - aMissing || a.template.label.localeCompare(b.template.label);
+    });
+  }, [ownedGear, query, usedCounts]);
+
+  const totals = useMemo(() => {
+    return ownedGear.reduce((acc, item) => {
+      const used = usedCounts.get(getInventoryMatchKey(item.template)) ?? 0;
+      acc.owned += item.quantity;
+      acc.used += used;
+      acc.missing += Math.max(used - item.quantity, 0);
+      return acc;
+    }, { owned: 0, used: 0, missing: 0 });
+  }, [ownedGear, usedCounts]);
+
+  const exportOwnedGear = useCallback(() => {
+    const payload: OwnedGearFile = { version: 1, ownedGear };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json; charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${schematicName.replace(/[^a-zA-Z0-9-_ ]/g, "") || "owned-gear"}.owned-gear.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [ownedGear, schematicName]);
+
+  const importOwnedGear = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text()) as OwnedGearFile | OwnedGearItem[];
+      const incoming = Array.isArray(parsed) ? parsed : parsed.ownedGear;
+      if (!Array.isArray(incoming)) throw new Error("Invalid owned gear file");
+      const normalized = incoming
+        .filter((item): item is OwnedGearItem => !!item?.template && typeof item.template.label === "string")
+        .map((item) => ({
+          template: item.template,
+          quantity: Number.isFinite(item.quantity) ? item.quantity : 1,
+        }));
+      setOwnedGear(normalized);
+      addToast(`Loaded ${normalized.length} owned gear item${normalized.length === 1 ? "" : "s"}`, "success");
+    } catch {
+      addToast("Couldn't load owned gear JSON", "error");
+    }
+  }, [setOwnedGear, addToast]);
+
+  return (
+    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        className="hidden"
+        onChange={importOwnedGear}
+      />
+      <div className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-2 space-y-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportOwnedGear}
+            disabled={ownedGear.length === 0}
+            className="flex-1 rounded border border-[var(--color-border)] bg-white px-2 py-1 text-[10px] text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+          >
+            Export JSON
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-1 rounded border border-[var(--color-border)] bg-white px-2 py-1 text-[10px] text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors"
+          >
+            Import JSON
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-1 text-center">
+          <div className="rounded bg-white px-1 py-1">
+            <div className="text-[9px] uppercase tracking-wide text-[var(--color-text-muted)]">Owned</div>
+            <div className="text-xs font-semibold text-[var(--color-text-heading)]">{totals.owned}</div>
+          </div>
+          <div className="rounded bg-white px-1 py-1">
+            <div className="text-[9px] uppercase tracking-wide text-[var(--color-text-muted)]">Used</div>
+            <div className="text-xs font-semibold text-[var(--color-text-heading)]">{totals.used}</div>
+          </div>
+          <div className="rounded bg-white px-1 py-1">
+            <div className="text-[9px] uppercase tracking-wide text-[var(--color-text-muted)]">Need</div>
+            <div className={`text-xs font-semibold ${totals.missing > 0 ? "text-amber-600" : "text-emerald-600"}`}>{totals.missing}</div>
+          </div>
+        </div>
+      </div>
+
+      {filteredOwnedGear.length === 0 ? (
+        <div className="text-xs text-[var(--color-text-muted)] text-center py-6 px-3">
+          {ownedGear.length === 0
+            ? "No owned gear yet. Add items from the Devices tab, or import a JSON inventory."
+            : `No owned gear matches “${query}”.`}
+        </div>
+      ) : (
+        filteredOwnedGear.map((item) => {
+          const key = getTemplateKey(item.template);
+          const used = usedCounts.get(getInventoryMatchKey(item.template)) ?? 0;
+          const missing = Math.max(used - item.quantity, 0);
+          const spare = Math.max(item.quantity - used, 0);
+          return (
+            <div
+              key={key}
+              className="rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-2 space-y-1.5 cursor-grab"
+              draggable
+              onDragStart={(e) => onDragStart(e, item.template)}
+            >
+              <div className="flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-medium text-[var(--color-text-heading)] truncate">
+                    <HighlightedText text={item.template.label} query={query} />
+                  </div>
+                  {item.template.manufacturer && (
+                    <div className="text-[10px] text-[var(--color-text-muted)] truncate">
+                      <HighlightedText text={item.template.manufacturer} query={query} />
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => removeOwnedGear(key)}
+                  className="text-red-400/70 hover:text-red-500 text-sm leading-none cursor-pointer px-1"
+                  title="Remove from owned gear"
+                >
+                  &times;
+                </button>
+              </div>
+              <div className="flex items-center gap-1.5 min-h-6">
+                <button
+                  onClick={() => updateOwnedGearQuantity(key, item.quantity - 1)}
+                  className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--color-border)] bg-white text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors"
+                  title="Decrease quantity"
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min={0}
+                  value={item.quantity}
+                  onChange={(e) => updateOwnedGearQuantity(key, Number.parseInt(e.target.value || "0", 10))}
+                  className="w-14 h-6 rounded border border-[var(--color-border)] bg-white px-1 py-1 text-xs text-center text-[var(--color-text)] outline-none focus:border-blue-500 appearance-none [-moz-appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-inner-spin-button]:m-0"
+                />
+                <button
+                  onClick={() => updateOwnedGearQuantity(key, item.quantity + 1)}
+                  className="w-6 h-6 inline-flex items-center justify-center rounded border border-[var(--color-border)] bg-white text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] cursor-pointer transition-colors"
+                  title="Increase quantity"
+                >
+                  +
+                </button>
+                <div className="ml-auto text-[10px] text-[var(--color-text-muted)]">
+                  Used {used}
+                </div>
+              </div>
+              <div className="flex items-center gap-1 text-[10px]">
+                <span className="rounded bg-white px-1.5 py-0.5 text-[var(--color-text-muted)]">Owned {item.quantity}</span>
+                {missing > 0 ? (
+                  <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-700">Buy {missing}</span>
+                ) : (
+                  <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-emerald-700">Spare {spare}</span>
+                )}
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
 export default function DeviceLibrary() {
   const customTemplates = useSchematicStore((s) => s.customTemplates);
+  const ownedGear = useSchematicStore((s) => s.ownedGear);
   const removeCustomTemplate = useSchematicStore((s) => s.removeCustomTemplate);
+  const addOwnedGear = useSchematicStore((s) => s.addOwnedGear);
   const templatePresets = useSchematicStore((s) => s.templatePresets);
   const favoriteTemplates = useSchematicStore((s) => s.favoriteTemplates);
   const toggleFavoriteTemplate = useSchematicStore((s) => s.toggleFavoriteTemplate);
   const categoryOrder = useSchematicStore((s) => s.categoryOrder);
   const reorderCategory = useSchematicStore((s) => s.reorderCategory);
+  const showOwnedGearPane = useSchematicStore((s) => s.showOwnedGearPane);
+  const libraryActiveTab = useSchematicStore((s) => s.libraryActiveTab);
+  const setLibraryActiveTab = useSchematicStore((s) => s.setLibraryActiveTab);
   const [search, setSearch] = useState("");
   const [showDeviceCreator, setShowDeviceCreator] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -738,6 +1009,10 @@ export default function DeviceLibrary() {
 
   const presetIds = useMemo(() => new Set(Object.keys(templatePresets)), [templatePresets]);
   const favoriteSet = useMemo(() => new Set(favoriteTemplates), [favoriteTemplates]);
+  const ownedQuantityMap = useMemo(
+    () => new Map(ownedGear.map((item) => [getTemplateKey(item.template), item.quantity])),
+    [ownedGear],
+  );
 
   // Non-expansion templates for filter option derivation
   const libraryTemplates = useMemo(
@@ -803,6 +1078,10 @@ export default function DeviceLibrary() {
   useEffect(() => {
     fetchTemplates().then(setTemplates).catch(() => console.warn("Using bundled device library (API unavailable)"));
   }, []);
+
+  const handleAddToOwned = useCallback((template: DeviceTemplate) => {
+    addOwnedGear(template, 1);
+  }, [addOwnedGear]);
 
   const query = search.trim();
 
@@ -878,6 +1157,10 @@ export default function DeviceLibrary() {
 
   const totalResults = rankedResults?.length ??
     (filteredCustom.length + filteredCategories.reduce((sum, c) => sum + c.templates.length, 0));
+  const ownedResults = useMemo(
+    () => ownedGear.filter((item) => matchesOwnedGearQuery(item, query)).length,
+    [ownedGear, query],
+  );
 
   if (collapsed) {
     return (
@@ -894,7 +1177,7 @@ export default function DeviceLibrary() {
         <div className="writing-mode-vertical text-[10px] uppercase tracking-widest text-[var(--color-text-muted)] mt-2 select-none"
           style={{ writingMode: "vertical-rl" }}
         >
-          Devices
+          {showOwnedGearPane ? "Library" : "Devices"}
         </div>
       </div>
     );
@@ -905,7 +1188,7 @@ export default function DeviceLibrary() {
       {/* Header */}
       <div className="px-3 py-2 border-b border-[var(--color-border)] flex items-center justify-between">
         <h2 className="text-xs font-semibold text-[var(--color-text-heading)] uppercase tracking-wider">
-          Devices
+          {showOwnedGearPane ? "Library" : "Devices"}
         </h2>
         <button
           onClick={() => setCollapsed(true)}
@@ -917,6 +1200,31 @@ export default function DeviceLibrary() {
           </svg>
         </button>
       </div>
+
+      {showOwnedGearPane && (
+        <div className="px-2 py-1.5 border-b border-[var(--color-border)] flex gap-1">
+          <button
+            onClick={() => setLibraryActiveTab("devices")}
+            className={`flex-1 rounded px-2 py-1 text-[10px] transition-colors cursor-pointer ${
+              libraryActiveTab === "devices"
+                ? "bg-blue-100 text-blue-700 font-semibold"
+                : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            Devices
+          </button>
+          <button
+            onClick={() => setLibraryActiveTab("owned")}
+            className={`flex-1 rounded px-2 py-1 text-[10px] transition-colors cursor-pointer ${
+              libraryActiveTab === "owned"
+                ? "bg-blue-100 text-blue-700 font-semibold"
+                : "text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            Owned Gear
+          </button>
+        </div>
+      )}
 
       {/* Search */}
       <div className="px-2 pt-2 pb-1.5">
@@ -935,7 +1243,7 @@ export default function DeviceLibrary() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search devices..."
+            placeholder={libraryActiveTab === "owned" ? "Search owned gear..." : "Search devices..."}
             className="w-full bg-white border border-[var(--color-border)] rounded pl-7 pr-2 py-1.5 text-xs text-[var(--color-text)] outline-none focus:border-blue-500 placeholder:text-[var(--color-text-muted)]"
           />
           {search && (
@@ -949,12 +1257,13 @@ export default function DeviceLibrary() {
         </div>
         {query && (
           <div className="text-[10px] text-[var(--color-text-muted)] mt-1 px-0.5">
-            {totalResults} result{totalResults !== 1 ? "s" : ""}
+            {(libraryActiveTab === "owned" ? ownedResults : totalResults)} result{(libraryActiveTab === "owned" ? ownedResults : totalResults) !== 1 ? "s" : ""}
           </div>
         )}
       </div>
 
       {/* Filters */}
+      {libraryActiveTab === "devices" && (
       <div className="px-2 pb-2 border-b border-[var(--color-border)]">
         <div className="flex gap-1.5">
           <div className={`flex-1 min-w-0 flex items-center rounded border transition-colors ${
@@ -1076,10 +1385,13 @@ export default function DeviceLibrary() {
           </div>
         )}
       </div>
+      )}
 
       {showDeviceCreator && <DeviceCreatorPicker onClose={() => setShowDeviceCreator(false)} />}
 
-      {/* Device list */}
+      {libraryActiveTab === "owned" ? (
+        <OwnedGearTab query={query} />
+      ) : (
       <div className="flex-1 overflow-y-auto p-2 space-y-2">
         {/* Note draggable */}
         {!hasFilter && (!query || "note".includes(query.toLowerCase())) && (
@@ -1150,7 +1462,9 @@ export default function DeviceLibrary() {
                       onDelete={customTemplates.includes(template) ? () => removeCustomTemplate(template.id ?? template.deviceType) : undefined}
                       hasPreset={!!(template.id && presetIds.has(template.id))}
                       isFavorite={favoriteSet.has(key)}
+                      ownedQuantity={ownedQuantityMap.get(key)}
                       onToggleFavorite={() => toggleFavoriteTemplate(key)}
+                      onAddToOwned={() => handleAddToOwned(template)}
                     />
                   );
                 })}
@@ -1171,7 +1485,9 @@ export default function DeviceLibrary() {
                 defaultOpen={true}
                 presetIds={presetIds}
                 favoriteSet={favoriteSet}
+                ownedQuantityMap={ownedQuantityMap}
                 onToggleFavorite={toggleFavoriteTemplate}
+                onAddToOwned={handleAddToOwned}
               />
             )}
 
@@ -1179,6 +1495,8 @@ export default function DeviceLibrary() {
               customTemplates={customTemplates}
               query={query}
               favoriteSet={favoriteSet}
+              ownedQuantityMap={ownedQuantityMap}
+              onAddToOwned={handleAddToOwned}
             />
 
             {filteredCategories.map((cat, i) => (
@@ -1190,7 +1508,9 @@ export default function DeviceLibrary() {
                 defaultOpen={false}
                 presetIds={presetIds}
                 favoriteSet={favoriteSet}
+                ownedQuantityMap={ownedQuantityMap}
                 onToggleFavorite={toggleFavoriteTemplate}
+                onAddToOwned={handleAddToOwned}
                 categoryIndex={i}
                 onCategoryReorder={reorderCategory}
               />
@@ -1198,6 +1518,7 @@ export default function DeviceLibrary() {
           </>
         )}
       </div>
+      )}
 
       {/* Version */}
       <div className="px-3 py-1.5 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)]">

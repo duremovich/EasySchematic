@@ -353,6 +353,16 @@ export interface TemplatePreset {
   color?: string;
 }
 
+export interface OwnedGearItem {
+  template: DeviceTemplate;
+  quantity: number;
+}
+
+export interface OwnedGearFile {
+  version: 1;
+  ownedGear: OwnedGearItem[];
+}
+
 export interface CustomField {
   id: string;
   label: string;
@@ -406,6 +416,7 @@ export interface SchematicFile {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
   customTemplates?: DeviceTemplate[];
+  ownedGear?: OwnedGearItem[];
   signalColors?: Partial<Record<SignalType, string>>;
   signalLineStyles?: Partial<Record<SignalType, LineStyle>>;
   printPaperId?: string;
@@ -463,6 +474,10 @@ export interface SchematicFile {
   edgeHitboxSize?: number;
   /** User-preferred device category display order (#62) */
   categoryOrder?: string[];
+  /** Show the owned-gear tab in the left library panel */
+  showOwnedGearPane?: boolean;
+  /** Active tab in the left library panel */
+  libraryActiveTab?: "devices" | "owned";
   /** Color key / signal legend for print view (#70) */
   colorKeyEnabled?: boolean;
   colorKeyCorner?: "top-left" | "top-right" | "bottom-left" | "bottom-right";
