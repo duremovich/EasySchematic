@@ -36,6 +36,10 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
   const [editPowerCapacityW, setEditPowerCapacityW] = useState("");
   const [editVoltage, setEditVoltage] = useState("");
   const [editPoeBudgetW, setEditPoeBudgetW] = useState("");
+  const [editHeightMm, setEditHeightMm] = useState("");
+  const [editWidthMm, setEditWidthMm] = useState("");
+  const [editDepthMm, setEditDepthMm] = useState("");
+  const [editWeightKg, setEditWeightKg] = useState("");
 
   useEffect(() => {
     fetchSubmission(id)
@@ -76,6 +80,10 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
     setEditPowerCapacityW((d as Record<string, unknown>).powerCapacityW != null ? String((d as Record<string, unknown>).powerCapacityW) : "");
     setEditVoltage((d as Record<string, unknown>).voltage as string ?? "");
     setEditPoeBudgetW((d as Record<string, unknown>).poeBudgetW != null ? String((d as Record<string, unknown>).poeBudgetW) : "");
+    setEditHeightMm((d as Record<string, unknown>).heightMm != null ? String((d as Record<string, unknown>).heightMm) : "");
+    setEditWidthMm((d as Record<string, unknown>).widthMm != null ? String((d as Record<string, unknown>).widthMm) : "");
+    setEditDepthMm((d as Record<string, unknown>).depthMm != null ? String((d as Record<string, unknown>).depthMm) : "");
+    setEditWeightKg((d as Record<string, unknown>).weightKg != null ? String((d as Record<string, unknown>).weightKg) : "");
     setEditing(true);
   };
 
@@ -100,6 +108,10 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
           ...(editPowerCapacityW.trim() && { powerCapacityW: Number(editPowerCapacityW) }),
           ...(editVoltage.trim() && { voltage: editVoltage.trim() }),
           ...(editPoeBudgetW.trim() && { poeBudgetW: Number(editPoeBudgetW) }),
+          ...(editHeightMm.trim() && { heightMm: Number(editHeightMm) }),
+          ...(editWidthMm.trim() && { widthMm: Number(editWidthMm) }),
+          ...(editDepthMm.trim() && { depthMm: Number(editDepthMm) }),
+          ...(editWeightKg.trim() && { weightKg: Number(editWeightKg) }),
         };
       }
       await approveSubmission(id, editedData);
@@ -257,6 +269,22 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
                 <input value={editColor} onChange={(e) => setEditColor(e.target.value)} placeholder="#3b82f6" className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 {editColor && <span className="w-8 h-8 rounded border border-slate-200" style={{ backgroundColor: editColor }} />}
               </div>
+            </label>
+            <label>
+              <span className="block text-sm font-medium text-slate-700 mb-1">Width (mm)</span>
+              <input type="number" value={editWidthMm} onChange={(e) => setEditWidthMm(e.target.value)} placeholder="mm" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </label>
+            <label>
+              <span className="block text-sm font-medium text-slate-700 mb-1">Depth (mm)</span>
+              <input type="number" value={editDepthMm} onChange={(e) => setEditDepthMm(e.target.value)} placeholder="mm" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </label>
+            <label>
+              <span className="block text-sm font-medium text-slate-700 mb-1">Height (mm)</span>
+              <input type="number" value={editHeightMm} onChange={(e) => setEditHeightMm(e.target.value)} placeholder="mm" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </label>
+            <label>
+              <span className="block text-sm font-medium text-slate-700 mb-1">Weight (kg)</span>
+              <input type="number" step="0.01" value={editWeightKg} onChange={(e) => setEditWeightKg(e.target.value)} placeholder="kg" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </label>
           </div>
           <PortEditor ports={editPorts} onChange={setEditPorts} />
@@ -440,9 +468,11 @@ function diffCls(changed: boolean, side?: "current" | "proposed"): string {
   return side === "proposed" ? "bg-green-50 rounded px-1 -mx-1" : "bg-red-50 rounded px-1 -mx-1";
 }
 
+type DeviceInfoFields = "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily" | "powerDrawW" | "powerCapacityW" | "voltage" | "heightMm" | "widthMm" | "depthMm" | "weightKg";
+
 type DeviceInfoProps = {
-  data: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily" | "powerDrawW" | "powerCapacityW" | "voltage">;
-  compare?: Pick<DeviceTemplate, "label" | "deviceType" | "manufacturer" | "modelNumber" | "color" | "referenceUrl" | "slots" | "slotFamily" | "powerDrawW" | "powerCapacityW" | "voltage">;
+  data: Pick<DeviceTemplate, DeviceInfoFields>;
+  compare?: Pick<DeviceTemplate, DeviceInfoFields>;
   side?: "current" | "proposed";
 };
 
@@ -488,6 +518,19 @@ function DeviceInfo({ data, compare, side }: DeviceInfoProps) {
       )}
       {data.voltage && (
         <div className={d("voltage")}><span className="text-slate-500">Voltage:</span> {data.voltage}</div>
+      )}
+      {(extra.heightMm != null || extra.widthMm != null || extra.depthMm != null) && (
+        <div className={`${dExtra("heightMm")} ${dExtra("widthMm")} ${dExtra("depthMm")}`}>
+          <span className="text-slate-500">Dimensions:</span>{" "}
+          {[
+            extra.widthMm != null ? `${extra.widthMm}mm W` : null,
+            extra.depthMm != null ? `${extra.depthMm}mm D` : null,
+            extra.heightMm != null ? `${extra.heightMm}mm H` : null,
+          ].filter(Boolean).join(" × ")}
+        </div>
+      )}
+      {extra.weightKg != null && (
+        <div className={dExtra("weightKg")}><span className="text-slate-500">Weight:</span> {String(extra.weightKg)} kg</div>
       )}
     </div>
   );
