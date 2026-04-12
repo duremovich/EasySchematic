@@ -158,7 +158,7 @@ export default function LandingPage() {
             {signalSamples.map((s) => (
               <span
                 key={s.name}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-sm font-medium text-gray-700"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-sm font-medium text-black"
               >
                 <span
                   className="w-3 h-3 rounded-full shrink-0"
