@@ -55,6 +55,14 @@ export default function ReviewQueuePage() {
                     <span className="font-medium text-slate-900">{s.data.label}</span>
                     <StatusBadge status={s.status} />
                     <span className="text-xs text-slate-400 capitalize">{s.action}</span>
+                    {s.source && s.source !== "manual" && (
+                      <span
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase tracking-wide"
+                        title="Submitted via bulk import"
+                      >
+                        {s.source === "bulk-json" ? "bulk JSON" : "bulk CSV"}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-slate-500">
                     {s.data.deviceType}

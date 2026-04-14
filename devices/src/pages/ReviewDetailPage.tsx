@@ -184,6 +184,14 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
         <a href="/review" onClick={linkClick} className="text-sm text-blue-600 hover:text-blue-800">&larr; Review Queue</a>
         <StatusBadge status={submission.status} />
         <span className="text-xs text-slate-400 capitalize">{submission.action}</span>
+        {submission.source && submission.source !== "manual" && (
+          <span
+            className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase tracking-wide"
+            title="Submitted via bulk import — review related submissions from this user together"
+          >
+            {submission.source === "bulk-json" ? "bulk JSON" : "bulk CSV"}
+          </span>
+        )}
       </div>
 
       <ReviewGuidelines />

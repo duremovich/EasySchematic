@@ -98,24 +98,33 @@ export default function ImportDevicesDialog({ open, onClose }: Props) {
     importCustomTemplates(selectedTemplates.map((pt) => pt.template));
 
     let submitted = 0;
-    let failed = 0;
+    const failures: { label: string; reason: string }[] = [];
+    const source = tab === "json" ? "bulk-json" : "bulk-csv";
     for (const pt of selectedTemplates) {
       try {
         // Strip id/version since the submission API generates these
         const { id, version, ...data } = pt.template as DeviceTemplate & { version?: number };
         void id; void version;
-        await createSubmission("create", data, undefined, submitterNote || undefined);
+        await createSubmission("create", data, undefined, submitterNote || undefined, source);
         submitted++;
       } catch (err) {
-        failed++;
-        console.error("Submission failed:", err);
+        const reason = err instanceof Error ? err.message : String(err);
+        failures.push({ label: pt.template.label || "(no label)", reason });
+        console.error("Submission failed:", pt.template.label, reason);
       }
     }
     setSubmitting(false);
 
-    if (failed > 0) {
+    if (failures.length > 0) {
+      // Summarize unique rejection reasons so users actually know what went wrong
+      // instead of a useless "N failed" count.
+      const grouped = new Map<string, number>();
+      for (const f of failures) grouped.set(f.reason, (grouped.get(f.reason) ?? 0) + 1);
+      const summary = Array.from(grouped.entries())
+        .map(([reason, n]) => `${n}× ${reason}`)
+        .join(" · ");
       addToast(
-        `Added ${selectedTemplates.length} to library. Submitted ${submitted}, ${failed} failed (sign-in required?)`,
+        `Added ${selectedTemplates.length} to library. Submitted ${submitted}, ${failures.length} failed: ${summary}`,
         "error",
       );
     } else {

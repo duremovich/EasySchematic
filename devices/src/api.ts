@@ -230,6 +230,7 @@ export interface Submission {
   submitterEmail?: string;
   submitterName?: string;
   submitterNote?: string;
+  source?: "manual" | "bulk-json" | "bulk-csv";
   claimedBy: string | null;
   claimedAt: string | null;
   claimerEmail?: string;
@@ -241,16 +242,24 @@ export async function createSubmission(
   data: Omit<DeviceTemplate, "id" | "version">,
   templateId?: string,
   submitterNote?: string,
+  source: "manual" | "bulk-json" | "bulk-csv" = "manual",
 ): Promise<Submission> {
   const res = await fetch(`${API_URL}/submissions`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ action, data, templateId, ...(submitterNote && { submitterNote }) }),
+    body: JSON.stringify({ action, data, templateId, source, ...(submitterNote && { submitterNote }) }),
   });
   if (res.status === 401) throw new Error("Not authenticated");
   if (res.status === 403) throw new Error("Account suspended");
-  if (res.status === 429) throw new Error("Too many submissions. Try again later.");
+  if (res.status === 429) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || "Too many submissions. Try again later.");
+  }
+  if (res.status === 409) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || "Duplicate submission");
+  }
   if (!res.ok) {
     const err = await res.json() as { error: string };
     throw new Error(err.error || `Submission failed: ${res.status}`);

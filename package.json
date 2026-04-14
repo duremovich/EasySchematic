@@ -2,7 +2,7 @@
   "name": "easyschematic",
   "private": true,
   "license": "AGPL-3.0",
-  "version": "0.25.0",
+  "version": "0.26.0",
   "type": "module",
   "description": "Browser-based AV signal flow diagram tool for designing audio/video system schematics",
   "homepage": "https://easyschematic.live",

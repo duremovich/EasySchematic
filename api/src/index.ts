@@ -691,7 +691,17 @@ app.post("/submissions", async (c) => {
     return c.json({ error: "Too many submissions. Try again later." }, 429);
   }
 
-  const body = await c.req.json<{ action?: string; templateId?: string; data?: unknown; submitterNote?: string }>();
+  // Cap on total in-flight pending submissions per user. Generous for legitimate
+  // bulk importers, brutal for spammers who try to drip-feed past the hourly limit.
+  const pendingRow = await db
+    .prepare("SELECT COUNT(*) as count FROM submissions WHERE user_id = ? AND status = 'pending'")
+    .bind(user.id)
+    .first<{ count: number }>();
+  if ((pendingRow?.count ?? 0) >= 25) {
+    return c.json({ error: "You have too many pending submissions. Wait for moderator review before submitting more." }, 429);
+  }
+
+  const body = await c.req.json<{ action?: string; templateId?: string; data?: unknown; submitterNote?: string; source?: string }>();
 
   if (!body.action || (body.action !== "create" && body.action !== "update")) {
     return c.json({ error: "action must be 'create' or 'update'" }, 400);
@@ -707,18 +717,71 @@ app.post("/submissions", async (c) => {
     return c.json({ error: validation.error }, 400);
   }
 
+  // Duplicate detection — only for "create" actions with a real model number.
+  // Updates can legitimately target an existing template, and Generic devices
+  // without a model number can't be meaningfully deduped.
+  const tpl = validation.data;
+  if (body.action === "create" && tpl.manufacturer && tpl.modelNumber) {
+    const mfr = tpl.manufacturer.trim().toLowerCase();
+    const model = tpl.modelNumber.trim().toLowerCase();
+
+    const existingTemplate = await db
+      .prepare(
+        "SELECT id, label FROM templates WHERE lower(manufacturer) = ? AND lower(model_number) = ? LIMIT 1",
+      )
+      .bind(mfr, model)
+      .first<{ id: string; label: string }>();
+    if (existingTemplate) {
+      return c.json(
+        {
+          error: `A template for ${tpl.manufacturer} ${tpl.modelNumber} already exists in the community library. Submit an edit to that template instead.`,
+          existingTemplateId: existingTemplate.id,
+        },
+        409,
+      );
+    }
+
+    // Pending submission from anyone for the same device — avoid queue stacking.
+    const pendingDup = await db
+      .prepare(
+        `SELECT s.id FROM submissions s
+         WHERE s.status = 'pending'
+           AND s.action = 'create'
+           AND lower(json_extract(s.data, '$.manufacturer')) = ?
+           AND lower(json_extract(s.data, '$.modelNumber')) = ?
+         LIMIT 1`,
+      )
+      .bind(mfr, model)
+      .first<{ id: string }>();
+    if (pendingDup) {
+      return c.json(
+        {
+          error: `A pending submission for ${tpl.manufacturer} ${tpl.modelNumber} is already in the review queue.`,
+          existingSubmissionId: pendingDup.id,
+        },
+        409,
+      );
+    }
+  }
+
   // Validate optional submitter note
   const submitterNote = body.submitterNote && typeof body.submitterNote === "string"
     ? body.submitterNote.trim().slice(0, 1000) || null
+    : null;
+
+  // Optional source tag — used by bulk import UI so moderators can triage batches.
+  const ALLOWED_SOURCES = new Set(["manual", "bulk-json", "bulk-csv"]);
+  const source = body.source && typeof body.source === "string" && ALLOWED_SOURCES.has(body.source)
+    ? body.source
     : null;
 
   const id = crypto.randomUUID();
 
   await db
     .prepare(
-      "INSERT INTO submissions (id, user_id, action, template_id, data, submitter_note) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO submissions (id, user_id, action, template_id, data, submitter_note, source) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
-    .bind(id, user.id, body.action, body.templateId ?? null, JSON.stringify(body.data), submitterNote)
+    .bind(id, user.id, body.action, body.templateId ?? null, JSON.stringify(body.data), submitterNote, source)
     .run();
 
   const created = await db.prepare("SELECT * FROM submissions WHERE id = ?").bind(id).first();
@@ -1838,6 +1901,7 @@ interface SubmissionRow {
   reviewer_id: string | null;
   reviewer_note: string | null;
   submitter_note: string | null;
+  source: string | null;
   created_at: string;
   reviewed_at: string | null;
   claimed_by: string | null;
@@ -1865,6 +1929,7 @@ function formatSubmission(row: SubmissionRow) {
     ...(row.submitter_email && { submitterEmail: row.submitter_email }),
     ...(row.submitter_name && { submitterName: row.submitter_name }),
     ...(row.submitter_note && { submitterNote: row.submitter_note }),
+    ...(row.source && { source: row.source }),
     claimedBy: row.claimed_by ?? null,
     claimedAt: row.claimed_at ?? null,
     ...(row.claimer_email && { claimerEmail: row.claimer_email }),

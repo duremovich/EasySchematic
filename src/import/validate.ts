@@ -45,7 +45,7 @@ export function validateTemplate(t: Partial<DeviceTemplate>): TemplateValidation
   if (!isGeneric) {
     if (!isStr(t.modelNumber)) errors.push("modelNumber is required (unless manufacturer is \"Generic\")");
     if (!isStr(t.referenceUrl)) {
-      warnings.push("referenceUrl is missing — recommended for community submissions");
+      errors.push("referenceUrl is required (unless manufacturer is \"Generic\")");
     } else if (!/^https?:\/\//i.test(t.referenceUrl)) {
       errors.push("referenceUrl must start with http:// or https://");
     }
