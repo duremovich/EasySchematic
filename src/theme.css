@@ -60,6 +60,7 @@
   --color-rtmp: #dc2626;      /* red — RTMP streaming */
   --color-rtsp: #ea580c;      /* orange — RTSP streaming */
   --color-mpeg-ts: #ca8a04;   /* gold — MPEG-TS */
+  --color-digilink: #9a3412;  /* dark orange — Avid Mini-DigiLink */
   --color-custom: #64748b;    /* cool gray */
 }
 

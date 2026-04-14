@@ -15,7 +15,7 @@ function d1Read(sql) {
   // Actually, for SELECTs by ID we can safely use --command since they have no complex JSON
   const escaped = sql.replace(/"/g, '\\"');
   const out = execSync(`npx wrangler d1 execute easyschematic-db --remote --command "${escaped}"`, {
-    cwd: process.cwd(), encoding: "utf-8", timeout: 30000, stdio: ["pipe", "pipe", "pipe"]
+    cwd: process.cwd(), encoding: "utf-8", timeout: 90000, stdio: ["pipe", "pipe", "pipe"]
   });
   const match = out.match(/\[[\s\S]*\]/);
   if (!match) return [];
@@ -27,7 +27,7 @@ function d1Write(sql) {
   writeFileSync(TMPFILE, sql, "utf-8");
   try {
     execSync(`npx wrangler d1 execute easyschematic-db --remote --file="${TMPFILE}"`, {
-      cwd: process.cwd(), encoding: "utf-8", timeout: 30000, stdio: ["pipe", "pipe", "pipe"]
+      cwd: process.cwd(), encoding: "utf-8", timeout: 90000, stdio: ["pipe", "pipe", "pipe"]
     });
   } catch (e) {
     const stderr = e.stderr || "";
@@ -119,7 +119,8 @@ for (const id of ids) {
     console.log(`  APPROVED`);
     approved++;
   } catch (e) {
-    console.error(`  FAILED`);
+    const msg = (e.stderr || e.message || "").toString().replace(/\x1b\[[0-9;]*m/g, "").slice(0, 400);
+    console.error(`  FAILED: ${msg}`);
     failed++;
   }
 }

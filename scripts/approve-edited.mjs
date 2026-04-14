@@ -20,7 +20,7 @@ const TMPFILE = join(process.cwd(), "__tmp_sql.sql");
 function d1Read(sql) {
   const escaped = sql.replace(/"/g, '\\"');
   const out = execSync(`npx wrangler d1 execute easyschematic-db --remote --command "${escaped}"`, {
-    cwd: process.cwd(), encoding: "utf-8", timeout: 30000, stdio: ["pipe", "pipe", "pipe"]
+    cwd: process.cwd(), encoding: "utf-8", timeout: 90000, stdio: ["pipe", "pipe", "pipe"]
   });
   const match = out.match(/\[[\s\S]*\]/);
   if (!match) return [];
@@ -31,7 +31,7 @@ function d1Write(sql) {
   writeFileSync(TMPFILE, sql, "utf-8");
   try {
     execSync(`npx wrangler d1 execute easyschematic-db --remote --file="${TMPFILE}"`, {
-      cwd: process.cwd(), encoding: "utf-8", timeout: 30000, stdio: ["pipe", "pipe", "pipe"]
+      cwd: process.cwd(), encoding: "utf-8", timeout: 90000, stdio: ["pipe", "pipe", "pipe"]
     });
   } finally {
     try { unlinkSync(TMPFILE); } catch {}

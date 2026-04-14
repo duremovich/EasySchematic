@@ -9,7 +9,7 @@ export type ConnectorType =
   | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel"
   | "banana" | "binding-post" | "binding-post-banana" | "dvi" | "mini-xlr" | "opticalcon"
   | "l5-20" | "l6-20" | "l6-30" | "l21-30" | "cam-lok" | "powercon-true1"
-  | "qsfp" | "mpo"
+  | "qsfp" | "mpo" | "digilink" | "pcie-6pin"
   | "mini-din-4" | "mini-din-7"
   | "mini-hdmi" | "mini-displayport"
   | "rj11" | "rj12" | "usb-mini" | "usb-micro" | "trs-2.5mm"
@@ -107,6 +107,7 @@ export type SignalType =
   | "rtsp"
   | "mpeg-ts"
   | "component-video"
+  | "digilink"
   | "custom";
 
 export type LineStyle = "solid" | "dashed" | "dotted" | "dash-dot";
@@ -573,6 +574,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   rtmp: "var(--color-rtmp)",
   rtsp: "var(--color-rtsp)",
   "mpeg-ts": "var(--color-mpeg-ts)",
+  digilink: "var(--color-digilink)",
   custom: "var(--color-custom)",
 };
 
@@ -635,6 +637,8 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   rj12: "RJ12",
   qsfp: "QSFP+",
   mpo: "Fiber - MPO/MTP",
+  digilink: "DigiLink",
+  "pcie-6pin": "PCIe 6-pin Aux",
   "usb-mini": "Mini USB",
   "usb-micro": "Micro USB",
   "trs-2.5mm": "2.5mm TRS",
@@ -715,6 +719,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   rtsp: "RTSP",
   "mpeg-ts": "MPEG-TS",
   "component-video": "Component Video",
+  digilink: "DigiLink",
   custom: "Custom",
 };
 
@@ -722,7 +727,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
 export const SIGNAL_GROUPS: Record<string, SignalType[]> = {
   "Video": ["sdi", "hdmi", "displayport", "dvi", "composite", "s-video", "vga"],
   "Video over IP": ["ndi", "srt", "hdbaset", "st2110"],
-  "Audio": ["analog-audio", "aes", "dante", "aes67", "madi", "spdif", "adat", "ultranet", "aes50", "stageconnect", "ydif", "soundgrid", "gigaace", "dx5", "dsnake", "slink", "fibreace"],
+  "Audio": ["analog-audio", "aes", "dante", "aes67", "madi", "spdif", "adat", "ultranet", "aes50", "stageconnect", "ydif", "soundgrid", "gigaace", "dx5", "dsnake", "slink", "fibreace", "digilink"],
   "Network": ["ethernet", "fiber"],
   "Control / Data": ["dmx", "artnet", "sacn", "rs422", "serial", "gpio", "ir", "midi", "tally", "usb", "thunderbolt", "dxlink"],
   "Sync / Clock": ["genlock", "wordclock", "timecode", "dars", "gps"],
@@ -738,9 +743,9 @@ export const CONNECTOR_GROUPS: Record<string, ConnectorType[]> = {
   "Network / Data": ["rj45", "ethercon", "sfp", "lc", "sc", "opticalcon", "qsfp", "mpo", "rj11", "rj12"],
   "USB": ["usb-a", "usb-b", "usb-c", "usb-mini", "usb-micro"],
   "D-Sub / Serial": ["db9", "db15", "db25", "db37", "db7w2"],
-  "Power": ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "powercon-true1", "edison", "barrel", "l5-20", "l6-20", "l6-30", "l21-30", "cam-lok", "socapex"],
+  "Power": ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "powercon-true1", "edison", "barrel", "l5-20", "l6-20", "l6-30", "l21-30", "cam-lok", "socapex", "pcie-6pin"],
   "Speaker": ["speakon", "banana", "binding-post", "binding-post-banana"],
   "Terminal": ["phoenix", "terminal-block", "multipin"],
   "RF": ["reverse-tnc", "sma"],
-  "Other": ["wireless", "none", "other"],
+  "Other": ["wireless", "digilink", "none", "other"],
 };

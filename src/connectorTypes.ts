@@ -60,6 +60,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   rtsp: "rj45",
   "mpeg-ts": "rj45",
   "component-video": "bnc",
+  digilink: "digilink",
   custom: "other",
 };
 
