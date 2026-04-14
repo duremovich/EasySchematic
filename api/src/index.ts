@@ -685,20 +685,21 @@ app.post("/submissions", async (c) => {
 
   const db = c.env.easyschematic_db;
 
-  // Rate limit: 10 submissions per user per hour
-  const limit = await checkRateLimit(db, `submit:user:${user.id}`, 10);
+  // Rate limit: 30 submissions per user per hour
+  const limit = await checkRateLimit(db, `submit:user:${user.id}`, 30);
   if (!limit.allowed) {
-    return c.json({ error: "Too many submissions. Try again later." }, 429);
+    return c.json({ error: "Submission limit is 30 per hour. Try again later." }, 429);
   }
 
-  // Cap on total in-flight pending submissions per user. Generous for legitimate
-  // bulk importers, brutal for spammers who try to drip-feed past the hourly limit.
+  // Cap on total in-flight pending submissions per user. Matches the hourly
+  // limit so a user can burst up to 30 in one go; beyond that they have to
+  // wait for moderator review to free slots.
   const pendingRow = await db
     .prepare("SELECT COUNT(*) as count FROM submissions WHERE user_id = ? AND status = 'pending'")
     .bind(user.id)
     .first<{ count: number }>();
-  if ((pendingRow?.count ?? 0) >= 25) {
-    return c.json({ error: "You have too many pending submissions. Wait for moderator review before submitting more." }, 429);
+  if ((pendingRow?.count ?? 0) >= 30) {
+    return c.json({ error: "You have 30 or more pending submissions awaiting review. Wait for moderators to clear some before submitting more." }, 429);
   }
 
   const body = await c.req.json<{ action?: string; templateId?: string; data?: unknown; submitterNote?: string; source?: string }>();
