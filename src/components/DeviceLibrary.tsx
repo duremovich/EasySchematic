@@ -6,6 +6,7 @@ import { useSchematicStore, CATEGORY_ORDER_DEFAULT } from "../store";
 import { scoreTemplate } from "../templateSearch";
 import { inventoryKeyFromDeviceData, inventoryKeyFromTemplate } from "../inventoryKey";
 import DeviceCreatorPicker from "./DeviceCreatorPicker";
+import ImportDevicesDialog from "./ImportDevicesDialog";
 
 const APP_VERSION = __APP_VERSION__;
 const BUILD_HASH = __BUILD_HASH__;
@@ -997,6 +998,7 @@ export default function DeviceLibrary() {
   const setLibraryActiveTab = useSchematicStore((s) => s.setLibraryActiveTab);
   const [search, setSearch] = useState("");
   const [showDeviceCreator, setShowDeviceCreator] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [templates, setTemplates] = useState(getBundledTemplates);
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
@@ -1384,7 +1386,13 @@ export default function DeviceLibrary() {
       </div>
       )}
 
-      {showDeviceCreator && <DeviceCreatorPicker onClose={() => setShowDeviceCreator(false)} />}
+      {showDeviceCreator && (
+        <DeviceCreatorPicker
+          onClose={() => setShowDeviceCreator(false)}
+          onImport={() => setShowImportDialog(true)}
+        />
+      )}
+      <ImportDevicesDialog open={showImportDialog} onClose={() => setShowImportDialog(false)} />
 
       {libraryActiveTab === "owned" ? (
         <OwnedGearTab query={query} />

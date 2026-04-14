@@ -223,6 +223,29 @@ export async function loadSchematicTemplate(): Promise<unknown | null> {
 
 // ==================== TEMPLATES ====================
 
+/** Submit a single device template to the community review queue. */
+export async function createSubmission(
+  action: "create" | "update",
+  data: Omit<DeviceTemplate, "id" | "version">,
+  templateId?: string,
+  submitterNote?: string,
+): Promise<{ id: string }> {
+  const res = await fetch(`${API_URL}/submissions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ action, data, templateId, ...(submitterNote && { submitterNote }) }),
+  });
+  if (res.status === 401) throw new Error("Sign in to submit to the community library");
+  if (res.status === 403) throw new Error("Account suspended");
+  if (res.status === 429) throw new Error("Too many submissions — try again later");
+  if (!res.ok) {
+    const err = (await res.json()) as { error?: string };
+    throw new Error(err.error || `Submission failed: ${res.status}`);
+  }
+  return res.json();
+}
+
 export async function fetchTemplates(): Promise<DeviceTemplate[]> {
   if (cached) return cached;
 

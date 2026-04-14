@@ -16,6 +16,7 @@ const navItems = [
   { hash: "pack-list", label: "Pack List & Reports" },
   { hash: "printing", label: "Printing & Title Block" },
   { hash: "import-export", label: "Import / Export" },
+  { hash: "device-template-schema", label: "Device Template Schema" },
   { hash: "self-hosting", label: "Self-Hosting" },
   { hash: "api", label: "Public API" },
 ];
