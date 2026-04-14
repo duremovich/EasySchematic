@@ -128,8 +128,8 @@ export default function LandingPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">
             Supported by
           </p>
-          <div className="flex justify-center gap-8">
-            {sponsors.map((s) => (
+          <div className="flex justify-center gap-8 mb-6">
+            {sponsors.filter((s) => s.kind === "organization").map((s) => (
               <a
                 key={s.name}
                 href={s.url}
@@ -145,6 +145,19 @@ export default function LandingPage() {
               </a>
             ))}
           </div>
+          {sponsors.some((s) => s.kind === "individual") && (
+            <div>
+              <p className="text-xs uppercase tracking-widest text-slate-400 mb-2">
+                Individual supporters
+              </p>
+              <p className="text-sm text-slate-500">
+                {sponsors
+                  .filter((s) => s.kind === "individual")
+                  .map((s) => s.name)
+                  .join(" · ")}
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

@@ -16,6 +16,8 @@
   </a>
 </p>
 
+<p align="center"><sub><b>Individual supporters</b><br/>Sean Curtis</sub></p>
+
 ## Features
 
 ### Canvas & Devices
