@@ -3,6 +3,7 @@ import { fetchSubmission, fetchTemplate, approveSubmission, rejectSubmission, de
 import type { Submission } from "../api";
 import type { DeviceTemplate, Port, SlotDefinition } from "../../../src/types";
 import { CONNECTOR_LABELS } from "../../../src/types";
+import { DEVICE_TYPE_TO_CATEGORY, ALL_CATEGORIES } from "../../../src/deviceTypeCategories";
 import { linkClick } from "../navigate";
 import StatusBadge from "../components/StatusBadge";
 import SignalBadge from "../components/SignalBadge";
@@ -23,6 +24,7 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
   const [editing, setEditing] = useState(false);
   const [editLabel, setEditLabel] = useState("");
   const [editDeviceType, setEditDeviceType] = useState("");
+  const [editCategory, setEditCategory] = useState("");
   const [editManufacturer, setEditManufacturer] = useState("");
   const [editModelNumber, setEditModelNumber] = useState("");
   const [editReferenceUrl, setEditReferenceUrl] = useState("");
@@ -67,6 +69,7 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
     const d = submission.data;
     setEditLabel(d.label ?? "");
     setEditDeviceType(d.deviceType ?? "");
+    setEditCategory((d as Record<string, unknown>).category as string ?? DEVICE_TYPE_TO_CATEGORY[d.deviceType] ?? "");
     setEditManufacturer(d.manufacturer ?? "");
     setEditModelNumber(d.modelNumber ?? "");
     setEditReferenceUrl(d.referenceUrl ?? "");
@@ -95,8 +98,9 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
         editedData = {
           label: editLabel.trim(),
           deviceType: editDeviceType.trim(),
+          category: editCategory,
+          manufacturer: editManufacturer.trim(),
           ports: editPorts,
-          ...(editManufacturer.trim() && { manufacturer: editManufacturer.trim() }),
           ...(editModelNumber.trim() && { modelNumber: editModelNumber.trim() }),
           ...(editReferenceUrl.trim() && { referenceUrl: editReferenceUrl.trim() }),
           ...(editColor.trim() && { color: editColor.trim() }),
@@ -256,7 +260,16 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
               <input value={editDeviceType} onChange={(e) => setEditDeviceType(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </label>
             <label>
-              <span className="block text-sm font-medium text-slate-700 mb-1">Manufacturer</span>
+              <span className="block text-sm font-medium text-slate-700 mb-1">Category *</span>
+              <select value={editCategory} onChange={(e) => setEditCategory(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                <option value="">Select category</option>
+                {ALL_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="block text-sm font-medium text-slate-700 mb-1">Manufacturer *</span>
               <input value={editManufacturer} onChange={(e) => setEditManufacturer(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </label>
             <label>
