@@ -34,7 +34,10 @@ const ACTION_HEADERS: Record<string, string> = {
 const COLUMN_COUNT = 6;
 
 function RelativeTime({ iso }: { iso: string }) {
-  const ms = Date.now() - new Date(iso + "Z").getTime();
+  // Capture "now" at mount so the component stays pure across re-renders.
+  // Relative labels won't drift live — fine for an audit feed that's manually refreshed.
+  const [now] = useState(() => Date.now());
+  const ms = now - new Date(iso + "Z").getTime();
   const mins = Math.floor(ms / 60000);
   if (mins < 1) return <span>just now</span>;
   if (mins < 60) return <span>{mins}m ago</span>;
@@ -62,6 +65,7 @@ export default function AdminActivityPage({ currentUser }: { currentUser?: User 
       .catch(() => {});
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- fetch-on-filter-change pattern; loading/error state is local to this fetch */
   useEffect(() => {
     setLoading(true);
     setError("");
@@ -74,6 +78,7 @@ export default function AdminActivityPage({ currentUser }: { currentUser?: User 
       .then((data) => { setActions(data); setLoading(false); })
       .catch((e) => { setError(e.message); setLoading(false); });
   }, [selectedMod, selectedAction, page]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const resetFilters = () => {
     setSelectedMod("");
@@ -713,17 +718,11 @@ function tryParse(s: string | null): TemplateLike | null {
 }
 
 function getDeviceLabel(a: ModAction): string {
-  try {
-    const data = a.after_data ? JSON.parse(a.after_data) : null;
-    if (data?.label) return data.label;
-  } catch {}
-  try {
-    const data = a.before_data ? JSON.parse(a.before_data) : null;
-    if (data?.label) return data.label;
-  } catch {}
-  try {
-    const data = a.submission_data ? JSON.parse(a.submission_data) : null;
-    if (data?.label) return data.label;
-  } catch {}
+  const sources = [a.after_data, a.before_data, a.submission_data];
+  for (const src of sources) {
+    const parsed = tryParse(src);
+    const label = parsed && typeof parsed.label === "string" ? parsed.label : null;
+    if (label) return label;
+  }
   return a.template_id ? `Template ${a.template_id.slice(0, 8)}...` : "—";
 }
