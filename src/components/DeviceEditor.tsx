@@ -65,7 +65,6 @@ const MIME = "application/easyschematic-port";
 
 export default function DeviceEditor() {
   const editingNodeId = useSchematicStore((s) => s.editingNodeId);
-  const creatingNodeId = useSchematicStore((s) => s.creatingNodeId);
   const nodes = useSchematicStore((s) => s.nodes);
   const updateDevice = useSchematicStore((s) => s.updateDevice);
   const syncDeviceFromTemplate = useSchematicStore((s) => s.syncDeviceFromTemplate);
@@ -195,13 +194,17 @@ export default function DeviceEditor() {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const close = useCallback(() => {
-    if (editingNodeId && editingNodeId === creatingNodeId) {
+    // Read live store state — a stale closure here would make handleSave
+    // (which clears creatingNodeId just before calling close) trigger the
+    // provisional-undo branch and revert the user's just-saved data.
+    const { editingNodeId: eId, creatingNodeId: cId } = useSchematicStore.getState();
+    if (eId && eId === cId) {
       // Provisional node — user cancelled without saving, undo the addDevice
       undo();
       setCreatingNodeId(null);
     }
     setEditingNodeId(null);
-  }, [editingNodeId, creatingNodeId, undo, setCreatingNodeId, setEditingNodeId]);
+  }, [undo, setCreatingNodeId, setEditingNodeId]);
 
   const handleSave = useCallback(() => {
     if (!editingNodeId) return;
