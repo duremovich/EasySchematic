@@ -413,11 +413,11 @@ export default function DeviceForm({ id, draftId, cloneId, onSubmit, submitLabel
             <span className="text-xs text-slate-400 mt-1 block">Total supply capacity (distros only)</span>
           </label>
         )}
-        {deviceType.includes("network-switch") && (
+        {ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
           <label>
-            <span className="block text-sm font-medium text-slate-700 mb-1">PoE Budget (W)</span>
+            <span className="block text-sm font-medium text-slate-700 mb-1">PoE Source Budget (W)</span>
             <input type="number" min="0" value={poeBudgetW} onChange={(e) => setPoeBudgetW(e.target.value)} placeholder="e.g. 370" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <span className="text-xs text-slate-400 mt-1 block">Total PoE power budget (0 or empty = no PoE)</span>
+            <span className="text-xs text-slate-400 mt-1 block">Total PoE budget this device supplies (leave blank if not a PoE source)</span>
           </label>
         )}
         {ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (

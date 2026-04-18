@@ -31,7 +31,9 @@ export async function fetchTemplates(): Promise<DeviceTemplate[]> {
 }
 
 export async function fetchTemplate(id: string): Promise<DeviceTemplate> {
-  const res = await fetch(`${API_URL}/templates/${id}`);
+  // Include credentials so logged-in mods/admins can view flagged-for-deletion
+  // templates via the standard endpoint (non-mods still get 404 for flagged rows).
+  const res = await fetch(`${API_URL}/templates/${id}`, { credentials: "include" });
   if (!res.ok) throw new Error(`Failed to fetch template: ${res.status}`);
   return res.json();
 }
@@ -73,12 +75,21 @@ export async function fetchDraft(id: string): Promise<Record<string, unknown>> {
   return res.json();
 }
 
-// ==================== TEMPLATES (admin token) ====================
+// ==================== TEMPLATES (admin token or admin/moderator session) ====================
 
-export async function createTemplate(template: Omit<DeviceTemplate, "id" | "version">, token: string): Promise<DeviceTemplate> {
+function templateAuthInit(token: string | null): RequestInit {
+  if (token) {
+    return { headers: { Authorization: `Bearer ${token}` } };
+  }
+  return { credentials: "include" };
+}
+
+export async function createTemplate(template: Omit<DeviceTemplate, "id" | "version">, token: string | null): Promise<DeviceTemplate> {
+  const init = templateAuthInit(token);
   const res = await fetch(`${API_URL}/templates`, {
+    ...init,
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: { "Content-Type": "application/json", ...(init.headers ?? {}) },
     body: JSON.stringify(template),
   });
   if (res.status === 401) throw new Error("Unauthorized");
@@ -86,10 +97,12 @@ export async function createTemplate(template: Omit<DeviceTemplate, "id" | "vers
   return res.json();
 }
 
-export async function updateTemplate(id: string, template: Omit<DeviceTemplate, "id" | "version">, token: string): Promise<DeviceTemplate> {
+export async function updateTemplate(id: string, template: Omit<DeviceTemplate, "id" | "version">, token: string | null): Promise<DeviceTemplate> {
+  const init = templateAuthInit(token);
   const res = await fetch(`${API_URL}/templates/${id}`, {
+    ...init,
     method: "PUT",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    headers: { "Content-Type": "application/json", ...(init.headers ?? {}) },
     body: JSON.stringify(template),
   });
   if (res.status === 401) throw new Error("Unauthorized");
@@ -97,10 +110,11 @@ export async function updateTemplate(id: string, template: Omit<DeviceTemplate, 
   return res.json();
 }
 
-export async function deleteTemplate(id: string, token: string): Promise<void> {
+export async function deleteTemplate(id: string, token: string | null): Promise<void> {
+  const init = templateAuthInit(token);
   const res = await fetch(`${API_URL}/templates/${id}`, {
+    ...init,
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
   });
   if (res.status === 401) throw new Error("Unauthorized");
   if (!res.ok) throw new Error(`Failed to delete template: ${res.status}`);
@@ -378,13 +392,18 @@ export interface ModAction {
   moderator_id: string;
   moderator_email: string;
   moderator_name: string | null;
-  action: "approve" | "reject" | "defer";
+  // Action taxonomy (string, not narrowed union — taxonomy grows over time):
+  //   approve, reject, defer, edit, send_back,
+  //   flag-delete, unflag-delete, confirm-delete,
+  //   note_added, note_edited, note_deleted
+  action: string;
   submission_id: string | null;
   template_id: string | null;
   before_data: string | null;
   after_data: string | null;
   submission_data_override: string | null;
   submission_action: "create" | "update" | null;
+  submission_data: string | null;
   note: string | null;
   created_at: string;
 }
@@ -449,8 +468,24 @@ export interface TemplateAdminView extends DeviceTemplate {
   approvedSchemaVersion: string | null;
   needsReview: boolean;
   needsReviewReason: string | null;
+  flaggedForDeletion: boolean;
+  flaggedForDeletionReason: string | null;
+  flaggedForDeletionAt: string | null;
+  flaggedBy: { id: string; name: string; email: string | null } | null;
   modNotes: TemplateNote[];
   modHistory: TemplateModHistoryEntry[];
+}
+
+export interface PendingDeletion {
+  id: string;
+  label: string;
+  deviceType: string;
+  category: string;
+  manufacturer: string | null;
+  modelNumber: string | null;
+  flaggedReason: string;
+  flaggedAt: string;
+  flaggedBy: { id: string; name: string; email: string | null } | null;
 }
 
 export async function fetchTemplateAdmin(id: string): Promise<TemplateAdminView> {
@@ -510,5 +545,38 @@ export async function sendBackTemplate(id: string, reason: string): Promise<{ su
     const err = await res.json().catch(() => ({})) as { error?: string };
     throw new Error(err.error || `Failed to send back: ${res.status}`);
   }
+  return res.json();
+}
+
+export async function flagForDeletion(id: string, reason: string): Promise<void> {
+  const res = await fetch(`${API_URL}/templates/${id}/flag-delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ reason }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || `Failed to flag for deletion: ${res.status}`);
+  }
+}
+
+export async function unflagDeletion(id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/templates/${id}/unflag-delete`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || `Failed to restore template: ${res.status}`);
+  }
+}
+
+export async function fetchPendingDeletions(): Promise<PendingDeletion[]> {
+  const res = await fetch(`${API_URL}/admin/pending-deletions`, {
+    credentials: "include",
+  });
+  if (res.status === 403) throw new Error("Admin access required");
+  if (!res.ok) throw new Error(`Failed to fetch pending deletions: ${res.status}`);
   return res.json();
 }

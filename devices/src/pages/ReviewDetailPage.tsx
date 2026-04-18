@@ -43,6 +43,7 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
   const [editWidthMm, setEditWidthMm] = useState("");
   const [editDepthMm, setEditDepthMm] = useState("");
   const [editWeightKg, setEditWeightKg] = useState("");
+  const [editIsVenueProvided, setEditIsVenueProvided] = useState(false);
 
   useEffect(() => {
     fetchSubmission(id)
@@ -89,6 +90,7 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
     setEditWidthMm((d as Record<string, unknown>).widthMm != null ? String((d as Record<string, unknown>).widthMm) : "");
     setEditDepthMm((d as Record<string, unknown>).depthMm != null ? String((d as Record<string, unknown>).depthMm) : "");
     setEditWeightKg((d as Record<string, unknown>).weightKg != null ? String((d as Record<string, unknown>).weightKg) : "");
+    setEditIsVenueProvided(Boolean((d as Record<string, unknown>).isVenueProvided));
     setEditing(true);
   };
 
@@ -119,6 +121,7 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
           ...(editWidthMm.trim() && { widthMm: Number(editWidthMm) }),
           ...(editDepthMm.trim() && { depthMm: Number(editDepthMm) }),
           ...(editWeightKg.trim() && { weightKg: Number(editWeightKg) }),
+          ...(editIsVenueProvided && { isVenueProvided: true }),
         };
       }
       await approveSubmission(id, editedData);
@@ -227,6 +230,15 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
         );
       })()}
 
+      {existing && (existing as DeviceTemplate & { flaggedForDeletion?: boolean }).flaggedForDeletion && (
+        <div className="mb-6 border border-red-300 rounded-lg p-4 bg-red-50">
+          <div className="text-xs font-semibold text-red-700 mb-1">Target device is flagged for deletion</div>
+          <p className="text-sm text-red-900">
+            Another moderator flagged this device for deletion. This edit may be an attempt to fix the device — check the flag reason on the device page before approving.
+          </p>
+        </div>
+      )}
+
       {submission.submitterNote && (() => {
         const fromModeratorFlag = submission.source === "moderator-flag"
           || submission.submitterNote.startsWith("Sent back by moderator:");
@@ -316,6 +328,35 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
               </div>
             </label>
             <label>
+              <span className="block text-sm font-medium text-slate-700 mb-1">Power Draw (W)</span>
+              <input type="number" min="0" value={editPowerDrawW} onChange={(e) => setEditPowerDrawW(e.target.value)} placeholder="e.g. 150" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </label>
+            <label>
+              <span className="block text-sm font-medium text-slate-700 mb-1">Voltage</span>
+              <input value={editVoltage} onChange={(e) => setEditVoltage(e.target.value)} placeholder="e.g. 100-240V" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </label>
+            {(editDeviceType.includes("power-distribution") || editDeviceType.includes("company-switch")) && (
+              <label>
+                <span className="block text-sm font-medium text-slate-700 mb-1">Power Capacity (W)</span>
+                <input type="number" min="0" value={editPowerCapacityW} onChange={(e) => setEditPowerCapacityW(e.target.value)} placeholder="e.g. 2400" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <span className="text-xs text-slate-400 mt-1 block">Total supply capacity (distros only)</span>
+              </label>
+            )}
+            {editPorts.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
+              <label>
+                <span className="block text-sm font-medium text-slate-700 mb-1">PoE Source Budget (W)</span>
+                <input type="number" min="0" value={editPoeBudgetW} onChange={(e) => setEditPoeBudgetW(e.target.value)} placeholder="e.g. 370" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <span className="text-xs text-slate-400 mt-1 block">Total PoE budget this device supplies (leave blank if not a PoE source)</span>
+              </label>
+            )}
+            {editPorts.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
+              <label>
+                <span className="block text-sm font-medium text-slate-700 mb-1">PoE Draw (W)</span>
+                <input type="number" min="0" step="0.1" value={editPoeDrawW} onChange={(e) => setEditPoeDrawW(e.target.value)} placeholder="e.g. 12.95" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <span className="text-xs text-slate-400 mt-1 block">Power this device consumes via PoE</span>
+              </label>
+            )}
+            <label>
               <span className="block text-sm font-medium text-slate-700 mb-1">Width (mm)</span>
               <input type="number" value={editWidthMm} onChange={(e) => setEditWidthMm(e.target.value)} placeholder="mm" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </label>
@@ -330,6 +371,10 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
             <label>
               <span className="block text-sm font-medium text-slate-700 mb-1">Weight (kg)</span>
               <input type="number" step="0.01" value={editWeightKg} onChange={(e) => setEditWeightKg(e.target.value)} placeholder="kg" className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </label>
+            <label className="sm:col-span-2 flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={editIsVenueProvided} onChange={(e) => setEditIsVenueProvided(e.target.checked)} className="cursor-pointer" />
+              <span className="text-sm font-medium text-slate-700">Venue provided (exclude from pack list)</span>
             </label>
           </div>
           <PortEditor ports={editPorts} onChange={setEditPorts} />
@@ -580,6 +625,17 @@ function DeviceInfo({ data, compare, side }: DeviceInfoProps) {
       {extra.weightKg != null && (
         <div className={dExtra("weightKg")}><span className="text-slate-500">Weight:</span> {String(extra.weightKg)} kg</div>
       )}
+      {extra.isVenueProvided ? (
+        <div className={dExtra("isVenueProvided")}>
+          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">Venue Provided</span>
+        </div>
+      ) : null}
+      {Array.isArray(extra.searchTerms) && (extra.searchTerms as unknown[]).length > 0 && (
+        <div className={`sm:col-span-2 ${dExtra("searchTerms")}`}>
+          <span className="text-slate-500">Search Terms:</span>{" "}
+          <span className="text-slate-700">{(extra.searchTerms as string[]).join(", ")}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -623,6 +679,7 @@ function PortTable({ ports, comparePorts, side }: { ports: Port[]; comparePorts?
   if (!ports.length) return <p className="text-sm text-slate-400">No ports</p>;
 
   const diffMap = comparePorts && side ? getPortDiffMap(ports, comparePorts, side) : null;
+  const hasSections = ports.some((p) => p.section) || (comparePorts?.some((p) => p.section) ?? false);
 
   return (
     <div className="overflow-x-auto">
@@ -633,6 +690,7 @@ function PortTable({ ports, comparePorts, side }: { ports: Port[]; comparePorts?
           <th className="pb-1">Direction</th>
           <th className="pb-1">Signal</th>
           <th className="pb-1">Connector</th>
+          {hasSections && <th className="pb-1">Section</th>}
         </tr>
       </thead>
       <tbody>
@@ -645,6 +703,7 @@ function PortTable({ ports, comparePorts, side }: { ports: Port[]; comparePorts?
               <td className="py-1">{p.direction}</td>
               <td className="py-1"><SignalBadge signalType={p.signalType} /></td>
               <td className="py-1 text-slate-500">{p.connectorType ? (CONNECTOR_LABELS[p.connectorType] ?? p.connectorType) : "—"}</td>
+              {hasSections && <td className="py-1 text-slate-500">{p.section ?? "—"}</td>}
             </tr>
           );
         })}

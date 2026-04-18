@@ -1,12 +1,14 @@
 import { useState, type ReactNode } from "react";
 import { getAdminToken, setAdminToken } from "../api";
+import type { User } from "../api";
 
-export default function AuthGate({ children }: { children: ReactNode }) {
+export default function AuthGate({ user, children }: { user?: User | null; children: ReactNode }) {
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
-  const [authed, setAuthed] = useState(!!getAdminToken());
+  const sessionAllowed = user?.role === "admin" || user?.role === "moderator";
+  const [authed, setAuthed] = useState(!!getAdminToken() || sessionAllowed);
 
-  if (authed) return <>{children}</>;
+  if (authed || sessionAllowed) return <>{children}</>;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

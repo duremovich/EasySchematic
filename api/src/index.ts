@@ -1223,7 +1223,7 @@ app.get("/contributors/:id/templates", async (c) => {
        FROM templates t
        LEFT JOIN submissions s
          ON s.template_id = t.id AND s.user_id = ? AND s.status = 'approved' AND s.action = 'update'
-       WHERE t.submitted_by = ? OR s.id IS NOT NULL
+       WHERE t.flagged_for_deletion = 0 AND (t.submitted_by = ? OR s.id IS NOT NULL)
        GROUP BY t.id
        ORDER BY t.label`,
     )
@@ -1245,28 +1245,28 @@ app.get("/contributors/:id/templates", async (c) => {
 
 app.get("/templates/categories", async (c) => {
   const { results } = await c.env.easyschematic_db
-    .prepare("SELECT DISTINCT category FROM templates ORDER BY category")
+    .prepare("SELECT DISTINCT category FROM templates WHERE flagged_for_deletion = 0 ORDER BY category")
     .all();
   return c.json(results.map((r) => (r as { category: string }).category), 200, CACHE_HEADERS);
 });
 
 app.get("/templates/device-types", async (c) => {
   const { results } = await c.env.easyschematic_db
-    .prepare("SELECT DISTINCT device_type FROM templates ORDER BY device_type")
+    .prepare("SELECT DISTINCT device_type FROM templates WHERE flagged_for_deletion = 0 ORDER BY device_type")
     .all();
   return c.json(results.map((r) => (r as { device_type: string }).device_type), 200, CACHE_HEADERS);
 });
 
 app.get("/templates/manufacturers", async (c) => {
   const { results } = await c.env.easyschematic_db
-    .prepare("SELECT DISTINCT manufacturer FROM templates WHERE manufacturer IS NOT NULL ORDER BY manufacturer")
+    .prepare("SELECT DISTINCT manufacturer FROM templates WHERE manufacturer IS NOT NULL AND flagged_for_deletion = 0 ORDER BY manufacturer")
     .all();
   return c.json(results.map((r) => (r as { manufacturer: string }).manufacturer), 200, CACHE_HEADERS);
 });
 
 app.get("/templates/search-terms", async (c) => {
   const { results } = await c.env.easyschematic_db
-    .prepare("SELECT search_terms FROM templates WHERE search_terms IS NOT NULL")
+    .prepare("SELECT search_terms FROM templates WHERE search_terms IS NOT NULL AND flagged_for_deletion = 0")
     .all();
   const allTerms = new Set<string>();
   for (const row of results) {
@@ -1279,7 +1279,7 @@ app.get("/templates/search-terms", async (c) => {
 
 app.get("/templates/summary", async (c) => {
   const { results } = await c.env.easyschematic_db
-    .prepare("SELECT id, label, device_type, category, manufacturer, model_number, color, search_terms, ports, slots FROM templates ORDER BY sort_order, label")
+    .prepare("SELECT id, label, device_type, category, manufacturer, model_number, color, search_terms, ports, slots FROM templates WHERE flagged_for_deletion = 0 ORDER BY sort_order, label")
     .all();
 
   const summaries = results.map((row) => rowToSummary(row as never));
@@ -1288,7 +1288,7 @@ app.get("/templates/summary", async (c) => {
 
 app.get("/templates", async (c) => {
   const { results } = await c.env.easyschematic_db
-    .prepare("SELECT * FROM templates ORDER BY sort_order, label")
+    .prepare("SELECT * FROM templates WHERE flagged_for_deletion = 0 ORDER BY sort_order, label")
     .all();
 
   const templates = results.map((row) => rowToTemplate(row as never));
@@ -1314,8 +1314,17 @@ app.get("/templates/:id", async (c) => {
     return c.json({ error: "Template not found" }, 404);
   }
 
-  const template = rowToTemplate(row as never);
   const r = row as Record<string, unknown>;
+  const user = c.get("user");
+  const isModOrAdmin = user && (user.role === "admin" || user.role === "moderator");
+
+  // Flagged templates are hidden from the public. Mods and admins see the full record
+  // (with a flag banner rendered client-side from the /admin endpoint).
+  if (r.flagged_for_deletion && !isModOrAdmin) {
+    return c.json({ error: "Template not found" }, 404);
+  }
+
+  const template = rowToTemplate(row as never);
   const result: Record<string, unknown> = { ...template };
 
   if (r.submitted_by) {
@@ -1333,8 +1342,13 @@ app.get("/templates/:id", async (c) => {
   if (r.needs_review) {
     result.needsReview = true;
   }
+  if (r.flagged_for_deletion) {
+    result.flaggedForDeletion = true;
+  }
 
-  return c.json(result, 200, CACHE_HEADERS);
+  // Flagged responses bypass CDN caching so unflag is instantly visible.
+  const headers = r.flagged_for_deletion ? NO_CACHE_HEADERS : CACHE_HEADERS;
+  return c.json(result, 200, headers);
 });
 
 app.post("/templates", async (c) => {
@@ -1537,6 +1551,130 @@ app.post("/templates/:id/send-back", async (c) => {
   return c.json({ ok: true, submission_id: submissionId }, 200, NO_CACHE_HEADERS);
 });
 
+// Moderator flags a template for deletion. Soft-hides from public reads; admin
+// must confirm (hard delete) or restore (unflag) via the pending-deletions queue.
+app.post("/templates/:id/flag-delete", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const body = await c.req.json<{ reason?: string }>().catch(() => ({} as { reason?: string }));
+  const reason = (body.reason ?? "").trim();
+  if (!reason) return c.json({ error: "reason is required" }, 400);
+
+  const db = c.env.easyschematic_db;
+  const existing = await db.prepare("SELECT * FROM templates WHERE id = ?").bind(id).first();
+  if (!existing) return c.json({ error: "Template not found" }, 404);
+
+  const result = await db
+    .prepare(
+      `UPDATE templates
+         SET flagged_for_deletion = 1,
+             flagged_for_deletion_reason = ?,
+             flagged_for_deletion_at = datetime('now'),
+             flagged_for_deletion_by = ?
+       WHERE id = ? AND flagged_for_deletion = 0`,
+    )
+    .bind(reason, mod.id, id)
+    .run();
+
+  if (result.meta.changes === 0) {
+    return c.json({ error: "Template is already flagged for deletion" }, 409);
+  }
+
+  try {
+    await c.env.easyschematic_db
+      .prepare(
+        "INSERT INTO mod_actions (moderator_id, action, template_id, before_data, note) VALUES (?, 'flag-delete', ?, ?, ?)",
+      )
+      .bind(mod.id, id, JSON.stringify(rowToTemplate(existing as never)), reason)
+      .run();
+  } catch (e) {
+    console.error("Failed to write mod_actions audit log for flag-delete:", e);
+  }
+
+  return c.json({ ok: true }, 200, NO_CACHE_HEADERS);
+});
+
+// Admin clears a deletion flag, restoring the template to public visibility.
+app.post("/templates/:id/unflag-delete", async (c) => {
+  const admin = requireAdmin(c);
+  if (!admin) return c.json({ error: "Admin access required" }, 403);
+
+  const id = c.req.param("id");
+  const db = c.env.easyschematic_db;
+  const existing = await db.prepare("SELECT * FROM templates WHERE id = ?").bind(id).first();
+  if (!existing) return c.json({ error: "Template not found" }, 404);
+
+  const r = existing as Record<string, unknown>;
+  if (!r.flagged_for_deletion) {
+    return c.json({ error: "Template is not flagged for deletion" }, 409);
+  }
+
+  await db
+    .prepare(
+      `UPDATE templates
+         SET flagged_for_deletion = 0,
+             flagged_for_deletion_reason = NULL,
+             flagged_for_deletion_at = NULL,
+             flagged_for_deletion_by = NULL
+       WHERE id = ?`,
+    )
+    .bind(id)
+    .run();
+
+  try {
+    await db
+      .prepare(
+        "INSERT INTO mod_actions (moderator_id, action, template_id, note) VALUES (?, 'unflag-delete', ?, ?)",
+      )
+      .bind(admin.id, id, (r.flagged_for_deletion_reason as string | null) ?? null)
+      .run();
+  } catch (e) {
+    console.error("Failed to write mod_actions audit log for unflag-delete:", e);
+  }
+
+  return c.json({ ok: true }, 200, NO_CACHE_HEADERS);
+});
+
+// Admin-only queue of templates flagged for deletion, with flagger attribution.
+app.get("/admin/pending-deletions", async (c) => {
+  const admin = requireAdmin(c);
+  if (!admin) return c.json({ error: "Admin access required" }, 403);
+
+  const { results } = await c.env.easyschematic_db
+    .prepare(
+      `SELECT t.id, t.label, t.device_type, t.category, t.manufacturer, t.model_number,
+              t.flagged_for_deletion_reason, t.flagged_for_deletion_at, t.flagged_for_deletion_by,
+              u.name AS flagger_name, u.email AS flagger_email
+         FROM templates t
+         LEFT JOIN users u ON t.flagged_for_deletion_by = u.id
+        WHERE t.flagged_for_deletion = 1
+        ORDER BY t.flagged_for_deletion_at DESC`,
+    )
+    .all();
+
+  const items = (results as Record<string, unknown>[]).map((r) => ({
+    id: r.id as string,
+    label: r.label as string,
+    deviceType: r.device_type as string,
+    category: r.category as string,
+    manufacturer: (r.manufacturer as string | null) ?? null,
+    modelNumber: (r.model_number as string | null) ?? null,
+    flaggedReason: (r.flagged_for_deletion_reason as string | null) ?? "",
+    flaggedAt: (r.flagged_for_deletion_at as string | null) ?? "",
+    flaggedBy: r.flagged_for_deletion_by
+      ? {
+          id: r.flagged_for_deletion_by as string,
+          name: (r.flagger_name as string | null) ?? "Moderator",
+          email: (r.flagger_email as string | null) ?? null,
+        }
+      : null,
+  }));
+
+  return c.json(items, 200, NO_CACHE_HEADERS);
+});
+
 // Internal moderator notes — shared across all moderators.
 app.get("/templates/:id/notes", async (c) => {
   const mod = requireModerator(c);
@@ -1702,11 +1840,14 @@ app.get("/templates/:id/admin", async (c) => {
       `SELECT t.*,
               su.name AS submitter_name,
               eu.name AS editor_name,
-              au.name AS approver_name
+              au.name AS approver_name,
+              fu.name AS flagger_name,
+              fu.email AS flagger_email
          FROM templates t
          LEFT JOIN users su ON t.submitted_by = su.id
          LEFT JOIN users eu ON t.last_edited_by = eu.id
          LEFT JOIN users au ON t.approved_by = au.id
+         LEFT JOIN users fu ON t.flagged_for_deletion_by = fu.id
         WHERE t.id = ?`,
     )
     .bind(id)
@@ -1754,6 +1895,16 @@ app.get("/templates/:id/admin", async (c) => {
       approvedSchemaVersion: (r.approved_schema_version as string | null) ?? null,
       needsReview: !!r.needs_review,
       needsReviewReason: (r.needs_review_reason as string | null) ?? null,
+      flaggedForDeletion: !!r.flagged_for_deletion,
+      flaggedForDeletionReason: (r.flagged_for_deletion_reason as string | null) ?? null,
+      flaggedForDeletionAt: (r.flagged_for_deletion_at as string | null) ?? null,
+      flaggedBy: r.flagged_for_deletion_by
+        ? {
+            id: r.flagged_for_deletion_by as string,
+            name: (r.flagger_name as string | null) ?? "Moderator",
+            email: (r.flagger_email as string | null) ?? null,
+          }
+        : null,
       modNotes: (noteRows as Record<string, unknown>[]).map((n) => ({
         id: n.id as string,
         body: n.body as string,
@@ -1777,18 +1928,51 @@ app.get("/templates/:id/admin", async (c) => {
 app.delete("/templates/:id", async (c) => {
   // authMiddleware now passes moderators through for PUT; delete stays admin-only.
   const isAdminToken = c.get("isAdminToken");
-  if (!isAdminToken && !requireAdmin(c)) {
+  const adminUser = requireAdmin(c);
+  if (!isAdminToken && !adminUser) {
     return c.json({ error: "Admin access required" }, 403);
   }
   const id = c.req.param("id");
 
   const existing = await c.env.easyschematic_db
-    .prepare("SELECT id FROM templates WHERE id = ?")
+    .prepare("SELECT * FROM templates WHERE id = ?")
     .bind(id)
     .first();
 
   if (!existing) {
     return c.json({ error: "Template not found" }, 404);
+  }
+
+  const r = existing as Record<string, unknown>;
+  const template = rowToTemplate(existing as never);
+  // Include flag metadata alongside template fields for self-contained audit snapshot.
+  const beforeSnapshot: Record<string, unknown> = { ...template };
+  if (r.flagged_for_deletion) {
+    beforeSnapshot.flaggedForDeletion = true;
+    beforeSnapshot.flaggedForDeletionReason = r.flagged_for_deletion_reason ?? null;
+    beforeSnapshot.flaggedForDeletionAt = r.flagged_for_deletion_at ?? null;
+    beforeSnapshot.flaggedForDeletionBy = r.flagged_for_deletion_by ?? null;
+  }
+
+  // Insert the audit row BEFORE deleting: mod_actions.template_id has a FK to
+  // templates(id), so writing it post-delete would fail. The ON DELETE SET NULL
+  // from migration 0027 then nulls the FK as part of the subsequent delete.
+  if (adminUser) {
+    try {
+      await c.env.easyschematic_db
+        .prepare(
+          "INSERT INTO mod_actions (moderator_id, action, template_id, before_data, note) VALUES (?, 'confirm-delete', ?, ?, ?)",
+        )
+        .bind(
+          adminUser.id,
+          id,
+          JSON.stringify(beforeSnapshot),
+          (r.flagged_for_deletion_reason as string | null) ?? null,
+        )
+        .run();
+    } catch (e) {
+      console.error("Failed to write mod_actions audit log for confirm-delete:", e);
+    }
   }
 
   await c.env.easyschematic_db.prepare("DELETE FROM templates WHERE id = ?").bind(id).run();

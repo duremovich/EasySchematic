@@ -54,6 +54,10 @@ export interface TemplateRow {
   depth_mm: number | null;
   weight_kg: number | null;
   sort_order: number;
+  flagged_for_deletion?: number;
+  flagged_for_deletion_reason?: string | null;
+  flagged_for_deletion_at?: string | null;
+  flagged_for_deletion_by?: string | null;
 }
 
 interface TemplateInput {

@@ -9,11 +9,14 @@ import {
   editTemplateNote,
   deleteTemplateNote,
   sendBackTemplate,
+  flagForDeletion,
+  unflagDeletion,
+  deleteTemplate,
   getAdminToken,
 } from "../api";
 import type { User, TemplateAdminView, TemplateNote } from "../api";
 import SignalBadge from "../components/SignalBadge";
-import { linkClick } from "../navigate";
+import { linkClick, navigateTo } from "../navigate";
 
 type TemplateWithAttribution = DeviceTemplate & {
   submittedBy?: { name: string };
@@ -98,6 +101,14 @@ export default function DeviceDetailPage({ id, currentUser }: { id: string; curr
             <span className="ml-1 text-amber-700 dark:text-amber-300">Reason: {adminView.needsReviewReason}</span>
           )}
         </div>
+      )}
+      {adminView?.flaggedForDeletion && (
+        <DeletionFlagBanner
+          view={adminView}
+          templateId={id}
+          isAdmin={currentUser?.role === "admin"}
+          onChange={setAdminView}
+        />
       )}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
@@ -267,6 +278,9 @@ function ModeratorPanel({
   const [sendBackReason, setSendBackReason] = useState("");
   const [showSendBack, setShowSendBack] = useState(false);
   const [sendingBack, setSendingBack] = useState(false);
+  const [flagReason, setFlagReason] = useState("");
+  const [showFlag, setShowFlag] = useState(false);
+  const [flagging, setFlagging] = useState(false);
   const [actionError, setActionError] = useState("");
 
   const handleAdd = async () => {
@@ -332,6 +346,29 @@ function ModeratorPanel({
       setActionError(e instanceof Error ? e.message : "Failed to send back");
     } finally {
       setSendingBack(false);
+    }
+  };
+
+  const handleFlag = async () => {
+    const reason = flagReason.trim();
+    if (!reason) return;
+    setFlagging(true);
+    setActionError("");
+    try {
+      await flagForDeletion(templateId, reason);
+      onChange({
+        ...view,
+        flaggedForDeletion: true,
+        flaggedForDeletionReason: reason,
+        flaggedForDeletionAt: new Date().toISOString(),
+        // flaggedBy enrichment comes from the next /admin fetch; UI will render a placeholder until then
+      });
+      setFlagReason("");
+      setShowFlag(false);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Failed to flag for deletion");
+    } finally {
+      setFlagging(false);
     }
   };
 
@@ -455,7 +492,7 @@ function ModeratorPanel({
         </div>
       )}
 
-      {/* Send back to review */}
+      {/* Send back to review + Flag for deletion */}
       <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
         {showSendBack ? (
           <div>
@@ -485,14 +522,54 @@ function ModeratorPanel({
               </button>
             </div>
           </div>
+        ) : showFlag ? (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Why should this device be deleted?
+            </label>
+            <textarea
+              value={flagReason}
+              onChange={(e) => setFlagReason(e.target.value)}
+              placeholder="e.g. Duplicate of BMD UltraStudio HD Mini (id abc123), no salvageable fields to merge."
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-red-300 dark:border-red-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Flagging hides the device from the public library immediately. An admin will then permanently delete it or restore it.
+            </p>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={handleFlag}
+                disabled={flagging || !flagReason.trim()}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {flagging ? "Flagging..." : "Confirm — Flag for Deletion"}
+              </button>
+              <button
+                onClick={() => { setShowFlag(false); setFlagReason(""); }}
+                className="px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         ) : (
-          <button
-            onClick={() => setShowSendBack(true)}
-            disabled={view.needsReview}
-            className="px-4 py-2 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {view.needsReview ? "Already under review" : "Send back to review"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setShowSendBack(true)}
+              disabled={view.needsReview}
+              className="px-4 py-2 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {view.needsReview ? "Already under review" : "Send back to review"}
+            </button>
+            <button
+              onClick={() => setShowFlag(true)}
+              disabled={view.flaggedForDeletion}
+              className="px-4 py-2 rounded-lg border border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 text-sm font-medium hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {view.flaggedForDeletion ? "Already flagged for deletion" : "Flag for deletion"}
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -503,6 +580,117 @@ function formatDate(iso: string): string {
   const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
   if (isNaN(d.getTime())) return iso;
   return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+function DeletionFlagBanner({
+  view,
+  templateId,
+  isAdmin,
+  onChange,
+}: {
+  view: TemplateAdminView;
+  templateId: string;
+  isAdmin: boolean;
+  onChange: (v: TemplateAdminView) => void;
+}) {
+  const [restoring, setRestoring] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
+
+  const flagger = view.flaggedBy?.name ?? "A moderator";
+  const flaggedAt = view.flaggedForDeletionAt ? formatDate(view.flaggedForDeletionAt) : "recently";
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    setError("");
+    try {
+      await unflagDeletion(templateId);
+      onChange({
+        ...view,
+        flaggedForDeletion: false,
+        flaggedForDeletionReason: null,
+        flaggedForDeletionAt: null,
+        flaggedBy: null,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to restore");
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  const handleHardDelete = async () => {
+    setDeleting(true);
+    setError("");
+    try {
+      await deleteTemplate(templateId, null);
+      navigateTo("/admin/pending-deletions");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to delete");
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className="mb-4 border border-red-400 dark:border-red-700 rounded-lg p-4 bg-red-50 dark:bg-red-900/30">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex-1 min-w-0">
+          <div className="text-sm font-semibold text-red-800 dark:text-red-200">
+            Flagged for deletion
+          </div>
+          <div className="mt-1 text-sm text-red-700 dark:text-red-300 whitespace-pre-wrap">
+            {view.flaggedForDeletionReason || "(no reason given)"}
+          </div>
+          <div className="mt-1 text-xs text-red-600 dark:text-red-400">
+            Flagged by {flagger} · {flaggedAt}
+            {!isAdmin && " · Waiting for admin to confirm or restore."}
+          </div>
+        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {!confirmDelete ? (
+              <>
+                <button
+                  onClick={handleRestore}
+                  disabled={restoring || deleting}
+                  className="px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-sm text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                >
+                  {restoring ? "Restoring..." : "Restore"}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  disabled={restoring || deleting}
+                  className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  Permanently Delete
+                </button>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-red-700 dark:text-red-300">Are you sure?</span>
+                <button
+                  onClick={handleHardDelete}
+                  disabled={deleting}
+                  className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 transition-colors"
+                >
+                  {deleting ? "Deleting..." : "Yes, delete"}
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className="px-3 py-1.5 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+      {error && <div className="mt-2 text-xs text-red-700 dark:text-red-300">{error}</div>}
+    </div>
+  );
 }
 
 function SlotsSection({ slots, allTemplates }: { slots: SlotDefinition[]; allTemplates: DeviceTemplate[] }) {

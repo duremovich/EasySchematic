@@ -11,6 +11,7 @@ import ReviewQueuePage from "./pages/ReviewQueuePage";
 import ReviewDetailPage from "./pages/ReviewDetailPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminActivityPage from "./pages/AdminActivityPage";
+import PendingDeletionsPage from "./pages/PendingDeletionsPage";
 import ProfilePage from "./pages/ProfilePage";
 import ContributorsPage from "./pages/ContributorsPage";
 import UserMenu from "./components/UserMenu";
@@ -28,6 +29,7 @@ function parseRoute(): { page: string; id?: string; draft?: string; clone?: stri
   if (path === "/admin/edit") return { page: "admin-edit", auth };
   if (path === "/admin/users") return { page: "admin-users", auth };
   if (path === "/admin/activity") return { page: "admin-activity", auth };
+  if (path === "/admin/pending-deletions") return { page: "admin-pending-deletions", auth };
   if (path === "/admin") return { page: "admin-activity", auth };
   if (path.startsWith("/device/")) return { page: "device", id: path.slice(8), auth };
   if (path === "/login") return { page: "login", auth };
@@ -176,9 +178,14 @@ export default function App() {
         </>
       )}
       {isAdmin && (
-        <a href="/admin" onClick={linkClick} className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors">
-          Admin
-        </a>
+        <>
+          <a href="/admin/pending-deletions" onClick={linkClick} className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors">
+            Pending Deletion
+          </a>
+          <a href="/admin" onClick={linkClick} className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors">
+            Admin
+          </a>
+        </>
       )}
       {!authLoading && (
         user ? (
@@ -256,7 +263,10 @@ export default function App() {
         {route.page === "admin-activity" && (
           isAdmin ? <AdminActivityPage /> : <NoAccess />
         )}
-        {route.page === "admin-edit" && <AdminEditorPage id={route.id} />}
+        {route.page === "admin-pending-deletions" && (
+          isAdmin ? <PendingDeletionsPage /> : <NoAccess />
+        )}
+        {route.page === "admin-edit" && <AdminEditorPage id={route.id} currentUser={user} />}
       </main>
     </div>
   );
