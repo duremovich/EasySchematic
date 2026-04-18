@@ -232,7 +232,7 @@ export default function App() {
       </nav>
       <main className="flex-1">
         {route.page === "browse" && <BrowsePage />}
-        {route.page === "device" && route.id && <DeviceDetailPage id={route.id} />}
+        {route.page === "device" && route.id && <DeviceDetailPage id={route.id} currentUser={user} />}
         {route.page === "login" && <LoginPage />}
         {route.page === "submit" && (
           authLoading ? null : user ? <SubmitPage id={route.id} draftId={route.draft} cloneId={route.clone} /> : <LoginRedirect />

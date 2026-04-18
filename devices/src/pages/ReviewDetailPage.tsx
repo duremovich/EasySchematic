@@ -191,12 +191,20 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
         <a href="/review" onClick={linkClick} className="text-sm text-blue-600 hover:text-blue-800">&larr; Review Queue</a>
         <StatusBadge status={submission.status} />
         <span className="text-xs text-slate-400 capitalize">{submission.action}</span>
-        {submission.source && submission.source !== "manual" && (
+        {submission.source === "bulk-json" || submission.source === "bulk-csv" ? (
           <span
             className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase tracking-wide"
             title="Submitted via bulk import — review related submissions from this user together"
           >
             {submission.source === "bulk-json" ? "bulk JSON" : "bulk CSV"}
+          </span>
+        ) : null}
+        {submission.source === "moderator-flag" && (
+          <span
+            className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 uppercase tracking-wide"
+            title="A moderator flagged this device for re-review"
+          >
+            mod flag
           </span>
         )}
       </div>
@@ -219,12 +227,25 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
         );
       })()}
 
-      {submission.submitterNote && (
-        <div className="mb-6 border border-amber-200 rounded-lg p-4 bg-amber-50">
-          <div className="text-xs font-semibold text-amber-700 mb-1">Submitter Note</div>
-          <p className="text-sm text-amber-900 whitespace-pre-wrap">{submission.submitterNote}</p>
-        </div>
-      )}
+      {submission.submitterNote && (() => {
+        const fromModeratorFlag = submission.source === "moderator-flag"
+          || submission.submitterNote.startsWith("Sent back by moderator:");
+        if (fromModeratorFlag) {
+          const reason = submission.submitterNote.replace(/^Sent back by moderator:\s*/, "");
+          return (
+            <div className="mb-6 border border-amber-300 rounded-lg p-4 bg-amber-50">
+              <div className="text-xs font-semibold text-amber-700 mb-1">Sent back by moderator</div>
+              <p className="text-sm text-amber-900 whitespace-pre-wrap">{reason}</p>
+            </div>
+          );
+        }
+        return (
+          <div className="mb-6 border border-amber-200 rounded-lg p-4 bg-amber-50">
+            <div className="text-xs font-semibold text-amber-700 mb-1">Submitter Note</div>
+            <p className="text-sm text-amber-900 whitespace-pre-wrap">{submission.submitterNote}</p>
+          </div>
+        );
+      })()}
 
       {existing && submission.action === "update" ? (
         // Side-by-side diff for edits

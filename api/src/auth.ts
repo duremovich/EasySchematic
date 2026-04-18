@@ -71,9 +71,10 @@ export const authMiddleware = createMiddleware<Env>(async (c, next) => {
     }
   }
 
-  // Check session — admin role can write templates directly
+  // Session: admins and moderators can both write templates directly.
+  // Moderators use this for direct edits without re-approval.
   const user = c.get("user");
-  if (user && user.role === "admin") {
+  if (user && (user.role === "admin" || user.role === "moderator")) {
     return next();
   }
 

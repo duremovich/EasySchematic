@@ -1,20 +1,34 @@
 import { useState, useEffect } from "react";
 import type { DeviceTemplate, SlotDefinition } from "../../../src/types";
 import { CONNECTOR_LABELS } from "../../../src/types";
-import { fetchTemplate, fetchTemplates, getAdminToken } from "../api";
+import {
+  fetchTemplate,
+  fetchTemplates,
+  fetchTemplateAdmin,
+  addTemplateNote,
+  editTemplateNote,
+  deleteTemplateNote,
+  sendBackTemplate,
+  getAdminToken,
+} from "../api";
+import type { User, TemplateAdminView, TemplateNote } from "../api";
 import SignalBadge from "../components/SignalBadge";
 import { linkClick } from "../navigate";
 
 type TemplateWithAttribution = DeviceTemplate & {
   submittedBy?: { name: string };
   lastEditedBy?: { name: string };
+  needsReview?: boolean;
 };
 
-export default function DeviceDetailPage({ id }: { id: string }) {
+export default function DeviceDetailPage({ id, currentUser }: { id: string; currentUser?: User | null }) {
   const [template, setTemplate] = useState<TemplateWithAttribution | null>(null);
   const [allTemplates, setAllTemplates] = useState<DeviceTemplate[]>([]);
+  const [adminView, setAdminView] = useState<TemplateAdminView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const isMod = currentUser?.role === "moderator" || currentUser?.role === "admin";
 
   useEffect(() => {
     let cancelled = false;
@@ -23,8 +37,13 @@ export default function DeviceDetailPage({ id }: { id: string }) {
       .catch((e) => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     fetchTemplates().then((t) => { if (!cancelled) setAllTemplates(t); }).catch(() => {});
+    if (isMod) {
+      fetchTemplateAdmin(id)
+        .then((view) => { if (!cancelled) setAdminView(view); })
+        .catch(() => {}); // non-fatal — public view still renders
+    }
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, isMod]);
 
   if (loading) return <div className="p-8 text-center text-slate-500 dark:text-slate-400">Loading...</div>;
   if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
@@ -33,7 +52,8 @@ export default function DeviceDetailPage({ id }: { id: string }) {
   const inputs = template.ports.filter((p) => p.direction === "input");
   const outputs = template.ports.filter((p) => p.direction === "output");
   const bidi = template.ports.filter((p) => p.direction === "bidirectional");
-  const hasAdmin = !!getAdminToken();
+  const hasAdmin = !!getAdminToken() || isMod;
+  const needsReview = template.needsReview || adminView?.needsReview;
 
   const renderPortTable = (ports: typeof template.ports, title: string) => {
     if (ports.length === 0) return null;
@@ -71,6 +91,14 @@ export default function DeviceDetailPage({ id }: { id: string }) {
       <div className="mb-4">
         <a href="/" onClick={linkClick} className="text-sm text-blue-600 hover:text-blue-800">&larr; All Devices</a>
       </div>
+      {needsReview && (
+        <div className="mb-4 border border-amber-300 dark:border-amber-700 rounded-lg p-3 bg-amber-50 dark:bg-amber-900/30 text-sm text-amber-800 dark:text-amber-200">
+          <strong>Under review:</strong> A moderator flagged this device for re-review — specs may be inaccurate.
+          {adminView?.needsReviewReason && (
+            <span className="ml-1 text-amber-700 dark:text-amber-300">Reason: {adminView.needsReviewReason}</span>
+          )}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{template.label}</h1>
@@ -211,8 +239,270 @@ export default function DeviceDetailPage({ id }: { id: string }) {
           )}
         </div>
       )}
+
+      {isMod && adminView && (
+        <ModeratorPanel
+          view={adminView}
+          onChange={setAdminView}
+          templateId={id}
+        />
+      )}
     </div>
   );
+}
+
+function ModeratorPanel({
+  view,
+  onChange,
+  templateId,
+}: {
+  view: TemplateAdminView;
+  onChange: (v: TemplateAdminView) => void;
+  templateId: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState("");
+  const [sendBackReason, setSendBackReason] = useState("");
+  const [showSendBack, setShowSendBack] = useState(false);
+  const [sendingBack, setSendingBack] = useState(false);
+  const [actionError, setActionError] = useState("");
+
+  const handleAdd = async () => {
+    const body = draft.trim();
+    if (!body) return;
+    setAdding(true);
+    setActionError("");
+    try {
+      const note = await addTemplateNote(templateId, body);
+      onChange({ ...view, modNotes: [note, ...view.modNotes] });
+      setDraft("");
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Failed to add note");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleStartEdit = (note: TemplateNote) => {
+    setEditingNoteId(note.id);
+    setEditingDraft(note.body);
+  };
+
+  const handleSaveEdit = async (noteId: string) => {
+    const body = editingDraft.trim();
+    if (!body) return;
+    setActionError("");
+    try {
+      await editTemplateNote(templateId, noteId, body);
+      onChange({
+        ...view,
+        modNotes: view.modNotes.map((n) => (n.id === noteId ? { ...n, body, updatedAt: new Date().toISOString() } : n)),
+      });
+      setEditingNoteId(null);
+      setEditingDraft("");
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Failed to save note");
+    }
+  };
+
+  const handleDelete = async (noteId: string) => {
+    if (!confirm("Delete this note?")) return;
+    setActionError("");
+    try {
+      await deleteTemplateNote(templateId, noteId);
+      onChange({ ...view, modNotes: view.modNotes.filter((n) => n.id !== noteId) });
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Failed to delete note");
+    }
+  };
+
+  const handleSendBack = async () => {
+    const reason = sendBackReason.trim();
+    if (!reason) return;
+    setSendingBack(true);
+    setActionError("");
+    try {
+      await sendBackTemplate(templateId, reason);
+      onChange({ ...view, needsReview: true, needsReviewReason: reason });
+      setSendBackReason("");
+      setShowSendBack(false);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : "Failed to send back");
+    } finally {
+      setSendingBack(false);
+    }
+  };
+
+  return (
+    <div className="mt-8 pt-4 border-t-2 border-yellow-300 dark:border-yellow-700">
+      <h2 className="text-sm font-semibold text-yellow-700 dark:text-yellow-400 uppercase tracking-wider mb-3">Moderator Panel</h2>
+
+      {actionError && (
+        <div className="mb-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded px-3 py-2">
+          {actionError}
+        </div>
+      )}
+
+      {/* Approval metadata */}
+      <div className="mb-4 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 text-sm">
+        <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Approval</div>
+        {view.approvedAt ? (
+          <div className="text-slate-700 dark:text-slate-300">
+            Approved {formatDate(view.approvedAt)}
+            {view.approvedBy ? <> by <span className="font-medium">{view.approvedBy.name}</span></> : null}
+            {view.approvedSchemaVersion ? (
+              <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">(schema v{view.approvedSchemaVersion})</span>
+            ) : null}
+          </div>
+        ) : (
+          <div className="text-slate-500 dark:text-slate-400">No approval record.</div>
+        )}
+        {view.needsReview && (
+          <div className="mt-1 text-amber-700 dark:text-amber-300">
+            Flagged for re-review{view.needsReviewReason ? `: ${view.needsReviewReason}` : ""}
+          </div>
+        )}
+      </div>
+
+      {/* Internal notes */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Internal Notes ({view.modNotes.length})</div>
+        </div>
+        <div className="space-y-2 mb-3">
+          {view.modNotes.map((note) => (
+            <div key={note.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50">
+              {editingNoteId === note.id ? (
+                <div>
+                  <textarea
+                    value={editingDraft}
+                    onChange={(e) => setEditingDraft(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => handleSaveEdit(note.id)}
+                      className="px-3 py-1 rounded bg-blue-600 text-white text-xs hover:bg-blue-700 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setEditingNoteId(null); setEditingDraft(""); }}
+                      className="px-3 py-1 rounded text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{note.body}</div>
+                  <div className="mt-2 flex items-center justify-between text-xs text-slate-400 dark:text-slate-500">
+                    <span>
+                      {note.authorName} · {formatDate(note.createdAt)}
+                      {note.updatedAt !== note.createdAt ? " (edited)" : ""}
+                    </span>
+                    <span className="flex gap-2">
+                      <button onClick={() => handleStartEdit(note)} className="hover:text-slate-600 dark:hover:text-slate-300">Edit</button>
+                      <button onClick={() => handleDelete(note.id)} className="hover:text-red-600">Delete</button>
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+          {view.modNotes.length === 0 && (
+            <div className="text-sm text-slate-400 dark:text-slate-500 italic">No notes yet.</div>
+          )}
+        </div>
+        <div>
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Add an internal note — visible only to moderators."
+            rows={2}
+            className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={handleAdd}
+              disabled={adding || !draft.trim()}
+              className="px-3 py-1.5 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            >
+              {adding ? "Adding..." : "Add note"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent mod history */}
+      {view.modHistory.length > 0 && (
+        <div className="mb-4">
+          <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Recent Moderator Activity</div>
+          <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
+            {view.modHistory.slice(0, 10).map((h, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="font-mono text-slate-400 dark:text-slate-500">{formatDate(h.createdAt)}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">{h.moderatorName}</span>
+                <span className="text-slate-500 dark:text-slate-400">{h.action}</span>
+                {h.note && <span className="text-slate-500 dark:text-slate-400 italic truncate">— {h.note}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Send back to review */}
+      <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
+        {showSendBack ? (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Why is this device being sent back to review?
+            </label>
+            <textarea
+              value={sendBackReason}
+              onChange={(e) => setSendBackReason(e.target.value)}
+              placeholder="e.g. User reported that the power draw is wrong; manufacturer page now shows 45W not 30W."
+              rows={3}
+              className="w-full px-3 py-2 rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={handleSendBack}
+                disabled={sendingBack || !sendBackReason.trim()}
+                className="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 transition-colors"
+              >
+                {sendingBack ? "Sending..." : "Confirm — Send to Review"}
+              </button>
+              <button
+                onClick={() => { setShowSendBack(false); setSendBackReason(""); }}
+                className="px-3 py-2 rounded-lg text-sm text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowSendBack(true)}
+            disabled={view.needsReview}
+            className="px-4 py-2 rounded-lg border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-sm font-medium hover:bg-amber-50 dark:hover:bg-amber-900/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {view.needsReview ? "Already under review" : "Send back to review"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
 function SlotsSection({ slots, allTemplates }: { slots: SlotDefinition[]; allTemplates: DeviceTemplate[] }) {

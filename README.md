@@ -110,7 +110,7 @@ SDI · HDMI · NDI · Dante · Analog Audio · AES · AES67 · DMX · MADI · US
 
 - **[devices.easyschematic.live](https://devices.easyschematic.live)** — browse, search, and submit device templates
 - **Community submissions** — submit new devices or suggest edits to existing templates via magic-link email auth
-- **Moderation workflow** — submissions are reviewed by moderators before going live
+- **Moderation workflow** — submissions are reviewed by moderators before going live; each approved device is stamped with the reviewer and schema version, moderators keep internal notes on devices, and flagged devices can be sent back into the review queue if users report issues
 - **Reference URLs** — branded devices link to manufacturer product pages for spec verification
 - **Contributor attribution** — approved submissions credit the contributor on the device page and the hall of fame
 - **REST API** at `api.easyschematic.live` backed by Cloudflare D1 (SQLite) — open for read access, no auth required

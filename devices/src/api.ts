@@ -230,7 +230,7 @@ export interface Submission {
   submitterEmail?: string;
   submitterName?: string;
   submitterNote?: string;
-  source?: "manual" | "bulk-json" | "bulk-csv";
+  source?: "manual" | "bulk-json" | "bulk-csv" | "moderator-flag";
   claimedBy: string | null;
   claimedAt: string | null;
   claimerEmail?: string;
@@ -420,5 +420,95 @@ export async function fetchModerators(): Promise<ModeratorSummary[]> {
     credentials: "include",
   });
   if (!res.ok) throw new Error(`Failed to fetch moderators: ${res.status}`);
+  return res.json();
+}
+
+// ==================== MODERATOR TEMPLATE TOOLS ====================
+
+export interface TemplateNote {
+  id: string;
+  body: string;
+  authorId: string;
+  authorName: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TemplateModHistoryEntry {
+  action: string;
+  note: string | null;
+  createdAt: string;
+  moderatorName: string;
+}
+
+export interface TemplateAdminView extends DeviceTemplate {
+  submittedBy?: { name: string };
+  lastEditedBy?: { name: string };
+  approvedAt: string | null;
+  approvedBy: { name: string } | null;
+  approvedSchemaVersion: string | null;
+  needsReview: boolean;
+  needsReviewReason: string | null;
+  modNotes: TemplateNote[];
+  modHistory: TemplateModHistoryEntry[];
+}
+
+export async function fetchTemplateAdmin(id: string): Promise<TemplateAdminView> {
+  const res = await fetch(`${API_URL}/templates/${id}/admin`, {
+    credentials: "include",
+  });
+  if (res.status === 403) throw new Error("Moderator access required");
+  if (!res.ok) throw new Error(`Failed to fetch admin template: ${res.status}`);
+  return res.json();
+}
+
+export async function fetchTemplateNotes(id: string): Promise<TemplateNote[]> {
+  const res = await fetch(`${API_URL}/templates/${id}/notes`, {
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`Failed to fetch notes: ${res.status}`);
+  return res.json();
+}
+
+export async function addTemplateNote(id: string, body: string): Promise<TemplateNote> {
+  const res = await fetch(`${API_URL}/templates/${id}/notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ body }),
+  });
+  if (!res.ok) throw new Error(`Failed to add note: ${res.status}`);
+  return res.json();
+}
+
+export async function editTemplateNote(id: string, noteId: string, body: string): Promise<void> {
+  const res = await fetch(`${API_URL}/templates/${id}/notes/${noteId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ body }),
+  });
+  if (!res.ok) throw new Error(`Failed to edit note: ${res.status}`);
+}
+
+export async function deleteTemplateNote(id: string, noteId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/templates/${id}/notes/${noteId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error(`Failed to delete note: ${res.status}`);
+}
+
+export async function sendBackTemplate(id: string, reason: string): Promise<{ submission_id: string }> {
+  const res = await fetch(`${API_URL}/templates/${id}/send-back`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ reason }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error || `Failed to send back: ${res.status}`);
+  }
   return res.json();
 }

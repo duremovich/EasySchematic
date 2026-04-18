@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { rowToTemplate, rowToSummary, templateToRow } from "./db";
-import { authMiddleware, sessionMiddleware, requireSession, requireModeratorOrToken, requireAdmin, requireAdminOrToken } from "./auth";
+import { authMiddleware, sessionMiddleware, requireSession, requireModerator, requireModeratorOrToken, requireAdmin, requireAdminOrToken } from "./auth";
 import type { Env } from "./auth";
 import { validateTemplate } from "./validate";
 import { checkRateLimit, cleanupExpiredRateLimits } from "./rateLimiter";
@@ -20,7 +20,7 @@ app.use(
       "http://localhost:5174",
       "http://localhost:5175",
     ],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowHeaders: ["Authorization", "Content-Type"],
     credentials: true,
   })
@@ -48,6 +48,10 @@ const CACHE_HEADERS = {
 const NO_CACHE_HEADERS = {
   "Cache-Control": "no-cache",
 };
+
+// Matches the minor portion of package.json's 0.<schema>.<patch> — stamped on
+// approved templates so moderators can find entries predating newer fields.
+const SCHEMA_VERSION = "29";
 
 function sessionCookie(sessionId: string, maxAge: number): string {
   // No Domain attribute — host-only cookie for api.easyschematic.live.
@@ -897,8 +901,8 @@ app.post("/submissions/:id/approve", async (c) => {
 
     await db
       .prepare(
-        `INSERT INTO templates (id, version, device_type, category, label, manufacturer, model_number, color, image_url, reference_url, search_terms, ports, slots, slot_family, power_draw_w, power_capacity_w, voltage, poe_budget_w, poe_draw_w, is_venue_provided, height_mm, width_mm, depth_mm, weight_kg, sort_order, submitted_by)
-         VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO templates (id, version, device_type, category, label, manufacturer, model_number, color, image_url, reference_url, search_terms, ports, slots, slot_family, power_draw_w, power_capacity_w, voltage, poe_budget_w, poe_draw_w, is_venue_provided, height_mm, width_mm, depth_mm, weight_kg, sort_order, submitted_by, approved_at, approved_by, approved_schema_version, needs_review, needs_review_reason)
+         VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?, 0, NULL)`,
       )
       .bind(
         templateRow.id,
@@ -926,6 +930,8 @@ app.post("/submissions/:id/approve", async (c) => {
         templateRow.weight_kg,
         templateRow.sort_order,
         submission.user_id,
+        reviewerId,
+        SCHEMA_VERSION,
       )
       .run();
   } else if (submission.action === "update" && submission.template_id) {
@@ -939,7 +945,9 @@ app.post("/submissions/:id/approve", async (c) => {
              color = ?, image_url = ?, reference_url = ?, search_terms = ?, ports = ?, slots = ?, slot_family = ?,
              power_draw_w = ?, power_capacity_w = ?, voltage = ?, poe_budget_w = ?, poe_draw_w = ?, is_venue_provided = ?,
              height_mm = ?, width_mm = ?, depth_mm = ?, weight_kg = ?, sort_order = ?,
-             version = version + 1, updated_at = CURRENT_TIMESTAMP, last_edited_by = ?
+             version = version + 1, updated_at = CURRENT_TIMESTAMP, last_edited_by = ?,
+             approved_at = datetime('now'), approved_by = ?, approved_schema_version = ?,
+             needs_review = 0, needs_review_reason = NULL
          WHERE id = ?`,
       )
       .bind(
@@ -967,6 +975,8 @@ app.post("/submissions/:id/approve", async (c) => {
         templateRow.weight_kg,
         templateRow.sort_order,
         submission.user_id,
+        reviewerId,
+        SCHEMA_VERSION,
         submission.template_id,
       )
       .run();
@@ -1318,6 +1328,11 @@ app.get("/templates/:id", async (c) => {
       name: (r.editor_name as string) || "Awesome Community Member",
     };
   }
+  // Non-sensitive: lets the public device page render the "under review" banner
+  // without needing a moderator session. The *reason* stays mod-only.
+  if (r.needs_review) {
+    result.needsReview = true;
+  }
 
   return c.json(result, 200, CACHE_HEADERS);
 });
@@ -1393,6 +1408,12 @@ app.put("/templates/:id", async (c) => {
     return c.json({ error: result.error }, 400);
   }
 
+  // authMiddleware already gated this to admin/moderator session or ADMIN_TOKEN.
+  // Prefer session identity for last_edited_by; pure-token calls leave it null.
+  const user = c.get("user");
+  const editorId = user && (user.role === "admin" || user.role === "moderator") ? user.id : null;
+
+  const beforeData = JSON.stringify(rowToTemplate(existing as never));
   const row = templateToRow({ ...result.data, id });
 
   await c.env.easyschematic_db
@@ -1402,7 +1423,8 @@ app.put("/templates/:id", async (c) => {
          color = ?, image_url = ?, reference_url = ?, search_terms = ?, ports = ?, slots = ?, slot_family = ?,
          power_draw_w = ?, power_capacity_w = ?, voltage = ?, poe_budget_w = ?, poe_draw_w = ?, is_venue_provided = ?,
          height_mm = ?, width_mm = ?, depth_mm = ?, weight_kg = ?, sort_order = ?,
-         version = version + 1, updated_at = CURRENT_TIMESTAMP
+         version = version + 1, updated_at = CURRENT_TIMESTAMP,
+         last_edited_by = COALESCE(?, last_edited_by)
      WHERE id = ?`,
     )
     .bind(
@@ -1429,6 +1451,7 @@ app.put("/templates/:id", async (c) => {
       row.depth_mm,
       row.weight_kg,
       row.sort_order,
+      editorId,
       id,
     )
     .run();
@@ -1438,10 +1461,325 @@ app.put("/templates/:id", async (c) => {
     .bind(id)
     .first();
 
+  // Audit log for direct moderator edits. Skip for pure-token calls (matches approve behaviour).
+  if (editorId) {
+    try {
+      const afterData = JSON.stringify(rowToTemplate(updated as never));
+      await c.env.easyschematic_db
+        .prepare(
+          "INSERT INTO mod_actions (moderator_id, action, template_id, before_data, after_data) VALUES (?, 'edit', ?, ?, ?)",
+        )
+        .bind(editorId, id, beforeData, afterData)
+        .run();
+    } catch (e) {
+      console.error("Failed to write mod_actions audit log for edit:", e);
+    }
+  }
+
   return c.json(rowToTemplate(updated as never), 200, NO_CACHE_HEADERS);
 });
 
+// ==================== MODERATOR TEMPLATE ACTIONS ====================
+
+// Send an approved device back into the review queue. Keeps it visible publicly
+// with a "needs review" flag so the UI can warn users without hiding the record.
+app.post("/templates/:id/send-back", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const body = await c.req.json<{ reason?: string }>().catch(() => ({} as { reason?: string }));
+  const reason = (body.reason ?? "").trim();
+  if (!reason) {
+    return c.json({ error: "reason is required" }, 400);
+  }
+
+  const db = c.env.easyschematic_db;
+  const existing = await db.prepare("SELECT * FROM templates WHERE id = ?").bind(id).first();
+  if (!existing) return c.json({ error: "Template not found" }, 404);
+
+  const snapshot = rowToTemplate(existing as never);
+  const snapshotJson = JSON.stringify(snapshot);
+
+  await db
+    .prepare(
+      "UPDATE templates SET needs_review = 1, needs_review_reason = ? WHERE id = ?",
+    )
+    .bind(reason, id)
+    .run();
+
+  const submissionId = crypto.randomUUID();
+  await db
+    .prepare(
+      `INSERT INTO submissions (id, user_id, action, template_id, data, status, submitter_note, source)
+       VALUES (?, ?, 'update', ?, ?, 'pending', ?, 'moderator-flag')`,
+    )
+    .bind(
+      submissionId,
+      mod.id,
+      id,
+      snapshotJson,
+      `Sent back by moderator: ${reason}`,
+    )
+    .run();
+
+  try {
+    await db
+      .prepare(
+        "INSERT INTO mod_actions (moderator_id, action, submission_id, template_id, before_data, note) VALUES (?, 'send_back', ?, ?, ?, ?)",
+      )
+      .bind(mod.id, submissionId, id, snapshotJson, reason)
+      .run();
+  } catch (e) {
+    console.error("Failed to write mod_actions audit log for send_back:", e);
+  }
+
+  return c.json({ ok: true, submission_id: submissionId }, 200, NO_CACHE_HEADERS);
+});
+
+// Internal moderator notes — shared across all moderators.
+app.get("/templates/:id/notes", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const { results } = await c.env.easyschematic_db
+    .prepare(
+      `SELECT n.id, n.body, n.author_id, n.created_at, n.updated_at, u.name AS author_name
+       FROM template_notes n
+       LEFT JOIN users u ON n.author_id = u.id
+       WHERE n.template_id = ?
+       ORDER BY n.created_at DESC`,
+    )
+    .bind(id)
+    .all();
+
+  const notes = (results as Record<string, unknown>[]).map((r) => ({
+    id: r.id as string,
+    body: r.body as string,
+    authorId: r.author_id as string,
+    authorName: (r.author_name as string | null) ?? "Moderator",
+    createdAt: r.created_at as string,
+    updatedAt: r.updated_at as string,
+  }));
+
+  return c.json(notes, 200, NO_CACHE_HEADERS);
+});
+
+app.post("/templates/:id/notes", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const body = await c.req.json<{ body?: string }>().catch(() => ({} as { body?: string }));
+  const text = (body.body ?? "").trim();
+  if (!text) return c.json({ error: "body is required" }, 400);
+
+  const db = c.env.easyschematic_db;
+  const template = await db.prepare("SELECT id FROM templates WHERE id = ?").bind(id).first();
+  if (!template) return c.json({ error: "Template not found" }, 404);
+
+  const noteId = crypto.randomUUID();
+  await db
+    .prepare(
+      "INSERT INTO template_notes (id, template_id, author_id, body) VALUES (?, ?, ?, ?)",
+    )
+    .bind(noteId, id, mod.id, text)
+    .run();
+
+  try {
+    await db
+      .prepare(
+        "INSERT INTO mod_actions (moderator_id, action, template_id, note) VALUES (?, 'note_added', ?, ?)",
+      )
+      .bind(mod.id, id, text)
+      .run();
+  } catch (e) {
+    console.error("Failed to write mod_actions audit log for note_added:", e);
+  }
+
+  const row = await db
+    .prepare(
+      `SELECT n.id, n.body, n.author_id, n.created_at, n.updated_at, u.name AS author_name
+       FROM template_notes n LEFT JOIN users u ON n.author_id = u.id
+       WHERE n.id = ?`,
+    )
+    .bind(noteId)
+    .first<Record<string, unknown>>();
+
+  return c.json(
+    {
+      id: row!.id,
+      body: row!.body,
+      authorId: row!.author_id,
+      authorName: (row!.author_name as string | null) ?? "Moderator",
+      createdAt: row!.created_at,
+      updatedAt: row!.updated_at,
+    },
+    201,
+    NO_CACHE_HEADERS,
+  );
+});
+
+app.patch("/templates/:id/notes/:noteId", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const noteId = c.req.param("noteId");
+  const body = await c.req.json<{ body?: string }>().catch(() => ({} as { body?: string }));
+  const text = (body.body ?? "").trim();
+  if (!text) return c.json({ error: "body is required" }, 400);
+
+  const db = c.env.easyschematic_db;
+  const existing = await db
+    .prepare("SELECT id FROM template_notes WHERE id = ? AND template_id = ?")
+    .bind(noteId, id)
+    .first();
+  if (!existing) return c.json({ error: "Note not found" }, 404);
+
+  await db
+    .prepare(
+      "UPDATE template_notes SET body = ?, updated_at = datetime('now') WHERE id = ?",
+    )
+    .bind(text, noteId)
+    .run();
+
+  try {
+    await db
+      .prepare(
+        "INSERT INTO mod_actions (moderator_id, action, template_id, note) VALUES (?, 'note_edited', ?, ?)",
+      )
+      .bind(mod.id, id, text)
+      .run();
+  } catch (e) {
+    console.error("Failed to write mod_actions audit log for note_edited:", e);
+  }
+
+  return c.json({ ok: true }, 200, NO_CACHE_HEADERS);
+});
+
+app.delete("/templates/:id/notes/:noteId", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const noteId = c.req.param("noteId");
+  const db = c.env.easyschematic_db;
+
+  const existing = await db
+    .prepare("SELECT body FROM template_notes WHERE id = ? AND template_id = ?")
+    .bind(noteId, id)
+    .first<{ body: string }>();
+  if (!existing) return c.json({ error: "Note not found" }, 404);
+
+  await db.prepare("DELETE FROM template_notes WHERE id = ?").bind(noteId).run();
+
+  try {
+    await db
+      .prepare(
+        "INSERT INTO mod_actions (moderator_id, action, template_id, note) VALUES (?, 'note_deleted', ?, ?)",
+      )
+      .bind(mod.id, id, existing.body)
+      .run();
+  } catch (e) {
+    console.error("Failed to write mod_actions audit log for note_deleted:", e);
+  }
+
+  return c.body(null, 204);
+});
+
+// Moderator-only full view: template + approval metadata + notes + recent mod history.
+app.get("/templates/:id/admin", async (c) => {
+  const mod = requireModerator(c);
+  if (!mod) return c.json({ error: "Moderator access required" }, 403);
+
+  const id = c.req.param("id");
+  const db = c.env.easyschematic_db;
+
+  const row = await db
+    .prepare(
+      `SELECT t.*,
+              su.name AS submitter_name,
+              eu.name AS editor_name,
+              au.name AS approver_name
+         FROM templates t
+         LEFT JOIN users su ON t.submitted_by = su.id
+         LEFT JOIN users eu ON t.last_edited_by = eu.id
+         LEFT JOIN users au ON t.approved_by = au.id
+        WHERE t.id = ?`,
+    )
+    .bind(id)
+    .first();
+
+  if (!row) return c.json({ error: "Template not found" }, 404);
+
+  const r = row as Record<string, unknown>;
+  const template = rowToTemplate(row as never);
+
+  const { results: noteRows } = await db
+    .prepare(
+      `SELECT n.id, n.body, n.author_id, n.created_at, n.updated_at, u.name AS author_name
+         FROM template_notes n LEFT JOIN users u ON n.author_id = u.id
+        WHERE n.template_id = ?
+        ORDER BY n.created_at DESC`,
+    )
+    .bind(id)
+    .all();
+
+  const { results: historyRows } = await db
+    .prepare(
+      `SELECT ma.action, ma.note, ma.created_at, u.name AS moderator_name
+         FROM mod_actions ma LEFT JOIN users u ON ma.moderator_id = u.id
+        WHERE ma.template_id = ?
+        ORDER BY ma.created_at DESC
+        LIMIT 20`,
+    )
+    .bind(id)
+    .all();
+
+  return c.json(
+    {
+      ...template,
+      submittedBy: r.submitted_by
+        ? { name: (r.submitter_name as string) || "Awesome Community Member" }
+        : undefined,
+      lastEditedBy: r.last_edited_by
+        ? { name: (r.editor_name as string) || "Awesome Community Member" }
+        : undefined,
+      approvedAt: (r.approved_at as string | null) ?? null,
+      approvedBy: r.approved_by
+        ? { name: (r.approver_name as string) || "Moderator" }
+        : null,
+      approvedSchemaVersion: (r.approved_schema_version as string | null) ?? null,
+      needsReview: !!r.needs_review,
+      needsReviewReason: (r.needs_review_reason as string | null) ?? null,
+      modNotes: (noteRows as Record<string, unknown>[]).map((n) => ({
+        id: n.id as string,
+        body: n.body as string,
+        authorId: n.author_id as string,
+        authorName: (n.author_name as string | null) ?? "Moderator",
+        createdAt: n.created_at as string,
+        updatedAt: n.updated_at as string,
+      })),
+      modHistory: (historyRows as Record<string, unknown>[]).map((h) => ({
+        action: h.action as string,
+        note: (h.note as string | null) ?? null,
+        createdAt: h.created_at as string,
+        moderatorName: (h.moderator_name as string | null) ?? "Moderator",
+      })),
+    },
+    200,
+    NO_CACHE_HEADERS,
+  );
+});
+
 app.delete("/templates/:id", async (c) => {
+  // authMiddleware now passes moderators through for PUT; delete stays admin-only.
+  const isAdminToken = c.get("isAdminToken");
+  if (!isAdminToken && !requireAdmin(c)) {
+    return c.json({ error: "Admin access required" }, 403);
+  }
   const id = c.req.param("id");
 
   const existing = await c.env.easyschematic_db
