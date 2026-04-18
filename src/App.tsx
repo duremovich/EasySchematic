@@ -204,6 +204,7 @@ function SchematicCanvas() {
     setPendingUndoSnapshot,
     flushPendingSnapshot,
     reparentNode,
+    reparentAllDevices,
     undo,
     redo,
     loadFromLocalStorage,
@@ -1132,9 +1133,17 @@ function SchematicCanvas() {
         parentId = parent.parentId as string | undefined;
       }
       reparentNode(draggedNode.id, { x: absX, y: absY }, { skipUndo: true });
+      // When a room is moved, re-evaluate every device: ones that now fall
+      // inside the moved room become its children, ones that fell out get
+      // unparented. Children of the moved room itself already travelled with
+      // it via relative coords, but findBestEnclosingRoom will pick the
+      // smallest enclosing room so nested layouts still resolve correctly.
+      if (draggedNode.type === "room") {
+        reparentAllDevices({ skipUndo: true });
+      }
       flushPendingSnapshot();
     },
-    [reparentNode, flushPendingSnapshot],
+    [reparentNode, reparentAllDevices, flushPendingSnapshot],
   );
 
   // Dynamic minZoom: allow zooming out just enough to see all nodes, with padding

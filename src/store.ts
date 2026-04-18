@@ -215,6 +215,13 @@ interface SchematicState {
   addNote: (position: { x: number; y: number }) => void;
   updateNoteHtml: (nodeId: string, html: string) => void;
   reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }, options?: { skipUndo?: boolean }) => void;
+  /** Re-evaluate room membership for every non-room node. Used after a room is
+   *  created, resized, or moved so devices get parented/unparented to match
+   *  the new layout. */
+  reparentAllDevices: (options?: { skipUndo?: boolean }) => void;
+  /** Called when a room's NodeResizer finishes. Snapshots undo and reconciles
+   *  device membership against the new bounds. */
+  onRoomResizeEnd: (nodeId: string) => void;
 
   // Undo/Redo
   pushSnapshot: () => void;
@@ -683,6 +690,66 @@ function sortNodesParentFirst(nodes: SchematicNode[]): SchematicNode[] {
   for (const n of nodes) if (n.type === "room") visit(n);
   for (const n of nodes) if (n.type !== "room") visit(n);
   return result;
+}
+
+/** Walk parent chain to compute a node's absolute canvas position. */
+function getAbsolutePosition(
+  nodeId: string,
+  nodeMap: Map<string, SchematicNode>,
+): { x: number; y: number } {
+  const n = nodeMap.get(nodeId);
+  if (!n) return { x: 0, y: 0 };
+  if (!n.parentId) return n.position;
+  const p = getAbsolutePosition(n.parentId, nodeMap);
+  return { x: n.position.x + p.x, y: n.position.y + p.y };
+}
+
+/** True if ancestorId is an ancestor of childId (prevents circular nesting). */
+function isAncestorOf(
+  ancestorId: string,
+  childId: string,
+  nodeMap: Map<string, SchematicNode>,
+): boolean {
+  let cur = nodeMap.get(childId);
+  while (cur?.parentId) {
+    if (cur.parentId === ancestorId) return true;
+    cur = nodeMap.get(cur.parentId);
+  }
+  return false;
+}
+
+/** Find the smallest-area room whose bounds enclose (centerX, centerY). Skips
+ *  self and any descendant (for rooms being reparented). Returns undefined if
+ *  no room contains the point. */
+function findBestEnclosingRoom(
+  candidateId: string,
+  candidateIsRoom: boolean,
+  centerX: number,
+  centerY: number,
+  nodes: SchematicNode[],
+  nodeMap: Map<string, SchematicNode>,
+): SchematicNode | undefined {
+  let best: SchematicNode | undefined;
+  let bestArea = Infinity;
+  for (const n of nodes) {
+    if (n.type !== "room") continue;
+    if (n.id === candidateId) continue;
+    if (candidateIsRoom && isAncestorOf(candidateId, n.id, nodeMap)) continue;
+    const rw = n.measured?.width ?? (n.style?.width as number) ?? (n.width as number) ?? 400;
+    const rh = n.measured?.height ?? (n.style?.height as number) ?? (n.height as number) ?? 300;
+    const absPos = getAbsolutePosition(n.id, nodeMap);
+    if (
+      centerX >= absPos.x && centerX <= absPos.x + rw &&
+      centerY >= absPos.y && centerY <= absPos.y + rh
+    ) {
+      const area = rw * rh;
+      if (area < bestArea) {
+        best = n;
+        bestArea = area;
+      }
+    }
+  }
+  return best;
 }
 
 function getPortFromHandle(
@@ -1766,6 +1833,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     // Deselect everything else so the new room is the sole selection
     const deselected = state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
     set({ nodes: [newRoom, ...deselected] });
+    // Capture any existing devices that now fall inside the new room's bounds
+    get().reparentAllDevices({ skipUndo: true });
     get().saveToLocalStorage();
   },
 
@@ -1869,53 +1938,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!node) return;
 
     const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
-
-    /** Compute the full absolute canvas position of a node by walking its parent chain. */
-    function getAbsolutePosition(nId: string): { x: number; y: number } {
-      const n = nodeMap.get(nId);
-      if (!n) return { x: 0, y: 0 };
-      if (!n.parentId) return n.position;
-      const p = getAbsolutePosition(n.parentId);
-      return { x: n.position.x + p.x, y: n.position.y + p.y };
-    }
-
-    /** True if ancestorId is an ancestor of childId (prevents circular nesting). */
-    function isAncestorOf(ancestorId: string, childId: string): boolean {
-      let cur = nodeMap.get(childId);
-      while (cur?.parentId) {
-        if (cur.parentId === ancestorId) return true;
-        cur = nodeMap.get(cur.parentId);
-      }
-      return false;
-    }
-
     const isRoom = node.type === "room";
     const nodeW = node.measured?.width ?? (isRoom ? 400 : 180);
     const nodeH = node.measured?.height ?? (isRoom ? 300 : 60);
     const centerX = absolutePosition.x + nodeW / 2;
     const centerY = absolutePosition.y + nodeH / 2;
 
-    let targetRoom: SchematicNode | undefined;
-    let targetArea = Infinity;
-    for (const n of state.nodes) {
-      if (n.type !== "room") continue;
-      if (n.id === nodeId) continue; // can't parent to itself
-      if (isRoom && isAncestorOf(nodeId, n.id)) continue; // prevent circular nesting
-      const rw = n.measured?.width ?? (n.style?.width as number) ?? (n.width as number) ?? 400;
-      const rh = n.measured?.height ?? (n.style?.height as number) ?? (n.height as number) ?? 300;
-      const absPos = getAbsolutePosition(n.id);
-      if (
-        centerX >= absPos.x && centerX <= absPos.x + rw &&
-        centerY >= absPos.y && centerY <= absPos.y + rh
-      ) {
-        // Prefer the smallest enclosing room (deepest nesting level)
-        const area = rw * rh;
-        if (area < targetArea) {
-          targetRoom = n;
-          targetArea = area;
-        }
-      }
-    }
+    const targetRoom = findBestEnclosingRoom(nodeId, isRoom, centerX, centerY, state.nodes, nodeMap);
 
     const currentParent = node.parentId;
     const newParent = targetRoom?.id;
@@ -1929,8 +1958,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     let updated = state.nodes.map((n) => {
       if (n.id !== nodeId) return n;
       if (newParent && targetRoom) {
-        // Reparent — convert to position relative to new parent
-        const targetAbsPos = getAbsolutePosition(targetRoom.id);
+        const targetAbsPos = getAbsolutePosition(targetRoom.id, nodeMap);
         return {
           ...n,
           parentId: newParent,
@@ -1940,7 +1968,6 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           },
         };
       } else {
-        // Un-parent — use absolute position
         return {
           ...n,
           parentId: undefined,
@@ -1949,11 +1976,61 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       }
     });
 
-    // Ensure parent nodes come before children in the array
     updated = sortNodesParentFirst(updated);
 
     set({ nodes: updated });
     get().saveToLocalStorage();
+  },
+
+  reparentAllDevices: (options) => {
+    const state = get();
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
+    const updates = new Map<string, { parentId: string | undefined; position: { x: number; y: number } }>();
+
+    for (const node of state.nodes) {
+      if (node.type === "room") continue;
+
+      const absPos = getAbsolutePosition(node.id, nodeMap);
+      const nodeW = node.measured?.width ?? 180;
+      const nodeH = node.measured?.height ?? 60;
+      const centerX = absPos.x + nodeW / 2;
+      const centerY = absPos.y + nodeH / 2;
+
+      const targetRoom = findBestEnclosingRoom(node.id, false, centerX, centerY, state.nodes, nodeMap);
+      const newParent = targetRoom?.id;
+      if (node.parentId === newParent) continue;
+
+      if (targetRoom) {
+        const targetAbs = getAbsolutePosition(targetRoom.id, nodeMap);
+        updates.set(node.id, {
+          parentId: targetRoom.id,
+          position: { x: absPos.x - targetAbs.x, y: absPos.y - targetAbs.y },
+        });
+      } else {
+        updates.set(node.id, { parentId: undefined, position: absPos });
+      }
+    }
+
+    if (updates.size === 0) return;
+
+    if (!options?.skipUndo) {
+      pushUndo({ nodes: state.nodes, edges: state.edges });
+    }
+
+    let updated = state.nodes.map((n) => {
+      const u = updates.get(n.id);
+      if (!u) return n;
+      return { ...n, parentId: u.parentId, position: u.position };
+    });
+    updated = sortNodesParentFirst(updated);
+    set({ nodes: updated });
+    get().saveToLocalStorage();
+  },
+
+  onRoomResizeEnd: (_nodeId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    get().reparentAllDevices({ skipUndo: true });
   },
 
   pushSnapshot: () => {

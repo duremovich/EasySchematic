@@ -39,6 +39,7 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
   const updateRoomLabel = useSchematicStore((s) => s.updateRoomLabel);
   const toggleRoomLock = useSchematicStore((s) => s.toggleRoomLock);
   const setResizeGuides = useSchematicStore((s) => s.setResizeGuides);
+  const onRoomResizeEnd = useSchematicStore((s) => s.onRoomResizeEnd);
   const isSubroom = useSchematicStore((s) => !!s.nodes.find((n) => n.id === id)?.parentId);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(data.label);
@@ -66,7 +67,8 @@ function RoomNodeComponent({ id, data, selected }: NodeProps<RoomNodeType>) {
 
   const handleResizeEnd = useCallback(() => {
     setResizeGuides([]);
-  }, [setResizeGuides]);
+    onRoomResizeEnd(id);
+  }, [id, setResizeGuides, onRoomResizeEnd]);
 
   const commit = () => {
     const trimmed = value.trim();
