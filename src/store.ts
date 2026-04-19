@@ -1145,6 +1145,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...(template.version ? { templateVersion: template.version } : {}),
         ...(template.manufacturer ? { manufacturer: template.manufacturer } : {}),
         ...(template.modelNumber ? { modelNumber: template.modelNumber } : {}),
+        ...(template.referenceUrl ? { referenceUrl: template.referenceUrl } : {}),
+        ...(template.category ? { category: template.category } : {}),
         ...(template.powerDrawW != null ? { powerDrawW: template.powerDrawW } : {}),
         ...(template.powerCapacityW != null ? { powerCapacityW: template.powerCapacityW } : {}),
         ...(template.voltage ? { voltage: template.voltage } : {}),
@@ -2357,6 +2359,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...(template.version ? { templateVersion: template.version } : {}),
         ...(template.manufacturer ? { manufacturer: template.manufacturer } : {}),
         ...(template.modelNumber ? { modelNumber: template.modelNumber } : {}),
+        ...(template.referenceUrl ? { referenceUrl: template.referenceUrl } : {}),
+        ...(template.category ? { category: template.category } : {}),
         ...(hiddenPorts && hiddenPorts.length > 0 ? { hiddenPorts } : {}),
       },
     };

@@ -85,6 +85,9 @@ export default function DeviceEditor() {
   const [hostname, setHostname] = useState("");
   const [deviceType, setDeviceType] = useState("");
   const [manufacturer, setManufacturer] = useState("");
+  const [modelNumber, setModelNumber] = useState("");
+  const [referenceUrl, setReferenceUrl] = useState("");
+  const [category, setCategory] = useState("");
   const [color, setColor] = useState<string | undefined>(undefined);
   const [headerColor, setHeaderColor] = useState<string | undefined>(undefined);
   const [ports, setPorts] = useState<PortDraft[]>([]);
@@ -145,10 +148,16 @@ export default function DeviceEditor() {
   /* eslint-disable react-hooks/set-state-in-effect -- syncing props to local editor state */
   useEffect(() => {
     if (!node) return;
+    const tpl = node.data.templateId
+      ? getBundledTemplates().find((t) => t.id === node.data.templateId)
+      : undefined;
     setLabel(node.data.label);
     setHostname(node.data.hostname ?? "");
     setDeviceType(node.data.deviceType);
     setManufacturer(node.data.manufacturer ?? "");
+    setModelNumber(node.data.modelNumber ?? "");
+    setReferenceUrl(node.data.referenceUrl ?? tpl?.referenceUrl ?? "");
+    setCategory(node.data.category ?? tpl?.category ?? "");
     setColor(node.data.color);
     setHeaderColor(node.data.headerColor);
     setPorts(
@@ -233,7 +242,9 @@ export default function DeviceEditor() {
       deviceType: deviceType.trim() || "custom",
       ports: finalPorts,
       ...(manufacturer.trim() ? { manufacturer: manufacturer.trim() } : {}),
-      ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
+      ...(modelNumber.trim() ? { modelNumber: modelNumber.trim() } : {}),
+      ...(referenceUrl.trim() ? { referenceUrl: referenceUrl.trim() } : {}),
+      ...(category.trim() ? { category: category.trim() } : {}),
       ...(existing?.templateId ? { templateId: existing.templateId } : {}),
       ...(existing?.templateVersion ? { templateVersion: existing.templateVersion } : {}),
       ...(color ? { color } : {}),
@@ -264,7 +275,7 @@ export default function DeviceEditor() {
     updateDevice(editingNodeId, data);
     setCreatingNodeId(null); // commit the node — close won't undo it
     close();
-  }, [editingNodeId, ports, label, hostname, deviceType, manufacturer, color, headerColor, node, updateDevice, close, setCreatingNodeId, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
+  }, [editingNodeId, ports, label, hostname, deviceType, manufacturer, modelNumber, referenceUrl, category, color, headerColor, node, updateDevice, close, setCreatingNodeId, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
@@ -284,21 +295,21 @@ export default function DeviceEditor() {
         label: p.label.trim(),
       }));
 
-    const existing = node?.data;
     addCustomTemplate({
       id: `custom-${Date.now()}`,
       deviceType: deviceType.trim() || "custom",
       label: label.trim() || "Custom Device",
       ports: finalPorts,
       ...(color ? { color } : {}),
-      ...(existing?.category ? { category: String(existing.category) } : {}),
+      ...(category.trim() ? { category: category.trim() } : {}),
       ...(manufacturer.trim() ? { manufacturer: manufacturer.trim() } : {}),
-      ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
+      ...(modelNumber.trim() ? { modelNumber: modelNumber.trim() } : {}),
+      ...(referenceUrl.trim() ? { referenceUrl: referenceUrl.trim() } : {}),
       ...(hostname.trim() ? { hostname: hostname.trim() } : {}),
       ...(poeBudgetW != null ? { poeBudgetW } : {}),
       ...(poeDrawW != null ? { poeDrawW } : {}),
     });
-  }, [ports, label, hostname, node, addCustomTemplate, poeBudgetW, poeDrawW, deviceType, color, manufacturer]);
+  }, [ports, label, hostname, addCustomTemplate, poeBudgetW, poeDrawW, deviceType, color, manufacturer, modelNumber, referenceUrl, category]);
 
   const handleSubmitToCommunity = useCallback(async () => {
     const finalPorts: Port[] = ports
@@ -321,9 +332,9 @@ export default function DeviceEditor() {
       ports: finalPorts,
       ...(color ? { color } : {}),
       ...(manufacturer.trim() ? { manufacturer: manufacturer.trim() } : {}),
-      ...(existing?.modelNumber ? { modelNumber: existing.modelNumber } : {}),
-      ...(existing?.referenceUrl ? { referenceUrl: existing.referenceUrl } : {}),
-      ...(existing?.category ? { category: existing.category } : {}),
+      ...(modelNumber.trim() ? { modelNumber: modelNumber.trim() } : {}),
+      ...(referenceUrl.trim() ? { referenceUrl: referenceUrl.trim() } : {}),
+      ...(category.trim() ? { category: category.trim() } : {}),
       ...(existing?.slots ? { slots: existing.slots } : {}),
       ...(existing?.slotFamily ? { slotFamily: existing.slotFamily } : {}),
       ...(hostname.trim() ? { hostname: hostname.trim() } : {}),
@@ -363,7 +374,7 @@ export default function DeviceEditor() {
     } catch (e) {
       console.error("Failed to create draft:", e);
     }
-  }, [ports, label, deviceType, color, node, hostname, poeBudgetW, poeDrawW, manufacturer, powerDrawW, powerCapacityW, voltage, heightMm, widthMm, depthMm, weightKg, isVenueProvided]);
+  }, [ports, label, deviceType, color, node, hostname, poeBudgetW, poeDrawW, manufacturer, modelNumber, referenceUrl, category, powerDrawW, powerCapacityW, voltage, heightMm, widthMm, depthMm, weightKg, isVenueProvided]);
 
   const handleSaveAsPreset = useCallback(() => {
     if (!editingNodeId || !node?.data.templateId) return;
@@ -618,6 +629,31 @@ export default function DeviceEditor() {
                 placeholder="e.g. Sony"
               />
             </Field>
+            <Field label="Model Number">
+              <input
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                value={modelNumber}
+                onChange={(e) => setModelNumber(e.target.value)}
+                placeholder="e.g. FX9"
+              />
+            </Field>
+            <Field label="Category">
+              <input
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="e.g. video"
+              />
+            </Field>
+            <Field label="Reference URL">
+              <input
+                type="url"
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                value={referenceUrl}
+                onChange={(e) => setReferenceUrl(e.target.value)}
+                placeholder="https://…"
+              />
+            </Field>
           </div>
 
           {/* Header color picker */}
@@ -643,7 +679,7 @@ export default function DeviceEditor() {
             const tpl = node.data.templateId
               ? getBundledTemplates().find((t) => t.id === node.data.templateId)
               : undefined;
-            const url = tpl?.referenceUrl;
+            const url = referenceUrl.trim() || tpl?.referenceUrl;
             return url ? (
               <div className="text-[10px] text-[var(--color-text-muted)] -mt-2 flex items-center gap-1">
                 <a

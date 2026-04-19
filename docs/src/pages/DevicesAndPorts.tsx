@@ -243,6 +243,7 @@ export default function DevicesAndPortsPage() {
       </p>
       <ul>
         <li>Rename the device</li>
+        <li>Edit identity fields — <strong>manufacturer</strong>, <strong>model number</strong>, <strong>category</strong>, and a <strong>reference URL</strong> (spec sheet link)</li>
         <li>Add, remove, or reorder ports</li>
         <li>Change port signal types and directions</li>
         <li>Set a custom body color, or use the separate <strong>header color picker</strong> to set the header bar color independently</li>

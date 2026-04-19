@@ -196,6 +196,10 @@ export interface DeviceData {
   templateVersion?: number;
   manufacturer?: string;
   modelNumber?: string;
+  /** Manufacturer spec sheet / product page URL — inherited from the source template but editable per-device */
+  referenceUrl?: string;
+  /** Device category (e.g. "video", "audio") — meaningful for custom templates and community submissions */
+  category?: string;
   showAllPorts?: boolean;
   hiddenPorts?: string[];
   dhcpServer?: DhcpServerConfig;
