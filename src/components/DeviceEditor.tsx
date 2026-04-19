@@ -327,8 +327,16 @@ export default function DeviceEditor() {
       ...(existing?.slots ? { slots: existing.slots } : {}),
       ...(existing?.slotFamily ? { slotFamily: existing.slotFamily } : {}),
       ...(hostname.trim() ? { hostname: hostname.trim() } : {}),
+      ...(powerDrawW != null ? { powerDrawW } : {}),
+      ...(powerCapacityW != null ? { powerCapacityW } : {}),
+      ...(voltage ? { voltage } : {}),
       ...(poeBudgetW != null ? { poeBudgetW } : {}),
       ...(poeDrawW != null ? { poeDrawW } : {}),
+      ...(heightMm != null ? { heightMm } : {}),
+      ...(widthMm != null ? { widthMm } : {}),
+      ...(depthMm != null ? { depthMm } : {}),
+      ...(weightKg != null ? { weightKg } : {}),
+      ...(isVenueProvided ? { isVenueProvided: true } : {}),
     };
 
     const devicesUrl = import.meta.env.VITE_DEVICES_URL ?? "https://devices.easyschematic.live";
@@ -355,7 +363,7 @@ export default function DeviceEditor() {
     } catch (e) {
       console.error("Failed to create draft:", e);
     }
-  }, [ports, label, deviceType, color, node, hostname, poeBudgetW, poeDrawW, manufacturer]);
+  }, [ports, label, deviceType, color, node, hostname, poeBudgetW, poeDrawW, manufacturer, powerDrawW, powerCapacityW, voltage, heightMm, widthMm, depthMm, weightKg, isVenueProvided]);
 
   const handleSaveAsPreset = useCallback(() => {
     if (!editingNodeId || !node?.data.templateId) return;
@@ -1138,7 +1146,7 @@ export default function DeviceEditor() {
           >
             Save as User Template
           </button>
-          {(!templateId || dirtyVsTemplate) && ports.some((p) => p.label.trim()) && (
+          {(!templateId || dirtyVsTemplate || customTemplates.some((t) => t.id === templateId)) && ports.some((p) => p.label.trim()) && (
             <button
               onClick={handleSubmitToCommunity}
               className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
