@@ -43,6 +43,7 @@ function buildMinimalDxf(
 
 // dxf-parser's types are stricter than its runtime behavior — cast to any so
 // we can access entity-specific fields without narrowing every read site.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parse(dxfString: string): any {
   const parser = new DxfParser();
   return parser.parseSync(dxfString);
