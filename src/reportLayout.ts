@@ -313,6 +313,66 @@ export function createDefaultCableScheduleLayout(): ReportLayout {
   };
 }
 
+// ─── Patch Panel Schedule Defaults ───
+
+export function createDefaultPatchPanelScheduleHeaderLayout(): TitleBlockLayout {
+  return {
+    columns: normalizeSizes([0.6, 0.4]),
+    rows: normalizeSizes([0.55, 0.45]),
+    widthIn: 8,
+    heightIn: 0.8,
+    cells: [
+      layoutCell(0, 0, { type: "static", text: "Patch Panel Schedule" }, { fontSize: 14, fontWeight: "bold" }),
+      layoutCell(0, 1, { type: "logo" }, { align: "right" }),
+      layoutCell(1, 0, { type: "field", field: "showName" }, { fontSize: 8 }),
+      layoutCell(1, 1, { type: "field", field: "date" }, { fontSize: 8, align: "right", color: "#666666" }),
+    ],
+  };
+}
+
+export function createDefaultPatchPanelScheduleLayout(): ReportLayout {
+  return {
+    headerLayout: createDefaultPatchPanelScheduleHeaderLayout(),
+    headerHeightMm: 22,
+    footerLayout: createDefaultPackListFooterLayout(),
+    footerHeightMm: 8,
+    tables: [
+      {
+        id: "patchPanelSchedule",
+        label: "Patch Panel Schedule",
+        columns: [
+          { key: "panel",           header: "Panel",         widthMm: 30, visible: true },
+          { key: "panelRoom",       header: "Panel Room",    widthMm: 24, visible: true },
+          { key: "face",            header: "Face",          widthMm: 14, visible: true },
+          { key: "position",        header: "Position",      widthMm: 20, visible: true },
+          { key: "connector",       header: "Connector",     widthMm: 18, visible: true },
+          { key: "gender",          header: "M/F",           widthMm: 10, visible: true },
+          { key: "remoteDevice",    header: "Remote Device", widthMm: 30, visible: true },
+          { key: "remotePort",      header: "Remote Port",   widthMm: 22, visible: true },
+          { key: "remoteRoom",      header: "Remote Room",   widthMm: 24, visible: true },
+          { key: "cableId",         header: "Cable ID",      widthMm: 18, visible: true },
+          { key: "cableType",       header: "Cable Type",    widthMm: 22, visible: true },
+          { key: "signalType",      header: "Signal",        widthMm: 20, visible: true },
+          { key: "cableLength",     header: "Length",        widthMm: 16, visible: true },
+          { key: "multicableLabel", header: "Snake",         widthMm: 20, visible: false },
+        ],
+        groupBy: "panel",
+        groupByOptions: [
+          { key: "",           label: "None" },
+          { key: "panel",      label: "Panel" },
+          { key: "panelRoom",  label: "Panel Room" },
+          { key: "signalType", label: "Signal Type" },
+          { key: "face",       label: "Face" },
+        ],
+        sortBy: "position",
+        sortDir: "asc",
+      },
+    ],
+    orientation: "landscape",
+    paperSize: "letter",
+  };
+}
+
 // ─── Power Report Defaults ───
 
 export function createDefaultPowerReportHeaderLayout(): TitleBlockLayout {

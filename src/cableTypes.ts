@@ -1,6 +1,6 @@
 import type { Port, SignalType } from "./types";
 import { SIGNAL_LABELS, CONNECTOR_LABELS } from "./types";
-import { CONNECTOR_TO_CABLE, CONNECTOR_ACCEPTS, needsAdapter } from "./connectorTypes";
+import { CONNECTOR_TO_CABLE, CONNECTOR_ACCEPTS, needsAdapter, resolvePortGender } from "./connectorTypes";
 
 /** Maps each signal type to a physical cable type label for pack lists (legacy fallback) */
 export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
@@ -112,7 +112,25 @@ export function getCableType(
   const connector = src ?? tgt;
   if (connector) {
     const cable = CONNECTOR_TO_CABLE[connector];
-    if (cable) return cable;
+    if (cable) {
+      const suffix = sameGenderSuffix(sourcePort, targetPort);
+      return suffix ? `${cable} ${suffix}` : cable;
+    }
   }
   return SIGNAL_TO_CABLE[signalType];
+}
+
+/**
+ * Returns the cable's own gender suffix ("M-M" or "F-F") when both endpoints share a gender
+ * — the case where a standard M-F cable won't work. A cable plug is always the opposite
+ * gender of the port it mates with (male plug → female socket), so two female ports demand
+ * an M-M cable and two male ports demand an F-F cable. Returns undefined for normal M-F
+ * runs, for mismatched or genderless connectors, or when gender can't be confidently resolved.
+ */
+function sameGenderSuffix(sourcePort: Port | undefined, targetPort: Port | undefined): string | undefined {
+  const srcG = resolvePortGender(sourcePort);
+  const tgtG = resolvePortGender(targetPort);
+  if (!srcG || !tgtG || srcG !== tgtG) return undefined;
+  // Cable ends are opposite gender to the ports they plug into.
+  return srcG === "male" ? "F-F" : "M-M";
 }

@@ -1,4 +1,4 @@
-import { port, ports, camLokSet } from "./_helpers";
+import { port, camLokSet, patchPanelPorts } from "./_helpers";
 import type { DeviceTemplate } from "../types";
 
 export const templates: DeviceTemplate[] = [
@@ -282,7 +282,7 @@ export const templates: DeviceTemplate[] = [
     label: "Patch Panel 12-Port",
     searchTerms: ["patch panel", "patch bay", "12 port", "rj45", "ethernet", "cat6"],
     powerDrawW: 0,
-    ports: [...ports("Port", "ethernet", "input", 12), ...ports("Port", "ethernet", "output", 12)],
+    ports: patchPanelPorts("Port", "ethernet", 12),
   },
   {
     id: "c0a80101-00e9-4000-8000-000000000309",
@@ -290,7 +290,7 @@ export const templates: DeviceTemplate[] = [
     label: "Patch Panel 24-Port",
     searchTerms: ["patch panel", "patch bay", "24 port", "rj45", "ethernet", "cat6"],
     powerDrawW: 0,
-    ports: [...ports("Port", "ethernet", "input", 24), ...ports("Port", "ethernet", "output", 24)],
+    ports: patchPanelPorts("Port", "ethernet", 24),
   },
   {
     id: "c0a80101-00ea-4000-8000-000000000310",
@@ -298,7 +298,7 @@ export const templates: DeviceTemplate[] = [
     label: "Patch Panel 48-Port",
     searchTerms: ["patch panel", "patch bay", "48 port", "rj45", "ethernet", "cat6"],
     powerDrawW: 0,
-    ports: [...ports("Port", "ethernet", "input", 48), ...ports("Port", "ethernet", "output", 48)],
+    ports: patchPanelPorts("Port", "ethernet", 48),
   },
   {
     id: "c0a80101-00eb-4000-8000-000000000311",
@@ -306,7 +306,7 @@ export const templates: DeviceTemplate[] = [
     label: "BNC Patch Panel 12-Port",
     searchTerms: ["patch panel", "patch bay", "12 port", "bnc", "sdi", "video"],
     powerDrawW: 0,
-    ports: [...ports("Port", "sdi", "input", 12), ...ports("Port", "sdi", "output", 12)],
+    ports: patchPanelPorts("Port", "sdi", 12),
   },
   {
     id: "c0a80101-00ec-4000-8000-000000000312",
@@ -314,7 +314,7 @@ export const templates: DeviceTemplate[] = [
     label: "BNC Patch Panel 24-Port",
     searchTerms: ["patch panel", "patch bay", "24 port", "bnc", "sdi", "video"],
     powerDrawW: 0,
-    ports: [...ports("Port", "sdi", "input", 24), ...ports("Port", "sdi", "output", 24)],
+    ports: patchPanelPorts("Port", "sdi", 24),
   },
   {
     id: "c0a80101-00ed-4000-8000-000000000313",
@@ -322,7 +322,8 @@ export const templates: DeviceTemplate[] = [
     label: "XLR Patch Panel 12-Port",
     searchTerms: ["patch panel", "patch bay", "12 port", "xlr", "audio", "analog"],
     powerDrawW: 0,
-    ports: [...ports("Port", "analog-audio", "input", 12), ...ports("Port", "analog-audio", "output", 12)],
+    // Both faces female — pro-audio convention for a generic XLR bay (uses M-F or F-F patch cables as needed).
+    ports: patchPanelPorts("Port", "analog-audio", 12, { gender: "female" }),
   },
   {
     id: "c0a80101-00ee-4000-8000-000000000314",
@@ -330,7 +331,7 @@ export const templates: DeviceTemplate[] = [
     label: "XLR Patch Panel 24-Port",
     searchTerms: ["patch panel", "patch bay", "24 port", "xlr", "audio", "analog"],
     powerDrawW: 0,
-    ports: [...ports("Port", "analog-audio", "input", 24), ...ports("Port", "analog-audio", "output", 24)],
+    ports: patchPanelPorts("Port", "analog-audio", 24, { gender: "female" }),
   },
   {
     id: "c0a80101-00ef-4000-8000-000000000315",
@@ -338,7 +339,7 @@ export const templates: DeviceTemplate[] = [
     label: "Fiber Patch Panel 12-Port",
     searchTerms: ["patch panel", "patch bay", "12 port", "fiber", "lc", "optical"],
     powerDrawW: 0,
-    ports: [...ports("Port", "fiber", "input", 12), ...ports("Port", "fiber", "output", 12)],
+    ports: patchPanelPorts("Port", "fiber", 12),
   },
   {
     id: "c0a80101-00f0-4000-8000-000000000316",
@@ -346,7 +347,7 @@ export const templates: DeviceTemplate[] = [
     label: "Fiber Patch Panel 24-Port",
     searchTerms: ["patch panel", "patch bay", "24 port", "fiber", "lc", "optical"],
     powerDrawW: 0,
-    ports: [...ports("Port", "fiber", "input", 24), ...ports("Port", "fiber", "output", 24)],
+    ports: patchPanelPorts("Port", "fiber", 24),
   },
   {
     id: "c0a80101-0230-4000-8000-000000000711",
@@ -354,7 +355,7 @@ export const templates: DeviceTemplate[] = [
     label: "Patch Panel 32-Port",
     searchTerms: ["patch panel", "patch bay", "32 port", "rj45", "ethernet", "cat6", "networx"],
     powerDrawW: 0,
-    ports: [...ports("Port", "ethernet", "input", 32), ...ports("Port", "ethernet", "output", 32)],
+    ports: patchPanelPorts("Port", "ethernet", 32),
   },
   {
     id: "c0a80101-0231-4000-8000-000000000712",
@@ -362,7 +363,7 @@ export const templates: DeviceTemplate[] = [
     label: "BNC Patch Panel 32-Port",
     searchTerms: ["patch panel", "patch bay", "32 port", "bnc", "sdi", "video"],
     powerDrawW: 0,
-    ports: [...ports("Port", "sdi", "input", 32), ...ports("Port", "sdi", "output", 32)],
+    ports: patchPanelPorts("Port", "sdi", 32),
   },
   {
     id: "c0a80101-0232-4000-8000-000000000713",
@@ -370,7 +371,7 @@ export const templates: DeviceTemplate[] = [
     label: "BNC Patch Panel 48-Port",
     searchTerms: ["patch panel", "patch bay", "48 port", "bnc", "sdi", "video"],
     powerDrawW: 0,
-    ports: [...ports("Port", "sdi", "input", 48), ...ports("Port", "sdi", "output", 48)],
+    ports: patchPanelPorts("Port", "sdi", 48),
   },
   {
     id: "c0a80101-0233-4000-8000-000000000714",
@@ -378,7 +379,7 @@ export const templates: DeviceTemplate[] = [
     label: "XLR Patch Panel 32-Port",
     searchTerms: ["patch panel", "patch bay", "32 port", "xlr", "audio", "analog"],
     powerDrawW: 0,
-    ports: [...ports("Port", "analog-audio", "input", 32), ...ports("Port", "analog-audio", "output", 32)],
+    ports: patchPanelPorts("Port", "analog-audio", 32, { gender: "female" }),
   },
   {
     id: "c0a80101-0234-4000-8000-000000000715",
@@ -386,7 +387,7 @@ export const templates: DeviceTemplate[] = [
     label: "XLR Patch Panel 48-Port",
     searchTerms: ["patch panel", "patch bay", "48 port", "xlr", "audio", "analog"],
     powerDrawW: 0,
-    ports: [...ports("Port", "analog-audio", "input", 48), ...ports("Port", "analog-audio", "output", 48)],
+    ports: patchPanelPorts("Port", "analog-audio", 48, { gender: "female" }),
   },
   {
     id: "c0a80101-0235-4000-8000-000000000716",
@@ -394,7 +395,7 @@ export const templates: DeviceTemplate[] = [
     label: "Fiber Patch Panel 32-Port",
     searchTerms: ["patch panel", "patch bay", "32 port", "fiber", "lc", "optical"],
     powerDrawW: 0,
-    ports: [...ports("Port", "fiber", "input", 32), ...ports("Port", "fiber", "output", 32)],
+    ports: patchPanelPorts("Port", "fiber", 32),
   },
   {
     id: "c0a80101-0236-4000-8000-000000000717",
@@ -402,7 +403,7 @@ export const templates: DeviceTemplate[] = [
     label: "Fiber Patch Panel 48-Port",
     searchTerms: ["patch panel", "patch bay", "48 port", "fiber", "lc", "optical"],
     powerDrawW: 0,
-    ports: [...ports("Port", "fiber", "input", 48), ...ports("Port", "fiber", "output", 48)],
+    ports: patchPanelPorts("Port", "fiber", 48),
   },
   {
     id: "c0a80101-0237-4000-8000-000000000718",
@@ -410,7 +411,7 @@ export const templates: DeviceTemplate[] = [
     label: "TRS Patch Bay 24-Point",
     searchTerms: ["patch bay", "patch panel", "24 point", "trs", "quarter inch", "audio", "tt", "bantam", "normalled"],
     powerDrawW: 0,
-    ports: [...ports("Port", "analog-audio", "input", 24, "trs-quarter"), ...ports("Port", "analog-audio", "output", 24, "trs-quarter")],
+    ports: patchPanelPorts("Port", "analog-audio", 24, { connectorType: "trs-quarter" }),
   },
   {
     id: "c0a80101-0238-4000-8000-000000000719",
@@ -418,7 +419,7 @@ export const templates: DeviceTemplate[] = [
     label: "TRS Patch Bay 48-Point",
     searchTerms: ["patch bay", "patch panel", "48 point", "trs", "quarter inch", "audio", "tt", "bantam", "normalled"],
     powerDrawW: 0,
-    ports: [...ports("Port", "analog-audio", "input", 48, "trs-quarter"), ...ports("Port", "analog-audio", "output", 48, "trs-quarter")],
+    ports: patchPanelPorts("Port", "analog-audio", 48, { connectorType: "trs-quarter" }),
   },
   {
     id: "c0a80101-0239-4000-8000-000000000720",
@@ -426,6 +427,6 @@ export const templates: DeviceTemplate[] = [
     label: "TRS Patch Bay 96-Point",
     searchTerms: ["patch bay", "patch panel", "96 point", "trs", "quarter inch", "audio", "tt", "bantam", "normalled"],
     powerDrawW: 0,
-    ports: [...ports("Port", "analog-audio", "input", 96, "trs-quarter"), ...ports("Port", "analog-audio", "output", 96, "trs-quarter")],
+    ports: patchPanelPorts("Port", "analog-audio", 96, { connectorType: "trs-quarter" }),
   },
 ];

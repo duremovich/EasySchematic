@@ -69,6 +69,8 @@
 - Add, remove, and rename ports per device
 - **Port notes** — optional notes field per port for documenting specific usage
 - **Flip ports** — move any port to the opposite side of the device for flexible signal flow layouts
+- **Connector gender** — auto-derived from connector type and direction (e.g. XLR-3 input = female, output = male; powerCON inlet = male). Override per-port for connectors where gender genuinely varies (XLR, powerCON, IEC, Cam-Lok, BNC, TRS, etc.). The cable schedule labels cables by the gender of the cable's own ends (opposite to the ports): two female ports get an `M-M` suffix, two male ports get `F-F`, so pack lists reflect what you actually need to buy.
+- **Patch panels** — devices with `patch-panel` type render as front/rear instead of input/output, with column headers on the canvas; built-in templates for RJ45, BNC, XLR, fiber LC, and TT bantam patch bays in common port counts
 
 ### Organization
 
@@ -96,6 +98,7 @@ SDI · HDMI · NDI · Dante · Analog Audio · AES · AES67 · DMX · MADI · US
 
 - **Pack list** — auto-generated bill of materials from your schematic (devices + cables)
 - **Cable schedule** — per-connection wiring report with editable cable IDs, connector info, cable types, signal types, and room assignments; fill series support for batch renaming
+- **Patch panel schedule** — per-port inventory of every patch panel in the schematic, including unconnected ports; occupancy badges per panel, group by Panel / Room / Signal / Face; shares cable IDs with the cable schedule
 - **Print preview** — WYSIWYG report editor with interactive header/footer grid, column visibility, grouping, sorting
 - **Multi-page preview** with accurate page breaks, page navigation, zoom, and "Page X of Y" numbering
 - **Header/footer grid editor** — assign fields (show name, venue, date, etc.), static text, logo, or page numbers to cells; merge, resize, add/delete rows and columns via right-click

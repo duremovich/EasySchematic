@@ -131,6 +131,8 @@ export const LINE_STYLE_DASHARRAY: Record<LineStyle, string | undefined> = {
 
 export type PortDirection = "input" | "output" | "bidirectional";
 
+export type Gender = "male" | "female";
+
 export interface Port {
   id: string;
   label: string;
@@ -138,6 +140,8 @@ export interface Port {
   direction: PortDirection;
   section?: string;
   connectorType?: ConnectorType;
+  /** Connector gender override. Omit to derive from connector + direction convention. */
+  gender?: Gender;
   capabilities?: PortCapabilities;
   networkConfig?: PortNetworkConfig;
   addressable?: boolean;

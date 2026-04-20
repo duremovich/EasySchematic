@@ -170,8 +170,22 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     };
   };
 
-  const leftItems = useMemo(() => buildColumnItems(leftPorts), [leftPorts]);
-  const rightItems = useMemo(() => buildColumnItems(rightPorts), [rightPorts]);
+  const isPatchPanel = data.deviceType === "patch-panel";
+
+  const leftItems = useMemo(() => {
+    const items = buildColumnItems(leftPorts);
+    if (isPatchPanel && leftPorts.length > 0) {
+      return [{ type: "section" as const, name: "Rear" }, ...items];
+    }
+    return items;
+  }, [leftPorts, isPatchPanel]);
+  const rightItems = useMemo(() => {
+    const items = buildColumnItems(rightPorts);
+    if (isPatchPanel && rightPorts.length > 0) {
+      return [{ type: "section" as const, name: "Front" }, ...items];
+    }
+    return items;
+  }, [rightPorts, isPatchPanel]);
 
   const hasSections = leftItems.some((i) => i.type === "section") ||
     rightItems.some((i) => i.type === "section");

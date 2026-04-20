@@ -585,6 +585,7 @@ export default function MenuBar() {
     Reports: [
       { type: "item", label: "Device List...", onClick: () => setReportsTab("devices") },
       { type: "item", label: "Cable Schedule...", onClick: () => setReportsTab("cableSchedule") },
+      { type: "item", label: "Patch Panels...", onClick: () => setReportsTab("patchPanel") },
       { type: "item", label: "Pack List...", onClick: () => setReportsTab("packList") },
       { type: "item", label: "Network Report...", onClick: () => setReportsTab("network") },
       { type: "item", label: "Power Report...", onClick: () => setReportsTab("power") },

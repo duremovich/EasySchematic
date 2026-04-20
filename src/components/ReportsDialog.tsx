@@ -20,7 +20,13 @@ import {
   getCableScheduleTableData,
   type CableScheduleRow,
 } from "../cableSchedule";
-import { createDefaultPackListLayout, createDefaultNetworkReportLayout, createDefaultCableScheduleLayout, createDefaultPowerReportLayout } from "../reportLayout";
+import {
+  computePatchPanelSchedule,
+  exportPatchPanelScheduleCsv,
+  getPatchPanelScheduleTableData,
+  type PatchPanelScheduleRow,
+} from "../patchPanelSchedule";
+import { createDefaultPackListLayout, createDefaultNetworkReportLayout, createDefaultCableScheduleLayout, createDefaultPatchPanelScheduleLayout, createDefaultPowerReportLayout } from "../reportLayout";
 import { getNetworkReportTableData } from "../networkReport";
 import { computePowerReport, exportPowerReportCsv, getPowerReportTableData } from "../powerReport";
 import ReportPreviewDialog from "./ReportPreviewDialog";
@@ -31,7 +37,7 @@ import { useSpreadsheetSelection } from "../spreadsheet/useSpreadsheetSelection"
 import type { SpreadsheetColumn } from "../spreadsheet/types";
 import FillSeriesDialog from "../spreadsheet/FillSeriesDialog";
 
-export type ReportsTab = "network" | "devices" | "packList" | "cableSchedule" | "power";
+export type ReportsTab = "network" | "devices" | "packList" | "cableSchedule" | "patchPanel" | "power";
 
 interface ReportsDialogProps {
   initialTab: ReportsTab;
@@ -41,6 +47,7 @@ interface ReportsDialogProps {
 const PACKLIST_LAYOUT_KEY = "easyschematic-packlist-layout";
 const NETWORK_LAYOUT_KEY = "easyschematic-network-report-layout";
 const CABLE_SCHEDULE_LAYOUT_KEY = "easyschematic-cable-schedule-layout";
+const PATCH_PANEL_LAYOUT_KEY = "easyschematic-patch-panel-layout";
 const POWER_LAYOUT_KEY = "easyschematic-power-report-layout";
 
 function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
@@ -49,6 +56,7 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
   const [showPreview, setShowPreview] = useState(false);
   const [showNetworkPreview, setShowNetworkPreview] = useState(false);
   const [showCableSchedulePreview, setShowCableSchedulePreview] = useState(false);
+  const [showPatchPanelPreview, setShowPatchPanelPreview] = useState(false);
   const [showPowerPreview, setShowPowerPreview] = useState(false);
 
   const nodes = useSchematicStore((s) => s.nodes);
@@ -76,6 +84,10 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
       const cableNamingScheme = useSchematicStore.getState().cableNamingScheme;
       const rows = computeCableSchedule(nodes, edges, cableNamingScheme);
       exportCableScheduleCsv(rows, schematicName);
+    } else if (tab === "patchPanel") {
+      const cableNamingScheme = useSchematicStore.getState().cableNamingScheme;
+      const rows = computePatchPanelSchedule(nodes, edges, cableNamingScheme);
+      exportPatchPanelScheduleCsv(rows, schematicName);
     } else if (tab === "power") {
       const data = computePowerReport(nodes, edges);
       exportPowerReportCsv(data, schematicName);
@@ -89,11 +101,13 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
   const defaultLayout = useMemo(() => createDefaultPackListLayout(), []);
   const networkDefaultLayout = useMemo(() => createDefaultNetworkReportLayout(), []);
   const cableScheduleDefaultLayout = useMemo(() => createDefaultCableScheduleLayout(), []);
+  const patchPanelDefaultLayout = useMemo(() => createDefaultPatchPanelScheduleLayout(), []);
   const powerDefaultLayout = useMemo(() => createDefaultPowerReportLayout(), []);
 
   const tabLabels: Record<ReportsTab, string> = {
     devices: "Devices",
     cableSchedule: "Cable Schedule",
+    patchPanel: "Patch Panels",
     packList: "Pack List",
     network: "Network",
     power: "Power",
@@ -134,6 +148,11 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
             )}
             {tab === "cableSchedule" && (
               <button onClick={() => setShowCableSchedulePreview(true)} className={btnClass}>
+                PDF
+              </button>
+            )}
+            {tab === "patchPanel" && (
+              <button onClick={() => setShowPatchPanelPreview(true)} className={btnClass}>
                 PDF
               </button>
             )}
@@ -181,6 +200,7 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
             {tab === "devices" && <DeviceReportTab />}
             {tab === "packList" && <PackListTabInline />}
             {tab === "cableSchedule" && <CableScheduleTabInline />}
+            {tab === "patchPanel" && <PatchPanelScheduleTabInline />}
             {tab === "power" && <PowerReportTab />}
           </div>
         </div>
@@ -222,6 +242,22 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
           }
           onClose={() => setShowCableSchedulePreview(false)}
           filename={`${schematicName.replace(/[^a-zA-Z0-9-_ ]/g, "")} - Cable Schedule.pdf`}
+        />
+      )}
+
+      {showPatchPanelPreview && (
+        <ReportPreviewDialog
+          reportKey={PATCH_PANEL_LAYOUT_KEY}
+          defaultLayout={patchPanelDefaultLayout}
+          titleBlock={titleBlock}
+          getTableData={(layout) =>
+            getPatchPanelScheduleTableData(
+              computePatchPanelSchedule(nodes, edges, useSchematicStore.getState().cableNamingScheme),
+              layout,
+            )
+          }
+          onClose={() => setShowPatchPanelPreview(false)}
+          filename={`${schematicName.replace(/[^a-zA-Z0-9-_ ]/g, "")} - Patch Panel Schedule.pdf`}
         />
       )}
 
@@ -1752,6 +1788,228 @@ function renderGroupedCableSchedule(
     }
   }
   return elements;
+}
+
+// ─── Patch Panel Schedule Tab ──────────────────────────────────
+
+type PatchPanelSortKey =
+  | "panel" | "panelRoom" | "face" | "position" | "connector" | "gender"
+  | "remoteDevice" | "remotePort" | "remoteRoom"
+  | "cableId" | "cableType" | "signalType" | "cableLength" | "multicableLabel";
+
+type PatchPanelGroupBy = "" | "panel" | "panelRoom" | "signalType" | "face";
+
+function PatchPanelScheduleTabInline() {
+  const nodes = useSchematicStore((s) => s.nodes);
+  const edges = useSchematicStore((s) => s.edges);
+  const cableNamingScheme = useSchematicStore((s) => s.cableNamingScheme);
+
+  const [filter, setFilter] = useState("");
+  const [sortKey, setSortKey] = useState<PatchPanelSortKey>("panel");
+  const [sortAsc, setSortAsc] = useState(true);
+  const [groupByKey, setGroupByKey] = useState<PatchPanelGroupBy>("panel");
+  const [hideUnconnected, setHideUnconnected] = useState(false);
+
+  const rows = useMemo(
+    () => computePatchPanelSchedule(nodes, edges, cableNamingScheme),
+    [nodes, edges, cableNamingScheme],
+  );
+
+  const filtered = useMemo(() => {
+    let list = rows;
+    if (hideUnconnected) list = list.filter((r) => r.edgeId !== "");
+    const q = filter.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(
+      (r) =>
+        r.panel.toLowerCase().includes(q) ||
+        r.panelRoom.toLowerCase().includes(q) ||
+        r.face.toLowerCase().includes(q) ||
+        r.position.toLowerCase().includes(q) ||
+        r.connector.toLowerCase().includes(q) ||
+        r.remoteDevice.toLowerCase().includes(q) ||
+        r.remotePort.toLowerCase().includes(q) ||
+        r.remoteRoom.toLowerCase().includes(q) ||
+        r.cableId.toLowerCase().includes(q) ||
+        r.cableType.toLowerCase().includes(q) ||
+        r.signalType.toLowerCase().includes(q) ||
+        r.cableLength.toLowerCase().includes(q) ||
+        r.multicableLabel.toLowerCase().includes(q),
+    );
+  }, [rows, filter, hideUnconnected]);
+
+  const sorted = useMemo(() => {
+    const copy = [...filtered];
+    if (sortKey === "position") {
+      // Natural rear-then-front-by-index order from compute(); keep the existing
+      // sort and only flip direction if user asks descending.
+      if (!sortAsc) copy.reverse();
+      return copy;
+    }
+    copy.sort((a, b) => {
+      const va = (a[sortKey] ?? "") as string;
+      const vb = (b[sortKey] ?? "") as string;
+      const cmp = va.localeCompare(vb);
+      return sortAsc ? cmp : -cmp;
+    });
+    return copy;
+  }, [filtered, sortKey, sortAsc]);
+
+  const toggleSort = (key: PatchPanelSortKey) => {
+    if (sortKey === key) setSortAsc(!sortAsc);
+    else { setSortKey(key); setSortAsc(true); }
+  };
+
+  const sortArrow = (key: PatchPanelSortKey) =>
+    sortKey === key ? (sortAsc ? " ▴" : " ▾") : "";
+
+  if (rows.length === 0) {
+    return (
+      <div className="text-sm text-[var(--color-text-muted)] text-center py-8">
+        No patch panels in this schematic.
+      </div>
+    );
+  }
+
+  const groups: { label: string; rows: PatchPanelScheduleRow[] }[] = [];
+  if (groupByKey) {
+    const map = new Map<string, PatchPanelScheduleRow[]>();
+    for (const r of sorted) {
+      const k = groupByKey === "signalType"
+        ? (r.signalType || "Unconnected")
+        : (r[groupByKey] || "—");
+      const arr = map.get(k);
+      if (arr) arr.push(r); else map.set(k, [r]);
+    }
+    for (const [label, list] of map) groups.push({ label, rows: list });
+  } else {
+    groups.push({ label: "", rows: sorted });
+  }
+
+  // Occupancy summary: unique panels × (connected / total ports).
+  const perPanel = new Map<string, { connected: number; total: number; label: string }>();
+  for (const r of rows) {
+    const key = `${r.panelId}`;
+    const entry = perPanel.get(key) ?? { connected: 0, total: 0, label: r.panel };
+    entry.total += 1;
+    if (r.edgeId) entry.connected += 1;
+    perPanel.set(key, entry);
+  }
+
+  return (
+    <>
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <input
+          className="flex-1 min-w-[240px] bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none focus:border-blue-500"
+          placeholder="Filter by panel, port, device, cable, signal, room..."
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(e) => e.stopPropagation()}
+        />
+        <select
+          className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none cursor-pointer"
+          value={groupByKey}
+          onChange={(e) => setGroupByKey(e.target.value as PatchPanelGroupBy)}
+          title="Group by"
+        >
+          <option value="">No Grouping</option>
+          <option value="panel">Panel</option>
+          <option value="panelRoom">Panel Room</option>
+          <option value="signalType">Signal Type</option>
+          <option value="face">Face</option>
+        </select>
+        <label className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={hideUnconnected}
+            onChange={(e) => setHideUnconnected(e.target.checked)}
+            className="cursor-pointer"
+          />
+          Hide empty
+        </label>
+      </div>
+
+      {/* Occupancy summary */}
+      <div className="flex gap-2 flex-wrap mb-3">
+        {Array.from(perPanel.values()).map((p) => {
+          const pct = p.total > 0 ? Math.round((p.connected / p.total) * 100) : 0;
+          return (
+            <div
+              key={p.label}
+              className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-[10px]"
+              title={`${p.connected} of ${p.total} ports used`}
+            >
+              <span className="font-semibold text-[var(--color-text-heading)]">{p.label}</span>
+              <span className="text-[var(--color-text-muted)] ml-1.5">
+                {p.connected}/{p.total} ({pct}%)
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className={thClass} onClick={() => toggleSort("panel")}>Panel{sortArrow("panel")}</th>
+            <th className={thClass} onClick={() => toggleSort("panelRoom")}>Panel Room{sortArrow("panelRoom")}</th>
+            <th className={thClass} onClick={() => toggleSort("face")}>Face{sortArrow("face")}</th>
+            <th className={thClass} onClick={() => toggleSort("position")}>Position{sortArrow("position")}</th>
+            <th className={thClass} onClick={() => toggleSort("connector")}>Connector{sortArrow("connector")}</th>
+            <th className={thClass} onClick={() => toggleSort("gender")}>M/F{sortArrow("gender")}</th>
+            <th className={thClass} onClick={() => toggleSort("remoteDevice")}>Remote Device{sortArrow("remoteDevice")}</th>
+            <th className={thClass} onClick={() => toggleSort("remotePort")}>Remote Port{sortArrow("remotePort")}</th>
+            <th className={thClass} onClick={() => toggleSort("remoteRoom")}>Remote Room{sortArrow("remoteRoom")}</th>
+            <th className={thClass} onClick={() => toggleSort("cableId")}>Cable ID{sortArrow("cableId")}</th>
+            <th className={thClass} onClick={() => toggleSort("cableType")}>Cable Type{sortArrow("cableType")}</th>
+            <th className={thClass} onClick={() => toggleSort("signalType")}>Signal{sortArrow("signalType")}</th>
+            <th className={thClass} onClick={() => toggleSort("cableLength")}>Length{sortArrow("cableLength")}</th>
+            <th className={thClass} onClick={() => toggleSort("multicableLabel")}>Snake{sortArrow("multicableLabel")}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {groups.map((g, gi) => (
+            <React.Fragment key={g.label || `__g${gi}`}>
+              {g.label && (
+                <tr>
+                  <td
+                    colSpan={14}
+                    className="bg-[var(--color-surface)] text-[10px] font-semibold uppercase tracking-wide text-[var(--color-text-muted)] py-1 px-2"
+                  >
+                    {g.label}
+                  </td>
+                </tr>
+              )}
+              {g.rows.map((r, i) => {
+                const unconnected = r.edgeId === "";
+                return (
+                  <tr
+                    key={r.rowId}
+                    className={`${rowClass(i)} ${unconnected ? "opacity-60" : ""}`}
+                  >
+                    <td className={tdClass}>{r.panel}</td>
+                    <td className={tdClass}>{r.panelRoom}</td>
+                    <td className={tdClass}>{r.face}</td>
+                    <td className={tdClass}>{r.position}</td>
+                    <td className={tdClass}>{r.connector}</td>
+                    <td className={tdClass}>{r.gender}</td>
+                    <td className={tdClass}>{r.remoteDevice}</td>
+                    <td className={tdClass}>{r.remotePort}</td>
+                    <td className={tdClass}>{r.remoteRoom}</td>
+                    <td className={tdClass}>{r.cableId || "—"}</td>
+                    <td className={tdClass}>{r.cableType || "—"}</td>
+                    <td className={tdClass}>{r.signalType || "—"}</td>
+                    <td className={tdClass}>{r.cableLength || "—"}</td>
+                    <td className={tdClass}>{r.multicableLabel || "—"}</td>
+                  </tr>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
 }
 
 // ─── Pack List Tab (inline, reusing packList.ts logic) ─────────

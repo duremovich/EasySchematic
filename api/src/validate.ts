@@ -162,6 +162,10 @@ export function validateTemplate(body: unknown): ValidationResult {
         if (err) return { ok: false, error: err };
       }
     }
+    // Connector gender — optional, "male" or "female"
+    if (port.gender != null && port.gender !== "male" && port.gender !== "female") {
+      return { ok: false, error: `ports[${i}].gender must be 'male' or 'female'` };
+    }
   }
 
   // Slot family — optional string for expansion card templates

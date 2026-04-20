@@ -1,4 +1,4 @@
-import type { ConnectorType, Port } from "../types";
+import type { ConnectorType, Gender, Port } from "../types";
 import { DEFAULT_CONNECTOR } from "../connectorTypes";
 
 let portIdCounter = 0;
@@ -63,4 +63,28 @@ export function ports(
   return Array.from({ length: count }, (_, i) =>
     port(`${prefix} ${i + 1}`, signalType, direction, connectorType),
   );
+}
+
+/**
+ * Generate the rear+front port pairs for a patch panel. Rear ports use direction "input",
+ * front ports use direction "output" — DeviceNode and DeviceEditor relabel these as
+ * "Rear" and "Front" for any device with deviceType "patch-panel".
+ *
+ * `gender` lets a template force both faces to the same gender (common for XLR / TT bantam
+ * patch bays where both sides are female sockets) when the connector convention would
+ * otherwise produce M/F.
+ */
+export function patchPanelPorts(
+  prefix: string,
+  signalType: Port["signalType"],
+  count: number,
+  opts?: { connectorType?: ConnectorType; gender?: Gender },
+): Port[] {
+  const rear = ports(prefix, signalType, "input", count, opts?.connectorType);
+  const front = ports(prefix, signalType, "output", count, opts?.connectorType);
+  if (opts?.gender) {
+    for (const p of rear) p.gender = opts.gender;
+    for (const p of front) p.gender = opts.gender;
+  }
+  return [...rear, ...front];
 }

@@ -377,7 +377,7 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
               <span className="text-sm font-medium text-slate-700">Venue provided (exclude from pack list)</span>
             </label>
           </div>
-          <PortEditor ports={editPorts} onChange={setEditPorts} />
+          <PortEditor ports={editPorts} onChange={setEditPorts} deviceType={editDeviceType} />
 
           {/* Slot Editor */}
           <div className="mt-6">

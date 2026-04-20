@@ -445,7 +445,7 @@ export default function DeviceForm({ id, draftId, cloneId, onSubmit, submitLabel
         {extraFields}
       </div>
 
-      <PortEditor ports={ports} onChange={setPorts} />
+      <PortEditor ports={ports} onChange={setPorts} deviceType={deviceType} />
 
       {/* Expansion Slots */}
       <SlotEditor slots={slots} onChange={setSlots} allTemplates={allTemplates} />

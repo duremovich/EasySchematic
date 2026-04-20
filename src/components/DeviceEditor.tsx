@@ -6,6 +6,7 @@ import {
   CONNECTOR_LABELS,
   type SignalType,
   type ConnectorType,
+  type Gender,
   type Port,
   type PortDirection,
   type PortNetworkConfig,
@@ -16,7 +17,7 @@ import {
   type DhcpServerConfig,
   type SlotDefinition,
 } from "../types";
-import { DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES } from "../connectorTypes";
+import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES, resolvePortGender } from "../connectorTypes";
 import { getBundledTemplates, getCardsByFamily, checkSession, createDraft, createHandoff } from "../templateApi";
 import { getTemplateDrift } from "../templateSync";
 import LoginDialog from "./LoginDialog";
@@ -40,6 +41,7 @@ interface PortDraft {
   direction: PortDirection;
   section?: string;
   connectorType?: ConnectorType;
+  gender?: Gender;
   networkConfig?: PortNetworkConfig;
   addressable?: boolean;
   capabilities?: PortCapabilities;
@@ -169,6 +171,7 @@ export default function DeviceEditor() {
         direction: p.direction,
         section: p.section,
         connectorType: p.connectorType,
+        gender: p.gender,
         networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
         capabilities: p.capabilities ? { ...p.capabilities } : undefined,
         isMulticable: p.isMulticable,
@@ -451,6 +454,7 @@ export default function DeviceEditor() {
       direction: p.direction,
       section: p.section,
       connectorType: p.connectorType,
+      gender: p.gender,
       networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
       capabilities: p.capabilities ? { ...p.capabilities } : undefined,
       directAttach: p.directAttach,
@@ -476,6 +480,7 @@ export default function DeviceEditor() {
       direction: p.direction,
       section: p.section,
       connectorType: p.connectorType,
+      gender: p.gender,
       networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
       capabilities: p.capabilities ? { ...p.capabilities } : undefined,
       directAttach: p.directAttach,
@@ -763,7 +768,7 @@ export default function DeviceEditor() {
           />
 
           <PortSection
-            title="Inputs"
+            title={deviceType === "patch-panel" ? "Rear" : "Inputs"}
             direction="input"
             deviceType={deviceType}
             ports={inputs}
@@ -781,7 +786,7 @@ export default function DeviceEditor() {
           />
 
           <PortSection
-            title="Outputs"
+            title={deviceType === "patch-panel" ? "Front" : "Outputs"}
             direction="output"
             deviceType={deviceType}
             ports={outputs}
@@ -798,23 +803,25 @@ export default function DeviceEditor() {
             setHiddenPorts={setHiddenPorts}
           />
 
-          <PortSection
-            title="Bidirectional"
-            direction="bidirectional"
-            deviceType={deviceType}
-            ports={bidir}
-            onAdd={() => addPort("bidirectional")}
-            onBulkAdd={bulkAddPorts}
-            onRemove={removePort}
-            onUpdate={updatePort}
-            draggedPortId={draggedPortId}
-            setDraggedPortId={setDraggedPortId}
-            dropTarget={dropTarget}
-            setDropTarget={setDropTarget}
-            onDragEnd={handleDragEnd}
-            hiddenPorts={hiddenPorts}
-            setHiddenPorts={setHiddenPorts}
-          />
+          {deviceType !== "patch-panel" && (
+            <PortSection
+              title="Bidirectional"
+              direction="bidirectional"
+              deviceType={deviceType}
+              ports={bidir}
+              onAdd={() => addPort("bidirectional")}
+              onBulkAdd={bulkAddPorts}
+              onRemove={removePort}
+              onUpdate={updatePort}
+              draggedPortId={draggedPortId}
+              setDraggedPortId={setDraggedPortId}
+              dropTarget={dropTarget}
+              setDropTarget={setDropTarget}
+              onDragEnd={handleDragEnd}
+              hiddenPorts={hiddenPorts}
+              setHiddenPorts={setHiddenPorts}
+            />
+          )}
 
           {/* Hostname */}
           <div className="flex items-center gap-2 mt-2">
@@ -1836,6 +1843,40 @@ function PortRow({
             </option>
           ))}
         </select>
+
+        {/* Connector gender — only shown for connectors where M/F genuinely varies */}
+        {(() => {
+          const ct = port.connectorType ?? DEFAULT_CONNECTOR[port.signalType];
+          if (!CONNECTORS_WITH_GENDER_VARIATION.has(ct)) return null;
+          const resolved = resolvePortGender({
+            id: port.id,
+            label: port.label,
+            signalType: port.signalType,
+            direction: port.direction,
+            connectorType: ct,
+            gender: port.gender,
+          });
+          const isOverride = port.gender != null;
+          return (
+            <select
+              className={`border border-[var(--color-border)] rounded px-1 py-1 text-[10px] outline-none focus:border-blue-500 cursor-pointer shrink-0 ${
+                isOverride
+                  ? "bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                  : "bg-[var(--color-surface)] text-[var(--color-text-muted)]"
+              }`}
+              value={port.gender ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                onUpdate({ gender: v === "" ? undefined : (v as Gender) });
+              }}
+              title={`Connector gender${isOverride ? " (overridden)" : ` (auto: ${resolved ?? "—"})`}`}
+            >
+              <option value="">{resolved ? `${resolved === "male" ? "M" : "F"} (auto)` : "—"}</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          );
+        })()}
 
         {/* Multicable trunk toggle */}
         <label

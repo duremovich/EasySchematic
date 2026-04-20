@@ -10,9 +10,11 @@ import SearchableSelect from "./SearchableSelect";
 interface PortEditorProps {
   ports: Port[];
   onChange: (ports: Port[]) => void;
+  deviceType?: string;
 }
 
-export default function PortEditor({ ports, onChange }: PortEditorProps) {
+export default function PortEditor({ ports, onChange, deviceType }: PortEditorProps) {
+  const isPatchPanel = deviceType === "patch-panel";
   const [bulkOpen, setBulkOpen] = useState<PortDirection | null>(null);
   const [bulkPrefix, setBulkPrefix] = useState("IN");
   const [bulkStart, setBulkStart] = useState(1);
@@ -317,9 +319,9 @@ export default function PortEditor({ ports, onChange }: PortEditorProps) {
         </div>
       )}
 
-      {renderSection("input", "Inputs")}
-      {renderSection("output", "Outputs")}
-      {renderSection("bidirectional", "Bidirectional")}
+      {renderSection("input", isPatchPanel ? "Rear" : "Inputs")}
+      {renderSection("output", isPatchPanel ? "Front" : "Outputs")}
+      {!isPatchPanel && renderSection("bidirectional", "Bidirectional")}
     </div>
   );
 }

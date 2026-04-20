@@ -1,4 +1,4 @@
-import type { ConnectorType, DeviceTemplate, SignalType } from "./types";
+import type { ConnectorType, DeviceTemplate, Gender, Port, SignalType } from "./types";
 
 /** Default connector type inferred from signal type — used for migration and new ports */
 export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
@@ -266,6 +266,106 @@ export function findAdaptersForConnectorBridge(
   });
 
   return results;
+}
+
+/**
+ * Connector gender convention table.
+ * - Fixed entry: gender is the same regardless of port direction (e.g., RJ45 jacks are always female on a device).
+ * - Direction map: gender depends on whether the port is an input or output (e.g., XLR input = female, output = male).
+ * - Omitted entries: connector is genderless or doesn't have a meaningful M/F distinction (fiber, terminal blocks, etc.).
+ */
+export const CONNECTOR_GENDER: Partial<Record<ConnectorType, Gender | { input: Gender; output: Gender }>> = {
+  // Fixed gender — device side is always this regardless of direction
+  hdmi: "female",
+  "mini-hdmi": "female",
+  displayport: "female",
+  "mini-displayport": "female",
+  vga: "female",
+  dvi: "female",
+  rj45: "female",
+  ethercon: "female",
+  rj11: "female",
+  rj12: "female",
+  "usb-a": "female",
+  "usb-b": "female",
+  "usb-c": "female",
+  "usb-mini": "female",
+  "usb-micro": "female",
+  rca: "female",
+  toslink: "female",
+  "din-5": "female",
+  "mini-din-4": "female",
+  "mini-din-7": "female",
+  digilink: "female",
+  db7w2: "female",
+  db9: "female",
+  db15: "female",
+  db25: "female",
+  db37: "female",
+  "trs-quarter": "female",
+  "trs-eighth": "female",
+  "trs-2.5mm": "female",
+  "combo-xlr-trs": "female",
+  "f-connector": "female",
+  "reverse-tnc": "female",
+  sma: "female",
+  barrel: "female",
+  "pcie-6pin": "male",
+  "d-tap": "female",
+  "v-mount": "female",
+
+  // Direction-conditional — gender flips based on signal flow
+  "xlr-3":            { input: "female", output: "male" },
+  "xlr-4":            { input: "female", output: "male" },
+  "xlr-5":            { input: "female", output: "male" },
+  "mini-xlr":         { input: "female", output: "male" },
+  bnc:                { input: "female", output: "female" }, // device side is female; cable BNCs are male
+  speakon:            { input: "female", output: "female" }, // chassis-mount is typically female on both
+  "powercon":         { input: "male",   output: "female" }, // input/inlet = male (NAC3MPA), output = female (NAC3FPB)
+  "powercon-true1":   { input: "male",   output: "female" },
+  iec:                { input: "male",   output: "female" }, // C14 inlet = male, C13 outlet = female
+  "iec-c5":           { input: "male",   output: "female" },
+  "iec-c7":           { input: "male",   output: "female" },
+  "iec-c15":          { input: "male",   output: "female" },
+  "iec-c20":          { input: "male",   output: "female" },
+  edison:             { input: "male",   output: "female" },
+  "l5-20":            { input: "male",   output: "female" },
+  "l6-20":            { input: "male",   output: "female" },
+  "l6-30":            { input: "male",   output: "female" },
+  "l21-30":           { input: "male",   output: "female" },
+  "cam-lok":          { input: "female", output: "male"   },
+  socapex:            { input: "female", output: "female" },
+  multipin:           { input: "female", output: "female" },
+  banana:             { input: "female", output: "female" }, // binding posts on both sides
+  "binding-post":     { input: "female", output: "female" },
+  "binding-post-banana": { input: "female", output: "female" },
+};
+
+/**
+ * Connectors where gender genuinely varies in real gear (and thus where the editor should expose
+ * a manual override). Connectors not listed here use whatever CONNECTOR_GENDER says without prompting.
+ */
+export const CONNECTORS_WITH_GENDER_VARIATION: Set<ConnectorType> = new Set([
+  "xlr-3", "xlr-4", "xlr-5", "mini-xlr",
+  "powercon", "powercon-true1",
+  "iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20",
+  "edison", "l5-20", "l6-20", "l6-30", "l21-30",
+  "cam-lok", "socapex", "multipin",
+  "speakon", "banana", "binding-post", "binding-post-banana",
+  "bnc",
+  "trs-quarter", "trs-eighth", "trs-2.5mm",
+]);
+
+/** Resolve a port's gender: explicit override → convention from connector + direction → undefined. */
+export function resolvePortGender(port: Port | undefined): Gender | undefined {
+  if (!port) return undefined;
+  if (port.gender) return port.gender;
+  if (!port.connectorType) return undefined;
+  const entry = CONNECTOR_GENDER[port.connectorType];
+  if (!entry) return undefined;
+  if (typeof entry === "string") return entry;
+  // Bidirectional ports fall back to the input convention.
+  return port.direction === "output" ? entry.output : entry.input;
 }
 
 /** Signal types that can have network configuration */

@@ -1,6 +1,6 @@
-import type { Port, SignalType, ConnectorType } from "../../../src/types";
+import type { Gender, Port, SignalType, ConnectorType } from "../../../src/types";
 import { SIGNAL_LABELS, CONNECTOR_LABELS, SIGNAL_GROUPS, CONNECTOR_GROUPS } from "../../../src/types";
-import { DEFAULT_CONNECTOR } from "../../../src/connectorTypes";
+import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, resolvePortGender } from "../../../src/connectorTypes";
 import SearchableSelect from "./SearchableSelect";
 
 const NETWORK_SIGNAL_TYPES = new Set(["ethernet", "ndi", "dante", "avb", "srt", "hdbaset"]);
@@ -67,6 +67,26 @@ export default function PortRow({ port, selected, onSelect, onChange, onRemove, 
           recommendedLabel={`Default for ${SIGNAL_LABELS[port.signalType]}`}
           className="px-2 py-1 rounded border border-slate-200 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[100px]"
         />
+        {port.connectorType && CONNECTORS_WITH_GENDER_VARIATION.has(port.connectorType) && (() => {
+          const resolved = resolvePortGender(port);
+          return (
+            <select
+              value={port.gender ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                onChange({ gender: v === "" ? undefined : (v as Gender) });
+              }}
+              className={`px-2 py-1 rounded border text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                port.gender ? "border-blue-300 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-500"
+              }`}
+              title={port.gender ? "Connector gender (overridden)" : `Connector gender (auto: ${resolved ?? "—"})`}
+            >
+              <option value="">{resolved ? `${resolved === "male" ? "M" : "F"} (auto)` : "Gender"}</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+          );
+        })()}
         <input
           type="text"
           value={port.section ?? ""}

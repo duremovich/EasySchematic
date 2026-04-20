@@ -237,6 +237,56 @@ export default function DevicesAndPortsPage() {
         </tbody>
       </table>
 
+      <h2>Connector gender</h2>
+      <p>
+        Most connectors have a <strong>gender</strong> (male or female) that affects what cable you actually need. EasySchematic
+        infers gender automatically from the connector type and direction — for example, an XLR-3 input is female and
+        an XLR-3 output is male, while powerCON inlets are male and outlets are female. Fixed-gender connectors
+        (RJ45, HDMI, USB-C, etc.) are always the same regardless of direction.
+      </p>
+      <p>
+        For connectors where gender genuinely varies in real gear (XLR family, powerCON, IEC, Cam-Lok, banana, speakON,
+        BNC, TRS), the port editor shows a <strong>gender override dropdown</strong> next to the connector type. Set this when
+        the device's actual hardware doesn't follow the default convention — for instance, a ground-loop isolator with
+        male XLR inputs.
+      </p>
+      <p>
+        Gender flows into the <strong>cable schedule</strong>. A cable plug is always the <em>opposite</em> gender of the port it
+        mates with — a male plug fits a female socket. For a normal device-to-device run (female input, male output),
+        that's a standard M-F cable, and the pack list shows the plain cable name.
+      </p>
+      <p>
+        When both endpoints share a gender, the cable label gets a suffix reflecting the cable's own ends:
+      </p>
+      <ul>
+        <li>Two female ports (e.g. front and rear of a TT bantam patch bay) need an <strong>M-M</strong> cable — male plugs on both ends</li>
+        <li>Two male ports (rare — e.g. two appliance-side IEC inlets wired back-to-back) need an <strong>F-F</strong> cable</li>
+      </ul>
+
+      <h2>Patch panels</h2>
+      <p>
+        Patch panels (RJ45 panels, BNC video bays, XLR audio bays, fiber panels, TT bantam patch bays) are bidirectional
+        pass-throughs with ports on two physical faces. EasySchematic models them as a special device type:
+      </p>
+      <ul>
+        <li>The port editor shows the two sides as <strong>Rear</strong> and <strong>Front</strong> instead of "Inputs" and "Outputs"</li>
+        <li>The device on the canvas shows <strong>Rear</strong> on the left and <strong>Front</strong> on the right with a header above each column</li>
+        <li>Rear and front ports default to the same gender — patch bays typically have female sockets on both faces, so a
+            cable connecting two front ports correctly shows up as <code>M-M</code> (male plugs on both cable ends) in the pack list</li>
+        <li>Connections work the same way as any other device — drag from one face to wherever the cable physically goes</li>
+      </ul>
+      <p>
+        Built-in templates cover RJ45 (12/24/32/48-port), BNC video, XLR audio, fiber LC, and TT bantam audio patch bays
+        in common port counts.
+      </p>
+      <p>
+        A dedicated <strong>Patch Panel Schedule</strong> report (Menu → Reports → Patch Panels) lists every port of every
+        patch panel in the schematic — one row per port, including unconnected ones. Each row shows the panel, room, face,
+        position, connector, gender, and what's connected on the remote end (device, port, room, cable ID, cable type,
+        signal, length). Group by Panel, Panel Room, Signal Type, or Face. An occupancy badge at the top of the report
+        shows how many ports on each panel are used so you can spot free capacity at a glance.
+      </p>
+
       <h2>Editing devices</h2>
       <p>
         <strong>Double-click</strong> any device to open the device editor. From there you can:
