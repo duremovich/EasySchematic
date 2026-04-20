@@ -241,6 +241,7 @@ interface SchematicState {
   // Custom templates
   addCustomTemplate: (template: DeviceTemplate) => void;
   removeCustomTemplate: (deviceType: string) => void;
+  clearAllCustomTemplates: () => void;
   addOwnedGear: (template: DeviceTemplate, quantity?: number) => void;
   setOwnedGear: (items: OwnedGearItem[]) => void;
   updateOwnedGearQuantity: (templateKey: string, quantity: number) => void;
@@ -2162,6 +2163,17 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({ customTemplates: updated, customTemplateOrder: order, customTemplateGroupAssignments: groupAssignments });
     saveCustomTemplates(updated);
     saveCustomTemplateMeta({ groups: get().customTemplateGroups, order, groupAssignments });
+  },
+
+  clearAllCustomTemplates: () => {
+    set({
+      customTemplates: [],
+      customTemplateOrder: [],
+      customTemplateGroups: [],
+      customTemplateGroupAssignments: {},
+    });
+    saveCustomTemplates([]);
+    saveCustomTemplateMeta({ groups: [], order: [], groupAssignments: {} });
   },
 
   // Custom template organization (#62)

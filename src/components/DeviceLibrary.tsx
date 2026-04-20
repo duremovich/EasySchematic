@@ -560,6 +560,7 @@ function CustomTemplatesSection({
   const order = useSchematicStore((s) => s.customTemplateOrder);
   const assignments = useSchematicStore((s) => s.customTemplateGroupAssignments);
   const removeCustomTemplate = useSchematicStore((s) => s.removeCustomTemplate);
+  const clearAllCustomTemplates = useSchematicStore((s) => s.clearAllCustomTemplates);
   const toggleFavoriteTemplate = useSchematicStore((s) => s.toggleFavoriteTemplate);
   const reorderCustomTemplate = useSchematicStore((s) => s.reorderCustomTemplate);
   const moveCustomTemplateToGroup = useSchematicStore((s) => s.moveCustomTemplateToGroup);
@@ -573,6 +574,7 @@ function CustomTemplatesSection({
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [newGroupLabel, setNewGroupLabel] = useState("");
   const [ungroupedOpen, setUngroupedOpen] = useState(true);
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const newGroupInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -649,7 +651,63 @@ function CustomTemplatesSection({
         >
           +
         </button>
+        {customTemplates.length > 0 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setConfirmingClear(true); }}
+            className="opacity-0 group-hover/cat:opacity-100 text-[var(--color-text-muted)] hover:text-red-500 text-xs cursor-pointer px-0.5 transition-opacity"
+            title="Delete all user templates"
+          >
+            🗑
+          </button>
+        )}
       </div>
+
+      {confirmingClear && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          onClick={() => setConfirmingClear(false)}
+        >
+          <div
+            className="bg-white border border-[var(--color-border)] rounded-lg shadow-2xl w-[360px] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--color-border)]">
+              <span className="text-sm font-semibold text-[var(--color-text-heading)]">
+                Delete all user templates?
+              </span>
+              <button
+                onClick={() => setConfirmingClear(false)}
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-lg leading-none cursor-pointer"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="px-5 py-4 text-xs text-[var(--color-text)] space-y-2">
+              <p>
+                This will permanently delete all {customTemplates.length} of your user templates
+                {groups.length > 0 ? ` and all ${groups.length} group${groups.length === 1 ? "" : "s"}` : ""}.
+              </p>
+              <p className="text-[var(--color-text-muted)]">
+                Devices already placed on the canvas are not affected. This cannot be undone.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[var(--color-border)]">
+              <button
+                onClick={() => setConfirmingClear(false)}
+                className="px-3 py-1.5 text-xs rounded border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer text-[var(--color-text)]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { clearAllCustomTemplates(); setConfirmingClear(false); }}
+                className="px-3 py-1.5 text-xs rounded bg-red-600 text-white hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Delete All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isOpen && (
         <div className="ml-2">
