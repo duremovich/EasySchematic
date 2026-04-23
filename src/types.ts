@@ -15,7 +15,7 @@ export type ConnectorType =
   | "rj11" | "rj12" | "usb-mini" | "usb-micro" | "trs-2.5mm"
   | "reverse-tnc" | "sma" | "db37"
   | "d-tap" | "v-mount" | "f-connector"
-  | "lemo-2pin" | "lemo-5pin"
+  | "lemo-2pin" | "lemo-4pin" | "lemo-5pin"
   | "wireless"
   | "none" | "other";
 
@@ -681,6 +681,7 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   digilink: "DigiLink",
   "pcie-6pin": "PCIe 6-pin Aux",
   "lemo-2pin": "LEMO 2-pin",
+  "lemo-4pin": "LEMO 4-pin",
   "lemo-5pin": "LEMO 5-pin",
   "usb-mini": "Mini USB",
   "usb-micro": "Micro USB",
@@ -790,7 +791,7 @@ export const CONNECTOR_GROUPS: Record<string, ConnectorType[]> = {
   "Network / Data": ["rj45", "ethercon", "sfp", "lc", "sc", "opticalcon", "qsfp", "qsfp28", "mpo", "rj11", "rj12"],
   "USB": ["usb-a", "usb-b", "usb-c", "usb-mini", "usb-micro"],
   "D-Sub / Serial": ["db9", "db15", "db25", "db37", "db7w2", "lemo-5pin"],
-  "Power": ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "powercon-true1", "edison", "barrel", "l5-20", "l6-20", "l6-30", "l21-30", "cam-lok", "socapex", "pcie-6pin", "lemo-2pin"],
+  "Power": ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "powercon-true1", "edison", "barrel", "l5-20", "l6-20", "l6-30", "l21-30", "cam-lok", "socapex", "pcie-6pin", "lemo-2pin", "lemo-4pin"],
   "Speaker": ["speakon", "banana", "binding-post", "binding-post-banana"],
   "Terminal": ["phoenix", "terminal-block", "multipin"],
   "RF": ["reverse-tnc", "sma"],

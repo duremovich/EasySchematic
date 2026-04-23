@@ -200,6 +200,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   digilink: "DigiLink",
   "pcie-6pin": "PCIe 6-pin Aux",
   "lemo-2pin": "LEMO 2-pin",
+  "lemo-4pin": "LEMO 4-pin",
   "lemo-5pin": "LEMO 5-pin",
   none: "",
   other: "Other",
@@ -318,6 +319,7 @@ export const CONNECTOR_GENDER: Partial<Record<ConnectorType, Gender | { input: G
   "d-tap": "female",
   "v-mount": "female",
   "lemo-2pin": "female",
+  "lemo-4pin": "female",
   "lemo-5pin": "female",
 
   // Direction-conditional — gender flips based on signal flow
