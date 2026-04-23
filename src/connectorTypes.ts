@@ -189,6 +189,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   "cam-lok": "Cam-Lok",
   "powercon-true1": "powerCON TRUE1",
   qsfp: "QSFP Fiber",
+  qsfp28: "QSFP28 Fiber",
   mpo: "MPO Fiber",
   wireless: "Wireless",
   "usb-micro": "Micro USB",
@@ -197,6 +198,8 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   db37: "DB37",
   digilink: "DigiLink",
   "pcie-6pin": "PCIe 6-pin Aux",
+  "lemo-2pin": "LEMO 2-pin",
+  "lemo-5pin": "LEMO 5-pin",
   none: "",
   other: "Other",
 };
@@ -313,6 +316,8 @@ export const CONNECTOR_GENDER: Partial<Record<ConnectorType, Gender | { input: G
   "pcie-6pin": "male",
   "d-tap": "female",
   "v-mount": "female",
+  "lemo-2pin": "female",
+  "lemo-5pin": "female",
 
   // Direction-conditional — gender flips based on signal flow
   "xlr-3":            { input: "female", output: "male" },

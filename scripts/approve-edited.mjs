@@ -76,7 +76,7 @@ const CATEGORIES = {
   "expansion-card": "Expansion Cards",
   "cloud-service": "Cloud Services",
   "power-mixer": "Powered Mixers",
-  "nas": "Storage",
+  "nas": "Storage", "external-storage": "Storage",
   "audio-meter": "Monitoring", "video-scope": "Monitoring",
 };
 
@@ -88,8 +88,8 @@ if (!submissionId) { console.error("Usage: node approve-edited.mjs <id> [json-ed
 const edits = editsJson ? JSON.parse(editsJson) : {};
 
 // Fetch submission
-const rows = d1Read(`SELECT * FROM submissions WHERE id = '${esc(submissionId)}' AND status = 'pending'`);
-if (!rows.length) { console.error("Not found or not pending"); process.exit(1); }
+const rows = d1Read(`SELECT * FROM submissions WHERE id = '${esc(submissionId)}' AND status IN ('pending', 'deferred')`);
+if (!rows.length) { console.error("Not found or already reviewed"); process.exit(1); }
 
 const sub = rows[0];
 const data = JSON.parse(sub.data);
@@ -138,13 +138,17 @@ const category = CATEGORIES[data.deviceType] || data.category || "Other";
 console.log(`${sub.action}: ${data.label} (${data.deviceType} -> ${category})`);
 console.log(`Ports: ${data.ports.length}`);
 
+const numOrNull = (v) => (v != null ? v : "NULL");
+const strOrNull = (v) => (v ? `'${esc(v)}'` : "NULL");
+const jsonOrNull = (v) => (v ? `'${esc(JSON.stringify(v))}'` : "NULL");
+
 if (sub.action === "update" && sub.template_id) {
-  const sql = `UPDATE templates SET device_type = '${esc(data.deviceType)}', category = '${esc(category)}', label = '${esc(data.label)}', manufacturer = ${data.manufacturer ? `'${esc(data.manufacturer)}'` : "NULL"}, model_number = ${data.modelNumber ? `'${esc(data.modelNumber)}'` : "NULL"}, color = ${data.color ? `'${esc(data.color)}'` : "NULL"}, image_url = ${data.imageUrl ? `'${esc(data.imageUrl)}'` : "NULL"}, reference_url = ${data.referenceUrl ? `'${esc(data.referenceUrl)}'` : "NULL"}, search_terms = ${data.searchTerms ? `'${esc(JSON.stringify(data.searchTerms))}'` : "NULL"}, ports = '${esc(JSON.stringify(data.ports))}', slots = ${data.slots ? `'${esc(JSON.stringify(data.slots))}'` : "NULL"}, slot_family = ${data.slotFamily ? `'${esc(data.slotFamily)}'` : "NULL"}, power_draw_w = ${data.powerDrawW != null ? data.powerDrawW : "NULL"}, power_capacity_w = ${data.powerCapacityW != null ? data.powerCapacityW : "NULL"}, voltage = ${data.voltage ? `'${esc(data.voltage)}'` : "NULL"}, poe_budget_w = ${data.poeBudgetW != null ? data.poeBudgetW : "NULL"}, is_venue_provided = ${data.isVenueProvided ? 1 : "NULL"}, version = version + 1, updated_at = CURRENT_TIMESTAMP, last_edited_by = '${esc(sub.user_id)}' WHERE id = '${esc(sub.template_id)}';`;
+  const sql = `UPDATE templates SET device_type = '${esc(data.deviceType)}', category = '${esc(category)}', label = '${esc(data.label)}', manufacturer = ${strOrNull(data.manufacturer)}, model_number = ${strOrNull(data.modelNumber)}, color = ${strOrNull(data.color)}, image_url = ${strOrNull(data.imageUrl)}, reference_url = ${strOrNull(data.referenceUrl)}, search_terms = ${jsonOrNull(data.searchTerms)}, ports = '${esc(JSON.stringify(data.ports))}', slots = ${jsonOrNull(data.slots)}, slot_family = ${strOrNull(data.slotFamily)}, power_draw_w = ${numOrNull(data.powerDrawW)}, power_capacity_w = ${numOrNull(data.powerCapacityW)}, voltage = ${strOrNull(data.voltage)}, poe_budget_w = ${numOrNull(data.poeBudgetW)}, poe_draw_w = ${numOrNull(data.poeDrawW)}, height_mm = ${numOrNull(data.heightMm)}, width_mm = ${numOrNull(data.widthMm)}, depth_mm = ${numOrNull(data.depthMm)}, weight_kg = ${numOrNull(data.weightKg)}, is_venue_provided = ${data.isVenueProvided ? 1 : "NULL"}, version = version + 1, updated_at = CURRENT_TIMESTAMP, last_edited_by = '${esc(sub.user_id)}' WHERE id = '${esc(sub.template_id)}';`;
   d1Write(sql);
 
 } else if (sub.action === "create") {
   const templateId = crypto.randomUUID();
-  const sql = `INSERT INTO templates (id, version, device_type, category, label, manufacturer, model_number, color, image_url, reference_url, search_terms, ports, slots, slot_family, power_draw_w, power_capacity_w, voltage, poe_budget_w, is_venue_provided, sort_order, submitted_by) VALUES ('${templateId}', 1, '${esc(data.deviceType)}', '${esc(category)}', '${esc(data.label)}', ${data.manufacturer ? `'${esc(data.manufacturer)}'` : "NULL"}, ${data.modelNumber ? `'${esc(data.modelNumber)}'` : "NULL"}, ${data.color ? `'${esc(data.color)}'` : "NULL"}, ${data.imageUrl ? `'${esc(data.imageUrl)}'` : "NULL"}, ${data.referenceUrl ? `'${esc(data.referenceUrl)}'` : "NULL"}, ${data.searchTerms ? `'${esc(JSON.stringify(data.searchTerms))}'` : "NULL"}, '${esc(JSON.stringify(data.ports))}', ${data.slots ? `'${esc(JSON.stringify(data.slots))}'` : "NULL"}, ${data.slotFamily ? `'${esc(data.slotFamily)}'` : "NULL"}, ${data.powerDrawW != null ? data.powerDrawW : "NULL"}, ${data.powerCapacityW != null ? data.powerCapacityW : "NULL"}, ${data.voltage ? `'${esc(data.voltage)}'` : "NULL"}, ${data.poeBudgetW != null ? data.poeBudgetW : "NULL"}, ${data.isVenueProvided ? 1 : "NULL"}, 0, '${esc(sub.user_id)}');`;
+  const sql = `INSERT INTO templates (id, version, device_type, category, label, manufacturer, model_number, color, image_url, reference_url, search_terms, ports, slots, slot_family, power_draw_w, power_capacity_w, voltage, poe_budget_w, poe_draw_w, height_mm, width_mm, depth_mm, weight_kg, is_venue_provided, sort_order, submitted_by) VALUES ('${templateId}', 1, '${esc(data.deviceType)}', '${esc(category)}', '${esc(data.label)}', ${strOrNull(data.manufacturer)}, ${strOrNull(data.modelNumber)}, ${strOrNull(data.color)}, ${strOrNull(data.imageUrl)}, ${strOrNull(data.referenceUrl)}, ${jsonOrNull(data.searchTerms)}, '${esc(JSON.stringify(data.ports))}', ${jsonOrNull(data.slots)}, ${strOrNull(data.slotFamily)}, ${numOrNull(data.powerDrawW)}, ${numOrNull(data.powerCapacityW)}, ${strOrNull(data.voltage)}, ${numOrNull(data.poeBudgetW)}, ${numOrNull(data.poeDrawW)}, ${numOrNull(data.heightMm)}, ${numOrNull(data.widthMm)}, ${numOrNull(data.depthMm)}, ${numOrNull(data.weightKg)}, ${data.isVenueProvided ? 1 : "NULL"}, 0, '${esc(sub.user_id)}');`;
   d1Write(sql);
   console.log(`Template ID: ${templateId}`);
 }

@@ -81,6 +81,7 @@ export const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "hdmi-splitter": "Distribution",
   "network-router": "Networking",
   "nas": "Storage",
+  "external-storage": "Storage",
   "lighting-processor": "Lighting",
   "network-wifi": "Networking",
   "access-point": "Networking",
