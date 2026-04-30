@@ -218,6 +218,7 @@ interface SchematicState {
   addRoom: (label: string, position: { x: number; y: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
+  updateAnnotation: (nodeId: string, data: Partial<import("./types").AnnotationData>) => void;
   toggleRoomLock: (nodeId: string) => void;
   toggleEquipmentRack: (nodeId: string) => void;
   addNote: (position: { x: number; y: number }) => void;
@@ -1909,6 +1910,18 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         const wasLocked = (n.data as import("./types").RoomData).locked;
         const merged = wasLocked ? { ...data, locked: true } : data;
         return { ...n, data: merged } as SchematicNode;
+      }),
+    });
+    get().saveToLocalStorage();
+  },
+
+  updateAnnotation: (nodeId, data) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId || n.type !== "annotation") return n;
+        return { ...n, data: { ...n.data, ...data } } as SchematicNode;
       }),
     });
     get().saveToLocalStorage();

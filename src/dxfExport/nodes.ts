@@ -362,7 +362,14 @@ function emitPortLabel(
   }
 }
 
-/** Emit an annotation (rectangle or ellipse with optional fill + label). */
+/** Parse a CSS fill color (hex or rgba) to a DXF true-color integer, ignoring alpha. */
+function annotationFillToTrueColor(color: string): number {
+  const m = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(color.trim());
+  if (m) return rgbToTrueColor(parseInt(m[1]), parseInt(m[2]), parseInt(m[3]));
+  return hexToTrueColor(color);
+}
+
+/** Emit an annotation (rectangle, ellipse, circle, diamond, or triangle). */
 export function emitAnnotation(
   writer: DxfWriter,
   node: SchematicNode,
@@ -381,29 +388,48 @@ export function emitAnnotation(
   const borderStyle: EntityStyle = {};
   if (data.borderColor) borderStyle.trueColor = hexToTrueColor(data.borderColor);
 
-  if (data.shape === "ellipse") {
+  if (data.shape === "ellipse" || data.shape === "circle") {
     const cx = rect.x + rect.w / 2;
     const cy = rect.y + rect.h / 2;
-    const majorRadius = rect.w / 2;
-    const ratio = Math.min(1, rect.h / rect.w);
+    const majorRadius = data.shape === "circle" ? Math.min(rect.w, rect.h) / 2 : rect.w / 2;
+    const ratio = data.shape === "circle" ? 1 : Math.min(1, rect.h / rect.w);
     if (data.color) {
       writer.addSolidHatchEllipse(
         CANONICAL_LAYERS.ANNOTATIONS_FILL,
         cx, cy, majorRadius, 0, ratio,
-        { trueColor: hexToTrueColor(data.color) },
+        { trueColor: annotationFillToTrueColor(data.color) },
       );
     }
-    writer.addEllipse(
-      CANONICAL_LAYERS.ANNOTATIONS,
-      cx, cy, majorRadius, 0, ratio,
-      borderStyle,
-    );
+    writer.addEllipse(CANONICAL_LAYERS.ANNOTATIONS, cx, cy, majorRadius, 0, ratio, borderStyle);
+  } else if (data.shape === "diamond") {
+    const cx = rect.x + rect.w / 2;
+    const cy = rect.y + rect.h / 2;
+    const pts = [
+      { x: cx, y: rect.y },
+      { x: rect.x + rect.w, y: cy },
+      { x: cx, y: rect.y + rect.h },
+      { x: rect.x, y: cy },
+    ];
+    if (data.color) {
+      writer.addSolidHatchPolygon(CANONICAL_LAYERS.ANNOTATIONS_FILL, pts, { trueColor: annotationFillToTrueColor(data.color) });
+    }
+    writer.addPolyline(CANONICAL_LAYERS.ANNOTATIONS, pts, true, borderStyle);
+  } else if (data.shape === "triangle") {
+    const pts = [
+      { x: rect.x + rect.w / 2, y: rect.y },
+      { x: rect.x + rect.w, y: rect.y + rect.h },
+      { x: rect.x, y: rect.y + rect.h },
+    ];
+    if (data.color) {
+      writer.addSolidHatchPolygon(CANONICAL_LAYERS.ANNOTATIONS_FILL, pts, { trueColor: annotationFillToTrueColor(data.color) });
+    }
+    writer.addPolyline(CANONICAL_LAYERS.ANNOTATIONS, pts, true, borderStyle);
   } else {
     if (data.color) {
       writer.addSolidHatchRect(
         CANONICAL_LAYERS.ANNOTATIONS_FILL,
         rect.x, rect.y, rect.w, rect.h,
-        { trueColor: hexToTrueColor(data.color) },
+        { trueColor: annotationFillToTrueColor(data.color) },
       );
     }
     writer.addRect(CANONICAL_LAYERS.ANNOTATIONS, rect.x, rect.y, rect.w, rect.h, borderStyle);
@@ -417,7 +443,7 @@ export function emitAnnotation(
       cx, cy,
       data.label,
       {
-        height: cssFontPxToDxfHeight(12),
+        height: cssFontPxToDxfHeight(data.fontSize ?? 12),
         align: "center",
         vAlign: "middle",
         style: data.borderColor ? { trueColor: hexToTrueColor(data.borderColor) } : undefined,

@@ -1,16 +1,72 @@
-import { memo } from "react";
+import { memo, type CSSProperties } from "react";
 import { NodeResizer, type NodeProps } from "@xyflow/react";
 import type { AnnotationData } from "../types";
+import { useSchematicStore } from "../store";
 
-/**
- * Annotation node — renders a resizable rectangle or ellipse shape.
- * Created as scaffolding for #24; full implementation by Teammate D.
- */
-function AnnotationNode({ data, selected }: NodeProps) {
+function AnnotationNode({ id, data, selected }: NodeProps) {
   const annotationData = data as unknown as AnnotationData;
-  const isEllipse = annotationData.shape === "ellipse";
   const bgColor = annotationData.color ?? "rgba(59, 130, 246, 0.1)";
   const border = annotationData.borderColor ?? "#3b82f6";
+  const shape = annotationData.shape ?? "rectangle";
+  const fontSize = annotationData.fontSize ?? 12;
+
+  const handleDoubleClick = () => {
+    useSchematicStore.getState().setEditingNodeId(id);
+  };
+
+  const labelStyle: CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize,
+    fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+    color: "#333",
+    pointerEvents: "none",
+    padding: "4px",
+    textAlign: "center",
+  };
+
+  const label = annotationData.label ? (
+    <span style={labelStyle}>{annotationData.label}</span>
+  ) : null;
+
+  const polygonPoints =
+    shape === "diamond"
+      ? "50,2 98,50 50,98 2,50"
+      : "50,2 98,98 2,98";
+
+  if (shape === "diamond" || shape === "triangle") {
+    return (
+      <>
+        <NodeResizer isVisible={!!selected} minWidth={60} minHeight={40} />
+        <div
+          style={{ position: "relative", width: "100%", height: "100%" }}
+          onDoubleClick={handleDoubleClick}
+        >
+          <svg
+            width="100%"
+            height="100%"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            style={{ display: "block" }}
+          >
+            <polygon
+              points={polygonPoints}
+              fill={bgColor}
+              stroke={border}
+              strokeWidth={2}
+              vectorEffect="non-scaling-stroke"
+            />
+          </svg>
+          {label}
+        </div>
+      </>
+    );
+  }
+
+  const isRound = shape === "ellipse" || shape === "circle";
 
   return (
     <>
@@ -21,14 +77,18 @@ function AnnotationNode({ data, selected }: NodeProps) {
           height: "100%",
           backgroundColor: bgColor,
           border: `2px solid ${border}`,
-          borderRadius: isEllipse ? "50%" : "4px",
+          borderRadius: isRound ? "50%" : "4px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 14,
+          fontSize,
+          fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
           color: "#333",
           overflow: "hidden",
+          textAlign: "center",
+          padding: "4px",
         }}
+        onDoubleClick={handleDoubleClick}
       >
         {annotationData.label && <span>{annotationData.label}</span>}
       </div>

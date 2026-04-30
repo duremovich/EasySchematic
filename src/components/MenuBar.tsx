@@ -478,12 +478,13 @@ export default function MenuBar() {
     // Place annotation in the center of the current viewport
     const x = (-viewport.x + window.innerWidth / 2) / viewport.zoom - 100;
     const y = (-viewport.y + window.innerHeight / 2) / viewport.zoom - 50;
+    const isSquare = shape === "circle" || shape === "diamond";
     const newNode: SchematicNode = {
       id: `annotation-${Date.now()}`,
       type: "annotation",
-      position: { x, y },
-      data: { shape, color: "rgba(59, 130, 246, 0.1)", borderColor: "#3b82f6" } as AnnotationData,
-      style: { width: 200, height: 100 },
+      position: { x: isSquare ? x + 50 : x, y },
+      data: { shape, color: "rgba(59, 130, 246, 0.15)", borderColor: "#3b82f6" } as AnnotationData,
+      style: { width: isSquare ? 100 : 200, height: 100 },
     };
     useSchematicStore.setState({ nodes: [...state.nodes, newNode] });
     state.saveToLocalStorage();
@@ -534,6 +535,9 @@ export default function MenuBar() {
     Insert: [
       { type: "item", label: "Add Rectangle", onClick: () => addAnnotation("rectangle") },
       { type: "item", label: "Add Ellipse", onClick: () => addAnnotation("ellipse") },
+      { type: "item", label: "Add Circle", onClick: () => addAnnotation("circle") },
+      { type: "item", label: "Add Diamond", onClick: () => addAnnotation("diamond") },
+      { type: "item", label: "Add Triangle", onClick: () => addAnnotation("triangle") },
     ],
     View: [
       {

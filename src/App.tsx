@@ -39,6 +39,7 @@ import RoutingTuningPanel from "./components/RoutingTuningPanel";
 import RoomContextMenu from "./components/RoomContextMenu";
 import DeviceContextMenu from "./components/DeviceContextMenu";
 import RoomEditor from "./components/RoomEditor";
+import AnnotationEditor from "./components/AnnotationEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
 import DeviceCreatorPicker from "./components/DeviceCreatorPicker";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
@@ -1511,6 +1512,7 @@ export default function App() {
       </div>
       <DeviceEditor />
       <RoomEditor />
+      <AnnotationEditor />
       <EdgeContextMenu />
       <RoomContextMenu />
       <DeviceContextMenu />

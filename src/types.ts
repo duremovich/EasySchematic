@@ -278,13 +278,15 @@ export type NoteNode = Node<NoteData, "note">;
 export interface AnnotationData {
   [key: string]: unknown;
   /** Shape type for the annotation (#24) */
-  shape: "rectangle" | "ellipse";
+  shape: "rectangle" | "ellipse" | "circle" | "diamond" | "triangle";
   /** Fill color */
   color?: string;
   /** Border color */
   borderColor?: string;
   /** Optional text label */
   label?: string;
+  /** Font size for the label in px */
+  fontSize?: number;
 }
 
 export type AnnotationNode = Node<AnnotationData, "annotation">;
