@@ -51,6 +51,10 @@ html, body, #root {
   overscroll-behavior: none;
 }
 
+/* Pan-first mode cursor feedback */
+.pan-mode .react-flow__pane { cursor: grab; }
+.pan-mode .react-flow__pane:active { cursor: grabbing; }
+
 .react-flow__background {
   background: var(--color-bg) !important;
 }

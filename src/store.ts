@@ -25,8 +25,8 @@ import type {
   CustomTemplateMeta,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
-import type { SignalType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings } from "./types";
-import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS } from "./types";
+import type { SignalType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings, PanMode } from "./types";
+import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE } from "./types";
 import { pairKey } from "./roomDistance";
 import type { Orientation } from "./printConfig";
 import { computeAlignment, resolveAlignmentOverlaps, type AlignOperation } from "./alignUtils";
@@ -423,6 +423,10 @@ interface SchematicState {
   // Label case preference — purely a display-time transform; data is never mutated.
   labelCase: LabelCaseMode;
   setLabelCase: (mode: LabelCaseMode) => void;
+
+  // Left-drag canvas behavior: select box (default) or pan viewport.
+  panMode: PanMode;
+  setPanMode: (mode: PanMode) => void;
 
   // ISO 4217 currency code for cost display in reports (#158).
   currency: string;
@@ -890,6 +894,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   _edgeWaypointStash: null,
   autoRouteConfirmPending: false,
   edgeHitboxSize: 10,
+  panMode: DEFAULT_PAN_MODE,
   debugEdges: false,
   debugShowLabels: true,
   debugShowObstacles: true,
@@ -2689,6 +2694,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  setPanMode: (mode) => {
+    set({ panMode: mode });
+    get().saveToLocalStorage();
+  },
+
   setCurrency: (code) => {
     set({ currency: code });
     get().saveToLocalStorage();
@@ -2823,6 +2833,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       cableNamingScheme: state.cableNamingScheme !== "type-prefix" ? state.cableNamingScheme : undefined,
       labelCase: state.labelCase !== "as-typed" ? state.labelCase : undefined,
       currency: state.currency !== "USD" ? state.currency : undefined,
+      panMode: state.panMode !== "select-first" ? state.panMode : undefined,
       showLineJumps: !state.showLineJumps ? false : undefined,
       showCableIdLabels: !state.showCableIdLabels ? false : undefined,
       showCustomLabels: !state.showCustomLabels ? false : undefined,
@@ -2908,6 +2919,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             cableNamingScheme: data.cableNamingScheme ?? "type-prefix",
             labelCase: resolveLabelCase(data.labelCase),
             currency: data.currency ?? "USD",
+            panMode: (data.panMode === "pan-first" ? "pan-first" : "select-first") as PanMode,
             showLineJumps: data.showLineJumps ?? true,
             autoRoute: data.autoRoute ?? true,
             edgeHitboxSize: data.edgeHitboxSize ?? 10,
@@ -2978,6 +2990,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         cableNamingScheme: data.cableNamingScheme ?? "type-prefix",
         labelCase: resolveLabelCase(data.labelCase),
         currency: data.currency ?? "USD",
+        panMode: (data.panMode === "pan-first" ? "pan-first" : "select-first") as PanMode,
         showLineJumps: data.showLineJumps ?? true,
         showCableIdLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
         showConnectionLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
@@ -3048,6 +3061,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       cableNamingScheme: state.cableNamingScheme !== "type-prefix" ? state.cableNamingScheme : undefined,
       labelCase: state.labelCase !== "as-typed" ? state.labelCase : undefined,
       currency: state.currency !== "USD" ? state.currency : undefined,
+      panMode: state.panMode !== "select-first" ? state.panMode : undefined,
       showLineJumps: !state.showLineJumps ? false : undefined,
       showCableIdLabels: !state.showCableIdLabels ? false : undefined,
       showCustomLabels: !state.showCustomLabels ? false : undefined,
@@ -3135,6 +3149,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       cableNamingScheme: data.cableNamingScheme ?? "type-prefix",
       labelCase: resolveLabelCase(data.labelCase),
       currency: data.currency ?? "USD",
+      panMode: (data.panMode === "pan-first" ? "pan-first" : "select-first") as PanMode,
       showLineJumps: data.showLineJumps ?? true,
       showCableIdLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
       showConnectionLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
@@ -3236,6 +3251,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         customLabelMode: "endpoint" as "endpoint" | "midpoint",
         autoRoute: true,
         edgeHitboxSize: 10,
+        panMode: DEFAULT_PAN_MODE,
         showOwnedGearPane: false,
         libraryActiveTab: "devices" as "devices" | "owned",
         undoSize: 0,

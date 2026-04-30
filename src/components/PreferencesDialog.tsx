@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSchematicStore } from "../store";
 import { DEFAULT_SCROLL_CONFIG } from "../types";
-import type { LabelCaseMode, ScrollAction, ScrollConfig } from "../types";
+import type { LabelCaseMode, PanMode, ScrollAction, ScrollConfig } from "../types";
 
 const AUTOROUTE_PREF_KEY = "easyschematic-autoroute-pref";
 
@@ -87,6 +87,8 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
   const setLabelCase = useSchematicStore((s) => s.setLabelCase);
   const currency = useSchematicStore((s) => s.currency);
   const setCurrency = useSchematicStore((s) => s.setCurrency);
+  const panMode = useSchematicStore((s) => s.panMode);
+  const setPanMode = useSchematicStore((s) => s.setPanMode);
   const [autoRoutePref, setAutoRoutePref] = useState(
     () => localStorage.getItem(AUTOROUTE_PREF_KEY) ?? "ask",
   );
@@ -105,7 +107,8 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
     edgeHitboxSize === 10 &&
     autoRoutePref === "ask" &&
     labelCase === "as-typed" &&
-    currency === "USD";
+    currency === "USD" &&
+    panMode === "select-first";
 
   return (
     <div
@@ -150,6 +153,42 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
         <div className="flex-1 min-h-0 overflow-y-auto px-5 py-4 space-y-4">
           {activeTab === "canvas" && (
             <>
+              {/* Navigation */}
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+                  Navigation
+                </div>
+                <div className="space-y-0.5">
+                  {/* Configurable row */}
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs text-[var(--color-text)]">Left drag</span>
+                    <select
+                      className={selectClass}
+                      value={panMode}
+                      onChange={(e) => setPanMode(e.target.value as PanMode)}
+                    >
+                      <option value="select-first">Selection box</option>
+                      <option value="pan-first">Pan canvas</option>
+                    </select>
+                  </div>
+                  {/* Fixed / derived rows */}
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs text-[var(--color-text)]">Shift + left drag</span>
+                    <span className="text-xs text-[var(--color-text-muted)] w-[140px] text-right">
+                      {panMode === "pan-first" ? "Selection box" : "Add to selection"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs text-[var(--color-text)]">Middle drag</span>
+                    <span className="text-xs text-[var(--color-text-muted)] w-[140px] text-right">Pan canvas</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs text-[var(--color-text)]">Space + drag</span>
+                    <span className="text-xs text-[var(--color-text-muted)] w-[140px] text-right">Pan canvas</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Scroll Wheel */}
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
@@ -339,6 +378,7 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
                 setAutoRoutePref("ask");
                 setLabelCase("as-typed");
                 setCurrency("USD");
+                setPanMode("select-first");
               }}
               className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
             >

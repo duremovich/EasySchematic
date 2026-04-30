@@ -260,6 +260,8 @@ function SchematicCanvas() {
 
   // Space-held state for pan-on-drag (Vectorworks-style)
   const [spaceHeld, setSpaceHeld] = useState(false);
+  // Shift-held state used in pan-first mode to temporarily enable box selection
+  const [shiftHeld, setShiftHeld] = useState(false);
 
   // AutoCAD-style directional selection: drag direction determines selection mode
   const [selectionDirection, setSelectionDirection] = useState<'window' | 'crossing' | null>(null);
@@ -499,6 +501,7 @@ function SchematicCanvas() {
 
   const autoRoute = useSchematicStore((s) => s.autoRoute);
   const edgeHitboxSize = useSchematicStore((s) => s.edgeHitboxSize);
+  const panMode = useSchematicStore((s) => s.panMode);
   const routingParamVersion = useSchematicStore((s) => s.routingParamVersion);
 
   // When a device's port list changes (add/remove/reorder), React Flow won't
@@ -691,6 +694,11 @@ function SchematicCanvas() {
         return;
       }
 
+      if (e.key === "Shift") {
+        setShiftHeld(true);
+        return;
+      }
+
       if (e.key === "Delete" || e.key === "Backspace") {
         removeSelected();
       } else if ((e.ctrlKey || e.metaKey) && e.key === "c") {
@@ -731,8 +739,9 @@ function SchematicCanvas() {
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "Control") { ctrlHeldRef.current = false; }
       if (e.key === " ") setSpaceHeld(false);
+      if (e.key === "Shift") setShiftHeld(false);
     };
-    const handleBlur = () => { ctrlHeldRef.current = false; };
+    const handleBlur = () => { ctrlHeldRef.current = false; setShiftHeld(false); };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("blur", handleBlur);
@@ -1210,6 +1219,7 @@ function SchematicCanvas() {
       className={[
         debugEdges ? "debug-active" : "",
         selectionDirection ? `selection-${selectionDirection}` : "",
+        panMode === "pan-first" && !shiftHeld && !isMobile ? "pan-mode" : "",
       ].filter(Boolean).join(" ") || undefined}
       nodes={nodes}
       edges={visibleEdges}
@@ -1307,9 +1317,9 @@ function SchematicCanvas() {
       edgeTypes={edgeTypes}
       onDragOver={onDragOver}
       onDrop={onDrop}
-      selectionOnDrag={isMobile ? false : !spaceHeld}
+      selectionOnDrag={isMobile ? false : (panMode === "pan-first" ? shiftHeld : !spaceHeld)}
       selectionMode={selectionMode}
-      panOnDrag={isMobile ? [0] : (spaceHeld ? [0] : [1])}
+      panOnDrag={isMobile ? [0] : (panMode === "pan-first" ? (shiftHeld ? [1] : [0, 1]) : (spaceHeld ? [0, 1] : [1]))}
       fitView
       minZoom={minZoom}
       elevateNodesOnSelect={false}

@@ -535,10 +535,15 @@ export interface SchematicFile {
   distanceSettings?: DistanceSettings;
   /** ISO 4217 currency code for cost display in reports (#158). Defaults to "USD". */
   currency?: string;
+  /** Left-drag canvas behavior — select box (default) or pan viewport */
+  panMode?: PanMode;
 }
 
 export type LabelCaseMode = "as-typed" | "uppercase" | "lowercase" | "capitalize";
 export const DEFAULT_LABEL_CASE: LabelCaseMode = "as-typed";
+
+export type PanMode = "select-first" | "pan-first";
+export const DEFAULT_PAN_MODE: PanMode = "select-first";
 
 export interface DistanceSettings {
   unit: "m" | "ft";
