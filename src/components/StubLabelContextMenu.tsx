@@ -1,12 +1,17 @@
 import { useEffect, useCallback } from "react";
 import { useSchematicStore } from "../store";
 import type { StubLabelData, StubLabelPageMode } from "../types";
+import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
 
 /** Right-click menu for stub-label nodes — per-stub overrides for the three label
  *  fields plus a "show full connection" collapse action. Each cycle item rotates
  *  through "Default (follows global)" → explicit-on → explicit-off → undefined. */
 export default function StubLabelContextMenu() {
   const menu = useSchematicStore((s) => s.stubLabelContextMenu);
+  const { ref: menuRef, pos: menuPos } = useContextMenuPosition(
+    menu?.screenX ?? 0,
+    menu?.screenY ?? 0,
+  );
 
   useEffect(() => {
     if (!menu) return;
@@ -83,8 +88,15 @@ export default function StubLabelContextMenu() {
 
   return (
     <div
+      ref={menuRef}
       className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[200px]"
-      style={{ left: menu.screenX, top: menu.screenY }}
+      style={{
+        left: menuPos.x,
+        top: menuPos.y,
+        maxHeight: menuPos.maxHeight,
+        overflowY: menuPos.maxHeight ? "auto" : undefined,
+        visibility: menuPos.ready ? "visible" : "hidden",
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       <MenuItem label={showPortLabel} onClick={() => cycleBool("showPort")} />

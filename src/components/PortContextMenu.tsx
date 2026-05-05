@@ -3,10 +3,15 @@ import { useUpdateNodeInternals } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import type { DeviceData } from "../types";
 import { portSide } from "../types";
+import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
 
 export default function PortContextMenu() {
   const menu = useSchematicStore((s) => s.portContextMenu);
   const updateNodeInternals = useUpdateNodeInternals();
+  const { ref: menuRef, pos: menuPos } = useContextMenuPosition(
+    menu?.screenX ?? 0,
+    menu?.screenY ?? 0,
+  );
 
   // Close on click anywhere or Escape
   useEffect(() => {
@@ -74,8 +79,15 @@ export default function PortContextMenu() {
 
   return (
     <div
+      ref={menuRef}
       className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[160px]"
-      style={{ left: menu.screenX, top: menu.screenY }}
+      style={{
+        left: menuPos.x,
+        top: menuPos.y,
+        maxHeight: menuPos.maxHeight,
+        overflowY: menuPos.maxHeight ? "auto" : undefined,
+        visibility: menuPos.ready ? "visible" : "hidden",
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       <MenuItem label={flipLabel} onClick={flipPort} />

@@ -3,6 +3,8 @@ import { useReactFlow } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import { resolvePort } from "../packList";
 import { LINE_STYLE_LABELS, LINE_STYLE_DASHARRAY, type DeviceData, type LineStyle } from "../types";
+import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
+import MenuSubmenu from "./MenuSubmenu";
 
 /** Project a point onto the nearest segment and return the projected point. */
 function projectOntoSegments(
@@ -222,6 +224,12 @@ export default function EdgeContextMenu() {
   const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable">(false);
   const [labelValue, setLabelValue] = useState("");
 
+  const { ref: menuRef, pos: menuPos } = useContextMenuPosition(
+    menu?.screenX ?? 0,
+    menu?.screenY ?? 0,
+    [editingLabel],
+  );
+
   const setConnectionLabel = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
@@ -398,8 +406,15 @@ export default function EdgeContextMenu() {
   if (editingLabel) {
     return (
       <div
+        ref={menuRef}
         className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg p-2 min-w-[200px]"
-        style={{ left: menu.screenX, top: menu.screenY }}
+        style={{
+          left: menuPos.x,
+          top: menuPos.y,
+          maxHeight: menuPos.maxHeight,
+          overflowY: menuPos.maxHeight ? "auto" : undefined,
+          visibility: menuPos.ready ? "visible" : "hidden",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-xs text-gray-500 mb-1">
@@ -440,8 +455,15 @@ export default function EdgeContextMenu() {
 
   return (
     <div
+      ref={menuRef}
       className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[160px]"
-      style={{ left: menu.screenX, top: menu.screenY }}
+      style={{
+        left: menuPos.x,
+        top: menuPos.y,
+        maxHeight: menuPos.maxHeight,
+        overflowY: menuPos.maxHeight ? "auto" : undefined,
+        visibility: menuPos.ready ? "visible" : "hidden",
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       <MenuItem label="Add Handle" onClick={addHandle} />
@@ -496,28 +518,29 @@ export default function EdgeContextMenu() {
         />
       )}
       <div className="h-px bg-gray-200 my-1" />
-      <div className="px-3 py-1 text-[10px] text-gray-400 uppercase tracking-wider">Line Style</div>
-      {(["solid", "dashed", "dotted", "dash-dot"] as LineStyle[]).map((ls) => (
-        <button
-          key={ls}
-          className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 cursor-pointer ${
-            currentLineStyle === ls
-              ? "text-blue-700 bg-blue-50"
-              : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
-          }`}
-          onClick={() => setLineStyle(ls)}
-        >
-          <svg width="24" height="8" className="shrink-0">
-            <line
-              x1="0" y1="4" x2="24" y2="4"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeDasharray={LINE_STYLE_DASHARRAY[ls] ?? "none"}
-            />
-          </svg>
-          <span>{LINE_STYLE_LABELS[ls]}</span>
-        </button>
-      ))}
+      <MenuSubmenu label={`Line Style: ${LINE_STYLE_LABELS[currentLineStyle]}`} minWidth={180}>
+        {(["solid", "dashed", "dotted", "dash-dot"] as LineStyle[]).map((ls) => (
+          <button
+            key={ls}
+            className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 cursor-pointer ${
+              currentLineStyle === ls
+                ? "text-blue-700 bg-blue-50"
+                : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+            }`}
+            onClick={() => setLineStyle(ls)}
+          >
+            <svg width="24" height="8" className="shrink-0">
+              <line
+                x1="0" y1="4" x2="24" y2="4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeDasharray={LINE_STYLE_DASHARRAY[ls] ?? "none"}
+              />
+            </svg>
+            <span>{LINE_STYLE_LABELS[ls]}</span>
+          </button>
+        ))}
+      </MenuSubmenu>
       <div className="h-px bg-gray-200 my-1" />
       <MenuItem label="Go to Source" onClick={() => goToNode(edge?.source)} />
       <MenuItem label="Go to Destination" onClick={() => goToNode(edge?.target)} />
