@@ -907,19 +907,29 @@ function findShelfAt(
 
 function AccessoryMenu({
   menu,
+  defaultShelfDepthMm,
+  maxShelfDepthMm,
   onResize,
   onRename,
+  onChangeDepth,
   onRemove,
   onClose,
 }: {
   menu: { screenX: number; screenY: number; accessory: RackAccessory; occupantCount: number };
+  /** Computed fallback depth (rack.depthMm * 0.6) — shown as placeholder when shelfDepthMm is unset. */
+  defaultShelfDepthMm: number;
+  /** Cap to prevent shelves deeper than the rack itself. */
+  maxShelfDepthMm: number;
   onResize: (heightU: number) => void;
   onRename: (label: string) => void;
+  onChangeDepth: (depthMm: number | undefined) => void;
   onRemove: () => void;
   onClose: () => void;
 }) {
   const [heightU, setHeightU] = useState(menu.accessory.heightU);
   const [label, setLabel] = useState(menu.accessory.label ?? "");
+  const isShelf = menu.accessory.type === "shelf";
+  const [depthMm, setDepthMm] = useState<number | undefined>(menu.accessory.shelfDepthMm);
   return (
     <div
       className="fixed z-50 bg-white rounded-lg shadow-xl border border-neutral-200 py-1 text-xs min-w-[200px]"
@@ -946,6 +956,23 @@ function AccessoryMenu({
           autoFocus
         />
       </label>
+      {isShelf && (
+        <label className="flex items-center gap-2 px-3 py-1.5">
+          <span className="text-neutral-600 w-12">Depth</span>
+          <input
+            type="number"
+            className="flex-1 border border-neutral-300 rounded px-2 py-0.5 outline-none focus:border-blue-400 text-right"
+            value={depthMm ?? ""}
+            placeholder={Math.round(defaultShelfDepthMm).toString()}
+            min={50}
+            max={maxShelfDepthMm}
+            step={5}
+            onChange={(e) => setDepthMm(e.target.value === "" ? undefined : Number(e.target.value))}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <span className="text-neutral-500">mm</span>
+        </label>
+      )}
       <label className="flex items-center gap-2 px-3 py-1.5">
         <span className="text-neutral-600 w-12">Height</span>
         <input
@@ -963,9 +990,13 @@ function AccessoryMenu({
         <button
           className="flex-1 px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
           onClick={() => {
-            if (label.trim() !== (menu.accessory.label ?? "")) onRename(label.trim());
-            if (heightU !== menu.accessory.heightU) onResize(heightU);
-            else if (label.trim() === (menu.accessory.label ?? "")) onClose();
+            const labelChanged = label.trim() !== (menu.accessory.label ?? "");
+            const heightChanged = heightU !== menu.accessory.heightU;
+            const depthChanged = isShelf && depthMm !== menu.accessory.shelfDepthMm;
+            if (labelChanged) onRename(label.trim());
+            if (depthChanged) onChangeDepth(depthMm);
+            if (heightChanged) onResize(heightU);
+            else if (!labelChanged && !depthChanged) onClose();
           }}
         >
           Save
@@ -1669,6 +1700,18 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
       }
       const heightU = draggedDeviceHeightU;
       const clampedU = Math.max(1, Math.min(hit.uPosition, hit.rack.heightU - heightU + 1));
+      if (form === "half") {
+        // Cursor-side preference: rack-local x against the interior centerline.
+        const rackInteriorLeft = hit.rack.position.x + RACK_PAD_X + RULER_WIDTH + DEVICE_INSET;
+        const preferred: "left" | "right" = c.x < rackInteriorLeft + FULL_WIDTH / 2 ? "left" : "right";
+        const other: "left" | "right" = preferred === "left" ? "right" : "left";
+        const preferredOk = isRackSlotAvailable(page.id, hit.rack.id, clampedU, heightU, activeFace, preferred);
+        const otherOk = !preferredOk && isRackSlotAvailable(page.id, hit.rack.id, clampedU, heightU, activeFace, other);
+        const side: "left" | "right" = preferredOk ? preferred : other;
+        const valid = preferredOk || otherOk;
+        setDropTarget({ rackId: hit.rack.id, uPosition: clampedU, heightU, valid, mode: "direct", halfRackSide: side });
+        return;
+      }
       const valid = isRackSlotAvailable(page.id, hit.rack.id, clampedU, heightU, activeFace, undefined);
       setDropTarget({ rackId: hit.rack.id, uPosition: clampedU, heightU, valid, mode: "direct" });
     } else {
@@ -1690,8 +1733,9 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
       addShelfMountedDevice(page.id, dropTarget.shelfId, deviceNodeId);
     } else {
       // addPlacementSmart routes by inferRackForm: full/half direct, shelf-only auto-shelf,
-      // oversize already short-circuited above.
-      const result = addPlacementSmart(page.id, dropTarget.rackId, deviceNodeId, dropTarget.uPosition, activeFace);
+      // oversize already short-circuited above. dropTarget.halfRackSide carries the cursor's
+      // intent so half-rack drops land where the user aimed (or flip if that side is taken).
+      const result = addPlacementSmart(page.id, dropTarget.rackId, deviceNodeId, dropTarget.uPosition, activeFace, dropTarget.halfRackSide);
       if (!result.ok && result.reason === "oversize") {
         addToast("Device is too wide to fit in this rack — can't be racked.", "error");
       }
@@ -2092,10 +2136,15 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
         />
       )}
 
-      {/* Accessory context menu — resize / rename / remove */}
-      {accessoryContextMenu && (
+      {/* Accessory context menu — resize / rename / depth / remove */}
+      {accessoryContextMenu && (() => {
+        const accRack = page.racks.find((r) => r.id === accessoryContextMenu.accessory.rackId);
+        const rackDepth = accRack?.depthMm ?? 600;
+        return (
         <AccessoryMenu
           menu={accessoryContextMenu}
+          defaultShelfDepthMm={rackDepth * 0.6}
+          maxShelfDepthMm={rackDepth}
           onResize={(heightU) => {
             const a = accessoryContextMenu.accessory;
             const cleanH = Math.max(1, Math.min(20, Math.round(heightU || 1)));
@@ -2131,10 +2180,19 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
             updateRackAccessory(page.id, accessoryContextMenu.accessory.id, { label: label || undefined });
             setAccessoryContextMenu(null);
           }}
+          onChangeDepth={(depthMm) => {
+            const a = accessoryContextMenu.accessory;
+            const cleaned = depthMm == null || Number.isNaN(depthMm)
+              ? undefined
+              : Math.max(50, Math.min(rackDepth, Math.round(depthMm)));
+            updateRackAccessory(page.id, a.id, { shelfDepthMm: cleaned });
+            setAccessoryContextMenu(null);
+          }}
           onRemove={() => handleRemoveAccessory(accessoryContextMenu.accessory, accessoryContextMenu.occupantCount)}
           onClose={() => setAccessoryContextMenu(null)}
         />
-      )}
+        );
+      })()}
 
       {/* Shelf-occupant context menu — rotate / remove from shelf / edit device */}
       {shelfOccupantMenu && (

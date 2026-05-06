@@ -535,13 +535,15 @@ interface SchematicState {
   addRackPlacement: (pageId: string, placement: Omit<RackDevicePlacement, "id">) => string;
   /** Drop a device into a rack, routing to direct/half/shelf-mount based on its physical
    *  dimensions (see `inferRackForm`). Returns the resulting placement id, or null on
-   *  rejection (oversize device). */
+   *  rejection (oversize device). For half-rack form, `preferredHalfRackSide` honors the
+   *  cursor's intent at drop time and only flips if that side is occupied. */
   addPlacementSmart: (
     pageId: string,
     rackId: string,
     deviceNodeId: string,
     uPosition: number,
     face: "front" | "rear",
+    preferredHalfRackSide?: "left" | "right",
   ) => { ok: true; placementId: string; shelfId?: string } | { ok: false; reason: "oversize" | "no-page" | "no-device" };
   removeRackPlacement: (pageId: string, placementId: string) => void;
   updateRackPlacement: (pageId: string, placementId: string, patch: Partial<RackDevicePlacement>) => void;
@@ -3200,7 +3202,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     return id;
   },
 
-  addPlacementSmart: (pageId, rackId, deviceNodeId, uPosition, face) => {
+  addPlacementSmart: (pageId, rackId, deviceNodeId, uPosition, face, preferredHalfRackSide) => {
     const state = get();
     const page = state.pages.find((p) => p.id === pageId && p.type === "rack-elevation") as RackElevationPage | undefined;
     if (!page) return { ok: false, reason: "no-page" };
@@ -3254,13 +3256,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     }
 
     if (form === "half") {
-      // Default to left side; flip to right if left half at this U is occupied.
-      const leftTaken = page.placements.some((p) =>
+      // Honor cursor-side preference when free; otherwise flip to the other side.
+      // Falls back to "left first" if no preference was supplied (legacy callers).
+      const sideTaken = (side: "left" | "right") => page.placements.some((p) =>
         p.rackId === rackId && p.face === face && !p.mountedOnShelfId
-        && p.halfRackSide === "left"
+        && p.halfRackSide === side
         && p.uPosition === uPosition
       );
-      const halfRackSide: "left" | "right" = leftTaken ? "right" : "left";
+      const preferred: "left" | "right" = preferredHalfRackSide ?? "left";
+      const other: "left" | "right" = preferred === "left" ? "right" : "left";
+      const halfRackSide: "left" | "right" = sideTaken(preferred) ? other : preferred;
       pushUndo({ nodes: state.nodes, edges: state.edges });
       const id = nextPlacementId();
       const placement: RackDevicePlacement = { id, rackId, deviceNodeId, uPosition, face, halfRackSide };
