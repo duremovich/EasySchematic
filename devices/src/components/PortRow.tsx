@@ -107,6 +107,15 @@ export default function PortRow({ port, selected, onSelect, onChange, onRemove, 
             Addr
           </label>
         )}
+        <label className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap" title="Multi-connect — accepts multiple connections (e.g. SRT receiver, wireless RX, custom signals)">
+          <input
+            type="checkbox"
+            checked={port.multiConnect ?? false}
+            onChange={(e) => onChange({ multiConnect: e.target.checked || undefined })}
+            className="cursor-pointer"
+          />
+          Multi
+        </label>
         <div className="flex flex-col">
           <button onClick={onMoveUp} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 text-xs leading-none" title="Move up">&#9650;</button>
           <button onClick={onMoveDown} className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 text-xs leading-none" title="Move down">&#9660;</button>

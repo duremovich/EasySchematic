@@ -177,6 +177,10 @@ export function validateTemplate(body: unknown): ValidationResult {
     if (port.gender != null && port.gender !== "male" && port.gender !== "female") {
       return { ok: false, error: `ports[${i}].gender must be 'male' or 'female'` };
     }
+    // Multi-connect — optional boolean
+    if (port.multiConnect != null && typeof port.multiConnect !== "boolean") {
+      return { ok: false, error: `ports[${i}].multiConnect must be a boolean` };
+    }
     // networkConfig — optional object with known fields only
     if (port.networkConfig != null) {
       if (typeof port.networkConfig !== "object" || Array.isArray(port.networkConfig)) {

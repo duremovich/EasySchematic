@@ -222,6 +222,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             position={Position.Left}
             id={h.handleId}
             data-connected={connectedHandles.has(h.handleId) || undefined}
+            data-multi-connect={port.multiConnect || undefined}
             className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
             style={{ background: SIGNAL_COLORS[port.signalType], top: "50%" }}
           />
@@ -239,6 +240,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             position={Position.Right}
             id={h.handleId}
             data-connected={connectedHandles.has(h.handleId) || undefined}
+            data-multi-connect={port.multiConnect || undefined}
             className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
             style={{ background: SIGNAL_COLORS[port.signalType], top: "50%" }}
           />
@@ -429,6 +431,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           position={Position.Left}
                           id={lh.handleId}
                           data-connected={connectedHandles.has(lh.handleId) || undefined}
+                          data-multi-connect={left.multiConnect || undefined}
                           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
                           style={{ background: SIGNAL_COLORS[left.signalType], top: "50%" }}
                         />
@@ -457,6 +460,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           position={Position.Right}
                           id={rh.handleId}
                           data-connected={connectedHandles.has(rh.handleId) || undefined}
+                          data-multi-connect={right.multiConnect || undefined}
                           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
                           style={{ background: SIGNAL_COLORS[right.signalType], top: "50%" }}
                         />
@@ -512,6 +516,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   position={Position.Left}
                   id={inId}
                   data-connected={connectedHandles.has(inId) || undefined}
+                  data-multi-connect={port.multiConnect || undefined}
                   className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
                   style={{
                     background: inDisabled ? "#d1d5db" : SIGNAL_COLORS[port.signalType],
@@ -531,6 +536,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   position={Position.Right}
                   id={outId}
                   data-connected={connectedHandles.has(outId) || undefined}
+                  data-multi-connect={port.multiConnect || undefined}
                   className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
                   style={{
                     background: outDisabled ? "#d1d5db" : SIGNAL_COLORS[port.signalType],

@@ -412,3 +412,23 @@ export const NETWORK_SIGNAL_TYPES: Set<SignalType> = new Set([
 export const VIDEO_SIGNAL_TYPES: Set<SignalType> = new Set([
   "sdi", "hdmi", "ndi", "displayport", "hdbaset", "fiber", "thunderbolt", "composite", "vga", "dvi", "srt", "st2110",
 ]);
+
+/** Signal types whose new ports default to multi-connect — logical/streaming signals where fan-in is the norm. */
+export const MULTI_CONNECT_DEFAULT_SIGNALS: Set<SignalType> = new Set([
+  "srt", "custom",
+]);
+
+/** Connector types whose new ports default to multi-connect — wireless/RF carriers where many TX → one RX. */
+export const MULTI_CONNECT_DEFAULT_CONNECTORS: Set<ConnectorType> = new Set([
+  "wireless",
+]);
+
+export function shouldDefaultMultiConnect(
+  signalType: SignalType,
+  connectorType?: ConnectorType,
+): boolean {
+  return (
+    MULTI_CONNECT_DEFAULT_SIGNALS.has(signalType) ||
+    (connectorType != null && MULTI_CONNECT_DEFAULT_CONNECTORS.has(connectorType))
+  );
+}

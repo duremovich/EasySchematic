@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import type { Port, SignalType, PortDirection, ConnectorType } from "../../../src/types";
 import { SIGNAL_LABELS, CONNECTOR_LABELS, SIGNAL_GROUPS, CONNECTOR_GROUPS } from "../../../src/types";
-import { DEFAULT_CONNECTOR } from "../../../src/connectorTypes";
+import { DEFAULT_CONNECTOR, shouldDefaultMultiConnect } from "../../../src/connectorTypes";
 
 const NETWORK_SIGNAL_TYPES = new Set(["ethernet", "ndi", "dante", "avb", "srt", "hdbaset"]);
 import PortRow from "./PortRow";
@@ -122,17 +122,21 @@ export default function PortEditor({ ports, onChange, deviceType }: PortEditorPr
     const id = crypto.randomUUID().slice(0, 8);
     const dirLabel = direction === "input" ? "IN" : direction === "output" ? "OUT" : "IO";
     const count = grouped[direction].length + 1;
+    const signalType: SignalType = "sdi";
+    const connectorType = DEFAULT_CONNECTOR[signalType];
     insertAtTop(direction, [{
       id,
       label: `${dirLabel} ${count}`,
-      signalType: "sdi",
-      connectorType: DEFAULT_CONNECTOR["sdi"],
+      signalType,
+      connectorType,
       direction,
+      ...(shouldDefaultMultiConnect(signalType, connectorType) ? { multiConnect: true } : {}),
     }]);
   };
 
   const addBulk = (direction: PortDirection) => {
     const newPorts: Port[] = [];
+    const multiConnect = shouldDefaultMultiConnect(bulkSignal, bulkConnector);
     for (let i = 0; i < bulkCount; i++) {
       newPorts.push({
         id: crypto.randomUUID().slice(0, 8),
@@ -140,6 +144,7 @@ export default function PortEditor({ ports, onChange, deviceType }: PortEditorPr
         signalType: bulkSignal,
         direction,
         connectorType: bulkConnector,
+        ...(multiConnect ? { multiConnect: true } : {}),
       });
     }
     insertAtTop(direction, newPorts);

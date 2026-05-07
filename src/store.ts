@@ -1719,22 +1719,26 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const tgtIsMulticable = targetPort.isMulticable ?? false;
     if (srcIsMulticable !== tgtIsMulticable) return false;
 
-    // Don't allow multiple connections to the same handle (input or output)
-    const duplicateTarget = state.edges.some(
-      (e) =>
-        e.id !== _reconnectingEdgeId &&
-        e.target === connection.target &&
-        e.targetHandle === connection.targetHandle,
-    );
-    if (duplicateTarget) return false;
+    // Don't allow multiple connections to the same handle, unless the port is multi-connect
+    if (!targetPort.multiConnect) {
+      const duplicateTarget = state.edges.some(
+        (e) =>
+          e.id !== _reconnectingEdgeId &&
+          e.target === connection.target &&
+          e.targetHandle === connection.targetHandle,
+      );
+      if (duplicateTarget) return false;
+    }
 
-    const duplicateSource = state.edges.some(
-      (e) =>
-        e.id !== _reconnectingEdgeId &&
-        e.source === connection.source &&
-        e.sourceHandle === connection.sourceHandle,
-    );
-    if (duplicateSource) return false;
+    if (!sourcePort.multiConnect) {
+      const duplicateSource = state.edges.some(
+        (e) =>
+          e.id !== _reconnectingEdgeId &&
+          e.source === connection.source &&
+          e.sourceHandle === connection.sourceHandle,
+      );
+      if (duplicateSource) return false;
+    }
 
     // For bidirectional ports, block the opposite side if one side is already connected
     if (sourcePort.direction === "bidirectional" && connection.sourceHandle) {

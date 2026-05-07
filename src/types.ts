@@ -157,6 +157,8 @@ export interface Port {
   activeConfig?: PortActiveConfig;
   isMulticable?: boolean;
   channelCount?: number;
+  /** When true, this port accepts multiple connections (e.g. SRT receiver, wireless mic RX, custom logical signals). */
+  multiConnect?: boolean;
   /** When true, this port attaches directly to the connected device (no separate cable needed in pack list) */
   directAttach?: boolean;
   /** When true, port renders on the opposite side of the device (input on right, output on left) */

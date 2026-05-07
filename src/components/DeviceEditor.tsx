@@ -17,7 +17,7 @@ import {
   type DhcpServerConfig,
   type SlotDefinition,
 } from "../types";
-import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES, resolvePortGender } from "../connectorTypes";
+import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES, resolvePortGender, shouldDefaultMultiConnect } from "../connectorTypes";
 import { getBundledTemplates, getCardsByFamily, checkSession, createDraft, createHandoff } from "../templateApi";
 import { getTemplateDrift } from "../templateSync";
 import LoginDialog from "./LoginDialog";
@@ -50,6 +50,7 @@ interface PortDraft {
   capabilities?: PortCapabilities;
   isMulticable?: boolean;
   channelCount?: number;
+  multiConnect?: boolean;
   directAttach?: boolean;
   notes?: string;
   poeDrawW?: number;
@@ -58,12 +59,15 @@ interface PortDraft {
 }
 
 function newPortDraft(direction: PortDirection): PortDraft {
+  const signalType: SignalType = "sdi";
+  const connectorType = DEFAULT_CONNECTOR[signalType];
   return {
     id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
     label: "",
-    signalType: "sdi",
+    signalType,
     direction,
-    connectorType: DEFAULT_CONNECTOR["sdi"],
+    connectorType,
+    multiConnect: shouldDefaultMultiConnect(signalType, connectorType) || undefined,
   };
 }
 
@@ -196,6 +200,7 @@ export default function DeviceEditor() {
         capabilities: p.capabilities ? { ...p.capabilities } : undefined,
         isMulticable: p.isMulticable,
         channelCount: p.channelCount,
+        multiConnect: p.multiConnect,
         directAttach: p.directAttach,
         notes: p.notes,
         poeDrawW: p.poeDrawW,
@@ -543,6 +548,7 @@ export default function DeviceEditor() {
       gender: p.gender,
       networkConfig: p.networkConfig ? { ...p.networkConfig } : undefined,
       capabilities: p.capabilities ? { ...p.capabilities } : undefined,
+      multiConnect: p.multiConnect,
       directAttach: p.directAttach,
       notes: p.notes,
       poeDrawW: p.poeDrawW,
@@ -619,6 +625,8 @@ export default function DeviceEditor() {
 
   const bulkAddPorts = (direction: PortDirection, prefix: string, start: number, count: number, signalType: SignalType, section: string) => {
     const newPorts: PortDraft[] = [];
+    const connectorType = DEFAULT_CONNECTOR[signalType];
+    const multiConnect = shouldDefaultMultiConnect(signalType, connectorType) || undefined;
     for (let i = 0; i < count; i++) {
       newPorts.push({
         id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}-${i}`,
@@ -626,6 +634,7 @@ export default function DeviceEditor() {
         signalType,
         direction,
         section: section || undefined,
+        multiConnect,
       });
     }
     setPorts([...ports, ...newPorts]);
@@ -2219,6 +2228,24 @@ function PortRow({
             onKeyDown={(e) => e.stopPropagation()}
           />
         )}
+
+        {/* Multi-connect toggle */}
+        <label
+          className={`text-[9px] px-1 py-0.5 rounded cursor-pointer transition-colors shrink-0 select-none ${
+            port.multiConnect
+              ? "bg-amber-100 text-amber-700"
+              : "text-[var(--color-text-muted)] hover:text-[var(--color-text)] opacity-0 group-hover:opacity-100"
+          }`}
+          title="Multi-connect — port accepts multiple connections (SRT, wireless, custom signals)"
+        >
+          <input
+            type="checkbox"
+            checked={port.multiConnect ?? false}
+            onChange={(e) => onUpdate({ multiConnect: e.target.checked || undefined })}
+            className="hidden"
+          />
+          M
+        </label>
 
         {/* Direct attach toggle (adapters only) */}
         {deviceType === "adapter" && (

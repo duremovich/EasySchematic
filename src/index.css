@@ -216,10 +216,23 @@ html, body, #root {
   pointer-events: none;
 }
 
+/* Multi-connect handles stay clickable even when connected,
+   so users can pull additional connection threads from them. */
+.react-flow__handle-left[data-connected][data-multi-connect],
+.react-flow__handle-right[data-connected][data-multi-connect] {
+  pointer-events: auto;
+}
+
 /* Connected handle hover ring */
 .react-flow__handle[data-connected]:hover {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4);
   cursor: move;
+}
+
+/* Multi-connect hover: amber ring + crosshair to suggest "pull another" */
+.react-flow__handle[data-multi-connect]:hover {
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.5);
+  cursor: crosshair;
 }
 
 .react-flow__connection-line {
