@@ -1,0 +1,10 @@
+/* Hide the "On This Page" right-rail TOC on pages where it just duplicates
+   the main body (the index landing and module/namespace pages). Detail pages
+   for individual interfaces, types, functions, etc. keep it so users can
+   jump to specific members on long pages.
+
+   Body classes are set by typedoc-overrides.js based on URL path. */
+body.tsd-page-index .tsd-page-navigation,
+body.tsd-page-module .tsd-page-navigation {
+  display: none;
+}
