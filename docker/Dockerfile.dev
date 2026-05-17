@@ -1,0 +1,8 @@
+FROM node:lts-bookworm
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY docker/entrypoint-dev.sh /entrypoint-dev.sh
+RUN chmod +x /entrypoint-dev.sh
+EXPOSE 3000
+ENTRYPOINT ["/entrypoint-dev.sh"]

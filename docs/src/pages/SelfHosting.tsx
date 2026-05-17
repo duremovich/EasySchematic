@@ -4,10 +4,12 @@ export default function SelfHostingPage() {
       <h1>Self-Hosting</h1>
 
       <p>
-        EasySchematic can be self-hosted using Docker. The container builds the
-        frontend from source and serves it with nginx. All offline features work
-        exactly the same as the hosted version at{" "}
-        <a href="https://easyschematic.live">easyschematic.live</a>.
+        EasySchematic can be self-hosted using Docker. Two compose profiles are
+        available: a <strong>production</strong> image that builds the frontend
+        and serves it with nginx, and a <strong>development</strong> image that
+        clones the repo at container start and runs the Vite dev server with hot
+        reload. All offline canvas features work the same as the hosted version
+        at <a href="https://easyschematic.live">easyschematic.live</a>.
       </p>
 
       <div
@@ -22,7 +24,12 @@ export default function SelfHostingPage() {
         shared schematics).
       </div>
 
-      <h2>Quick start</h2>
+      <h2>Production (nginx)</h2>
+
+      <p>
+        Builds the app inside the image and serves static files on port{" "}
+        <strong>8080</strong>.
+      </p>
 
       <pre>
         <code>{`git clone https://github.com/duremovich/EasySchematic.git
@@ -36,11 +43,7 @@ docker compose up -d`}</code>
         dependencies and Vite bundles the app.
       </p>
 
-      <h2>Docker commands</h2>
-
-      <p>
-        A <code>makefile</code> wraps common Docker Compose commands:
-      </p>
+      <h3>Production commands</h3>
 
       <table>
         <thead>
@@ -90,15 +93,160 @@ docker compose up -d`}</code>
       </table>
 
       <p>
-        Or use <code>docker compose</code> directly — the makefile is just a
-        convenience wrapper.
+        Or use <code>docker compose</code> directly — the makefile is a
+        convenience wrapper around <code>compose.yml</code>.
+      </p>
+
+      <h2>Development (Vite, pull at runtime)</h2>
+
+      <p>
+        The dev profile uses <code>compose.dev.yml</code> and{" "}
+        <code>docker/Dockerfile.dev</code>. On each start the container shallow-clones
+        the GitHub repository into a named Docker volume, runs{" "}
+        <code>npm ci</code>, and starts Vite on port <strong>3000</strong>. The
+        clone persists between restarts, so later starts only fetch the latest
+        commit and reinstall dependencies if the lockfile changed.
+      </p>
+
+      <pre>
+        <code>{`git clone https://github.com/duremovich/EasySchematic.git
+cd EasySchematic
+make dev`}</code>
+      </pre>
+
+      <p>
+        Open <a href="http://localhost:3000">http://localhost:3000</a>. The
+        first start takes about 30–60 seconds (clone + install). Subsequent
+        starts are faster (pull + verify).
+      </p>
+
+      <p>
+        You only need the compose files and <code>docker/</code> directory on
+        your machine; the application source lives inside the container volume.
+        To point at a different branch or fork, set{" "}
+        <code>REPO_URL</code> and <code>BRANCH</code> in{" "}
+        <code>compose.dev.yml</code> or override them in your shell before
+        running <code>make dev</code>.
+      </p>
+
+      <h3>Development commands</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <code>make dev</code>
+            </td>
+            <td>Clone or pull the repo and start the Vite dev server (foreground)</td>
+          </tr>
+          <tr>
+            <td>
+              <code>make dev-detach</code>
+            </td>
+            <td>Same as <code>make dev</code>, but run in the background</td>
+          </tr>
+          <tr>
+            <td>
+              <code>make dev-down</code>
+            </td>
+            <td>Stop the dev container</td>
+          </tr>
+          <tr>
+            <td>
+              <code>make dev-logs</code>
+            </td>
+            <td>Tail dev container logs</td>
+          </tr>
+          <tr>
+            <td>
+              <code>make dev-update</code>
+            </td>
+            <td>Restart the dev container (re-runs pull and <code>npm ci</code>)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>
+        Equivalent compose invocation:
+      </p>
+
+      <pre>
+        <code>docker compose -f compose.yml -f compose.dev.yml up</code>
+      </pre>
+
+      <p>
+        To wipe the cloned source and start fresh from GitHub:
+      </p>
+
+      <pre>
+        <code>{`docker compose -f compose.yml -f compose.dev.yml down -v
+make dev`}</code>
+      </pre>
+
+      <h2>Configuring the API with <code>.env</code></h2>
+
+      <p>
+        By default the app talks to the hosted API at{" "}
+        <code>https://api.easyschematic.live</code>. For the dev container you
+        can override this with a <code>.env</code> file in the repository root
+        (the same directory as <code>compose.yml</code>). The file is listed in{" "}
+        <code>.gitignore</code> and is never committed.
+      </p>
+
+      <ol>
+        <li>
+          In the cloned EasySchematic directory, create a file named{" "}
+          <code>.env</code>.
+        </li>
+        <li>
+          Add the API URL Vite should use. Only variables prefixed with{" "}
+          <code>VITE_</code> are exposed to the browser bundle.
+        </li>
+        <li>
+          Start or restart the dev container so it picks up the new values (
+          <code>make dev</code> or <code>make dev-update</code>).
+        </li>
+      </ol>
+
+      <p>Example — use the hosted API (explicit default):</p>
+
+      <pre>
+        <code>VITE_TEMPLATE_API_URL=https://api.easyschematic.live</code>
+      </pre>
+
+      <p>Example — point at a local API (e.g. Wrangler on port 8787):</p>
+
+      <pre>
+        <code>VITE_TEMPLATE_API_URL=http://localhost:8787</code>
+      </pre>
+
+      <p>
+        If you omit <code>.env</code>, the dev server uses the same default as a
+        production build. Cloud login, saves, and templates against the hosted
+        API work from <code>localhost:3000</code> because that origin is already
+        allowed by the API CORS policy.
+      </p>
+
+      <p>
+        The production nginx container does not read <code>.env</code> at
+        runtime; the API URL is baked in at build time. To change it for
+        production self-hosting you would need to pass{" "}
+        <code>VITE_TEMPLATE_API_URL</code> as a build argument when building the
+        image, or rebuild after setting it in the environment used by{" "}
+        <code>npm run build</code>.
       </p>
 
       <h2>Changing the port</h2>
 
       <p>
-        Edit <code>compose.yml</code> and change the first number in the port
-        mapping:
+        <strong>Production:</strong> edit <code>compose.yml</code> and change
+        the host port (the first number):
       </p>
 
       <pre>
@@ -106,17 +254,23 @@ docker compose up -d`}</code>
   - "3000:80"  # now available at localhost:3000`}</code>
       </pre>
 
+      <p>
+        <strong>Development:</strong> edit <code>compose.dev.yml</code> and
+        change both sides of the mapping, and pass the same port to Vite in{" "}
+        <code>docker/entrypoint-dev.sh</code> if you change the container port.
+      </p>
+
       <h2>Reverse proxy</h2>
 
       <p>
         To serve EasySchematic behind a reverse proxy (nginx, Caddy, Traefik),
-        point the proxy at the container's port and ensure it forwards
-        WebSocket-upgrade headers if you plan to use live reload during
-        development. For production, a simple HTTP proxy is sufficient since the
-        container serves static files only.
+        point the proxy at the container port. For the production container, a
+        simple HTTP proxy is sufficient since it serves static files only. For
+        the dev server, the proxy must support WebSocket upgrades if you use
+        Vite hot module replacement through the proxy.
       </p>
 
-      <p>Example Caddy config:</p>
+      <p>Example Caddy config (production on port 8080):</p>
 
       <pre>
         <code>{`easyschematic.example.com {
@@ -140,7 +294,10 @@ docker compose up -d`}</code>
           </tr>
           <tr>
             <td>Bundled offline device templates (~780)</td>
-            <td>Yes (bundled at build time; live community library still loads when the hosted API is reachable)</td>
+            <td>
+              Yes (bundled at build time; live community library still loads
+              when the hosted API is reachable)
+            </td>
           </tr>
           <tr>
             <td>Export (PNG, SVG, DXF, PDF, JSON)</td>
