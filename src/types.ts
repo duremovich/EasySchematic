@@ -339,6 +339,8 @@ export type NoteNode = Node<NoteData, "note">;
 
 export interface AnnotationData {
   [key: string]: unknown;
+  /** Annotation behavior role; draw boxes are visual-only grouping frames. */
+  role?: "draw-box";
   /** Shape type for the annotation (#24) */
   shape: "rectangle" | "ellipse" | "circle" | "diamond" | "triangle";
   /** Fill color */

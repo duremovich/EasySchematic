@@ -10,6 +10,7 @@ import {
 import type {
   DeviceNode,
   DeviceData,
+  AnnotationData,
   SchematicNode,
   ConnectionEdge,
   ConnectionData,
@@ -151,6 +152,12 @@ function resolveLabelCase(v: unknown): LabelCaseMode {
 /** Guard: don't persist empty state before initial load completes */
 let hydrated = false;
 
+function isDrawBoxNode(node: SchematicNode): boolean {
+  if (node.type !== "annotation") return false;
+  const data = node.data as AnnotationData;
+  return data.role === "draw-box" || (data.shape === "rectangle" && data.borderStyle === "dashed");
+}
+
 // Re-exported from gridConstants so existing `import { GRID_SIZE } from "./store"`
 // call sites keep working. Utility modules that the store also depends on (e.g.
 // snapUtils) must import directly from "./gridConstants" — pulling it through
@@ -187,6 +194,21 @@ function applyRoomLockState(nodes: SchematicNode[]): void {
         n.selectable = true;
         n.className = undefined;
       }
+    }
+  }
+}
+
+function normalizeDrawBoxes(nodes: SchematicNode[]): void {
+  const nodeMap = new Map(nodes.map((n) => [n.id, n]));
+  for (const n of nodes) {
+    if (!isDrawBoxNode(n)) continue;
+    const data = n.data as AnnotationData;
+    data.role = "draw-box";
+    n.zIndex = -1;
+    if (n.parentId) {
+      const abs = getAbsolutePosition(n.id, nodeMap);
+      n.parentId = undefined;
+      n.position = abs;
     }
   }
 }
@@ -1182,6 +1204,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const updated = applyNodeChanges(changes, get().nodes) as SchematicNode[];
     // Keep room zIndex pinned low (React Flow may reset it)
     const normalized = updated.map((n) => {
+      if (isDrawBoxNode(n)) {
+        return {
+          ...n,
+          parentId: undefined,
+          zIndex: -1,
+          data: { ...n.data, role: "draw-box" },
+        } as SchematicNode;
+      }
       if (n.type !== "room") return n;
       const locked = (n.data as import("./types").RoomData).locked;
       return {
@@ -2611,6 +2641,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       type: "annotation",
       position,
       data: {
+        role: "draw-box",
         shape: "rectangle",
         color: "rgba(0, 0, 0, 0)",
         borderColor: "#6b7280",
@@ -2618,6 +2649,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       },
       style: { width: 400, height: 300 },
       selected: true,
+      zIndex: -1,
     };
     const deselected = state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
     set({ nodes: [...deselected, newBox] });
@@ -2766,6 +2798,26 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!node) return;
 
     const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
+    if (isDrawBoxNode(node)) {
+      if (node.parentId || node.zIndex !== -1 || (node.data as AnnotationData).role !== "draw-box") {
+        const abs = node.parentId ? getAbsolutePosition(node.id, nodeMap) : absolutePosition;
+        set({
+          nodes: state.nodes.map((n) =>
+            n.id === nodeId
+              ? {
+                  ...n,
+                  parentId: undefined,
+                  position: abs,
+                  zIndex: -1,
+                  data: { ...n.data, role: "draw-box" },
+                } as SchematicNode
+              : n,
+          ),
+        });
+        get().saveToLocalStorage();
+      }
+      return;
+    }
     const isRoom = node.type === "room";
     const nodeW = node.measured?.width ?? (isRoom ? 400 : 180);
     const nodeH = node.measured?.height ?? (isRoom ? 300 : 60);
@@ -2819,7 +2871,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       // Waypoints belong to edges, not rooms — reparenting them turns their
       // .position into relative-to-room coords, which downstream sync code
       // mistakes for absolute and corrupts manualWaypoints.
-      if (node.type === "room" || node.type === "waypoint") continue;
+      if (node.type === "room" || node.type === "waypoint" || isDrawBoxNode(node)) continue;
 
       const absPos = getAbsolutePosition(node.id, nodeMap);
       const nodeW = node.measured?.width ?? 180;
@@ -4330,6 +4382,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           const data = migrateSchematic(mod.default) as SchematicFile;
           snapNodesToGrid(data.nodes);
           applyRoomLockState(data.nodes);
+          normalizeDrawBoxes(data.nodes);
           syncCounters(data.nodes, data.edges);
           data.edges = removeOrphanedEdges(data.nodes, data.edges);
           const colors = data.signalColors ?? {};
@@ -4407,6 +4460,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       const data = migrateSchematic(parsed) as SchematicFile;
       snapNodesToGrid(data.nodes);
       applyRoomLockState(data.nodes);
+      normalizeDrawBoxes(data.nodes);
       syncCounters(data.nodes, data.edges);
       data.edges = removeOrphanedEdges(data.nodes, data.edges);
       // Always apply colors — if file has none, reset to defaults
@@ -4564,6 +4618,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     }
     snapNodesToGrid(nodes);
     applyRoomLockState(nodes);
+    normalizeDrawBoxes(nodes);
     syncCounters(nodes, edges);
     edges = removeOrphanedEdges(nodes, edges);
     // Merge imported custom templates with existing ones (avoid duplicates by template key)

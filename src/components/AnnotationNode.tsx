@@ -10,6 +10,9 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
   const borderStyle = annotationData.borderStyle ?? "solid";
   const shape = annotationData.shape ?? "rectangle";
   const fontSize = annotationData.fontSize ?? 12;
+  const isDrawBox = annotationData.role === "draw-box" || (
+    shape === "rectangle" && annotationData.borderStyle === "dashed"
+  );
 
   const handleDoubleClick = () => {
     useSchematicStore.getState().setEditingNodeId(id);
@@ -17,10 +20,10 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
 
   const labelStyle: CSSProperties = {
     position: "absolute",
-    inset: 0,
+    inset: isDrawBox ? "6px auto auto 8px" : 0,
     display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: isDrawBox ? "flex-start" : "center",
+    justifyContent: isDrawBox ? "flex-start" : "center",
     fontSize,
     fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
     color: "#333",
@@ -77,6 +80,7 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
       <NodeResizer isVisible={!!selected} minWidth={60} minHeight={40} />
       <div
         style={{
+          position: "relative",
           width: "100%",
           height: "100%",
           backgroundColor: bgColor,
@@ -94,7 +98,7 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
         }}
         onDoubleClick={handleDoubleClick}
       >
-        {annotationData.label && <span>{annotationData.label}</span>}
+        {isDrawBox ? label : annotationData.label && <span>{annotationData.label}</span>}
       </div>
     </>
   );
