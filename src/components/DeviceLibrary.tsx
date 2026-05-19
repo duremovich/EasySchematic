@@ -1496,6 +1496,22 @@ export default function DeviceLibrary() {
           </div>
         )}
 
+        {!hasFilter && (!query || "draw box".includes(query.toLowerCase())) && (
+          <div
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("application/easyschematic-draw-box", "1");
+              e.dataTransfer.effectAllowed = "move";
+            }}
+            className="flex items-center gap-2 px-2 py-1.5 rounded border border-dashed border-slate-500/60 bg-transparent hover:bg-[var(--color-surface-hover)] cursor-grab active:cursor-grabbing transition-colors"
+          >
+            <svg viewBox="0 0 16 16" className="w-4 h-4 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <rect x="1.5" y="1.5" width="13" height="13" rx="1" strokeDasharray="4 2" />
+            </svg>
+            <span className="text-xs text-[var(--color-text)]">Draw Box</span>
+          </div>
+        )}
+
         {/* Create New Device */}
         {!hasFilter && (!query || "create new device".includes(query.toLowerCase())) && (
           <button

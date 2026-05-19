@@ -7,6 +7,7 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
   const annotationData = data as unknown as AnnotationData;
   const bgColor = annotationData.color ?? "rgba(59, 130, 246, 0.1)";
   const border = annotationData.borderColor ?? "#3b82f6";
+  const borderStyle = annotationData.borderStyle ?? "solid";
   const shape = annotationData.shape ?? "rectangle";
   const fontSize = annotationData.fontSize ?? 12;
 
@@ -57,6 +58,9 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
               fill={bgColor}
               stroke={border}
               strokeWidth={2}
+              strokeDasharray={
+                borderStyle === "dashed" ? "8 4" : borderStyle === "dotted" ? "2 4" : undefined
+              }
               vectorEffect="non-scaling-stroke"
             />
           </svg>
@@ -76,7 +80,7 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
           width: "100%",
           height: "100%",
           backgroundColor: bgColor,
-          border: `2px solid ${border}`,
+          border: `2px ${borderStyle} ${border}`,
           borderRadius: isRound ? "50%" : "4px",
           display: "flex",
           alignItems: "center",

@@ -263,6 +263,7 @@ interface SchematicState {
   setCreatingNodeId: (id: string | null) => void;
   createAndEditDevice: (template: DeviceTemplate, position: { x: number; y: number }) => void;
   addRoom: (label: string, position: { x: number; y: number }) => void;
+  addDrawBox: (position: { x: number; y: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
   updateAnnotation: (nodeId: string, data: Partial<import("./types").AnnotationData>) => void;
@@ -2599,6 +2600,27 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({ nodes: [newRoom, ...deselected] });
     // Capture any existing devices that now fall inside the new room's bounds
     get().reparentAllDevices({ skipUndo: true });
+    get().saveToLocalStorage();
+  },
+
+  addDrawBox: (position) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const newBox: SchematicNode = {
+      id: `annotation-${Date.now()}`,
+      type: "annotation",
+      position,
+      data: {
+        shape: "rectangle",
+        color: "rgba(0, 0, 0, 0)",
+        borderColor: "#6b7280",
+        borderStyle: "dashed",
+      },
+      style: { width: 400, height: 300 },
+      selected: true,
+    };
+    const deselected = state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
+    set({ nodes: [...deselected, newBox] });
     get().saveToLocalStorage();
   },
 

@@ -9,7 +9,7 @@ import type {
 } from "../types";
 import type { DxfWriter, EntityStyle } from "./writer";
 import { cssFontPxToDxfHeight, pxToIn, tintToWhite, hexToRgb, rgbToTrueColor, truncateToWidth } from "./units";
-import { CANONICAL_LAYERS, hexToTrueColor, resolveSignalColor } from "./layers";
+import { CANONICAL_LAYERS, hexToTrueColor, lineStyleToLtype, resolveSignalColor } from "./layers";
 import {
   auxBlockHeight,
   auxRowHeight,
@@ -393,6 +393,7 @@ export function emitAnnotation(
 
   const borderStyle: EntityStyle = {};
   if (data.borderColor) borderStyle.trueColor = hexToTrueColor(data.borderColor);
+  if (data.borderStyle) borderStyle.linetype = lineStyleToLtype(data.borderStyle);
 
   if (data.shape === "ellipse" || data.shape === "circle") {
     const cx = rect.x + rect.w / 2;

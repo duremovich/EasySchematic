@@ -219,6 +219,7 @@ function SchematicCanvas() {
     isValidConnection,
     addDevice,
     addRoom,
+    addDrawBox,
     addNote,
     removeSelected,
     copySelected,
@@ -834,6 +835,16 @@ function SchematicCanvas() {
         return;
       }
 
+      const drawBoxData = event.dataTransfer.getData("application/easyschematic-draw-box");
+      if (drawBoxData) {
+        const position = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+        addDrawBox(position);
+        return;
+      }
+
       // Handle device drops
       const raw = event.dataTransfer.getData("application/easyschematic-device");
       if (!raw) return;
@@ -887,7 +898,7 @@ function SchematicCanvas() {
         }
       }, 0);
     },
-    [screenToFlowPosition, addDevice, addRoom, addNote, reparentNode],
+    [screenToFlowPosition, addDevice, addRoom, addDrawBox, addNote, reparentNode],
   );
 
   // Reconnection via React Flow's reconnection path (connected handle drags)

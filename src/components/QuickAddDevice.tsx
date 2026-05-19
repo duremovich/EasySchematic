@@ -7,12 +7,13 @@ import { scoreTemplate } from "../templateSearch";
 
 const MAX_RESULTS = 12;
 
-type SpecialItem = { kind: "note" } | { kind: "room" } | { kind: "create" };
+type SpecialItem = { kind: "note" } | { kind: "room" } | { kind: "draw-box" } | { kind: "create" };
 type ResultItem = { type: "device"; template: DeviceTemplate } | { type: "special"; item: SpecialItem; label: string; subtitle: string };
 
 const SPECIAL_ITEMS: { item: SpecialItem; label: string; subtitle: string; keywords: string[] }[] = [
   { item: { kind: "note" }, label: "Note", subtitle: "Text annotation", keywords: ["note", "text", "annotation", "label", "comment"] },
   { item: { kind: "room" }, label: "Room", subtitle: "Grouping container", keywords: ["room", "group", "area", "zone", "container"] },
+  { item: { kind: "draw-box" }, label: "Draw Box", subtitle: "Visual grouping box", keywords: ["draw", "box", "rectangle", "group", "visual", "outline"] },
   { item: { kind: "create" }, label: "Create New Device", subtitle: "Blank or copy from existing", keywords: ["create", "new", "custom", "blank", "device", "empty"] },
 ];
 
@@ -46,6 +47,7 @@ export default function QuickAddDevice({
   const addDevice = useSchematicStore((s) => s.addDevice);
   const addNote = useSchematicStore((s) => s.addNote);
   const addRoom = useSchematicStore((s) => s.addRoom);
+  const addDrawBox = useSchematicStore((s) => s.addDrawBox);
   const reparentNode = useSchematicStore((s) => s.reparentNode);
   const customTemplates = useSchematicStore((s) => s.customTemplates);
   const favoriteTemplates = useSchematicStore((s) => s.favoriteTemplates);
@@ -197,12 +199,18 @@ export default function QuickAddDevice({
           y: Math.round((position.y - 150) / GRID_SIZE) * GRID_SIZE,
         };
         addRoom("Room", centered);
+      } else if (item.kind === "draw-box") {
+        const centered = {
+          x: Math.round((position.x - 200) / GRID_SIZE) * GRID_SIZE,
+          y: Math.round((position.y - 150) / GRID_SIZE) * GRID_SIZE,
+        };
+        addDrawBox(centered);
       } else if (item.kind === "create") {
         onOpenDeviceCreator?.();
       }
       onClose();
     },
-    [addNote, addRoom, position, onClose, onOpenDeviceCreator],
+    [addDrawBox, addNote, addRoom, position, onClose, onOpenDeviceCreator],
   );
 
   const selectResult = useCallback(
@@ -245,7 +253,7 @@ export default function QuickAddDevice({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Add device, note, room..."
+            placeholder="Add device, note, room, draw box..."
             className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 placeholder:text-[var(--color-text-muted)]"
           />
         </div>
@@ -351,7 +359,7 @@ export default function QuickAddDevice({
                   }`}
                 >
                   <span className="text-[var(--color-text-muted)] text-xs shrink-0">
-                    {result.item.kind === "note" ? "📝" : result.item.kind === "room" ? "▢" : "⊞"}
+                    {result.item.kind === "note" ? "📝" : result.item.kind === "room" ? "▢" : result.item.kind === "draw-box" ? "▭" : "⊞"}
                   </span>
                   <div className="flex flex-col gap-0 flex-1 min-w-0">
                     <span className="text-xs font-medium truncate">{result.label}</span>

@@ -345,6 +345,8 @@ export interface AnnotationData {
   color?: string;
   /** Border color */
   borderColor?: string;
+  /** Border stroke style */
+  borderStyle?: "solid" | "dashed" | "dotted";
   /** Optional text label */
   label?: string;
   /** Font size for the label in px */
