@@ -414,7 +414,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       >
         {showLeft && leftHandleId && (
           <Handle
-            type={direction === "input" ? "target" : "source"}
+            type={direction === "input" || direction === "bidirectional" ? "target" : "source"}
             position={Position.Left}
             id={leftHandleId}
             data-connected={connectedHandles.has(leftHandleId) || undefined}

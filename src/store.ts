@@ -1030,6 +1030,23 @@ function getPortFromHandle(
   return ports.find((p) => p.id === baseId);
 }
 
+function getExternalEndpointHandleDirection(
+  port: Port,
+  handleId: string | null | undefined,
+): "input" | "output" | "passthrough" | "bidirectional" {
+  if (port.direction === "bidirectional") {
+    if (handleId?.endsWith("-in")) return "input";
+    if (handleId?.endsWith("-out")) return "output";
+  }
+  return port.direction;
+}
+
+function isExternalEndpointNode(nodes: SchematicNode[], nodeId: string | null | undefined): boolean {
+  if (!nodeId) return false;
+  const node = nodes.find((n) => n.id === nodeId);
+  return node?.type === "device" && isExternalEndpointData(node.data as DeviceData);
+}
+
 function removeOrphanedEdges(nodes: SchematicNode[], edges: ConnectionEdge[]): ConnectionEdge[] {
   return edges.filter((e) => {
     const srcNode = nodes.find((n) => n.id === e.source);
@@ -1798,6 +1815,17 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     );
 
     if (!sourcePort || !targetPort) return false;
+
+    const sourceIsExternalEndpoint = isExternalEndpointNode(state.nodes, connection.source);
+    const targetIsExternalEndpoint = isExternalEndpointNode(state.nodes, connection.target);
+    if (sourceIsExternalEndpoint) {
+      const sourceEndpointDirection = getExternalEndpointHandleDirection(sourcePort, connection.sourceHandle);
+      if (sourceEndpointDirection === "input") return false;
+    }
+    if (targetIsExternalEndpoint) {
+      const targetEndpointDirection = getExternalEndpointHandleDirection(targetPort, connection.targetHandle);
+      if (targetEndpointDirection === "output") return false;
+    }
 
     // ── Passthrough port handling ────────────────────────────────────────
     const srcIsPassthrough = sourcePort.direction === "passthrough";
