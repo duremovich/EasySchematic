@@ -99,6 +99,29 @@ Current behavior:
 - Draw boxes are ignored by minimum-spacing collision enforcement, so devices can sit inside them.
 - Dashed draw-box outlines are preserved in DXF export.
 
+### External Endpoint Nodes
+
+Commits:
+
+- `0cec79e` - `Add external endpoint nodes`
+- `3fad819` - `Refine external endpoint labels`
+- `2dd00b5` - `Fix external endpoint direction matching`
+- `ff0bbd1` - `Add external endpoint colour controls`
+
+Intent:
+
+- External endpoints represent the device or system on the far end of a connection, such as a client network, an off-page handoff, or a stub-style external device.
+- They are useful for keeping drawings clean without needing to place a full device block for the far end.
+
+Current behavior:
+
+- External Endpoint appears in the device library and quick-add search.
+- The endpoint can be renamed from External Endpoint Properties.
+- Endpoint direction, signal type, and connector type can be edited from properties.
+- Endpoint fill color and text color can be edited from properties.
+- Direction matching follows AV logic: a block output connects to the external endpoint input, and a block input connects to the external endpoint output.
+- Bidirectional external endpoints expose separate `-in` and `-out` sides so the connection direction is unambiguous.
+
 ## Useful Runtime Checks
 
 Test live site:
@@ -122,6 +145,6 @@ We are working on my fork of EasySchematic at C:\Users\seanl\Documents\codex\Eas
 It is deployed on my VPS at https://schematic.tateside.online.
 My GitHub fork is https://github.com/seanliamdarcy-code/EasySchematic.
 The original upstream is https://github.com/duremovich/EasySchematic.
-We added Tateside branding and a Draw Box tool.
+We added Tateside branding, a Draw Box tool, and External Endpoint nodes.
 Please read TATESIDE-NOTES.md and inspect git log/status before making changes.
 ```
