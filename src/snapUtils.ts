@@ -64,6 +64,12 @@ function estimateDeviceHeight(node: SchematicNode): number {
   return 60 + portRows * 20 + totalAuxHeight(data.auxiliaryData, labelZone);
 }
 
+function isDrawBoxNode(node: SchematicNode): boolean {
+  if (node.type !== "annotation") return false;
+  const data = node.data as { role?: string; shape?: string; borderStyle?: string };
+  return data.role === "draw-box" || (data.shape === "rectangle" && data.borderStyle === "dashed");
+}
+
 function nodeRect(node: SchematicNode): Rect {
   const w = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "room" ? 400 : 180);
   const h = node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? (node.type === "room" ? 300 : estimateDeviceHeight(node));
@@ -930,6 +936,7 @@ export function enforceMinSpacing(
   snapResult?: SnapResult,
 ): { x: number; y: number } | null {
   if (draggedNode.type === "room") return null;
+  if (isDrawBoxNode(draggedNode)) return null;
   // Stub labels are visual annotations, not routing obstacles. They also center-snap
   // to the grid — the final round-to-grid below would clobber that offset.
   if (draggedNode.type === "stub-label") return null;
@@ -951,6 +958,7 @@ export function enforceMinSpacing(
 
   const neighbors = allNodes.filter((n) => {
     if (n.id === draggedNode.id) return false;
+    if (isDrawBoxNode(n)) return false;
     if (n.type === "room" || n.type === "note" || n.type === "stub-label") return false;
     if (n.parentId !== draggedNode.parentId) return false;
     if (hiddenNodeIds?.has(n.id)) return false;
