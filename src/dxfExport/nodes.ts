@@ -21,7 +21,11 @@ import {
 } from "../auxiliaryData";
 import { transformLabelNow } from "../labelCaseUtils";
 import { resolveDeviceLabel, type SchematicDisplayDefaults } from "../displayName";
-import { isExternalEndpointData } from "../externalEndpoint";
+import {
+  EXTERNAL_ENDPOINT_HEIGHT,
+  estimateExternalEndpointWidth,
+  isExternalEndpointData,
+} from "../externalEndpoint";
 
 /** Matches Tailwind `rounded-lg` on the canvas DeviceNode (8px = 0.083"). */
 const DEVICE_CORNER_RADIUS_IN = 8 / 96;
@@ -353,8 +357,8 @@ function emitExternalEndpoint(
   const rect = toDxfRect(
     ax,
     ay,
-    node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? 120,
-    node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? 26,
+    node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? estimateExternalEndpointWidth(data.label, port?.direction),
+    node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? EXTERNAL_ENDPOINT_HEIGHT,
   );
   const directionPrefix =
     port?.direction === "input" ? "← "
@@ -376,9 +380,9 @@ function emitExternalEndpoint(
     CANONICAL_LAYERS.LABELS,
     rect.x + rect.w / 2,
     rect.y + rect.h / 2 - pxToIn(1),
-    truncateToWidth(`${directionPrefix}${transformLabelNow(data.label)}`, rect.w - pxToIn(16), cssFontPxToDxfHeight(10)),
+    truncateToWidth(`${directionPrefix}${data.label}`, rect.w - pxToIn(8), cssFontPxToDxfHeight(9)),
     {
-      height: cssFontPxToDxfHeight(10),
+      height: cssFontPxToDxfHeight(9),
       align: "center",
       vAlign: "middle",
     },

@@ -30,7 +30,12 @@ import FacePlateEditor from "./FacePlateEditor";
 import type { FacePlateLayout } from "../types";
 import { AUX_FIELD_GROUPS, normalizeAuxRows, resolveAuxiliaryLine, trimTrailingEmpty } from "../auxiliaryData";
 import { deriveThermalBtuh } from "../thermal";
-import { createExternalEndpointPort, isExternalEndpointData } from "../externalEndpoint";
+import {
+  createExternalEndpointPort,
+  EXTERNAL_ENDPOINT_DEFAULT_LABEL,
+  EXTERNAL_ENDPOINT_DEVICE_TYPE,
+  isExternalEndpointData,
+} from "../externalEndpoint";
 
 const ALL_SIGNAL_TYPES = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
   (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
@@ -294,7 +299,8 @@ export default function DeviceEditor() {
   const handleSave = useCallback(() => {
     if (!editingNodeId) return;
 
-    const normalizedPorts = isExternalEndpointData(node?.data)
+    const editingExternalEndpoint = isExternalEndpointData(node?.data);
+    const normalizedPorts = editingExternalEndpoint
       ? ports.map((p, i) => (i === 0 && !p.label.trim()
         ? { ...p, label: createExternalEndpointPort().label }
         : p))
@@ -318,6 +324,25 @@ export default function DeviceEditor() {
 
     // Preserve existing metadata fields from the node
     const existing = node?.data;
+    if (editingExternalEndpoint) {
+      const fallbackPort = createExternalEndpointPort();
+      const endpointPort = finalPorts[0] ?? fallbackPort;
+      updateDevice(editingNodeId, {
+        label: label.trim() || EXTERNAL_ENDPOINT_DEFAULT_LABEL,
+        model: existing?.model ?? EXTERNAL_ENDPOINT_DEFAULT_LABEL,
+        deviceType: EXTERNAL_ENDPOINT_DEVICE_TYPE,
+        ports: [{
+          ...endpointPort,
+          label: endpointPort.label.trim() || fallbackPort.label,
+          addressable: endpointPort.addressable ?? false,
+        }],
+        auxiliaryData: [],
+      });
+      setCreatingNodeId(null);
+      close();
+      return;
+    }
+
     const data: DeviceData = {
       label: label.trim() || "Untitled",
       ...(shortName.trim() ? { shortName: shortName.trim() } : {}),
@@ -792,12 +817,17 @@ export default function DeviceEditor() {
 
   if (!editingNodeId || !node) return null;
 
+  const isExternalEndpoint = isExternalEndpointData(node.data);
   const drift = getTemplateDrift(node.data, customTemplates);
   const hasPreset = !!(templateId && templatePresets[templateId]);
   const inputs = ports.filter((p) => p.direction === "input");
   const outputs = ports.filter((p) => p.direction === "output");
   const bidir = ports.filter((p) => p.direction === "bidirectional");
   const passthroughPorts = ports.filter((p) => p.direction === "passthrough");
+  const endpointPort = ports[0] ?? createExternalEndpointPort();
+  const updateEndpointPort = (updates: Partial<PortDraft>) => {
+    setPorts([{ ...endpointPort, ...updates }]);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }} onKeyDownCapture={onCtrlEnter}>
@@ -806,7 +836,9 @@ export default function DeviceEditor() {
       >
         {/* Header */}
         <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--color-text-heading)]">Device Properties</h2>
+          <h2 className="text-sm font-semibold text-[var(--color-text-heading)]">
+            {isExternalEndpoint ? "External Endpoint Properties" : "Device Properties"}
+          </h2>
           <button
             onClick={close}
             className="text-[var(--color-text-muted)] hover:text-[var(--color-text-heading)] text-lg leading-none cursor-pointer"
@@ -816,7 +848,7 @@ export default function DeviceEditor() {
         </div>
 
         {/* Template-drift notice */}
-        {drift && (
+        {!isExternalEndpoint && drift && (
           <div className="px-4 py-2 border-b border-[var(--color-border)] bg-blue-50 dark:bg-blue-900/20 flex items-center justify-between gap-2">
             <span className="text-xs text-blue-900 dark:text-blue-200">
               Template updated — v{drift.deviceVersion} → v{drift.currentVersion} available
@@ -833,107 +865,111 @@ export default function DeviceEditor() {
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Device Name">
+            <Field label={isExternalEndpoint ? "Display Text" : "Device Name"} className={isExternalEndpoint ? "col-span-2" : undefined}>
               <input
                 className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                placeholder="e.g. Camera 1"
+                placeholder={isExternalEndpoint ? "e.g. To Client Network" : "e.g. Camera 1"}
               />
-              {node.data.model && label.trim() !== node.data.model && (
+              {!isExternalEndpoint && node.data.model && label.trim() !== node.data.model && (
                 <div className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
                   Template: {node.data.model}
                 </div>
               )}
             </Field>
-            <Field label="Short Name">
-              <input
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
-                value={shortName}
-                onChange={(e) => setShortName(e.target.value)}
-                placeholder="e.g. HDC-5500"
-              />
-            </Field>
-            <div className="col-span-2 flex flex-wrap gap-x-4 gap-y-1 -mt-1">
-              {(() => {
-                const hasCompact = !!(shortName.trim() || modelNumber.trim());
-                const fallbackLabel = !shortName.trim() && modelNumber.trim() ? ` — falls back to model number "${modelNumber.trim()}"` : "";
-                return (
+            {!isExternalEndpoint && (
+              <>
+                <Field label="Short Name">
+                  <input
+                    className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                    value={shortName}
+                    onChange={(e) => setShortName(e.target.value)}
+                    placeholder="e.g. HDC-5500"
+                  />
+                </Field>
+                <div className="col-span-2 flex flex-wrap gap-x-4 gap-y-1 -mt-1">
+                  {(() => {
+                    const hasCompact = !!(shortName.trim() || modelNumber.trim());
+                    const fallbackLabel = !shortName.trim() && modelNumber.trim() ? ` — falls back to model number "${modelNumber.trim()}"` : "";
+                    return (
+                      <label
+                        className={`flex items-center gap-1.5 text-[11px] ${hasCompact ? "text-[var(--color-text)] cursor-pointer" : "text-[var(--color-text-muted)] opacity-60 cursor-not-allowed"}`}
+                        title={hasCompact
+                          ? `Use the short name on this device${fallbackLabel}. Leave unchecked to inherit the schematic-wide default.`
+                          : "Set a Short Name (or Model Number) above to enable this toggle."}
+                      >
+                        <input
+                          type="checkbox"
+                          disabled={!hasCompact}
+                          checked={useShortName === true}
+                          ref={(el) => { if (el) el.indeterminate = useShortName === undefined; }}
+                          onChange={(e) => setUseShortName(e.target.checked ? true : (useShortName === undefined ? false : undefined))}
+                        />
+                        Use short name {useShortName === undefined && hasCompact && <span className="text-[var(--color-text-muted)]">(inherit)</span>}
+                      </label>
+                    );
+                  })()}
                   <label
-                    className={`flex items-center gap-1.5 text-[11px] ${hasCompact ? "text-[var(--color-text)] cursor-pointer" : "text-[var(--color-text-muted)] opacity-60 cursor-not-allowed"}`}
-                    title={hasCompact
-                      ? `Use the short name on this device${fallbackLabel}. Leave unchecked to inherit the schematic-wide default.`
-                      : "Set a Short Name (or Model Number) above to enable this toggle."}
+                    className="flex items-center gap-1.5 text-[11px] text-[var(--color-text)] cursor-pointer"
+                    title="Wrap the device label across two lines on this device. Leave unchecked to inherit the schematic-wide default."
                   >
                     <input
                       type="checkbox"
-                      disabled={!hasCompact}
-                      checked={useShortName === true}
-                      ref={(el) => { if (el) el.indeterminate = useShortName === undefined; }}
-                      onChange={(e) => setUseShortName(e.target.checked ? true : (useShortName === undefined ? false : undefined))}
+                      checked={wrapLabel === true}
+                      ref={(el) => { if (el) el.indeterminate = wrapLabel === undefined; }}
+                      onChange={(e) => setWrapLabelState(e.target.checked ? true : (wrapLabel === undefined ? false : undefined))}
                     />
-                    Use short name {useShortName === undefined && hasCompact && <span className="text-[var(--color-text-muted)]">(inherit)</span>}
+                    Wrap label {wrapLabel === undefined && <span className="text-[var(--color-text-muted)]">(inherit)</span>}
                   </label>
-                );
-              })()}
-              <label
-                className="flex items-center gap-1.5 text-[11px] text-[var(--color-text)] cursor-pointer"
-                title="Wrap the device label across two lines on this device. Leave unchecked to inherit the schematic-wide default."
-              >
-                <input
-                  type="checkbox"
-                  checked={wrapLabel === true}
-                  ref={(el) => { if (el) el.indeterminate = wrapLabel === undefined; }}
-                  onChange={(e) => setWrapLabelState(e.target.checked ? true : (wrapLabel === undefined ? false : undefined))}
-                />
-                Wrap label {wrapLabel === undefined && <span className="text-[var(--color-text-muted)]">(inherit)</span>}
-              </label>
-            </div>
-            <Field label="Device Type">
-              <input
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
-                value={deviceType}
-                onChange={(e) => setDeviceType(e.target.value)}
-                placeholder="e.g. camera"
-              />
-            </Field>
-            <Field label="Manufacturer">
-              <input
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
-                value={manufacturer}
-                onChange={(e) => setManufacturer(e.target.value)}
-                placeholder="e.g. Sony"
-              />
-            </Field>
-            <Field label="Model Number">
-              <input
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
-                value={modelNumber}
-                onChange={(e) => setModelNumber(e.target.value)}
-                placeholder="e.g. FX9"
-              />
-            </Field>
-            <Field label="Category">
-              <input
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="e.g. video"
-              />
-            </Field>
-            <Field label="Reference URL">
-              <input
-                type="url"
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
-                value={referenceUrl}
-                onChange={(e) => setReferenceUrl(e.target.value)}
-                placeholder="https://…"
-              />
-            </Field>
+                </div>
+                <Field label="Device Type">
+                  <input
+                    className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                    value={deviceType}
+                    onChange={(e) => setDeviceType(e.target.value)}
+                    placeholder="e.g. camera"
+                  />
+                </Field>
+                <Field label="Manufacturer">
+                  <input
+                    className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                    value={manufacturer}
+                    onChange={(e) => setManufacturer(e.target.value)}
+                    placeholder="e.g. Sony"
+                  />
+                </Field>
+                <Field label="Model Number">
+                  <input
+                    className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                    value={modelNumber}
+                    onChange={(e) => setModelNumber(e.target.value)}
+                    placeholder="e.g. FX9"
+                  />
+                </Field>
+                <Field label="Category">
+                  <input
+                    className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="e.g. video"
+                  />
+                </Field>
+                <Field label="Reference URL">
+                  <input
+                    type="url"
+                    className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                    value={referenceUrl}
+                    onChange={(e) => setReferenceUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
+                </Field>
+              </>
+            )}
           </div>
 
           {/* Header color picker */}
-          <div className="flex items-center gap-2 -mt-1">
+          {!isExternalEndpoint && <div className="flex items-center gap-2 -mt-1">
             <span className="text-[10px] text-[var(--color-text-muted)]">Header Color</span>
             <input
               type="color"
@@ -949,9 +985,9 @@ export default function DeviceEditor() {
                 Reset
               </button>
             )}
-          </div>
+          </div>}
 
-          {(() => {
+          {!isExternalEndpoint && (() => {
             const tpl = node.data.templateId
               ? getBundledTemplates().find((t) => t.id === node.data.templateId)
               : undefined;
@@ -978,7 +1014,7 @@ export default function DeviceEditor() {
           })()}
 
           {/* Preset indicator */}
-          {hasPreset && templateId && (
+          {!isExternalEndpoint && hasPreset && templateId && (
             <div className="text-[10px] text-blue-700 dark:text-blue-200 bg-blue-50 dark:bg-blue-900/20 border border-blue-200/60 dark:border-blue-800/60 rounded px-2 py-1 flex items-center justify-between -mt-1">
               <span>Preset active for all &ldquo;{node.data.model || "this template"}&rdquo; devices</span>
               <button
@@ -990,97 +1026,150 @@ export default function DeviceEditor() {
             </div>
           )}
 
-          {/* Port Visibility */}
-          <PortVisibilitySection
-            showAllPorts={showAllPorts}
-            setShowAllPorts={setShowAllPorts}
-            hiddenPorts={hiddenPorts}
-            setHiddenPorts={setHiddenPorts}
-            ports={ports}
-            node={node}
-            nodes={nodes}
-            templateHiddenSignals={templateHiddenSignals}
-            setTemplateHiddenSignals={setTemplateHiddenSignals}
-            open={portVisOpen}
-            setOpen={setPortVisOpen}
-          />
+          {isExternalEndpoint ? (
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Direction">
+                <select
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer"
+                  value={endpointPort.direction}
+                  onChange={(e) => updateEndpointPort({ direction: e.target.value as PortDirection })}
+                >
+                  <option value="bidirectional">Bidirectional</option>
+                  <option value="input">Input</option>
+                  <option value="output">Output</option>
+                  <option value="passthrough">Passthrough</option>
+                </select>
+              </Field>
+              <Field label="Signal">
+                <select
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer"
+                  value={endpointPort.signalType}
+                  onChange={(e) => {
+                    const signalType = e.target.value as SignalType;
+                    updateEndpointPort({
+                      signalType,
+                      connectorType: DEFAULT_CONNECTOR[signalType],
+                    });
+                  }}
+                >
+                  {ALL_SIGNAL_TYPES.map((t) => (
+                    <option key={t} value={t}>{SIGNAL_LABELS[t]}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Connector">
+                <select
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer"
+                  value={endpointPort.connectorType ?? DEFAULT_CONNECTOR[endpointPort.signalType]}
+                  onChange={(e) => updateEndpointPort({ connectorType: e.target.value as ConnectorType })}
+                >
+                  {CONNECTOR_GROUP_ENTRIES.map(([groupName, types]) => (
+                    <optgroup key={groupName} label={groupName}>
+                      {types.map((c) => (
+                        <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </Field>
+            </div>
+          ) : (
+            <>
+              {/* Port Visibility */}
+              <PortVisibilitySection
+                showAllPorts={showAllPorts}
+                setShowAllPorts={setShowAllPorts}
+                hiddenPorts={hiddenPorts}
+                setHiddenPorts={setHiddenPorts}
+                ports={ports}
+                node={node}
+                nodes={nodes}
+                templateHiddenSignals={templateHiddenSignals}
+                setTemplateHiddenSignals={setTemplateHiddenSignals}
+                open={portVisOpen}
+                setOpen={setPortVisOpen}
+              />
 
-          <PortSection
-            title={deviceType === "patch-panel" ? "Rear" : "Inputs"}
-            direction="input"
-            deviceType={deviceType}
-            ports={inputs}
-            onAdd={() => addPort("input")}
-            onBulkAdd={bulkAddPorts}
-            onRemove={removePort}
-            onUpdate={updatePort}
-            draggedPortId={draggedPortId}
-            setDraggedPortId={setDraggedPortId}
-            dropTarget={dropTarget}
-            setDropTarget={setDropTarget}
-            onDragEnd={handleDragEnd}
-            hiddenPorts={hiddenPorts}
-            setHiddenPorts={setHiddenPorts}
-          />
+              <PortSection
+                title={deviceType === "patch-panel" ? "Rear" : "Inputs"}
+                direction="input"
+                deviceType={deviceType}
+                ports={inputs}
+                onAdd={() => addPort("input")}
+                onBulkAdd={bulkAddPorts}
+                onRemove={removePort}
+                onUpdate={updatePort}
+                draggedPortId={draggedPortId}
+                setDraggedPortId={setDraggedPortId}
+                dropTarget={dropTarget}
+                setDropTarget={setDropTarget}
+                onDragEnd={handleDragEnd}
+                hiddenPorts={hiddenPorts}
+                setHiddenPorts={setHiddenPorts}
+              />
 
-          <PortSection
-            title={deviceType === "patch-panel" ? "Front" : "Outputs"}
-            direction="output"
-            deviceType={deviceType}
-            ports={outputs}
-            onAdd={() => addPort("output")}
-            onBulkAdd={bulkAddPorts}
-            onRemove={removePort}
-            onUpdate={updatePort}
-            draggedPortId={draggedPortId}
-            setDraggedPortId={setDraggedPortId}
-            dropTarget={dropTarget}
-            setDropTarget={setDropTarget}
-            onDragEnd={handleDragEnd}
-            hiddenPorts={hiddenPorts}
-            setHiddenPorts={setHiddenPorts}
-          />
+              <PortSection
+                title={deviceType === "patch-panel" ? "Front" : "Outputs"}
+                direction="output"
+                deviceType={deviceType}
+                ports={outputs}
+                onAdd={() => addPort("output")}
+                onBulkAdd={bulkAddPorts}
+                onRemove={removePort}
+                onUpdate={updatePort}
+                draggedPortId={draggedPortId}
+                setDraggedPortId={setDraggedPortId}
+                dropTarget={dropTarget}
+                setDropTarget={setDropTarget}
+                onDragEnd={handleDragEnd}
+                hiddenPorts={hiddenPorts}
+                setHiddenPorts={setHiddenPorts}
+              />
 
-          {(deviceType !== "patch-panel" || bidir.length > 0) && (
-            <PortSection
-              title="Bidirectional"
-              direction="bidirectional"
-              deviceType={deviceType}
-              ports={bidir}
-              onAdd={() => addPort("bidirectional")}
-              onBulkAdd={bulkAddPorts}
-              onRemove={removePort}
-              onUpdate={updatePort}
-              draggedPortId={draggedPortId}
-              setDraggedPortId={setDraggedPortId}
-              dropTarget={dropTarget}
-              setDropTarget={setDropTarget}
-              onDragEnd={handleDragEnd}
-              hiddenPorts={hiddenPorts}
-              setHiddenPorts={setHiddenPorts}
-            />
+              {(deviceType !== "patch-panel" || bidir.length > 0) && (
+                <PortSection
+                  title="Bidirectional"
+                  direction="bidirectional"
+                  deviceType={deviceType}
+                  ports={bidir}
+                  onAdd={() => addPort("bidirectional")}
+                  onBulkAdd={bulkAddPorts}
+                  onRemove={removePort}
+                  onUpdate={updatePort}
+                  draggedPortId={draggedPortId}
+                  setDraggedPortId={setDraggedPortId}
+                  dropTarget={dropTarget}
+                  setDropTarget={setDropTarget}
+                  onDragEnd={handleDragEnd}
+                  hiddenPorts={hiddenPorts}
+                  setHiddenPorts={setHiddenPorts}
+                />
+              )}
+
+              {(deviceType === "patch-panel" || deviceType === "wall-plate" || passthroughPorts.length > 0) && (
+                <PortSection
+                  title="Passthrough Circuits"
+                  direction="passthrough"
+                  deviceType={deviceType}
+                  ports={passthroughPorts}
+                  onAdd={() => addPort("passthrough")}
+                  onBulkAdd={bulkAddPorts}
+                  onRemove={removePort}
+                  onUpdate={updatePort}
+                  draggedPortId={draggedPortId}
+                  setDraggedPortId={setDraggedPortId}
+                  dropTarget={dropTarget}
+                  setDropTarget={setDropTarget}
+                  onDragEnd={handleDragEnd}
+                  hiddenPorts={hiddenPorts}
+                  setHiddenPorts={setHiddenPorts}
+                />
+              )}
+            </>
           )}
 
-          {(deviceType === "patch-panel" || deviceType === "wall-plate" || passthroughPorts.length > 0) && (
-            <PortSection
-              title="Passthrough Circuits"
-              direction="passthrough"
-              deviceType={deviceType}
-              ports={passthroughPorts}
-              onAdd={() => addPort("passthrough")}
-              onBulkAdd={bulkAddPorts}
-              onRemove={removePort}
-              onUpdate={updatePort}
-              draggedPortId={draggedPortId}
-              setDraggedPortId={setDraggedPortId}
-              dropTarget={dropTarget}
-              setDropTarget={setDropTarget}
-              onDragEnd={handleDragEnd}
-              hiddenPorts={hiddenPorts}
-              setHiddenPorts={setHiddenPorts}
-            />
-          )}
-
+          {!isExternalEndpoint && (
+            <>
           {/* Hostname */}
           <div className="flex items-center gap-2 mt-2">
             <span className="text-[10px] text-[var(--color-text-muted)] shrink-0">Hostname:</span>
@@ -1162,7 +1251,7 @@ export default function DeviceEditor() {
             </div>
           </details>
 
-          {ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
+          {!isExternalEndpoint && ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
             <>
               <DhcpServerSection dhcpServer={dhcpServer} onChange={setDhcpServer} />
               <div className="flex items-center gap-2 mt-1">
@@ -1518,18 +1607,22 @@ export default function DeviceEditor() {
               </label>
             </div>
           </details>
+            </>
+          )}
         </div>
 
         {/* Footer */}
         <div className="px-4 py-3 border-t border-[var(--color-border)] flex items-center gap-2">
-          <button
-            onClick={handleSaveAsTemplate}
-            className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
-            title="Save this device configuration as a reusable user template"
-          >
-            Save as User Template
-          </button>
-          {(!templateId || dirtyVsTemplate || customTemplates.some((t) => t.id === templateId)) && ports.some((p) => p.label.trim()) && (
+          {!isExternalEndpoint && (
+            <>
+            <button
+              onClick={handleSaveAsTemplate}
+              className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
+              title="Save this device configuration as a reusable user template"
+            >
+              Save as User Template
+            </button>
+            {(!templateId || dirtyVsTemplate || customTemplates.some((t) => t.id === templateId)) && ports.some((p) => p.label.trim()) && (
             <button
               onClick={handleSubmitToCommunity}
               className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
@@ -1537,8 +1630,8 @@ export default function DeviceEditor() {
             >
               Submit to Community
             </button>
-          )}
-          {templateId && customTemplates.some((t) => t.id === templateId) ? (
+            )}
+            {templateId && customTemplates.some((t) => t.id === templateId) ? (
             <button
               onClick={handleUpdateUserTemplate}
               className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
@@ -1546,7 +1639,7 @@ export default function DeviceEditor() {
             >
               Update User Template
             </button>
-          ) : templateId ? (
+            ) : templateId ? (
             <button
               onClick={handleSaveAsPreset}
               className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
@@ -1554,8 +1647,8 @@ export default function DeviceEditor() {
             >
               Save as Preset
             </button>
-          ) : null}
-          {hasPreset && dirtyVsPreset && (
+            ) : null}
+            {hasPreset && dirtyVsPreset && (
             <button
               onClick={handleRevertToPreset}
               className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
@@ -1563,8 +1656,8 @@ export default function DeviceEditor() {
             >
               Revert to Preset
             </button>
-          )}
-          {dirtyVsTemplate && (
+            )}
+            {dirtyVsTemplate && (
             <button
               onClick={handleRevertToTemplate}
               className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
@@ -1572,6 +1665,8 @@ export default function DeviceEditor() {
             >
               Revert to Template
             </button>
+            )}
+            </>
           )}
           <div className="flex-1" />
           <button
@@ -1616,9 +1711,9 @@ export default function DeviceEditor() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div>
+    <div className={className}>
       <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
         {label}
       </label>

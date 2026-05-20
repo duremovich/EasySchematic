@@ -16,6 +16,7 @@ import { useDisplayLabel } from "../labelCaseUtils";
 import { resolveDeviceLabel } from "../displayName";
 import {
   EXTERNAL_ENDPOINT_HEIGHT,
+  EXTERNAL_ENDPOINT_MAX_WIDTH,
   EXTERNAL_ENDPOINT_MIN_WIDTH,
   isExternalEndpointData,
 } from "../externalEndpoint";
@@ -343,18 +344,29 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
 
   if (isExternalEndpointData(data) && data.ports.length === 1) {
     const port = data.ports[0];
+    const endpointText = data.label.trim() || data.model || "External Endpoint";
     if (!port) {
       return (
         <div
           onDoubleClick={() => setEditingNodeId(id)}
-          className={`
-            relative inline-flex items-center rounded-full border bg-white
-            ${isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]"}
-          `}
-          style={{ minWidth: EXTERNAL_ENDPOINT_MIN_WIDTH, height: EXTERNAL_ENDPOINT_HEIGHT, padding: "0 14px" }}
+          className="relative inline-flex items-center border bg-white"
+          style={{
+            boxSizing: "border-box",
+            width: "max-content",
+            minWidth: EXTERNAL_ENDPOINT_MIN_WIDTH,
+            maxWidth: EXTERNAL_ENDPOINT_MAX_WIDTH,
+            height: EXTERNAL_ENDPOINT_HEIGHT,
+            padding: "0 4px",
+            borderRadius: 2,
+            borderColor: isOverlapping ? "#f87171" : selected ? "#1a73e8" : "#9ca3af",
+          }}
         >
-          <span className="block truncate text-[10px] font-medium leading-none text-center" title={displayLabel(data.label)}>
-            {displayLabel(data.label)}
+          <span
+            className="block truncate text-[9px] font-medium leading-none text-center whitespace-nowrap"
+            style={{ color: "#374151", fontFamily: "'Inter', system-ui, sans-serif" }}
+            title={endpointText}
+          >
+            {endpointText}
           </span>
         </div>
       );
@@ -382,17 +394,22 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     return (
       <div
         onDoubleClick={() => setEditingNodeId(id)}
-        className={`
-          relative inline-flex items-center rounded-full border bg-white
-          ${isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]"}
-        `}
+        className="relative inline-flex items-center border bg-white"
         style={{
+          boxSizing: "border-box",
+          width: "max-content",
           minWidth: EXTERNAL_ENDPOINT_MIN_WIDTH,
-          maxWidth: 280,
+          maxWidth: EXTERNAL_ENDPOINT_MAX_WIDTH,
           height: EXTERNAL_ENDPOINT_HEIGHT,
-          paddingLeft: showLeft ? 12 : 14,
-          paddingRight: showRight ? 12 : 14,
-          borderColor: isOverlapping ? undefined : selected ? undefined : signalColor,
+          paddingLeft: 4,
+          paddingRight: 4,
+          borderRadius: 2,
+          borderColor: isOverlapping ? "#f87171" : selected ? "#1a73e8" : signalColor,
+          boxShadow: isOverlapping
+            ? "0 0 0 1px rgba(248, 113, 113, 0.35)"
+            : selected
+            ? "0 0 0 1px rgba(26, 115, 232, 0.3)"
+            : undefined,
         }}
       >
         {showLeft && leftHandleId && (
@@ -402,16 +419,16 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             id={leftHandleId}
             data-connected={connectedHandles.has(leftHandleId) || undefined}
             data-multi-connect={port?.multiConnect || undefined}
-            className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
+            className="!w-2 !h-2 !border !border-white !-left-1"
             style={{ background: signalColor, top: "50%" }}
           />
         )}
         <span
-          className="block truncate text-[10px] font-medium leading-none text-center"
-          style={{ color: "#1f2937" }}
-          title={`${displayLabel(data.label)} (${signalLabel})`}
+          className="block truncate text-[9px] font-medium leading-none text-center whitespace-nowrap"
+          style={{ color: "#374151", fontFamily: "'Inter', system-ui, sans-serif" }}
+          title={`${endpointText} (${signalLabel})`}
         >
-          {labelPrefix}{displayLabel(data.label)}
+          {labelPrefix}{endpointText}
         </span>
         {showRight && rightHandleId && (
           <Handle
@@ -420,7 +437,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             id={rightHandleId}
             data-connected={connectedHandles.has(rightHandleId) || undefined}
             data-multi-connect={port?.multiConnect || undefined}
-            className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
+            className="!w-2 !h-2 !border !border-white !-right-1"
             style={{ background: signalColor, top: "50%" }}
           />
         )}

@@ -59,7 +59,7 @@ import { autoFillSheetForRack } from "./printSheetAutoFill";
 import {
   createExternalEndpointData,
   EXTERNAL_ENDPOINT_HEIGHT,
-  EXTERNAL_ENDPOINT_MIN_WIDTH,
+  estimateExternalEndpointWidth,
   isExternalEndpointData,
 } from "./externalEndpoint";
 
@@ -165,11 +165,12 @@ function isDrawBoxNode(node: SchematicNode): boolean {
 }
 
 function fallbackNodeWidth(node: SchematicNode): number {
+  const isExternalEndpoint = node.type === "device" && isExternalEndpointData(node.data as DeviceData);
   return (
     (node.measured?.width as number | undefined) ??
     (node.width as number | undefined) ??
     (node.style?.width as number | undefined) ??
-    (node.type === "room" ? 400 : node.type === "device" && isExternalEndpointData(node.data as DeviceData) ? EXTERNAL_ENDPOINT_MIN_WIDTH : 180)
+    (node.type === "room" ? 400 : isExternalEndpoint ? estimateExternalEndpointWidth((node.data as DeviceData).label, (node.data as DeviceData).ports?.[0]?.direction) : 180)
   );
 }
 

@@ -7,7 +7,7 @@ import { resolveDeviceLabel } from "./displayName";
 import { STUB_GAP as STUB_PORT_GAP, STUB_W_EST, STUB_H_EST } from "./stubPlacement";
 import {
   EXTERNAL_ENDPOINT_HEIGHT,
-  EXTERNAL_ENDPOINT_MIN_WIDTH,
+  estimateExternalEndpointWidth,
   isExternalEndpointData,
 } from "./externalEndpoint";
 
@@ -79,7 +79,8 @@ function isDrawBoxNode(node: SchematicNode): boolean {
 }
 
 function nodeRect(node: SchematicNode): Rect {
-  const w = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "room" ? 400 : node.type === "device" && isExternalEndpointData(node.data as DeviceData) ? EXTERNAL_ENDPOINT_MIN_WIDTH : 180);
+  const isExternalEndpoint = node.type === "device" && isExternalEndpointData(node.data as DeviceData);
+  const w = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "room" ? 400 : isExternalEndpoint ? estimateExternalEndpointWidth((node.data as DeviceData).label, (node.data as DeviceData).ports?.[0]?.direction) : 180);
   const h = node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? (node.type === "room" ? 300 : estimateDeviceHeight(node));
   return {
     left: node.position.x,
@@ -131,7 +132,8 @@ function absoluteNodePos(
 /** Node rect in absolute world coords. Single allocation per call (parent
  *  chain walk inlined; intermediate nodeRect/absoluteNodePos avoided). */
 function absRect(node: SchematicNode, nodeMap: Map<string, SchematicNode>): Rect {
-  const w = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "room" ? 400 : node.type === "device" && isExternalEndpointData(node.data as DeviceData) ? EXTERNAL_ENDPOINT_MIN_WIDTH : 180);
+  const isExternalEndpoint = node.type === "device" && isExternalEndpointData(node.data as DeviceData);
+  const w = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "room" ? 400 : isExternalEndpoint ? estimateExternalEndpointWidth((node.data as DeviceData).label, (node.data as DeviceData).ports?.[0]?.direction) : 180);
   const h = node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? (node.type === "room" ? 300 : estimateDeviceHeight(node));
   let nx = node.position.x;
   let ny = node.position.y;
@@ -266,7 +268,7 @@ export function getPortAbsolutePositions(
       (device.measured?.width as number | undefined) ??
       (device.width as number | undefined) ??
       (device.style?.width as number | undefined) ??
-      EXTERNAL_ENDPOINT_MIN_WIDTH,
+      estimateExternalEndpointWidth(dd.label, port.direction),
     );
     const deviceH = Math.round(
       (device.measured?.height as number | undefined) ??
@@ -1158,7 +1160,7 @@ export function speculativeReparent(
 ): SchematicNode {
   if (node.parentId) return node;
 
-  const nodeW = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "device" && isExternalEndpointData(node.data as DeviceData) ? EXTERNAL_ENDPOINT_MIN_WIDTH : 180);
+  const nodeW = node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? (node.type === "device" && isExternalEndpointData(node.data as DeviceData) ? estimateExternalEndpointWidth((node.data as DeviceData).label, (node.data as DeviceData).ports?.[0]?.direction) : 180);
   const nodeH = node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? estimateDeviceHeight(node);
   const centerX = node.position.x + nodeW / 2;
   const centerY = node.position.y + nodeH / 2;
