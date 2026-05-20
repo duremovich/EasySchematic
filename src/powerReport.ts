@@ -8,6 +8,7 @@ import type { ReportTableData } from "./reportPdf";
 import { csvRow, groupBy, getRoomLabel } from "./packList";
 import { transformLabelNow } from "./labelCaseUtils";
 import { effectiveThermalBtuh } from "./thermal";
+import { isExternalEndpointData } from "./externalEndpoint";
 
 // ─── Types ───
 
@@ -65,6 +66,7 @@ export function computePowerReport(
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
+    if (isExternalEndpointData(data)) continue;
     if (data.isCableAccessory) continue;
     nodeDataMap.set(node.id, { data, parentId: node.parentId });
 
@@ -134,6 +136,7 @@ export function computePowerReport(
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
+    if (isExternalEndpointData(data)) continue;
     if (data.powerCapacityW == null || data.powerCapacityW <= 0) continue;
 
     const capacityW = data.powerCapacityW;
@@ -157,6 +160,7 @@ export function computePowerReport(
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
+    if (isExternalEndpointData(data)) continue;
     if (data.isCableAccessory) continue;
     if (data.powerCapacityW != null && data.powerCapacityW > 0) continue; // skip distros
     const powerDraw = data.powerDrawW ?? 0;

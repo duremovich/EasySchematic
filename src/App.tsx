@@ -52,6 +52,7 @@ import RackPage from "./components/RackPage";
 import PrintSheetPage from "./components/PrintSheetPage";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
 import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode } from "./types";
+import { EXTERNAL_ENDPOINT_HEIGHT, EXTERNAL_ENDPOINT_MIN_WIDTH } from "./externalEndpoint";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { loadSharedSchematic, checkSession } from "./templateApi";
@@ -219,6 +220,7 @@ function SchematicCanvas() {
     isValidConnection,
     addDevice,
     addRoom,
+    addExternalEndpoint,
     addDrawBox,
     addNote,
     removeSelected,
@@ -845,6 +847,56 @@ function SchematicCanvas() {
         return;
       }
 
+      const externalEndpointData = event.dataTransfer.getData("application/easyschematic-external-endpoint");
+      if (externalEndpointData) {
+        const cursorPosition = screenToFlowPosition({
+          x: event.clientX,
+          y: event.clientY,
+        });
+        const position = {
+          x: cursorPosition.x - EXTERNAL_ENDPOINT_MIN_WIDTH / 2,
+          y: cursorPosition.y - EXTERNAL_ENDPOINT_HEIGHT / 2,
+        };
+        addExternalEndpoint(position);
+
+        setTimeout(() => {
+          const state = useSchematicStore.getState();
+          const lastDevice = state.nodes.filter((n) => n.type === "device").at(-1);
+          if (lastDevice) {
+            reparentNode(lastDevice.id, position, { skipUndo: true });
+
+            const updated = useSchematicStore.getState();
+            const device = updated.nodes.find((n) => n.id === lastDevice.id);
+            if (device) {
+              const spacing = enforceMinSpacing(
+                device as SchematicNode,
+                updated.nodes,
+                updated.hiddenAdapterNodeIds,
+              );
+              if (spacing) {
+                useSchematicStore.setState({
+                  nodes: updated.nodes.map((n) =>
+                    n.id === device.id ? { ...n, position: { x: spacing.x, y: spacing.y } } : n,
+                  ) as SchematicNode[],
+                });
+                let absX = spacing.x;
+                let absY = spacing.y;
+                let pid: string | undefined = device.parentId as string | undefined;
+                while (pid) {
+                  const parent = updated.nodes.find((n) => n.id === pid);
+                  if (!parent) break;
+                  absX += parent.position.x;
+                  absY += parent.position.y;
+                  pid = parent.parentId as string | undefined;
+                }
+                reparentNode(device.id, { x: absX, y: absY }, { skipUndo: true });
+              }
+            }
+          }
+        }, 0);
+        return;
+      }
+
       // Handle device drops
       const raw = event.dataTransfer.getData("application/easyschematic-device");
       if (!raw) return;
@@ -898,7 +950,7 @@ function SchematicCanvas() {
         }
       }, 0);
     },
-    [screenToFlowPosition, addDevice, addRoom, addDrawBox, addNote, reparentNode],
+    [screenToFlowPosition, addDevice, addRoom, addExternalEndpoint, addDrawBox, addNote, reparentNode],
   );
 
   // Reconnection via React Flow's reconnection path (connected handle drags)

@@ -14,6 +14,11 @@ import {
 import type { AuxRow } from "../types";
 import { useDisplayLabel } from "../labelCaseUtils";
 import { resolveDeviceLabel } from "../displayName";
+import {
+  EXTERNAL_ENDPOINT_HEIGHT,
+  EXTERNAL_ENDPOINT_MIN_WIDTH,
+  isExternalEndpointData,
+} from "../externalEndpoint";
 
 type ColumnItem =
   | { type: "port"; port: Port }
@@ -335,6 +340,93 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       </div>
     );
   };
+
+  if (isExternalEndpointData(data) && data.ports.length === 1) {
+    const port = data.ports[0];
+    if (!port) {
+      return (
+        <div
+          onDoubleClick={() => setEditingNodeId(id)}
+          className={`
+            relative inline-flex items-center rounded-full border bg-white
+            ${isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]"}
+          `}
+          style={{ minWidth: EXTERNAL_ENDPOINT_MIN_WIDTH, height: EXTERNAL_ENDPOINT_HEIGHT, padding: "0 14px" }}
+        >
+          <span className="block truncate text-[10px] font-medium leading-none text-center" title={displayLabel(data.label)}>
+            {displayLabel(data.label)}
+          </span>
+        </div>
+      );
+    }
+    const direction = port?.direction ?? "bidirectional";
+    const signalType = port?.signalType ?? "custom";
+    const signalLabel = SIGNAL_LABELS[signalType] ?? signalType;
+    const signalColor = SIGNAL_COLORS[signalType] ?? SIGNAL_COLORS.custom;
+    const showLeft = direction === "input" || direction === "bidirectional" || direction === "passthrough";
+    const showRight = direction === "output" || direction === "bidirectional" || direction === "passthrough";
+    const leftHandleId =
+      direction === "bidirectional" ? `${port.id}-in`
+      : direction === "passthrough" ? `${port.id}-rear`
+      : port?.id;
+    const rightHandleId =
+      direction === "bidirectional" ? `${port.id}-out`
+      : direction === "passthrough" ? `${port.id}-front`
+      : port?.id;
+    const labelPrefix =
+      direction === "input" ? "← "
+      : direction === "output" ? "→ "
+      : direction === "passthrough" ? "⇔ "
+      : "↔ ";
+
+    return (
+      <div
+        onDoubleClick={() => setEditingNodeId(id)}
+        className={`
+          relative inline-flex items-center rounded-full border bg-white
+          ${isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]"}
+        `}
+        style={{
+          minWidth: EXTERNAL_ENDPOINT_MIN_WIDTH,
+          maxWidth: 280,
+          height: EXTERNAL_ENDPOINT_HEIGHT,
+          paddingLeft: showLeft ? 12 : 14,
+          paddingRight: showRight ? 12 : 14,
+          borderColor: isOverlapping ? undefined : selected ? undefined : signalColor,
+        }}
+      >
+        {showLeft && leftHandleId && (
+          <Handle
+            type={direction === "input" ? "target" : "source"}
+            position={Position.Left}
+            id={leftHandleId}
+            data-connected={connectedHandles.has(leftHandleId) || undefined}
+            data-multi-connect={port?.multiConnect || undefined}
+            className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
+            style={{ background: signalColor, top: "50%" }}
+          />
+        )}
+        <span
+          className="block truncate text-[10px] font-medium leading-none text-center"
+          style={{ color: "#1f2937" }}
+          title={`${displayLabel(data.label)} (${signalLabel})`}
+        >
+          {labelPrefix}{displayLabel(data.label)}
+        </span>
+        {showRight && rightHandleId && (
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={rightHandleId}
+            data-connected={connectedHandles.has(rightHandleId) || undefined}
+            data-multi-connect={port?.multiConnect || undefined}
+            className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
+            style={{ background: signalColor, top: "50%" }}
+          />
+        )}
+      </div>
+    );
+  }
 
   if (isHiddenAdapter) {
     // Render 1x1 invisible placeholder — keeps React Flow handle refs valid but

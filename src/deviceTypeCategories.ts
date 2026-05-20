@@ -98,6 +98,7 @@ export const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "audio-meter": "Monitoring",
   "assistive-listening": "Audio",
   "battery": "Infrastructure",
+  "external-endpoint": "Infrastructure",
   "commentary-box": "Intercom",
   "phone-hybrid": "Intercom",
   "interpreter-desk": "Intercom",

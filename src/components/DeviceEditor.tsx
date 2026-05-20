@@ -30,6 +30,7 @@ import FacePlateEditor from "./FacePlateEditor";
 import type { FacePlateLayout } from "../types";
 import { AUX_FIELD_GROUPS, normalizeAuxRows, resolveAuxiliaryLine, trimTrailingEmpty } from "../auxiliaryData";
 import { deriveThermalBtuh } from "../thermal";
+import { createExternalEndpointPort, isExternalEndpointData } from "../externalEndpoint";
 
 const ALL_SIGNAL_TYPES = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
   (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
@@ -293,9 +294,15 @@ export default function DeviceEditor() {
   const handleSave = useCallback(() => {
     if (!editingNodeId) return;
 
+    const normalizedPorts = isExternalEndpointData(node?.data)
+      ? ports.map((p, i) => (i === 0 && !p.label.trim()
+        ? { ...p, label: createExternalEndpointPort().label }
+        : p))
+      : ports;
+
     // Build old→new ID map for draft ports
     const idMap = new Map<string, string>();
-    const finalPorts: Port[] = ports
+    const finalPorts: Port[] = normalizedPorts
       .filter((p) => p.label.trim())
       .map((p, i) => {
         const newId = p.id.startsWith("draft-") ? `p${Date.now()}-${i}` : p.id;

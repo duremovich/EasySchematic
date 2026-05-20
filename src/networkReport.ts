@@ -6,6 +6,7 @@ import { getRoomLabel } from "./packList";
 import { transformLabelNow } from "./labelCaseUtils";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
+import { isExternalEndpointData } from "./externalEndpoint";
 
 export interface NetworkReportRow {
   nodeId: string;
@@ -39,6 +40,7 @@ export function computeNetworkReport(nodes: SchematicNode[], edges: ConnectionEd
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
+    if (isExternalEndpointData(data)) continue;
     if (data.isCableAccessory) continue;
     const room = getRoomLabel(nodes, node.parentId);
 
@@ -104,6 +106,7 @@ export function computeDhcpServerSummary(nodes: SchematicNode[]): DhcpServerSumm
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
+    if (isExternalEndpointData(data)) continue;
     if (!data.dhcpServer?.enabled) continue;
     rows.push({
       nodeId: node.id,
@@ -138,6 +141,7 @@ export function computePoeBudget(nodes: SchematicNode[], edges: ConnectionEdge[]
   for (const node of nodes) {
     if (node.type !== "device") continue;
     const data = node.data as DeviceData;
+    if (isExternalEndpointData(data)) continue;
     if (!data.poeBudgetW) continue;
 
     const room = getRoomLabel(nodes, node.parentId);

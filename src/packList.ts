@@ -10,6 +10,7 @@ import { getCableType } from "./cableTypes";
 import { transformLabelNow } from "./labelCaseUtils";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
+import { isExternalEndpointData } from "./externalEndpoint";
 
 export type CableCategory = "Video" | "Audio" | "Control" | "Data" | "Power" | "Custom";
 
@@ -231,6 +232,7 @@ export function computePackList(
   for (const n of nodes) {
     if (n.type !== "device") continue;
     const data = n.data as DeviceData;
+    if (isExternalEndpointData(data)) continue;
     if (data.isVenueProvided) continue;
     const model = transformLabelNow(data.model ?? data.baseLabel ?? data.label);
     const room = getRoomLabel(nodes, n.parentId);

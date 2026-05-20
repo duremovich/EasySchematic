@@ -21,6 +21,7 @@ import {
 } from "../auxiliaryData";
 import { transformLabelNow } from "../labelCaseUtils";
 import { resolveDeviceLabel, type SchematicDisplayDefaults } from "../displayName";
+import { isExternalEndpointData } from "../externalEndpoint";
 
 /** Matches Tailwind `rounded-lg` on the canvas DeviceNode (8px = 0.083"). */
 const DEVICE_CORNER_RADIUS_IN = 8 / 96;
@@ -144,6 +145,10 @@ export function emitDevice(
   const internal = rfInstance.getInternalNode(node.id);
   if (!internal) return;
   const data = node.data as DeviceData;
+  if (isExternalEndpointData(data) && data.ports.length === 1) {
+    emitExternalEndpoint(writer, node, internal.internals.positionAbsolute.x, internal.internals.positionAbsolute.y);
+    return;
+  }
   const ax = internal.internals.positionAbsolute.x;
   const ay = internal.internals.positionAbsolute.y;
   const w = node.measured?.width ?? 180;
@@ -332,6 +337,52 @@ export function emitDevice(
       lastSec = section;
     }
   }
+}
+
+function emitExternalEndpoint(
+  writer: DxfWriter,
+  node: SchematicNode,
+  ax: number,
+  ay: number,
+) {
+  if (node.type !== "device") return;
+  const data = node.data as DeviceData;
+  const port = data.ports[0];
+  const signalHex = resolveSignalColor(port?.signalType ?? "custom", undefined);
+  const [r, g, b] = hexToRgb(signalHex);
+  const rect = toDxfRect(
+    ax,
+    ay,
+    node.measured?.width ?? (node.width as number) ?? (node.style?.width as number) ?? 120,
+    node.measured?.height ?? (node.height as number) ?? (node.style?.height as number) ?? 26,
+  );
+  const directionPrefix =
+    port?.direction === "input" ? "← "
+    : port?.direction === "output" ? "→ "
+    : port?.direction === "passthrough" ? "⇔ "
+    : "↔ ";
+
+  writer.addRoundedRect(
+    CANONICAL_LAYERS.DEVICES,
+    rect.x,
+    rect.y,
+    rect.w,
+    rect.h,
+    Math.min(DEVICE_CORNER_RADIUS_IN, rect.h / 2),
+    { trueColor: rgbToTrueColor(r, g, b) },
+  );
+
+  writer.addText(
+    CANONICAL_LAYERS.LABELS,
+    rect.x + rect.w / 2,
+    rect.y + rect.h / 2 - pxToIn(1),
+    truncateToWidth(`${directionPrefix}${transformLabelNow(data.label)}`, rect.w - pxToIn(16), cssFontPxToDxfHeight(10)),
+    {
+      height: cssFontPxToDxfHeight(10),
+      align: "center",
+      vAlign: "middle",
+    },
+  );
 }
 
 function emitPortLabel(

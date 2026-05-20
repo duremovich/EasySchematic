@@ -1512,6 +1512,24 @@ export default function DeviceLibrary() {
           </div>
         )}
 
+        {!hasFilter && (!query || "external endpoint".includes(query.toLowerCase()) || "off page connector".includes(query.toLowerCase())) && (
+          <div
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.setData("application/easyschematic-external-endpoint", "1");
+              e.dataTransfer.effectAllowed = "move";
+            }}
+            className="flex items-center gap-2 px-2 py-1.5 rounded border border-sky-500/40 bg-sky-500/10 hover:bg-sky-500/15 cursor-grab active:cursor-grabbing transition-colors"
+          >
+            <svg viewBox="0 0 16 16" className="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M2.5 8h8" />
+              <path d="M8.5 4.5 12 8l-3.5 3.5" />
+              <rect x="1.5" y="5" width="4" height="6" rx="1.5" />
+            </svg>
+            <span className="text-xs text-[var(--color-text)]">External Endpoint</span>
+          </div>
+        )}
+
         {/* Create New Device */}
         {!hasFilter && (!query || "create new device".includes(query.toLowerCase())) && (
           <button

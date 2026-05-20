@@ -56,6 +56,12 @@ import { chooseNewHandleSuffix, type SwapPlan, type NewPortRef } from "./deviceS
 import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
 import { computeCableSchedule } from "./cableSchedule";
 import { autoFillSheetForRack } from "./printSheetAutoFill";
+import {
+  createExternalEndpointData,
+  EXTERNAL_ENDPOINT_HEIGHT,
+  EXTERNAL_ENDPOINT_MIN_WIDTH,
+  isExternalEndpointData,
+} from "./externalEndpoint";
 
 /** Fix UTF-8 → Windows-1252 double-encoding in string values (e.g. → becomes â†').
  *  Applied on import so old/corrupted saves display correctly. */
@@ -156,6 +162,24 @@ function isDrawBoxNode(node: SchematicNode): boolean {
   if (node.type !== "annotation") return false;
   const data = node.data as AnnotationData;
   return data.role === "draw-box" || (data.shape === "rectangle" && data.borderStyle === "dashed");
+}
+
+function fallbackNodeWidth(node: SchematicNode): number {
+  return (
+    (node.measured?.width as number | undefined) ??
+    (node.width as number | undefined) ??
+    (node.style?.width as number | undefined) ??
+    (node.type === "room" ? 400 : node.type === "device" && isExternalEndpointData(node.data as DeviceData) ? EXTERNAL_ENDPOINT_MIN_WIDTH : 180)
+  );
+}
+
+function fallbackNodeHeight(node: SchematicNode): number {
+  return (
+    (node.measured?.height as number | undefined) ??
+    (node.height as number | undefined) ??
+    (node.style?.height as number | undefined) ??
+    (node.type === "room" ? 300 : node.type === "device" && isExternalEndpointData(node.data as DeviceData) ? EXTERNAL_ENDPOINT_HEIGHT : 60)
+  );
 }
 
 // Re-exported from gridConstants so existing `import { GRID_SIZE } from "./store"`
@@ -285,6 +309,7 @@ interface SchematicState {
   setCreatingNodeId: (id: string | null) => void;
   createAndEditDevice: (template: DeviceTemplate, position: { x: number; y: number }) => void;
   addRoom: (label: string, position: { x: number; y: number }) => void;
+  addExternalEndpoint: (position: { x: number; y: number }) => void;
   addDrawBox: (position: { x: number; y: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
@@ -1617,7 +1642,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     let minY = Infinity;
     let maxY = -Infinity;
     for (const n of selectedNodes) {
-      const h = n.measured?.height ?? 60;
+      const h = fallbackNodeHeight(n);
       minY = Math.min(minY, n.position.y);
       maxY = Math.max(maxY, n.position.y + h);
     }
@@ -2633,6 +2658,22 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  addExternalEndpoint: (position) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const newNode: DeviceNode = {
+      id: nextNodeId(),
+      type: "device",
+      position,
+      data: createExternalEndpointData(),
+      style: { height: EXTERNAL_ENDPOINT_HEIGHT },
+      selected: true,
+    };
+    const deselected = state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n));
+    set({ nodes: [...deselected, newNode] });
+    get().saveToLocalStorage();
+  },
+
   addDrawBox: (position) => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
@@ -2819,8 +2860,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       return;
     }
     const isRoom = node.type === "room";
-    const nodeW = node.measured?.width ?? (isRoom ? 400 : 180);
-    const nodeH = node.measured?.height ?? (isRoom ? 300 : 60);
+    const nodeW = fallbackNodeWidth(node);
+    const nodeH = fallbackNodeHeight(node);
     const centerX = absolutePosition.x + nodeW / 2;
     const centerY = absolutePosition.y + nodeH / 2;
 
@@ -2874,8 +2915,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       if (node.type === "room" || node.type === "waypoint" || isDrawBoxNode(node)) continue;
 
       const absPos = getAbsolutePosition(node.id, nodeMap);
-      const nodeW = node.measured?.width ?? 180;
-      const nodeH = node.measured?.height ?? 60;
+      const nodeW = fallbackNodeWidth(node);
+      const nodeH = fallbackNodeHeight(node);
       const centerX = absPos.x + nodeW / 2;
       const centerY = absPos.y + nodeH / 2;
 
@@ -3203,15 +3244,15 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     const srcAbs = absPos(sourceNode);
     const tgtAbs = absPos(targetNode);
-    const srcW = sourceNode.measured?.width ?? 180;
-    const tgtW = targetNode.measured?.width ?? 180;
+    const srcW = fallbackNodeWidth(sourceNode);
+    const tgtW = fallbackNodeWidth(targetNode);
 
     // Midpoint between the right edge of the left device and left edge of the right device
     // (or just center-to-center if they're stacked vertically)
     const srcCenterX = srcAbs.x + srcW / 2;
     const tgtCenterX = tgtAbs.x + tgtW / 2;
-    const srcCenterY = srcAbs.y + (sourceNode.measured?.height ?? 60) / 2;
-    const tgtCenterY = tgtAbs.y + (targetNode.measured?.height ?? 60) / 2;
+    const srcCenterY = srcAbs.y + fallbackNodeHeight(sourceNode) / 2;
+    const tgtCenterY = tgtAbs.y + fallbackNodeHeight(targetNode) / 2;
 
     let idealX = Math.round(((srcCenterX + tgtCenterX) / 2) / GRID_SIZE) * GRID_SIZE;
     let idealY = Math.round(((srcCenterY + tgtCenterY) / 2) / GRID_SIZE) * GRID_SIZE;
@@ -3283,8 +3324,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     for (const other of state.nodes) {
       if (other.type !== "device") continue;
       if (other.parentId !== adapterParentId) continue;
-      const ow = other.measured?.width ?? 180;
-      const oh = other.measured?.height ?? 60;
+      const ow = fallbackNodeWidth(other);
+      const oh = fallbackNodeHeight(other);
       // Check AABB overlap with gap
       const overlapX = posX < other.position.x + ow + MIN_GAP && posX + adapterW + MIN_GAP > other.position.x;
       const overlapY = posY < other.position.y + oh && posY + adapterH > other.position.y;
@@ -4880,8 +4921,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       if (match) return { x: match.absX, y: match.absY, side: match.side };
       // Fallback: device vertical center on the appropriate edge.
       const dPos = absPos(deviceNode);
-      const w = (deviceNode.measured?.width as number | undefined) ?? 180;
-      const h = (deviceNode.measured?.height as number | undefined) ?? 60;
+      const w = fallbackNodeWidth(deviceNode);
+      const h = fallbackNodeHeight(deviceNode);
       const ports = (deviceNode.data as { ports?: Port[] }).ports ?? [];
       const baseId = (handleId ?? "").replace(/-(in|out|rear|front)$/, "");
       const port = ports.find((pp) => pp.id === baseId);

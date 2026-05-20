@@ -4,16 +4,21 @@ import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate } from "../types";
 import { useSchematicStore, GRID_SIZE } from "../store";
 import { scoreTemplate } from "../templateSearch";
+import {
+  EXTERNAL_ENDPOINT_HEIGHT,
+  EXTERNAL_ENDPOINT_MIN_WIDTH,
+} from "../externalEndpoint";
 
 const MAX_RESULTS = 12;
 
-type SpecialItem = { kind: "note" } | { kind: "room" } | { kind: "draw-box" } | { kind: "create" };
+type SpecialItem = { kind: "note" } | { kind: "room" } | { kind: "draw-box" } | { kind: "external-endpoint" } | { kind: "create" };
 type ResultItem = { type: "device"; template: DeviceTemplate } | { type: "special"; item: SpecialItem; label: string; subtitle: string };
 
 const SPECIAL_ITEMS: { item: SpecialItem; label: string; subtitle: string; keywords: string[] }[] = [
   { item: { kind: "note" }, label: "Note", subtitle: "Text annotation", keywords: ["note", "text", "annotation", "label", "comment"] },
   { item: { kind: "room" }, label: "Room", subtitle: "Grouping container", keywords: ["room", "group", "area", "zone", "container"] },
   { item: { kind: "draw-box" }, label: "Draw Box", subtitle: "Visual grouping box", keywords: ["draw", "box", "rectangle", "group", "visual", "outline"] },
+  { item: { kind: "external-endpoint" }, label: "External Endpoint", subtitle: "Stub-like off-page connection target", keywords: ["external", "endpoint", "off page", "off-page", "stub", "network handoff", "client network"] },
   { item: { kind: "create" }, label: "Create New Device", subtitle: "Blank or copy from existing", keywords: ["create", "new", "custom", "blank", "device", "empty"] },
 ];
 
@@ -48,6 +53,7 @@ export default function QuickAddDevice({
   const addNote = useSchematicStore((s) => s.addNote);
   const addRoom = useSchematicStore((s) => s.addRoom);
   const addDrawBox = useSchematicStore((s) => s.addDrawBox);
+  const addExternalEndpoint = useSchematicStore((s) => s.addExternalEndpoint);
   const reparentNode = useSchematicStore((s) => s.reparentNode);
   const customTemplates = useSchematicStore((s) => s.customTemplates);
   const favoriteTemplates = useSchematicStore((s) => s.favoriteTemplates);
@@ -205,12 +211,23 @@ export default function QuickAddDevice({
           y: Math.round((position.y - 150) / GRID_SIZE) * GRID_SIZE,
         };
         addDrawBox(centered);
+      } else if (item.kind === "external-endpoint") {
+        const centered = {
+          x: Math.round((position.x - EXTERNAL_ENDPOINT_MIN_WIDTH / 2) / GRID_SIZE) * GRID_SIZE,
+          y: Math.round((position.y - EXTERNAL_ENDPOINT_HEIGHT / 2) / GRID_SIZE) * GRID_SIZE,
+        };
+        addExternalEndpoint(centered);
+        setTimeout(() => {
+          const state = useSchematicStore.getState();
+          const lastDevice = state.nodes.filter((n) => n.type === "device").at(-1);
+          if (lastDevice) reparentNode(lastDevice.id, centered, { skipUndo: true });
+        }, 0);
       } else if (item.kind === "create") {
         onOpenDeviceCreator?.();
       }
       onClose();
     },
-    [addDrawBox, addNote, addRoom, position, onClose, onOpenDeviceCreator],
+    [addDrawBox, addExternalEndpoint, addNote, addRoom, position, reparentNode, onClose, onOpenDeviceCreator],
   );
 
   const selectResult = useCallback(
@@ -253,7 +270,7 @@ export default function QuickAddDevice({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Add device, note, room, draw box..."
+            placeholder="Add device, note, room, endpoint..."
             className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 placeholder:text-[var(--color-text-muted)]"
           />
         </div>
@@ -359,7 +376,7 @@ export default function QuickAddDevice({
                   }`}
                 >
                   <span className="text-[var(--color-text-muted)] text-xs shrink-0">
-                    {result.item.kind === "note" ? "📝" : result.item.kind === "room" ? "▢" : result.item.kind === "draw-box" ? "▭" : "⊞"}
+                    {result.item.kind === "note" ? "📝" : result.item.kind === "room" ? "▢" : result.item.kind === "draw-box" ? "▭" : result.item.kind === "external-endpoint" ? "↗" : "⊞"}
                   </span>
                   <div className="flex flex-col gap-0 flex-1 min-w-0">
                     <span className="text-xs font-medium truncate">{result.label}</span>
