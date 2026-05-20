@@ -151,6 +151,7 @@ export default function DeviceEditor() {
   const [referenceUrl, setReferenceUrl] = useState("");
   const [category, setCategory] = useState("");
   const [color, setColor] = useState<string | undefined>(undefined);
+  const [textColor, setTextColor] = useState<string | undefined>(undefined);
   const [headerColor, setHeaderColor] = useState<string | undefined>(undefined);
   const [ports, setPorts] = useState<PortDraft[]>([]);
 
@@ -231,6 +232,7 @@ export default function DeviceEditor() {
     setReferenceUrl(node.data.referenceUrl ?? tpl?.referenceUrl ?? "");
     setCategory(node.data.category ?? tpl?.category ?? "");
     setColor(node.data.color);
+    setTextColor(node.data.textColor);
     setHeaderColor(node.data.headerColor);
     setPorts(
       node.data.ports.map((p) => ({
@@ -336,6 +338,8 @@ export default function DeviceEditor() {
           label: endpointPort.label.trim() || fallbackPort.label,
           addressable: endpointPort.addressable ?? false,
         }],
+        ...(color ? { color } : {}),
+        ...(textColor ? { textColor } : {}),
         auxiliaryData: [],
       });
       setCreatingNodeId(null);
@@ -390,7 +394,7 @@ export default function DeviceEditor() {
     updateDevice(editingNodeId, data);
     setCreatingNodeId(null); // commit the node — close won't undo it
     close();
-  }, [editingNodeId, ports, label, shortName, useShortName, wrapLabel, hostname, deviceType, manufacturer, modelNumber, referenceUrl, category, color, headerColor, node, updateDevice, close, setCreatingNodeId, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData, searchTermsRaw]);
+  }, [editingNodeId, ports, label, shortName, useShortName, wrapLabel, hostname, deviceType, manufacturer, modelNumber, referenceUrl, category, color, textColor, headerColor, node, updateDevice, close, setCreatingNodeId, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData, searchTermsRaw]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
@@ -967,6 +971,46 @@ export default function DeviceEditor() {
               </>
             )}
           </div>
+
+          {/* External endpoint colors */}
+          {isExternalEndpoint && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 -mt-1">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-[var(--color-text-muted)]">Fill Color</span>
+                <input
+                  type="color"
+                  className="w-6 h-6 rounded border border-[var(--color-border)] cursor-pointer p-0"
+                  value={color ?? "#ffffff"}
+                  onChange={(e) => setColor(e.target.value)}
+                />
+                {color && (
+                  <button
+                    className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+                    onClick={() => setColor(undefined)}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-[var(--color-text-muted)]">Text Color</span>
+                <input
+                  type="color"
+                  className="w-6 h-6 rounded border border-[var(--color-border)] cursor-pointer p-0"
+                  value={textColor ?? "#374151"}
+                  onChange={(e) => setTextColor(e.target.value)}
+                />
+                {textColor && (
+                  <button
+                    className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+                    onClick={() => setTextColor(undefined)}
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Header color picker */}
           {!isExternalEndpoint && <div className="flex items-center gap-2 -mt-1">

@@ -345,6 +345,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
   if (isExternalEndpointData(data) && data.ports.length === 1) {
     const port = data.ports[0];
     const endpointText = data.label.trim() || data.model || "External Endpoint";
+    const endpointFill = data.color ?? "#ffffff";
+    const endpointTextColor = data.textColor ?? "#374151";
     if (!port) {
       return (
         <div
@@ -357,13 +359,14 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             maxWidth: EXTERNAL_ENDPOINT_MAX_WIDTH,
             height: EXTERNAL_ENDPOINT_HEIGHT,
             padding: "0 4px",
+            backgroundColor: endpointFill,
             borderRadius: 2,
             borderColor: isOverlapping ? "#f87171" : selected ? "#1a73e8" : "#9ca3af",
           }}
         >
           <span
             className="block truncate text-[9px] font-medium leading-none text-center whitespace-nowrap"
-            style={{ color: "#374151", fontFamily: "'Inter', system-ui, sans-serif" }}
+            style={{ color: endpointTextColor, fontFamily: "'Inter', system-ui, sans-serif" }}
             title={endpointText}
           >
             {endpointText}
@@ -403,6 +406,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           height: EXTERNAL_ENDPOINT_HEIGHT,
           paddingLeft: 4,
           paddingRight: 4,
+          backgroundColor: endpointFill,
           borderRadius: 2,
           borderColor: isOverlapping ? "#f87171" : selected ? "#1a73e8" : signalColor,
           boxShadow: isOverlapping
@@ -425,7 +429,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
         )}
         <span
           className="block truncate text-[9px] font-medium leading-none text-center whitespace-nowrap"
-          style={{ color: "#374151", fontFamily: "'Inter', system-ui, sans-serif" }}
+          style={{ color: endpointTextColor, fontFamily: "'Inter', system-ui, sans-serif" }}
           title={`${endpointText} (${signalLabel})`}
         >
           {labelPrefix}{endpointText}

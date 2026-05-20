@@ -232,6 +232,8 @@ export interface DeviceData {
   deviceType: string;
   ports: Port[];
   color?: string;
+  /** Optional label/text color for compact visual nodes such as external endpoints. */
+  textColor?: string;
   /** Custom header background color (#9) */
   headerColor?: string;
   /** Original template label — present while device participates in auto-numbering.
