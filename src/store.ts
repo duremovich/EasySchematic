@@ -63,6 +63,7 @@ import {
   isExternalEndpointData,
   snapExternalEndpointY,
 } from "./externalEndpoint";
+import { allocateEdgeId, maxEdgeCounterFromIds, uniquifyEdgeIds } from "./idUtils";
 
 /** Fix UTF-8 → Windows-1252 double-encoding in string values (e.g. → becomes â†').
  *  Applied on import so old/corrupted saves display correctly. */
@@ -692,8 +693,17 @@ function nextNodeId(): string {
 }
 
 let edgeIdCounter = 0;
-function nextEdgeId(): string {
-  return `edge-${++edgeIdCounter}`;
+function nextEdgeId(existingEdges: Iterable<Pick<ConnectionEdge, "id">> = []): string {
+  const usedIds = Array.from(existingEdges, (edge) => edge.id);
+  const allocated = allocateEdgeId(usedIds, edgeIdCounter);
+  edgeIdCounter = allocated.counter;
+  return allocated.id;
+}
+
+function ensureUniqueEdgeIds(edges: ConnectionEdge[]): ConnectionEdge[] {
+  const result = uniquifyEdgeIds(edges, edgeIdCounter);
+  edgeIdCounter = result.counter;
+  return result.edges as ConnectionEdge[];
 }
 
 let roomIdCounter = 0;
@@ -781,8 +791,7 @@ function syncCounters(nodes: SchematicNode[], edges: ConnectionEdge[]) {
     if (nm) noteIdCounter = Math.max(noteIdCounter, Number(nm[1]));
   }
   for (const e of edges) {
-    const m = e.id.match(/^edge-(\d+)$/);
-    if (m) edgeIdCounter = Math.max(edgeIdCounter, Number(m[1]));
+    edgeIdCounter = maxEdgeCounterFromIds([e.id], edgeIdCounter);
   }
 }
 
@@ -1398,8 +1407,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       ...(connectorMismatch ? { connectorMismatch: true } : {}),
       ...(isDirectAttach ? { directAttach: true } : {}),
     };
+    const existingEdges = ensureUniqueEdgeIds(state.edges);
     const newEdge: ConnectionEdge = {
-      id: nextEdgeId(),
+      id: nextEdgeId(existingEdges),
       source: connection.source,
       target: connection.target,
       sourceHandle: connection.sourceHandle,
@@ -1411,7 +1421,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       },
     };
 
-    set({ edges: [...state.edges, newEdge] });
+    set({
+      nodes: existingEdges === state.edges ? state.nodes : reconcileWaypointNodes(state.nodes, existingEdges),
+      edges: [...existingEdges, newEdge],
+    });
     get().saveToLocalStorage();
   },
 
@@ -1726,23 +1739,26 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       };
     });
 
-    const newEdges: ConnectionEdge[] = clipboard.edges.map((e) => ({
-      ...e,
-      id: nextEdgeId(),
-      source: nodeIdMap.get(e.source) ?? e.source,
-      target: nodeIdMap.get(e.target) ?? e.target,
-      sourceHandle: e.sourceHandle ? (portIdMap.get(e.sourceHandle) ?? e.sourceHandle) : e.sourceHandle,
-      targetHandle: e.targetHandle ? (portIdMap.get(e.targetHandle) ?? e.targetHandle) : e.targetHandle,
-    }));
+    const existingEdges = ensureUniqueEdgeIds(state.edges);
+    const newEdges: ConnectionEdge[] = [];
+    for (const e of clipboard.edges) {
+      newEdges.push({
+        ...e,
+        id: nextEdgeId([...existingEdges, ...newEdges]),
+        source: nodeIdMap.get(e.source) ?? e.source,
+        target: nodeIdMap.get(e.target) ?? e.target,
+        sourceHandle: e.sourceHandle ? (portIdMap.get(e.sourceHandle) ?? e.sourceHandle) : e.sourceHandle,
+        targetHandle: e.targetHandle ? (portIdMap.get(e.targetHandle) ?? e.targetHandle) : e.targetHandle,
+      });
+    }
 
     // Deselect existing nodes/edges, add pasted ones as selected
-    const current = get();
     const mergedNodes = [
-      ...current.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
+      ...state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
       ...newNodes,
     ];
     const mergedEdges = [
-      ...current.edges.map((e) => (e.selected ? { ...e, selected: false } : e)),
+      ...existingEdges.map((e) => (e.selected ? { ...e, selected: false } : e)),
       ...newEdges,
     ];
     // Pasted edges may carry manualWaypoints; spawn fresh waypoint nodes for them.
@@ -3245,8 +3261,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       connectorMismatch: true,
       allowIncompatible: true,
     };
+    const existingEdges = ensureUniqueEdgeIds(state.edges);
     const newEdge: ConnectionEdge = {
-      id: nextEdgeId(),
+      id: nextEdgeId(existingEdges),
       source: pending.connection.source,
       target: pending.connection.target,
       sourceHandle: pending.connection.sourceHandle,
@@ -3258,7 +3275,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       },
     };
 
-    set({ edges: [...state.edges, newEdge], pendingIncompatibleConnection: null });
+    set({
+      nodes: existingEdges === state.edges ? state.nodes : reconcileWaypointNodes(state.nodes, existingEdges),
+      edges: [...existingEdges, newEdge],
+      pendingIncompatibleConnection: null,
+    });
     get().saveToLocalStorage();
   },
 
@@ -3402,6 +3423,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       (p) => (p.direction === "output" || p.direction === "bidirectional") && p.signalType === pending.targetPort.signalType,
     );
 
+    const existingEdges = ensureUniqueEdgeIds(state.edges);
     const newEdges: ConnectionEdge[] = [];
 
     if (adapterInput) {
@@ -3412,7 +3434,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...(adapterInput.directAttach ? { directAttach: true } : {}),
       };
       newEdges.push({
-        id: nextEdgeId(),
+        id: nextEdgeId([...existingEdges, ...newEdges]),
         source: pending.connection.source,
         target: adapterId,
         sourceHandle: pending.connection.sourceHandle,
@@ -3433,7 +3455,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...(adapterOutput.directAttach ? { directAttach: true } : {}),
       };
       newEdges.push({
-        id: nextEdgeId(),
+        id: nextEdgeId([...existingEdges, ...newEdges]),
         source: adapterId,
         target: pending.connection.target,
         sourceHandle: outputHandle,
@@ -3448,8 +3470,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     const updatedNodes = renumberNodes([...state.nodes, adapterNode]);
     set({
-      nodes: updatedNodes,
-      edges: [...state.edges, ...newEdges],
+      nodes: existingEdges === state.edges
+        ? updatedNodes
+        : reconcileWaypointNodes(updatedNodes, [...existingEdges, ...newEdges]),
+      edges: [...existingEdges, ...newEdges],
       pendingIncompatibleConnection: null,
     });
     get().saveToLocalStorage();
@@ -4476,7 +4500,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           applyRoomLockState(data.nodes);
           normalizeDrawBoxes(data.nodes);
           syncCounters(data.nodes, data.edges);
-          data.edges = removeOrphanedEdges(data.nodes, data.edges);
+          data.edges = ensureUniqueEdgeIds(removeOrphanedEdges(data.nodes, data.edges));
           const colors = data.signalColors ?? {};
           applySignalColors(colors);
           saveSignalColors({ ...loadSignalColors(), ...colors });
@@ -4554,7 +4578,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       applyRoomLockState(data.nodes);
       normalizeDrawBoxes(data.nodes);
       syncCounters(data.nodes, data.edges);
-      data.edges = removeOrphanedEdges(data.nodes, data.edges);
+      data.edges = ensureUniqueEdgeIds(removeOrphanedEdges(data.nodes, data.edges));
       // Always apply colors — if file has none, reset to defaults
       const colors = data.signalColors ?? {};
       applySignalColors(colors);
@@ -4712,7 +4736,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     applyRoomLockState(nodes);
     normalizeDrawBoxes(nodes);
     syncCounters(nodes, edges);
-    edges = removeOrphanedEdges(nodes, edges);
+    edges = ensureUniqueEdgeIds(removeOrphanedEdges(nodes, edges));
     // Merge imported custom templates with existing ones (avoid duplicates by template key)
     if (data.customTemplates?.length) {
       const existing = get().customTemplates;
@@ -4804,7 +4828,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     pushUndo({ nodes: state.nodes, edges: state.edges });
 
     const mergedNodes = [...state.nodes, ...newNodes];
-    const mergedEdges = [...state.edges, ...newEdges];
+    const mergedEdges = ensureUniqueEdgeIds([...state.edges, ...newEdges]);
 
     syncCounters(mergedNodes, mergedEdges);
     snapNodesToGrid(mergedNodes);
