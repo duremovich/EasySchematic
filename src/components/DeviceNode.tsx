@@ -224,9 +224,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
 
   const isSpeaker = data.deviceType === "speaker";
   const isPatchPanel = data.deviceType === "patch-panel";
-  const nodeStrokeColor = isOverlapping ? "#f87171" : selected ? "#1a73e8" : "var(--color-border)";
-  const contentInsetPx = isSpeaker ? 18 : 12;
-  const dividerInsetPx = isSpeaker ? 18 : 0;
+  const contentInsetPx = isSpeaker ? 30 : 12;
+  const dividerInsetPx = isSpeaker ? 26 : 0;
 
   const leftItems = useMemo(() => {
     const items = buildColumnItems(leftPorts);
@@ -618,11 +617,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
   }
 
   function renderSpeakerShell() {
-    const accentStroke = isOverlapping
-      ? "rgba(248, 113, 113, 0.35)"
+    const lineColor = isOverlapping
+      ? "#f87171"
       : selected
-      ? "rgba(26, 115, 232, 0.35)"
-      : "rgba(100, 116, 139, 0.35)";
+      ? "#1a73e8"
+      : "#111827";
     return (
       <svg
         aria-hidden
@@ -631,31 +630,30 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
         preserveAspectRatio="none"
       >
         <path
-          d="M18 1 H126 L178 50 L126 99 H18 L4 50 Z"
+          d="M42 24 H80 L156 6 V94 L80 76 H42 Z"
           fill="white"
-          stroke={nodeStrokeColor}
-          strokeWidth="2"
+          stroke={lineColor}
+          strokeWidth="2.5"
           strokeLinejoin="round"
         />
-        <path
-          d="M34 24 H96 L132 50 L96 76 H34 L20 50 Z"
+        <line
+          x1="4"
+          y1="36"
+          x2="42"
+          y2="36"
           fill="none"
-          stroke={accentStroke}
-          strokeWidth="1.25"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M116 34 Q142 50 116 66"
-          fill="none"
-          stroke={accentStroke}
-          strokeWidth="1.4"
+          stroke={lineColor}
+          strokeWidth="2.5"
           strokeLinecap="round"
         />
-        <path
-          d="M130 28 Q162 50 130 72"
+        <line
+          x1="4"
+          y1="64"
+          x2="42"
+          y2="64"
           fill="none"
-          stroke={accentStroke}
-          strokeWidth="1.4"
+          stroke={lineColor}
+          strokeWidth="2.5"
           strokeLinecap="round"
         />
       </svg>
