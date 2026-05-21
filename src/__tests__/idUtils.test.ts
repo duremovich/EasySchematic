@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allocateEdgeId, maxEdgeCounterFromIds, uniquifyEdgeIds } from "../idUtils";
+import { allocateEdgeId, maxEdgeCounterFromIds, newLinkedConnectionId, uniquifyEdgeIds } from "../idUtils";
 
 describe("edge id utilities", () => {
   it("counts stub-leg ids as consuming their numeric base", () => {
@@ -16,5 +16,10 @@ describe("edge id utilities", () => {
 
     expect(result.changed).toBe(true);
     expect(result.edges.map((edge) => edge.id)).toEqual(["edge-1", "edge-3", "edge-2"]);
+  });
+
+  it("mints a distinct linked-connection id on every call", () => {
+    const ids = new Set(Array.from({ length: 100 }, () => newLinkedConnectionId()));
+    expect(ids.size).toBe(100);
   });
 });
