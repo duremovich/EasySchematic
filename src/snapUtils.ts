@@ -2,7 +2,7 @@ import type { DeviceData, SchematicNode } from "./types";
 import { portSide } from "./types";
 
 import { GRID_SIZE } from "./gridConstants";
-import { totalAuxHeight, headerBandHeight, HEADER_LABEL_ZONE_PX, HEADER_LABEL_ZONE_2_PX } from "./auxiliaryData";
+import { totalAuxHeight, auxBlockHeight, headerBandHeight, HEADER_LABEL_ZONE_PX, HEADER_LABEL_ZONE_2_PX } from "./auxiliaryData";
 import { resolveDeviceLabel } from "./displayName";
 import { STUB_GAP as STUB_PORT_GAP, STUB_W_EST, STUB_H_EST } from "./stubPlacement";
 import {
@@ -57,11 +57,15 @@ function estimateDeviceHeight(node: SchematicNode): number {
   if (node.type === "device" && isExternalEndpointData(data) && (data.ports?.length ?? 0) <= 1) {
     return EXTERNAL_ENDPOINT_HEIGHT;
   }
+  const isSpeaker = node.type === "device" && data.deviceType === "speaker";
   const ports = data.ports ?? [];
   const left = ports.filter((p) => p.direction !== "bidirectional" && (p.direction === "input" ? !p.flipped : !!p.flipped)).length;
   const right = ports.filter((p) => p.direction !== "bidirectional" && (p.direction === "output" ? !p.flipped : !!p.flipped)).length;
   const bidirs = ports.filter((p) => p.direction === "bidirectional").length;
   const portRows = Math.max(left, right) + bidirs;
+  if (isSpeaker) {
+    return 46 + portRows * 20 + auxBlockHeight(data.auxiliaryData);
+  }
   // Base: 1px top border + 40px header band (min) + 1px header border-b
   //     + 8px port-area pt + rows×20 + 9px port-area pb + 1px bottom border
   //     = 60 + rows×20.
@@ -296,7 +300,8 @@ export function getPortAbsolutePositions(
   }
   const resolved = resolveDeviceLabel(dd, displayDefaults);
   const labelZone = resolved.wrap ? HEADER_LABEL_ZONE_2_PX : HEADER_LABEL_ZONE_PX;
-  const headerBand = headerBandHeight(dd.auxiliaryData, labelZone);
+  const isSpeaker = dd.deviceType === "speaker";
+  const headerBand = isSpeaker ? 0 : headerBandHeight(dd.auxiliaryData, labelZone);
   // Round to integer pixels — absoluteNodePos walks the parent chain summing
   // positions, and any sub-pixel ancestor (older saves, room dragged to non-
   // integer Y) propagates through everything emitted here. The downstream edge
@@ -378,13 +383,15 @@ export function getPortAbsolutePositions(
   ).length;
   let cursor = lrBlockHeight + emptySlotsCount;
 
-  // Y of a port row's vertical center. Layers from device top:
+  // Y of a port row's vertical center. Standard devices layer from device top:
   //   1px top border + headerBand + 1px header border-b + 8px port-area pt
   // For headerBand a 20-multiple, the row center lands on `device.y + 20k`,
   // i.e. exactly on the 20-px routing grid. (The `pt-8` in DeviceNode.tsx is
   // intentional — it compensates for the header band's `border-b` so ports
   // remain grid-aligned; using `pt-9` would push every row off-grid by 1px.)
-  const PORT_AREA_TOP = 1 + headerBand + 1 + 8;
+  // Speakers render their label above the symbol, outside the node box, so the
+  // symbol itself starts closer to the top of the measured node.
+  const PORT_AREA_TOP = isSpeaker ? 28 : 1 + headerBand + 1 + 8;
   const rowCenterY = (row: number) => deviceAbs.y + PORT_AREA_TOP + row * 20 + 10;
 
   // Passthrough block: one "Rear / Front" header row, then passthroughItems.

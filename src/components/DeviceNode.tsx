@@ -541,6 +541,32 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
    *  Keep the band-height formula in sync with `headerBandHeight()` in auxiliaryData.ts —
    *  snapUtils uses it to estimate device height before React Flow measures it. */
   function renderHeaderBand(rows: AuxRow[]) {
+    if (isSpeaker) {
+      return (
+        <div
+          className="absolute left-0 right-0 z-20 px-1 pointer-events-none"
+          style={{ bottom: "calc(100% + 4px)" }}
+        >
+          <div
+            className="text-center text-[11px] font-semibold leading-tight whitespace-normal"
+            style={{
+              color: "var(--color-text-heading)",
+              fontFamily: "'Inter', system-ui, sans-serif",
+              overflowWrap: "anywhere",
+            }}
+            title={displayLabel(resolvedLabel.text)}
+          >
+            {displayLabel(resolvedLabel.text)}
+          </div>
+          {rows.length > 0 && (
+            <div className="mt-0.5 space-y-0.5">
+              {rows.map((row, i) => renderAuxRow(row, i))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
     const bandH = headerBandHeight(data.auxiliaryData, labelZone);
     const content = labelZone + rows.reduce((sum, r) => sum + auxRowHeight(r), 0);
     const totalPad = bandH - content;
@@ -578,32 +604,6 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
         {rows.map((row, i) => renderAuxRow(row, i))}
       </>
     );
-
-    if (isSpeaker) {
-      return (
-        <div
-          className="absolute z-10 pointer-events-none"
-          style={{
-            top: 12,
-            left: 74,
-            right: 28,
-          }}
-        >
-          <div
-            className="truncate text-center text-[11px] font-semibold leading-tight"
-            style={{ color: "#111827", fontFamily: "'Inter', system-ui, sans-serif" }}
-            title={displayLabel(resolvedLabel.text)}
-          >
-            {displayLabel(resolvedLabel.text)}
-          </div>
-          {rows.length > 0 && (
-            <div className="mt-0.5 space-y-0.5">
-              {rows.map((row, i) => renderAuxRow(row, i))}
-            </div>
-          )}
-        </div>
-      );
-    }
 
     return (
       <div
@@ -683,7 +683,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
            + 8px (pt) + 10px (half row) ≡ 0 mod 20.
            The header's `border-b` adds 1px between the band and the port column,
            which the `pt` value (8 not 9) compensates for. */}
-      <div className={isSpeaker ? "relative z-10 pt-[48px] pb-[18px]" : "pt-[8px] pb-[9px]"}>
+      <div className={isSpeaker ? "relative z-10 pt-[28px] pb-[18px]" : "pt-[8px] pb-[9px]"}>
       {/* Input/Output Ports — two independent columns */}
       {(leftPorts.length > 0 || rightPorts.length > 0) && (
         hasSections ? (
