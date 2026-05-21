@@ -581,24 +581,27 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
 
     if (isSpeaker) {
       return (
-        <>
+        <div
+          className="absolute z-10 pointer-events-none"
+          style={{
+            top: 12,
+            left: 74,
+            right: 28,
+          }}
+        >
           <div
-            className="flex flex-col"
-            style={{
-              paddingTop: pt,
-              paddingBottom: pb,
-              paddingLeft: contentInsetPx,
-              paddingRight: contentInsetPx,
-            }}
+            className="truncate text-center text-[11px] font-semibold leading-tight"
+            style={{ color: "#111827", fontFamily: "'Inter', system-ui, sans-serif" }}
+            title={displayLabel(resolvedLabel.text)}
           >
-            {bandContent}
+            {displayLabel(resolvedLabel.text)}
           </div>
-          <div
-            aria-hidden
-            className="h-px bg-[var(--color-border)]/80"
-            style={{ marginLeft: dividerInsetPx, marginRight: dividerInsetPx }}
-          />
-        </>
+          {rows.length > 0 && (
+            <div className="mt-0.5 space-y-0.5">
+              {rows.map((row, i) => renderAuxRow(row, i))}
+            </div>
+          )}
+        </div>
       );
     }
 
@@ -664,9 +667,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     <div
       onDoubleClick={() => setEditingNodeId(id)}
       className={`
-        relative rounded-lg border
-        ${isSpeaker ? "border-transparent bg-transparent" : "bg-white"}
-        ${isSpeaker ? (isOverlapping ? "shadow-lg shadow-red-400/30" : selected ? "shadow-lg shadow-blue-500/20" : "") : (isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]")}
+        relative
+        ${isSpeaker ? "" : "rounded-lg border bg-white"}
+        ${isSpeaker ? "" : (isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]")}
       `}
       style={{ width: DEVICE_NODE_WIDTH }}
     >
@@ -680,7 +683,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
            + 8px (pt) + 10px (half row) ≡ 0 mod 20.
            The header's `border-b` adds 1px between the band and the port column,
            which the `pt` value (8 not 9) compensates for. */}
-      <div className="pt-[8px] pb-[9px]">
+      <div className={isSpeaker ? "relative z-10 pt-[48px] pb-[18px]" : "pt-[8px] pb-[9px]"}>
       {/* Input/Output Ports — two independent columns */}
       {(leftPorts.length > 0 || rightPorts.length > 0) && (
         hasSections ? (
