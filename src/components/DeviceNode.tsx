@@ -25,6 +25,8 @@ type ColumnItem =
   | { type: "port"; port: Port }
   | { type: "section"; name: string };
 
+const DEVICE_NODE_WIDTH = 180;
+
 /** Build a list of ports interleaved with section headers where section changes. */
 function buildColumnItems(ports: Port[]): ColumnItem[] {
   const items: ColumnItem[] = [];
@@ -220,7 +222,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     };
   };
 
+  const isSpeaker = data.deviceType === "speaker";
   const isPatchPanel = data.deviceType === "patch-panel";
+  const nodeStrokeColor = isOverlapping ? "#f87171" : selected ? "#1a73e8" : "var(--color-border)";
+  const contentInsetPx = isSpeaker ? 18 : 12;
+  const dividerInsetPx = isSpeaker ? 18 : 0;
 
   const leftItems = useMemo(() => {
     const items = buildColumnItems(leftPorts);
@@ -257,7 +263,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     return (
       <div
         key={port.id}
-        className={`flex items-center gap-1 ${isLeft ? "pl-3" : "pr-3 justify-end"} h-5 relative`}
+        className={`flex items-center gap-1 ${isLeft ? "" : "justify-end"} h-5 relative`}
+        style={isLeft ? { paddingLeft: contentInsetPx } : { paddingRight: contentInsetPx }}
         onContextMenu={(e) => openPortMenu(e, port)}
       >
         {isLeft && (
@@ -324,7 +331,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
         />
         <span
           className="text-[10px] leading-5 truncate px-3 flex-1 text-center"
-          style={{ color: signalColor }}
+          style={{ color: signalColor, paddingLeft: contentInsetPx, paddingRight: contentInsetPx }}
           title={`${displayLabel(port.label)} (${signalLabel}) — passthrough`}
         >
           ⇔ {displayLabel(port.label)}
@@ -496,8 +503,15 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     const pb = totalPad - pt;
     return (
       <div
-        className="auxiliaryData px-3 border-t border-[var(--color-border)]"
-        style={{ paddingTop: pt, paddingBottom: pb }}
+        className={`auxiliaryData border-t border-[var(--color-border)] ${isSpeaker ? "" : "px-3"}`}
+        style={{
+          paddingTop: pt,
+          paddingBottom: pb,
+          paddingLeft: contentInsetPx,
+          paddingRight: contentInsetPx,
+          marginLeft: dividerInsetPx,
+          marginRight: dividerInsetPx,
+        }}
       >
         {rows.map((row, i) => renderAuxRow(row, i))}
       </div>
@@ -544,15 +558,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           lineHeight: "14px",
         }
       : undefined;
-    return (
-      <div
-        className="px-3 border-b border-[var(--color-border)] rounded-t-lg flex flex-col"
-        style={{
-          backgroundColor: data.headerColor || "var(--color-surface)",
-          paddingTop: pt,
-          paddingBottom: pb,
-        }}
-      >
+    const bandContent = (
+      <>
         <div
           className="flex items-center justify-center"
           style={{ height: labelZone }}
@@ -570,7 +577,88 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           </span>
         </div>
         {rows.map((row, i) => renderAuxRow(row, i))}
+      </>
+    );
+
+    if (isSpeaker) {
+      return (
+        <>
+          <div
+            className="flex flex-col"
+            style={{
+              paddingTop: pt,
+              paddingBottom: pb,
+              paddingLeft: contentInsetPx,
+              paddingRight: contentInsetPx,
+            }}
+          >
+            {bandContent}
+          </div>
+          <div
+            aria-hidden
+            className="h-px bg-[var(--color-border)]/80"
+            style={{ marginLeft: dividerInsetPx, marginRight: dividerInsetPx }}
+          />
+        </>
+      );
+    }
+
+    return (
+      <div
+        className="px-3 border-b border-[var(--color-border)] rounded-t-lg flex flex-col"
+        style={{
+          backgroundColor: data.headerColor || "var(--color-surface)",
+          paddingTop: pt,
+          paddingBottom: pb,
+        }}
+      >
+        {bandContent}
       </div>
+    );
+  }
+
+  function renderSpeakerShell() {
+    const accentStroke = isOverlapping
+      ? "rgba(248, 113, 113, 0.35)"
+      : selected
+      ? "rgba(26, 115, 232, 0.35)"
+      : "rgba(100, 116, 139, 0.35)";
+    return (
+      <svg
+        aria-hidden
+        className="absolute inset-0 h-full w-full pointer-events-none"
+        viewBox={`0 0 ${DEVICE_NODE_WIDTH} 100`}
+        preserveAspectRatio="none"
+      >
+        <path
+          d="M18 1 H126 L178 50 L126 99 H18 L4 50 Z"
+          fill="white"
+          stroke={nodeStrokeColor}
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M34 24 H96 L132 50 L96 76 H34 L20 50 Z"
+          fill="none"
+          stroke={accentStroke}
+          strokeWidth="1.25"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M116 34 Q142 50 116 66"
+          fill="none"
+          stroke={accentStroke}
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+        <path
+          d="M130 28 Q162 50 130 72"
+          fill="none"
+          stroke={accentStroke}
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+      </svg>
     );
   }
 
@@ -578,11 +666,13 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     <div
       onDoubleClick={() => setEditingNodeId(id)}
       className={`
-        relative rounded-lg border bg-white
-        ${isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]"}
+        relative rounded-lg border
+        ${isSpeaker ? "border-transparent bg-transparent" : "bg-white"}
+        ${isSpeaker ? (isOverlapping ? "shadow-lg shadow-red-400/30" : selected ? "shadow-lg shadow-blue-500/20" : "") : (isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]")}
       `}
-      style={{ width: 180 }}
+      style={{ width: DEVICE_NODE_WIDTH }}
     >
+      {isSpeaker && renderSpeakerShell()}
       {/* Header band — merged name strip + header aux rows. Height is always a 20-multiple
            (min 40) so the first port below stays on the pathfinding grid. */}
       {renderHeaderBand(headerAuxRows)}
@@ -602,7 +692,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             <div className="flex-1 min-w-0">
               {leftItems.map((item, i) =>
                 item.type === "section" ? (
-                  <div key={`lsec-${i}`} className="h-5 flex items-end pl-2">
+                  <div
+                    key={`lsec-${i}`}
+                    className="h-5 flex items-end"
+                    style={{ paddingLeft: contentInsetPx }}
+                  >
                     <span className="text-[9px] text-[var(--color-text-muted)] truncate border-b border-[var(--color-border)]/30 w-full pb-0.5 mr-1">
                       {item.name}
                     </span>
@@ -615,7 +709,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             <div className="flex-1 min-w-0">
               {rightItems.map((item, i) =>
                 item.type === "section" ? (
-                  <div key={`rsec-${i}`} className="h-5 flex items-end pr-2">
+                  <div
+                    key={`rsec-${i}`}
+                    className="h-5 flex items-end"
+                    style={{ paddingRight: contentInsetPx }}
+                  >
                     <span className="text-[9px] text-[var(--color-text-muted)] truncate text-right border-b border-[var(--color-border)]/30 w-full pb-0.5 ml-1">
                       {item.name}
                     </span>
@@ -634,7 +732,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
               const rh = right ? handleProps(right, "right") : null;
               return (
                 <div key={i} className="flex justify-between items-center relative h-5">
-                  <div className="flex items-center gap-1 pl-3 min-w-0 flex-1" onContextMenu={left ? (e) => openPortMenu(e, left) : undefined}>
+                  <div
+                    className="flex items-center gap-1 min-w-0 flex-1"
+                    style={{ paddingLeft: contentInsetPx }}
+                    onContextMenu={left ? (e) => openPortMenu(e, left) : undefined}
+                  >
                     {left && lh && (
                       <>
                         <Handle
@@ -656,7 +758,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                       </>
                     )}
                   </div>
-                  <div className="flex items-center gap-1 pr-3 min-w-0 flex-1 justify-end" onContextMenu={right ? (e) => openPortMenu(e, right) : undefined}>
+                  <div
+                    className="flex items-center gap-1 min-w-0 flex-1 justify-end"
+                    style={{ paddingRight: contentInsetPx }}
+                    onContextMenu={right ? (e) => openPortMenu(e, right) : undefined}
+                  >
                     {right && rh && (
                       <>
                         <span
@@ -689,7 +795,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       {data.slots?.some((s) => !s.cardTemplateId && !s.hideWhenEmpty) && (
         <div>
           {data.slots.filter((s) => !s.cardTemplateId && !s.hideWhenEmpty).map((slot) => (
-            <div key={slot.slotId} className="flex justify-center items-center h-5 mx-1">
+            <div
+              key={slot.slotId}
+              className="flex justify-center items-center h-5"
+              style={{ marginLeft: contentInsetPx, marginRight: contentInsetPx }}
+            >
               <span className="text-[9px] text-[var(--color-text-muted)] opacity-40 truncate text-center italic">
                 {displayLabel(slot.label)} (empty)
               </span>
@@ -702,12 +812,12 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       {passthroughPorts.length > 0 && (
         <div>
           <div className="flex h-5">
-            <div className="flex-1 flex items-end pl-2">
+            <div className="flex-1 flex items-end" style={{ paddingLeft: contentInsetPx }}>
               <span className="text-[9px] text-[var(--color-text-muted)] truncate border-b border-[var(--color-border)]/30 w-full pb-0.5 mr-1">
                 Rear
               </span>
             </div>
-            <div className="flex-1 flex items-end pr-2 justify-end">
+            <div className="flex-1 flex items-end justify-end" style={{ paddingRight: contentInsetPx }}>
               <span className="text-[9px] text-[var(--color-text-muted)] truncate text-right border-b border-[var(--color-border)]/30 w-full pb-0.5 ml-1">
                 Front
               </span>
@@ -715,7 +825,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           </div>
           {passthroughItems.map((item, i) =>
             item.type === "section" ? (
-              <div key={`psec-${i}`} className="flex justify-center items-end h-5 mx-1">
+              <div
+                key={`psec-${i}`}
+                className="flex justify-center items-end h-5"
+                style={{ marginLeft: contentInsetPx, marginRight: contentInsetPx }}
+              >
                 <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center">
                   {item.name}
                 </span>
@@ -731,7 +845,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           {bidirItems.map((item, i) => {
             if (item.type === "section") {
               return (
-                <div key={`bsec-${i}`} className="flex justify-center items-end h-5 mx-1">
+                <div
+                  key={`bsec-${i}`}
+                  className="flex justify-center items-end h-5"
+                  style={{ marginLeft: contentInsetPx, marginRight: contentInsetPx }}
+                >
                   <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center">
                     {item.name}
                   </span>
