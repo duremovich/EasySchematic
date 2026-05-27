@@ -379,13 +379,10 @@ export function getPortAbsolutePositions(
   ).length;
   let cursor = lrBlockHeight + emptySlotsCount;
 
-  // Y of a port row's vertical center. Layers from device top:
-  //   1px top border + headerBand + 1px header border-b + 8px port-area pt
-  // For headerBand a 20-multiple, the row center lands on `device.y + 20k`,
-  // i.e. exactly on the 20-px routing grid. (The `pt-8` in DeviceNode.tsx is
-  // intentional — it compensates for the header band's `border-b` so ports
-  // remain grid-aligned; using `pt-9` would push every row off-grid by 1px.)
-  const PORT_AREA_TOP = 1 + headerBand + 1 + 8;
+  // Y of a port row's vertical center. The outer border is drawn by an
+  // absolute overlay in DeviceNode and does not contribute layout height.
+  // Layers from device top: headerBand + 1px header border-b + 9px port-area pt.
+  const PORT_AREA_TOP = headerBand + 1 + 9;
   const rowCenterY = (row: number) => deviceAbs.y + PORT_AREA_TOP + row * 20 + 10;
 
   // Passthrough block: one "Rear / Front" header row, then passthroughItems.

@@ -351,7 +351,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       return (
         <div
           onDoubleClick={() => setEditingNodeId(id)}
-          className="relative inline-flex items-center border bg-white"
+          className="relative flex items-center border bg-white"
           style={{
             boxSizing: "border-box",
             width: "max-content",
@@ -397,7 +397,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     return (
       <div
         onDoubleClick={() => setEditingNodeId(id)}
-        className="relative inline-flex items-center border bg-white"
+        className="relative flex items-center border bg-white"
         style={{
           boxSizing: "border-box",
           width: "max-content",
@@ -587,12 +587,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
            (min 40) so the first port below stays on the pathfinding grid. */}
       {renderHeaderBand(headerAuxRows)}
 
-      {/* Port area — 8px top padding lands handle centers on the 20px grid:
-           1px (outer top border) + headerBand(20-mult) + 1px (header border-b)
-           + 8px (pt) + 10px (half row) ≡ 0 mod 20.
-           The header's `border-b` adds 1px between the band and the port column,
-           which the `pt` value (8 not 9) compensates for. */}
-      <div className="pt-[8px] pb-[9px]">
+      {/* Port area — keep this padding in sync with getPortAbsolutePositions().
+           Nine pixels below the bordered header puts each handle centre on the routing grid. */}
+      <div className="pt-[9px] pb-[8px]">
       {/* Input/Output Ports — two independent columns */}
       {(leftPorts.length > 0 || rightPorts.length > 0) && (
         hasSections ? (
