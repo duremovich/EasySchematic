@@ -25,8 +25,6 @@ type ColumnItem =
   | { type: "port"; port: Port }
   | { type: "section"; name: string };
 
-const DEVICE_NODE_WIDTH = 180;
-
 /** Build a list of ports interleaved with section headers where section changes. */
 function buildColumnItems(ports: Port[]): ColumnItem[] {
   const items: ColumnItem[] = [];
@@ -222,10 +220,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     };
   };
 
-  const isSpeaker = data.deviceType === "speaker";
   const isPatchPanel = data.deviceType === "patch-panel";
-  const contentInsetPx = isSpeaker ? 30 : 12;
-  const dividerInsetPx = isSpeaker ? 26 : 0;
 
   const leftItems = useMemo(() => {
     const items = buildColumnItems(leftPorts);
@@ -262,8 +257,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     return (
       <div
         key={port.id}
-        className={`flex items-center gap-1 ${isLeft ? "" : "justify-end"} h-5 relative`}
-        style={isLeft ? { paddingLeft: contentInsetPx } : { paddingRight: contentInsetPx }}
+        className={`flex items-center gap-1 ${isLeft ? "pl-3" : "pr-3 justify-end"} h-5 relative`}
         onContextMenu={(e) => openPortMenu(e, port)}
       >
         {isLeft && (
@@ -330,7 +324,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
         />
         <span
           className="text-[10px] leading-5 truncate px-3 flex-1 text-center"
-          style={{ color: signalColor, paddingLeft: contentInsetPx, paddingRight: contentInsetPx }}
+          style={{ color: signalColor }}
           title={`${displayLabel(port.label)} (${signalLabel}) — passthrough`}
         >
           ⇔ {displayLabel(port.label)}
@@ -502,15 +496,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     const pb = totalPad - pt;
     return (
       <div
-        className={`auxiliaryData border-t border-[var(--color-border)] ${isSpeaker ? "" : "px-3"}`}
-        style={{
-          paddingTop: pt,
-          paddingBottom: pb,
-          paddingLeft: contentInsetPx,
-          paddingRight: contentInsetPx,
-          marginLeft: dividerInsetPx,
-          marginRight: dividerInsetPx,
-        }}
+        className="auxiliaryData px-3 border-t border-[var(--color-border)]"
+        style={{ paddingTop: pt, paddingBottom: pb }}
       >
         {rows.map((row, i) => renderAuxRow(row, i))}
       </div>
@@ -541,32 +528,6 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
    *  Keep the band-height formula in sync with `headerBandHeight()` in auxiliaryData.ts —
    *  snapUtils uses it to estimate device height before React Flow measures it. */
   function renderHeaderBand(rows: AuxRow[]) {
-    if (isSpeaker) {
-      return (
-        <div
-          className="absolute left-0 right-0 z-20 px-1 pointer-events-none"
-          style={{ bottom: "calc(100% + 4px)" }}
-        >
-          <div
-            className="text-center text-[11px] font-semibold leading-tight whitespace-normal"
-            style={{
-              color: "var(--color-text-heading)",
-              fontFamily: "'Inter', system-ui, sans-serif",
-              overflowWrap: "anywhere",
-            }}
-            title={displayLabel(resolvedLabel.text)}
-          >
-            {displayLabel(resolvedLabel.text)}
-          </div>
-          {rows.length > 0 && (
-            <div className="mt-0.5 space-y-0.5">
-              {rows.map((row, i) => renderAuxRow(row, i))}
-            </div>
-          )}
-        </div>
-      );
-    }
-
     const bandH = headerBandHeight(data.auxiliaryData, labelZone);
     const content = labelZone + rows.reduce((sum, r) => sum + auxRowHeight(r), 0);
     const totalPad = bandH - content;
@@ -583,8 +544,15 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           lineHeight: "14px",
         }
       : undefined;
-    const bandContent = (
-      <>
+    return (
+      <div
+        className="px-3 border-b border-[var(--color-border)] rounded-t-lg flex flex-col"
+        style={{
+          backgroundColor: data.headerColor || "var(--color-surface)",
+          paddingTop: pt,
+          paddingBottom: pb,
+        }}
+      >
         <div
           className="flex items-center justify-center"
           style={{ height: labelZone }}
@@ -602,64 +570,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           </span>
         </div>
         {rows.map((row, i) => renderAuxRow(row, i))}
-      </>
-    );
-
-    return (
-      <div
-        className="px-3 border-b border-[var(--color-border)] rounded-t-lg flex flex-col"
-        style={{
-          backgroundColor: data.headerColor || "var(--color-surface)",
-          paddingTop: pt,
-          paddingBottom: pb,
-        }}
-      >
-        {bandContent}
       </div>
-    );
-  }
-
-  function renderSpeakerShell() {
-    const lineColor = isOverlapping
-      ? "#f87171"
-      : selected
-      ? "#1a73e8"
-      : "#111827";
-    return (
-      <svg
-        aria-hidden
-        className="absolute inset-0 h-full w-full pointer-events-none"
-        viewBox={`0 0 ${DEVICE_NODE_WIDTH} 100`}
-        preserveAspectRatio="none"
-      >
-        <path
-          d="M42 24 H80 L156 6 V94 L80 76 H42 Z"
-          fill="white"
-          stroke={lineColor}
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-        />
-        <line
-          x1="4"
-          y1="36"
-          x2="42"
-          y2="36"
-          fill="none"
-          stroke={lineColor}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-        <line
-          x1="4"
-          y1="64"
-          x2="42"
-          y2="64"
-          fill="none"
-          stroke={lineColor}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        />
-      </svg>
     );
   }
 
@@ -667,13 +578,11 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     <div
       onDoubleClick={() => setEditingNodeId(id)}
       className={`
-        relative
-        ${isSpeaker ? "" : "rounded-lg bg-white"}
-        ${isSpeaker ? "" : (isOverlapping ? "shadow-lg shadow-red-400/30" : selected ? "shadow-lg shadow-blue-500/20" : "")}
+        relative rounded-lg bg-white
+        ${isOverlapping ? "shadow-lg shadow-red-400/30" : selected ? "shadow-lg shadow-blue-500/20" : ""}
       `}
-      style={{ width: DEVICE_NODE_WIDTH }}
+      style={{ width: 180 }}
     >
-      {isSpeaker && renderSpeakerShell()}
       {/* Header band — merged name strip + header aux rows. Height is always a 20-multiple
            (min 40) so the first port below stays on the pathfinding grid. */}
       {renderHeaderBand(headerAuxRows)}
@@ -683,7 +592,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
            + 8px (pt) + 10px (half row) ≡ 0 mod 20.
            The header's `border-b` adds 1px between the band and the port column,
            which the `pt` value (8 not 9) compensates for. */}
-      <div className={isSpeaker ? "relative z-10 pt-[28px] pb-[18px]" : "pt-[8px] pb-[9px]"}>
+      <div className="pt-[8px] pb-[9px]">
       {/* Input/Output Ports — two independent columns */}
       {(leftPorts.length > 0 || rightPorts.length > 0) && (
         hasSections ? (
@@ -693,11 +602,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             <div className="flex-1 min-w-0">
               {leftItems.map((item, i) =>
                 item.type === "section" ? (
-                  <div
-                    key={`lsec-${i}`}
-                    className="h-5 flex items-end"
-                    style={{ paddingLeft: contentInsetPx }}
-                  >
+                  <div key={`lsec-${i}`} className="h-5 flex items-end pl-2">
                     <span className="text-[9px] text-[var(--color-text-muted)] truncate border-b border-[var(--color-border)]/30 w-full pb-0.5 mr-1">
                       {item.name}
                     </span>
@@ -710,11 +615,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             <div className="flex-1 min-w-0">
               {rightItems.map((item, i) =>
                 item.type === "section" ? (
-                  <div
-                    key={`rsec-${i}`}
-                    className="h-5 flex items-end"
-                    style={{ paddingRight: contentInsetPx }}
-                  >
+                  <div key={`rsec-${i}`} className="h-5 flex items-end pr-2">
                     <span className="text-[9px] text-[var(--color-text-muted)] truncate text-right border-b border-[var(--color-border)]/30 w-full pb-0.5 ml-1">
                       {item.name}
                     </span>
@@ -733,11 +634,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
               const rh = right ? handleProps(right, "right") : null;
               return (
                 <div key={i} className="flex justify-between items-center relative h-5">
-                  <div
-                    className="flex items-center gap-1 min-w-0 flex-1"
-                    style={{ paddingLeft: contentInsetPx }}
-                    onContextMenu={left ? (e) => openPortMenu(e, left) : undefined}
-                  >
+                  <div className="flex items-center gap-1 pl-3 min-w-0 flex-1" onContextMenu={left ? (e) => openPortMenu(e, left) : undefined}>
                     {left && lh && (
                       <>
                         <Handle
@@ -759,11 +656,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                       </>
                     )}
                   </div>
-                  <div
-                    className="flex items-center gap-1 min-w-0 flex-1 justify-end"
-                    style={{ paddingRight: contentInsetPx }}
-                    onContextMenu={right ? (e) => openPortMenu(e, right) : undefined}
-                  >
+                  <div className="flex items-center gap-1 pr-3 min-w-0 flex-1 justify-end" onContextMenu={right ? (e) => openPortMenu(e, right) : undefined}>
                     {right && rh && (
                       <>
                         <span
@@ -796,11 +689,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       {data.slots?.some((s) => !s.cardTemplateId && !s.hideWhenEmpty) && (
         <div>
           {data.slots.filter((s) => !s.cardTemplateId && !s.hideWhenEmpty).map((slot) => (
-            <div
-              key={slot.slotId}
-              className="flex justify-center items-center h-5"
-              style={{ marginLeft: contentInsetPx, marginRight: contentInsetPx }}
-            >
+            <div key={slot.slotId} className="flex justify-center items-center h-5 mx-1">
               <span className="text-[9px] text-[var(--color-text-muted)] opacity-40 truncate text-center italic">
                 {displayLabel(slot.label)} (empty)
               </span>
@@ -813,12 +702,12 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       {passthroughPorts.length > 0 && (
         <div>
           <div className="flex h-5">
-            <div className="flex-1 flex items-end" style={{ paddingLeft: contentInsetPx }}>
+            <div className="flex-1 flex items-end pl-2">
               <span className="text-[9px] text-[var(--color-text-muted)] truncate border-b border-[var(--color-border)]/30 w-full pb-0.5 mr-1">
                 Rear
               </span>
             </div>
-            <div className="flex-1 flex items-end justify-end" style={{ paddingRight: contentInsetPx }}>
+            <div className="flex-1 flex items-end pr-2 justify-end">
               <span className="text-[9px] text-[var(--color-text-muted)] truncate text-right border-b border-[var(--color-border)]/30 w-full pb-0.5 ml-1">
                 Front
               </span>
@@ -826,11 +715,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           </div>
           {passthroughItems.map((item, i) =>
             item.type === "section" ? (
-              <div
-                key={`psec-${i}`}
-                className="flex justify-center items-end h-5"
-                style={{ marginLeft: contentInsetPx, marginRight: contentInsetPx }}
-              >
+              <div key={`psec-${i}`} className="flex justify-center items-end h-5 mx-1">
                 <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center">
                   {item.name}
                 </span>
@@ -846,11 +731,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           {bidirItems.map((item, i) => {
             if (item.type === "section") {
               return (
-                <div
-                  key={`bsec-${i}`}
-                  className="flex justify-center items-end h-5"
-                  style={{ marginLeft: contentInsetPx, marginRight: contentInsetPx }}
-                >
+                <div key={`bsec-${i}`} className="flex justify-center items-end h-5 mx-1">
                   <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center">
                     {item.name}
                   </span>
@@ -915,18 +796,16 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       )}
       {renderFooterAuxBlock(footerAuxRows)}
       </div>
-      {!isSpeaker && (
-        <div
-          aria-hidden
-          className={`absolute inset-0 rounded-lg border pointer-events-none ${
-            isOverlapping
-              ? "border-red-400"
-              : selected
-              ? "border-blue-500"
-              : "border-[var(--color-border)]"
-          }`}
-        />
-      )}
+      <div
+        aria-hidden
+        className={`absolute inset-0 rounded-lg border pointer-events-none ${
+          isOverlapping
+            ? "border-red-400"
+            : selected
+            ? "border-blue-500"
+            : "border-[var(--color-border)]"
+        }`}
+      />
     </div>
   );
 }
