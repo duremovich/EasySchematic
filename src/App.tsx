@@ -863,7 +863,7 @@ function SchematicCanvas() {
           const state = useSchematicStore.getState();
           const lastDevice = state.nodes.filter((n) => n.type === "device").at(-1);
           if (lastDevice) {
-            reparentNode(lastDevice.id, position, { skipUndo: true });
+            reparentNode(lastDevice.id, lastDevice.position, { skipUndo: true });
 
             const updated = useSchematicStore.getState();
             const device = updated.nodes.find((n) => n.id === lastDevice.id);
@@ -1234,7 +1234,7 @@ function SchematicCanvas() {
       const snap = computeSnap(draggedNode as SchematicNode, state.nodes, {
         useShortNames: state.useShortNames,
         wrapDeviceLabels: state.wrapDeviceLabels,
-      });
+      }, state.edges);
       setSnapGuides(snap.guides);
 
       // Group drag (#134): snap the anchor and apply that delta uniformly to
@@ -1319,7 +1319,7 @@ function SchematicCanvas() {
         const snap = computeSnap(draggedNode as SchematicNode, state.nodes, {
           useShortNames: state.useShortNames,
           wrapDeviceLabels: state.wrapDeviceLabels,
-        });
+        }, state.edges);
         const dx = snap.x - draggedNode.position.x;
         const dy = snap.y - draggedNode.position.y;
         const draggedIds = new Set(draggedNodes.map((n) => n.id));
@@ -1367,7 +1367,7 @@ function SchematicCanvas() {
       const snap = computeSnap(draggedNode as SchematicNode, state.nodes, {
         useShortNames: state.useShortNames,
         wrapDeviceLabels: state.wrapDeviceLabels,
-      });
+      }, state.edges);
       let finalX = snap.x;
       let finalY = snap.y;
 

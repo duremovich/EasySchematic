@@ -1,4 +1,4 @@
-import type { DeviceData, SchematicNode } from "./types";
+import type { ConnectionEdge, DeviceData, SchematicNode } from "./types";
 import { portSide } from "./types";
 
 import { GRID_SIZE } from "./gridConstants";
@@ -473,7 +473,7 @@ export function getPortAbsolutePositions(
   return out;
 }
 
-type CandidateKind = "edge" | "center" | "port" | "stub";
+type CandidateKind = "edge" | "center" | "port" | "connected-port" | "stub";
 
 interface AxisCandidate {
   /** How much to shift dragged.position to land on this alignment. */
@@ -487,10 +487,15 @@ interface AxisCandidate {
 
 /**
  * Pick the best candidate within SNAP_THRESHOLD. Among candidates within
- * threshold, port-snap wins over edge/center/stub snap so stubs prefer the
- * port they conceptually belong to over a coincidental device-edge alignment.
+ * threshold, a connected port wins over any nearby port, and any port wins
+ * over edge/center/stub alignment.
  */
 function pickBest(candidates: AxisCandidate[]): AxisCandidate | null {
+  const priority = (kind: CandidateKind) => {
+    if (kind === "connected-port") return 2;
+    if (kind === "port") return 1;
+    return 0;
+  };
   let best: AxisCandidate | null = null;
   for (const c of candidates) {
     if (Math.abs(c.delta) > SNAP_THRESHOLD) continue;
@@ -498,11 +503,9 @@ function pickBest(candidates: AxisCandidate[]): AxisCandidate | null {
       best = c;
       continue;
     }
-    const cIsPort = c.kind === "port";
-    const bestIsPort = best.kind === "port";
-    if (cIsPort && !bestIsPort) {
+    if (priority(c.kind) > priority(best.kind)) {
       best = c;
-    } else if (!cIsPort && bestIsPort) {
+    } else if (priority(c.kind) < priority(best.kind)) {
       // keep best
     } else if (Math.abs(c.delta) < Math.abs(best.delta)) {
       best = c;
@@ -519,6 +522,7 @@ export function computeSnap(
   draggedNode: SchematicNode,
   allNodes: SchematicNode[],
   displayDefaults: DisplayDefaults = DEFAULT_DISPLAY,
+  edges: readonly ConnectionEdge[] = [],
 ): SnapResult {
   // Build nodeMap with a for-loop (skips the intermediate tuple array that
   // `new Map(allNodes.map(...))` would allocate).
@@ -535,12 +539,16 @@ export function computeSnap(
   const dw = draggedAbs.right - draggedAbs.left;
   const dh = draggedAbs.bottom - draggedAbs.top;
   const isDraggedRoom = draggedNode.type === "room";
+  const isExternalEndpoint = draggedNode.type === "device" && isExternalEndpointData(draggedNode.data as DeviceData);
   const draggedParentId = draggedNode.parentId;
 
   // Single pass: filter, compute absRect for survivors, run top-K via in-place
   // bubble-insert. No transient {node, rect} or {c, dist} wrappers.
   const topRects: Rect[] = [];
   const topDistsSq: number[] = [];
+  const nearbyDevices: SchematicNode[] = [];
+  const nearbyDeviceRects: Rect[] = [];
+  const nearbyDeviceDistsSq: number[] = [];
 
   for (const n of allNodes) {
     if (n.id === draggedNode.id) continue;
@@ -562,6 +570,9 @@ export function computeSnap(
     const r = absRect(n, nodeMap);
     const dSq = bboxDistSq(draggedAbs, r);
     if (dSq > MAX_SNAP_DISTANCE_SQ) continue;
+    if (isExternalEndpoint && n.type === "device") {
+      insertTopKWithNode(nearbyDevices, nearbyDeviceRects, nearbyDeviceDistsSq, NEAREST_K_STUB, n, r, dSq);
+    }
     insertTopK(topRects, topDistsSq, NEAREST_K_DEVICE, r, dSq);
   }
 
@@ -571,8 +582,59 @@ export function computeSnap(
     pushBoxCandidates(xCands, yCands, draggedAbs, topRects[i], "edge", "center");
   }
 
+  if (isExternalEndpoint) {
+    const connectedHandles = new Map<string, Set<string>>();
+    for (const edge of edges) {
+      let nodeId: string | undefined;
+      let handleId: string | null | undefined;
+      if (edge.source === draggedNode.id) {
+        nodeId = edge.target;
+        handleId = edge.targetHandle;
+      } else if (edge.target === draggedNode.id) {
+        nodeId = edge.source;
+        handleId = edge.sourceHandle;
+      }
+      if (!nodeId || !handleId) continue;
+      let handles = connectedHandles.get(nodeId);
+      if (!handles) {
+        handles = new Set<string>();
+        connectedHandles.set(nodeId, handles);
+      }
+      handles.add(handleId);
+    }
+
+    for (const [nodeId, exactHandles] of connectedHandles) {
+      const device = nodeMap.get(nodeId);
+      if (!device || device.type !== "device") continue;
+      const rect = absRect(device, nodeMap);
+      for (const port of getPortAbsolutePositions(device, nodeMap, displayDefaults)) {
+        if (!exactHandles.has(port.handleId)) continue;
+        yCands.push({
+          delta: port.absY - draggedAbs.centerY,
+          guideAbsPos: port.absY,
+          anchorAbsRect: rect,
+          kind: "connected-port",
+        });
+      }
+    }
+
+    for (let i = 0; i < nearbyDevices.length; i++) {
+      const device = nearbyDevices[i];
+      const rect = nearbyDeviceRects[i];
+      for (const port of getPortAbsolutePositions(device, nodeMap, displayDefaults)) {
+        yCands.push({
+          delta: port.absY - draggedAbs.centerY,
+          guideAbsPos: port.absY,
+          anchorAbsRect: rect,
+          kind: "port",
+        });
+      }
+    }
+  }
+
+  const bestY = isExternalEndpoint ? pickBest(yCands) : null;
   const result = finalizeSnap(draggedNode, draggedAbs, dw, dh, xCands, yCands, nodeMap);
-  if (draggedNode.type === "device" && isExternalEndpointData(draggedNode.data as DeviceData)) {
+  if (isExternalEndpoint && bestY?.kind !== "port" && bestY?.kind !== "connected-port") {
     const dragOff = parentOffsetFromMap(draggedNode, nodeMap);
     return {
       ...result,
@@ -1138,11 +1200,11 @@ export function enforceMinSpacing(
 
   if (!changed) return null;
 
-  // Compact endpoint handles sit at box centre; ordinary devices align by top edge.
+  // Do not overwrite compact endpoint port-row placement with background-grid snapping.
   newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-  newY = draggedNode.type === "device" && isExternalEndpointData(draggedNode.data as DeviceData)
-    ? snapExternalEndpointY(newY)
-    : Math.round(newY / GRID_SIZE) * GRID_SIZE;
+  if (!(draggedNode.type === "device" && isExternalEndpointData(draggedNode.data as DeviceData))) {
+    newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+  }
 
   return { x: newX, y: newY };
 }
