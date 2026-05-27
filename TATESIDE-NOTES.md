@@ -122,6 +122,24 @@ Current behavior:
 - Direction matching follows AV logic: a block output connects to the external endpoint input, and a block input connects to the external endpoint output.
 - Bidirectional external endpoints expose separate `-in` and `-out` sides so the connection direction is unambiguous.
 
+### Trackpad Navigation
+
+Commit: `6486105` - `Add explicit trackpad navigation mode`
+
+Intent:
+
+- Trackpad users should be able to pan naturally with two fingers and zoom only by pinching, without first moving sideways to trigger detection.
+- Hardware input choice is a user/browser preference, not part of the saved schematic drawing data.
+
+Current behavior:
+
+- `Edit > Preferences > Canvas > Navigation input` offers `Automatic`, `Mouse wheel`, and `Trackpad`.
+- In `Trackpad` mode, two-finger movement pans the schematic immediately in both axes, including pure vertical movement from the first event.
+- In `Trackpad` mode, opening or closing two fingers still pinch-zooms around the pointer position.
+- The same trackpad mode is applied to print sheet navigation.
+- `Automatic` retains the existing detection behavior for users who do not select a device mode.
+- Confirmed locally on the Tateside setup that `Trackpad` mode works as intended.
+
 ## Useful Runtime Checks
 
 Test live site:
@@ -145,6 +163,6 @@ We are working on my fork of EasySchematic at C:\Users\seanl\Documents\codex\Eas
 It is deployed on my VPS at https://schematic.tateside.online.
 My GitHub fork is https://github.com/seanliamdarcy-code/EasySchematic.
 The original upstream is https://github.com/duremovich/EasySchematic.
-We added Tateside branding, a Draw Box tool, and External Endpoint nodes.
+We added Tateside branding, a Draw Box tool, External Endpoint nodes, and explicit Trackpad navigation mode.
 Please read TATESIDE-NOTES.md and inspect git log/status before making changes.
 ```
