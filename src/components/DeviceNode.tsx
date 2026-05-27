@@ -668,8 +668,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       onDoubleClick={() => setEditingNodeId(id)}
       className={`
         relative
-        ${isSpeaker ? "" : "rounded-lg border bg-white"}
-        ${isSpeaker ? "" : (isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]")}
+        ${isSpeaker ? "" : "rounded-lg bg-white"}
+        ${isSpeaker ? "" : (isOverlapping ? "shadow-lg shadow-red-400/30" : selected ? "shadow-lg shadow-blue-500/20" : "")}
       `}
       style={{ width: DEVICE_NODE_WIDTH }}
     >
@@ -915,6 +915,18 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       )}
       {renderFooterAuxBlock(footerAuxRows)}
       </div>
+      {!isSpeaker && (
+        <div
+          aria-hidden
+          className={`absolute inset-0 rounded-lg border pointer-events-none ${
+            isOverlapping
+              ? "border-red-400"
+              : selected
+              ? "border-blue-500"
+              : "border-[var(--color-border)]"
+          }`}
+        />
+      )}
     </div>
   );
 }

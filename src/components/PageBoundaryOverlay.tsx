@@ -672,7 +672,7 @@ function PageOverlay({
             y={tbTop}
             width={tbBoxW}
             height={tbHeight}
-            fill="none"
+            fill="#ffffff"
             stroke="#000000"
             strokeWidth={stroke}
           />
