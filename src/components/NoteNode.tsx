@@ -16,8 +16,12 @@ const SIZES = [
   { label: "L", size: "5" },
 ] as const;
 
+const DEFAULT_FILL_COLOR = "#fffbeb";
+const DEFAULT_BORDER_COLOR = "#fcd34d";
+
 function NoteNodeComponent({ id, data, selected }: NodeProps<NoteNodeType>) {
   const updateNoteHtml = useSchematicStore((s) => s.updateNoteHtml);
+  const updateNoteStyle = useSchematicStore((s) => s.updateNoteStyle);
   const pushSnapshot = useSchematicStore((s) => s.pushSnapshot);
   const [editing, setEditing] = useState(false);
   const [activeFormats, setActiveFormats] = useState<Set<string>>(new Set());
@@ -98,6 +102,9 @@ function NoteNodeComponent({ id, data, selected }: NodeProps<NoteNodeType>) {
     refreshFormats();
   }, [refreshFormats]);
 
+  const fillColor = data.fillColor ?? DEFAULT_FILL_COLOR;
+  const borderColor = data.borderColor ?? DEFAULT_BORDER_COLOR;
+
   return (
     <>
       <NodeResizer
@@ -110,11 +117,14 @@ function NoteNodeComponent({ id, data, selected }: NodeProps<NoteNodeType>) {
       {/* nodrag + nowheel on the whole container when editing so React Flow doesn't intercept */}
       <div
         ref={containerRef}
-        className={`w-full h-full rounded border bg-amber-50 flex flex-col ${
+        className={`w-full h-full rounded border flex flex-col ${
           editing ? "nodrag nowheel" : ""
-        } ${
-          selected ? "border-amber-400 shadow-md shadow-amber-200/40" : "border-amber-300/60"
         }`}
+        style={{
+          backgroundColor: fillColor,
+          borderColor,
+          boxShadow: selected ? "0 0 0 1px #f59e0b, 0 4px 6px rgba(251, 191, 36, 0.18)" : undefined,
+        }}
       >
         {/* Formatting toolbar — visible only when editing */}
         {editing && (
@@ -163,6 +173,52 @@ function NoteNodeComponent({ id, data, selected }: NodeProps<NoteNodeType>) {
               title="Bullet list"
             >
               &bull;
+            </button>
+          </div>
+        )}
+        {editing && (
+          <div
+            className="flex items-center gap-1.5 px-1.5 py-1 border-b border-amber-300/40 bg-amber-100/60 text-[9px] text-amber-800"
+            onMouseDown={(e) => e.preventDefault()}
+          >
+            <span>Fill</span>
+            <input
+              type="color"
+              value={fillColor === "transparent" ? DEFAULT_FILL_COLOR : fillColor}
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => updateNoteStyle(id, { fillColor: e.target.value })}
+              className="w-4 h-4 border-0 p-0 cursor-pointer"
+              title="Fill colour"
+            />
+            <button
+              onMouseDown={(e) => {
+                e.preventDefault();
+                updateNoteStyle(id, { fillColor: "transparent" });
+              }}
+              className={`px-1 rounded border ${fillColor === "transparent" ? "bg-amber-300/80 border-amber-400" : "border-amber-300 hover:bg-amber-200/60"}`}
+              title="Transparent fill"
+            >
+              Clear
+            </button>
+            <div className="w-px h-3 bg-amber-300/60 mx-0.5" />
+            <span>Line</span>
+            <input
+              type="color"
+              value={borderColor === "transparent" ? DEFAULT_BORDER_COLOR : borderColor}
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => updateNoteStyle(id, { borderColor: e.target.value })}
+              className="w-4 h-4 border-0 p-0 cursor-pointer"
+              title="Line colour"
+            />
+            <button
+              onMouseDown={(e) => {
+                e.preventDefault();
+                updateNoteStyle(id, { borderColor: "transparent" });
+              }}
+              className={`px-1 rounded border ${borderColor === "transparent" ? "bg-amber-300/80 border-amber-400" : "border-amber-300 hover:bg-amber-200/60"}`}
+              title="Transparent line"
+            >
+              Clear
             </button>
           </div>
         )}

@@ -335,6 +335,10 @@ export interface NoteData {
   [key: string]: unknown;
   /** HTML content from contentEditable */
   html: string;
+  /** Background fill color, or "transparent" for text-only notes. */
+  fillColor?: string;
+  /** Outline color, or "transparent" for borderless notes. */
+  borderColor?: string;
 }
 
 export type NoteNode = Node<NoteData, "note">;

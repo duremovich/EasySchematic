@@ -327,6 +327,7 @@ interface SchematicState {
   toggleEquipmentRack: (nodeId: string) => void;
   addNote: (position: { x: number; y: number }) => void;
   updateNoteHtml: (nodeId: string, html: string) => void;
+  updateNoteStyle: (nodeId: string, data: Partial<Pick<import("./types").NoteData, "fillColor" | "borderColor">>) => void;
   reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }, options?: { skipUndo?: boolean }) => void;
   /** Re-evaluate room membership for every non-room node. Used after a room is
    *  created, resized, or moved so devices get parented/unparented to match
@@ -2864,6 +2865,19 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       nodes: get().nodes.map((n) =>
         n.id === nodeId && n.type === "note"
           ? { ...n, data: { ...n.data, html } } as SchematicNode
+          : n,
+      ),
+    });
+    get().saveToLocalStorage();
+  },
+
+  updateNoteStyle: (nodeId, data) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      nodes: state.nodes.map((n) =>
+        n.id === nodeId && n.type === "note"
+          ? { ...n, data: { ...n.data, ...data } } as SchematicNode
           : n,
       ),
     });
