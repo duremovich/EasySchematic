@@ -105,7 +105,7 @@ export default function MenuSubmenu({ label, children, minWidth = 160 }: Props) 
             overflowY: pos.maxHeight ? "auto" : undefined,
             visibility: pos.ready ? "visible" : "hidden",
           }}
-          onMouseEnter={openNow}
+          onMouseEnter={cancelClose}
           onMouseLeave={scheduleClose}
           onClick={(e) => e.stopPropagation()}
         >
