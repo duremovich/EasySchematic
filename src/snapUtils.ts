@@ -9,6 +9,7 @@ import {
   EXTERNAL_ENDPOINT_HEIGHT,
   estimateExternalEndpointWidth,
   isExternalEndpointData,
+  snapExternalEndpointY,
 } from "./externalEndpoint";
 
 // Must be >= half the grid size so alignment snapping works with grid-snapped positions.
@@ -570,7 +571,15 @@ export function computeSnap(
     pushBoxCandidates(xCands, yCands, draggedAbs, topRects[i], "edge", "center");
   }
 
-  return finalizeSnap(draggedNode, draggedAbs, dw, dh, xCands, yCands, nodeMap);
+  const result = finalizeSnap(draggedNode, draggedAbs, dw, dh, xCands, yCands, nodeMap);
+  if (draggedNode.type === "device" && isExternalEndpointData(draggedNode.data as DeviceData)) {
+    const dragOff = parentOffsetFromMap(draggedNode, nodeMap);
+    return {
+      ...result,
+      y: snapExternalEndpointY(result.y + dragOff.dy) - dragOff.dy,
+    };
+  }
+  return result;
 }
 
 /** Push the 5 X-axis + 5 Y-axis edge/center alignment candidates for one
@@ -1129,9 +1138,11 @@ export function enforceMinSpacing(
 
   if (!changed) return null;
 
-  // Snap corrected position to grid
+  // Compact endpoint handles sit at box centre; ordinary devices align by top edge.
   newX = Math.round(newX / GRID_SIZE) * GRID_SIZE;
-  newY = Math.round(newY / GRID_SIZE) * GRID_SIZE;
+  newY = draggedNode.type === "device" && isExternalEndpointData(draggedNode.data as DeviceData)
+    ? snapExternalEndpointY(newY)
+    : Math.round(newY / GRID_SIZE) * GRID_SIZE;
 
   return { x: newX, y: newY };
 }

@@ -1,4 +1,5 @@
 import type { DeviceData, DeviceTemplate, Port, PortDirection } from "./types";
+import { GRID_SIZE } from "./gridConstants";
 
 export const EXTERNAL_ENDPOINT_DEVICE_TYPE = "external-endpoint";
 export const EXTERNAL_ENDPOINT_DEFAULT_LABEL = "External Endpoint";
@@ -7,6 +8,11 @@ export const EXTERNAL_ENDPOINT_PORT_LABEL = "Endpoint";
 export const EXTERNAL_ENDPOINT_MIN_WIDTH = 40;
 export const EXTERNAL_ENDPOINT_MAX_WIDTH = 520;
 export const EXTERNAL_ENDPOINT_HEIGHT = 14;
+
+/** Compact endpoint handles sit at the vertical centre, so snap that centre to the cable grid. */
+export function snapExternalEndpointY(y: number): number {
+  return Math.round((y + EXTERNAL_ENDPOINT_HEIGHT / 2) / GRID_SIZE) * GRID_SIZE - EXTERNAL_ENDPOINT_HEIGHT / 2;
+}
 
 export function isExternalEndpointData(
   data: Pick<DeviceData | DeviceTemplate, "deviceType"> | null | undefined,

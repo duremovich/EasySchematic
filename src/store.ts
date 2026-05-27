@@ -61,6 +61,7 @@ import {
   EXTERNAL_ENDPOINT_HEIGHT,
   estimateExternalEndpointWidth,
   isExternalEndpointData,
+  snapExternalEndpointY,
 } from "./externalEndpoint";
 
 /** Fix UTF-8 → Windows-1252 double-encoding in string values (e.g. → becomes â†').
@@ -197,14 +198,15 @@ export { GRID_SIZE } from "./gridConstants";
 import { GRID_SIZE } from "./gridConstants";
 
 /** Snap all node positions to the grid. Mutates the array in place.
- *  Stub labels are skipped — they store sub-grid Y to center the box on a
- *  port row (box height ≈13–14px, half of which would round away). Snapping
- *  them shifted the label down a few px on every load. */
+ *  Compact connection labels are centre-snapped vertically because their
+ *  side handles sit halfway down a 14-px box. */
 function snapNodesToGrid(nodes: SchematicNode[]): SchematicNode[] {
   for (const n of nodes) {
     if (n.type === "stub-label") continue;
     n.position.x = Math.round(n.position.x / GRID_SIZE) * GRID_SIZE;
-    n.position.y = Math.round(n.position.y / GRID_SIZE) * GRID_SIZE;
+    n.position.y = n.type === "device" && isExternalEndpointData(n.data as DeviceData)
+      ? snapExternalEndpointY(n.position.y)
+      : Math.round(n.position.y / GRID_SIZE) * GRID_SIZE;
   }
   return nodes;
 }
@@ -2699,7 +2701,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const newNode: DeviceNode = {
       id: nextNodeId(),
       type: "device",
-      position,
+      position: { ...position, y: snapExternalEndpointY(position.y) },
       data: createExternalEndpointData(),
       style: { height: EXTERNAL_ENDPOINT_HEIGHT },
       selected: true,
@@ -2894,11 +2896,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       }
       return;
     }
+    const normalizedPosition = node.type === "device" && isExternalEndpointData(node.data as DeviceData)
+      ? { ...absolutePosition, y: snapExternalEndpointY(absolutePosition.y) }
+      : absolutePosition;
     const isRoom = node.type === "room";
     const nodeW = fallbackNodeWidth(node);
     const nodeH = fallbackNodeHeight(node);
-    const centerX = absolutePosition.x + nodeW / 2;
-    const centerY = absolutePosition.y + nodeH / 2;
+    const centerX = normalizedPosition.x + nodeW / 2;
+    const centerY = normalizedPosition.y + nodeH / 2;
 
     const targetRoom = findBestEnclosingRoom(nodeId, isRoom, centerX, centerY, state.nodes, nodeMap);
 
@@ -2919,15 +2924,15 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           ...n,
           parentId: newParent,
           position: {
-            x: absolutePosition.x - targetAbsPos.x,
-            y: absolutePosition.y - targetAbsPos.y,
+            x: normalizedPosition.x - targetAbsPos.x,
+            y: normalizedPosition.y - targetAbsPos.y,
           },
         };
       } else {
         return {
           ...n,
           parentId: undefined,
-          position: absolutePosition,
+          position: normalizedPosition,
         };
       }
     });
