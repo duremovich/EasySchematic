@@ -56,7 +56,7 @@
 - **Cable length** — editable per-connection field, tracked in cable schedule and pack list
 - **Estimated cable length** — auto-populated from room-to-room distances when both endpoints are inside placed rooms; flows into the cable schedule, patch panel schedule, and pack list
 - **Multicable support** — cable accessory templates (snakes, socapex), trunk ports, break-in/break-out devices
-- **Cable ID labels** — auto-assigned with type-prefix naming (e.g. "SDI-1", "HDMI-2") or sequential ("Cable 1", "Cable 2")
+- **Cable ID labels** — auto-assigned with type-prefix naming (e.g. "SDI-1", "HDMI-2") or sequential ("Cable 1", "Cable 2"), with per-connection overrides from the right-click menu and cable schedule
 - **Line jump arcs** at connection crossings
 - **Stubbed connections** — render as short stubs with destination labels (device name, optional port, room, page) instead of full routed lines; drag labels to reposition, add intermediate waypoints via right-click. Globally toggle port-name display and page-number mode (cross-page only / always / never), or override per connection.
 - **Connector mismatch override** — force-connect ports with incompatible connectors

@@ -221,7 +221,7 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
-  const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable" | "source" | "target">(false);
+  const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable" | "source" | "target" | "cableId">(false);
   const [labelValue, setLabelValue] = useState("");
 
   const setEdgeColor = useCallback((hex: string) => {
@@ -257,6 +257,14 @@ export default function EdgeContextMenu() {
     setEditingLabel("multicable");
   }, [menu]);
 
+  const setCableId = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    setLabelValue((edge?.data?.cableId as string) ?? "");
+    setEditingLabel("cableId");
+  }, [menu]);
+
   const setSourceEndLabel = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
@@ -280,6 +288,7 @@ export default function EdgeContextMenu() {
       editingLabel === "multicable" ? "multicableLabel"
       : editingLabel === "source" ? "sourceLabel"
       : editingLabel === "target" ? "targetLabel"
+      : editingLabel === "cableId" ? "cableId"
       : "label";
     store.patchEdgeData(menu.edgeId, { [field]: labelValue.trim() || undefined });
     useSchematicStore.setState({ edgeContextMenu: null });
@@ -432,6 +441,7 @@ export default function EdgeContextMenu() {
           {editingLabel === "multicable" ? "Cable Label"
             : editingLabel === "source" ? "Source-end Label"
             : editingLabel === "target" ? "Target-end Label"
+            : editingLabel === "cableId" ? "Cable ID"
             : "Midpoint Label"}
         </div>
         <input
@@ -446,7 +456,11 @@ export default function EdgeContextMenu() {
               useSchematicStore.setState({ edgeContextMenu: null });
             }
           }}
-          placeholder={editingLabel === "multicable" ? "e.g. Audio Snake A" : "e.g. Program Feed"}
+          placeholder={editingLabel === "multicable"
+            ? "e.g. Audio Snake A"
+            : editingLabel === "cableId"
+              ? "e.g. SPK-001-HL"
+              : "e.g. Program Feed"}
           autoFocus
         />
         <div className="flex justify-end gap-1 mt-1.5">
@@ -497,6 +511,7 @@ export default function EdgeContextMenu() {
       {isTrunkEdge && (
         <MenuItem label="Set Cable Label..." onClick={setCableLabel} />
       )}
+      <MenuItem label="Set Cable ID..." onClick={setCableId} />
       <MenuItem
         label={isCableIdHidden ? "Show Cable ID" : "Hide Cable ID"}
         onClick={toggleHideCableId}

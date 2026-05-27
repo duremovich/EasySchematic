@@ -243,8 +243,9 @@ export default function ConnectionsPage() {
       </ul>
       <p>
         Use the <strong>View</strong> menu to toggle cable labels on or off across the entire canvas. You can also
-        hide the label on a single connection by right-clicking it and choosing <strong>Hide Label</strong>. To start
-        fresh, use the option to <strong>Clear All Cable IDs</strong> from the same menu.
+        right-click a connection to set a custom <strong>Cable ID</strong>, or hide the label on a single connection
+        by choosing <strong>Hide Cable ID</strong>. To start fresh, use the option to
+        <strong>Clear All Cable IDs</strong> from the same menu.
       </p>
 
       <h2>Line jump arcs</h2>
