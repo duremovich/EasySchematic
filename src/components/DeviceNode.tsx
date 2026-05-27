@@ -388,11 +388,12 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       direction === "bidirectional" ? `${port.id}-out`
       : direction === "passthrough" ? `${port.id}-front`
       : port?.id;
-    const labelPrefix =
-      direction === "input" ? "← "
-      : direction === "output" ? "→ "
-      : direction === "passthrough" ? "⇔ "
-      : "↔ ";
+    const leadingArrow =
+      direction === "output" ? "←"
+      : direction === "passthrough" ? "⇔"
+      : direction === "bidirectional" ? "↔"
+      : null;
+    const trailingArrow = direction === "input" ? "→" : null;
 
     return (
       <div
@@ -428,11 +429,13 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           />
         )}
         <span
-          className="block truncate text-[9px] font-medium leading-none text-center whitespace-nowrap"
+          className="flex min-w-0 items-center gap-0.5 text-[9px] font-medium leading-none text-center whitespace-nowrap"
           style={{ color: endpointTextColor, fontFamily: "'Inter', system-ui, sans-serif" }}
           title={`${endpointText} (${signalLabel})`}
         >
-          {labelPrefix}{endpointText}
+          {leadingArrow && <span className="shrink-0">{leadingArrow}</span>}
+          <span className="truncate">{endpointText}</span>
+          {trailingArrow && <span className="shrink-0">{trailingArrow}</span>}
         </span>
         {showRight && rightHandleId && (
           <Handle
