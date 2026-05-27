@@ -713,7 +713,7 @@ export interface SchematicFile {
   /** @deprecated Use scrollConfig instead. Kept for backwards compatibility on import. */
   scrollBehavior?: "zoom" | "pan";
   /** Per-modifier scroll wheel action mapping (#19) */
-  scrollConfig?: ScrollConfig;
+  scrollConfig?: Partial<ScrollConfig>;
   /** Cable naming scheme for cable schedule (#1) */
   cableNamingScheme?: "sequential" | "type-prefix";
   /** Show line jump arcs where connections cross (#18) */
@@ -816,7 +816,7 @@ export interface ScrollConfig {
   zoomSpeed: number;
   /** Pan speed multiplier (default 1.0, range 0.25–3.0) */
   panSpeed: number;
-  /** Enable automatic trackpad detection (default true) */
+  /** @deprecated Retained while reading older schematic files; input device is now browser-local. */
   trackpadEnabled: boolean;
 }
 

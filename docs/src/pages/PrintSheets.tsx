@@ -94,8 +94,8 @@ export default function PrintSheetsPage() {
 
       <h2>Pan and zoom</h2>
       <p>
-        Print sheets respect your <strong>scroll preferences</strong> (Edit → Preferences →
-        Navigation Mode). Trackpad pinch-to-zoom, two-finger pan, middle-click drag, Space+drag —
+        Print sheets respect your <strong>scroll preferences</strong> (Edit &gt; Preferences &gt;
+        Canvas). With Trackpad input selected, pinch-to-zoom and two-finger pan work alongside middle-click drag and Space+drag -
         all the same gestures as the schematic canvas.
       </p>
 

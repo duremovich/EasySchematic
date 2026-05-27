@@ -58,6 +58,7 @@ import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { loadSharedSchematic, checkSession } from "./templateApi";
 import { refreshCloudCache } from "./cloudSync";
 import { useTheme } from "./hooks/useTheme";
+import { getNavigationInputDevice, getWheelNavigationAction } from "./navigationPreferences";
 
 /** Darkens the canvas area left of x=0 and above y=0, marking the printable origin. */
 function CanvasOriginOverlay() {
@@ -380,6 +381,10 @@ function SchematicCanvas() {
   // Track physical Ctrl key to distinguish real Ctrl+scroll from trackpad pinch
   const ctrlHeldRef = useRef(false);
 
+  // Preserve the previous heuristic only in Automatic input mode.
+  const autoTrackpadActiveRef = useRef(false);
+  const autoTrackpadTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   // Shift-selection: bypass RF's selection system via XOR on pointerup.
   // RF doesn't emit NodeSelectionChange for already-selected nodes, so
   // onNodesChange interception can't toggle them. Instead we snapshot
@@ -464,11 +469,6 @@ function SchematicCanvas() {
       window.removeEventListener('pointerup', onPointerUp);
     };
   }, []);
-
-  // Sticky trackpad detection: once a trackpad gesture is detected, treat all
-  // subsequent wheel events as trackpad until 400ms of silence (gesture end).
-  const trackpadActiveRef = useRef(false);
-  const trackpadTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Edge reconnection state (React Flow's reconnection path)
   const reconnectingRef = useRef(false);
@@ -671,23 +671,25 @@ function SchematicCanvas() {
       e.stopPropagation();
 
       const cfg = useSchematicStore.getState().scrollConfig;
-
-      // Detect trackpad from gesture evidence: any deltaX or synthetic ctrlKey (pinch)
-      if (cfg.trackpadEnabled) {
+      const configuredDevice = getNavigationInputDevice();
+      const automaticEnabled = configuredDevice === "auto";
+      if (automaticEnabled) {
         if (e.deltaX !== 0 || (e.ctrlKey && !ctrlHeldRef.current)) {
-          trackpadActiveRef.current = true;
+          autoTrackpadActiveRef.current = true;
         }
-        // Reset trackpad mode after gesture ends (no wheel events for 400ms)
-        clearTimeout(trackpadTimerRef.current);
-        trackpadTimerRef.current = setTimeout(() => { trackpadActiveRef.current = false; }, 400);
+        clearTimeout(autoTrackpadTimerRef.current);
+        autoTrackpadTimerRef.current = setTimeout(() => { autoTrackpadActiveRef.current = false; }, 400);
+      } else {
+        autoTrackpadActiveRef.current = false;
+        clearTimeout(autoTrackpadTimerRef.current);
       }
+      const action = getWheelNavigationAction(configuredDevice, e, ctrlHeldRef.current, cfg, autoTrackpadActiveRef.current);
 
       let vp: { x: number; y: number; zoom: number };
       try { vp = rfInstance.getViewport(); } catch { return; }
 
-      // Trackpad pinch-to-zoom: browser synthesizes ctrlKey on pinch gestures.
-      // If ctrlKey is set but the physical key isn't held, it's a pinch — always zoom.
-      if (cfg.trackpadEnabled && e.ctrlKey && !ctrlHeldRef.current) {
+      // Pinch-to-zoom remains distinct from physical Ctrl + wheel configuration.
+      if (action === "pinch-zoom") {
         const factor = 1 - e.deltaY * 0.01 * cfg.zoomSpeed;
         const newZoom = Math.min(8, Math.max(0.05, vp.zoom * factor));
         const rect = el.getBoundingClientRect();
@@ -702,9 +704,8 @@ function SchematicCanvas() {
         return;
       }
 
-      // Trackpad scroll: once trackpad mode is detected, pan both axes for all
-      // unmodified events (including pure-vertical scrolls that lack deltaX).
-      if (!e.ctrlKey && !e.shiftKey && trackpadActiveRef.current) {
+      // Explicit trackpad mode makes two-finger movement pan from its first event.
+      if (action === "pan-free") {
         rfInstance.setViewport({
           x: vp.x - e.deltaX * cfg.panSpeed,
           y: vp.y - e.deltaY * cfg.panSpeed,
@@ -714,7 +715,6 @@ function SchematicCanvas() {
       }
 
       // Standard mouse wheel: use ScrollConfig
-      const action = e.ctrlKey ? cfg.ctrlScroll : e.shiftKey ? cfg.shiftScroll : cfg.scroll;
       const delta = e.deltaY;
 
       if (action === "zoom") {
@@ -738,7 +738,7 @@ function SchematicCanvas() {
     el.addEventListener("wheel", handler, { passive: false, capture: true });
     return () => {
       el.removeEventListener("wheel", handler, { capture: true });
-      clearTimeout(trackpadTimerRef.current);
+      clearTimeout(autoTrackpadTimerRef.current);
     };
   }, [rfInstance]);
 

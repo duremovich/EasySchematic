@@ -2,6 +2,12 @@ import { useState } from "react";
 import { useSchematicStore } from "../store";
 import { DEFAULT_SCROLL_CONFIG, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_PAGE_MODE } from "../types";
 import type { LabelCaseMode, PanMode, ScrollAction, ScrollConfig, StubLabelPageMode } from "../types";
+import {
+  DEFAULT_NAVIGATION_INPUT_DEVICE,
+  getNavigationInputDevice,
+  saveNavigationInputDevice,
+  type NavigationInputDevice,
+} from "../navigationPreferences";
 
 const AUTOROUTE_PREF_KEY = "easyschematic-autoroute-pref";
 
@@ -102,6 +108,7 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
   const [autoRoutePref, setAutoRoutePref] = useState(
     () => localStorage.getItem(AUTOROUTE_PREF_KEY) ?? "ask",
   );
+  const [navigationInputDevice, setNavigationInputDevice] = useState(getNavigationInputDevice);
   const [activeTab, setActiveTab] = useState<PrefTab>("canvas");
 
   const update = (patch: Partial<ScrollConfig>) =>
@@ -113,7 +120,7 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
     scrollConfig.ctrlScroll === DEFAULT_SCROLL_CONFIG.ctrlScroll &&
     scrollConfig.zoomSpeed === DEFAULT_SCROLL_CONFIG.zoomSpeed &&
     scrollConfig.panSpeed === DEFAULT_SCROLL_CONFIG.panSpeed &&
-    scrollConfig.trackpadEnabled === DEFAULT_SCROLL_CONFIG.trackpadEnabled &&
+    navigationInputDevice === DEFAULT_NAVIGATION_INPUT_DEVICE &&
     edgeHitboxSize === 10 &&
     autoRoutePref === "ask" &&
     labelCase === "as-typed" &&
@@ -244,22 +251,29 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
                 </div>
               </div>
 
-              {/* Trackpad */}
+              {/* Input Device */}
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
-                  Trackpad
+                  Input Device
                 </div>
-                <label className="flex items-center justify-between py-1 cursor-pointer">
-                  <span className="text-xs text-[var(--color-text)]">Auto-detect trackpad</span>
-                  <input
-                    type="checkbox"
-                    checked={scrollConfig.trackpadEnabled}
-                    onChange={(e) => update({ trackpadEnabled: e.target.checked })}
-                    className="accent-blue-600 cursor-pointer"
-                  />
-                </label>
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-xs text-[var(--color-text)]">Navigation input</span>
+                  <select
+                    className={selectClass}
+                    value={navigationInputDevice}
+                    onChange={(e) => {
+                      const value = e.target.value as NavigationInputDevice;
+                      saveNavigationInputDevice(value);
+                      setNavigationInputDevice(value);
+                    }}
+                  >
+                    <option value="auto">Automatic</option>
+                    <option value="mouse">Mouse wheel</option>
+                    <option value="trackpad">Trackpad</option>
+                  </select>
+                </div>
                 <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
-                  When off, all scroll input uses the scroll wheel settings above
+                  Trackpad mode makes two-finger movement pan immediately and pinch zoom. Automatic preserves existing detection. This preference is saved in this browser.
                 </p>
               </div>
 
@@ -455,6 +469,8 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
             <button
               onClick={() => {
                 setScrollConfig({ ...DEFAULT_SCROLL_CONFIG });
+                saveNavigationInputDevice(DEFAULT_NAVIGATION_INPUT_DEVICE);
+                setNavigationInputDevice(DEFAULT_NAVIGATION_INPUT_DEVICE);
                 setEdgeHitboxSize(10);
                 localStorage.removeItem(AUTOROUTE_PREF_KEY);
                 setAutoRoutePref("ask");

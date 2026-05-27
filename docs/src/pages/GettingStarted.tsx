@@ -33,8 +33,8 @@ export default function GettingStartedPage() {
           </tr>
         </thead>
         <tbody>
-          <tr><td><strong>Pan</strong></td><td>Hold Space + drag, or middle-mouse drag (always available). In "Drag to pan" mode, left drag also pans.</td></tr>
-          <tr><td><strong>Zoom</strong></td><td>Scroll wheel</td></tr>
+          <tr><td><strong>Pan</strong></td><td>Hold Space + drag, middle-mouse drag, or two-finger trackpad movement when Trackpad input is selected. In "Drag to pan" mode, left drag also pans.</td></tr>
+          <tr><td><strong>Zoom</strong></td><td>Scroll wheel in Mouse wheel mode, or pinch in Trackpad/Automatic mode</td></tr>
           <tr><td><strong>Select</strong></td><td>Click a device or connection</td></tr>
           <tr><td><strong>Toggle selection</strong></td><td>Shift+click to add/remove items from the current selection</td></tr>
           <tr><td><strong>Box select</strong></td><td>Click and drag on empty canvas (default mode). In "Drag to pan" mode, hold Shift and drag instead.</td></tr>
@@ -123,7 +123,7 @@ export default function GettingStartedPage() {
 
       <h3>Scroll wheel configuration</h3>
       <p>
-        Assign actions for each scroll modifier combination:
+        In <strong>Mouse wheel</strong> input mode, assign actions for each scroll modifier combination:
       </p>
       <table>
         <thead>
@@ -146,7 +146,10 @@ export default function GettingStartedPage() {
       <h3>Trackpad support</h3>
       <ul>
         <li>
-          <strong>Trackpad mode</strong> — enable trackpad detection for pinch-to-zoom and two-finger pan
+          <strong>Input device</strong> — choose <strong>Trackpad</strong> in Preferences &gt; Canvas to use pinch-to-zoom and two-finger pan from the first movement
+        </li>
+        <li>
+          <strong>Automatic</strong> — preserves the previous trackpad detection behavior for users who do not choose an explicit input device
         </li>
         <li>
           <strong>Sensitivity</strong> — zoom speed and pan speed sliders (0.25x–3x) to fine-tune trackpad responsiveness

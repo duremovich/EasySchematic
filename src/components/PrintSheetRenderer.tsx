@@ -6,6 +6,7 @@ import { PX_PER_MM } from "../rackUtils";
 import { computeRackStats, formatStatsLine } from "../rackStats";
 import { computeCellRects, normalizeSizes, getFieldValue } from "../titleBlockLayout";
 import { computeDragSnap, computeResizeSnap, type SheetGuide, type Rect } from "../printSheetSnap";
+import { getNavigationInputDevice, getWheelNavigationAction } from "../navigationPreferences";
 import RackFaceSVG from "./RackFaceSVG";
 
 const IN_TO_MM = 25.4;
@@ -206,8 +207,8 @@ export default function PrintSheetRenderer({ page }: Props) {
   const [spaceHeld, setSpaceHeld] = useState(false);
   const ctrlHeldRef = useRef(false);
   const spaceHeldRef = useRef(false);
-  const trackpadActiveRef = useRef(false);
-  const trackpadTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const autoTrackpadActiveRef = useRef(false);
+  const autoTrackpadTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const fitView = useCallback(() => {
     const el = containerRef.current;
@@ -253,26 +254,31 @@ export default function PrintSheetRenderer({ page }: Props) {
       e.preventDefault();
       const cfg = useSchematicStore.getState().scrollConfig;
       const { zoom: z, pan: p } = vpRef.current;
-      if (cfg.trackpadEnabled) {
-        if (e.deltaX !== 0 || (e.ctrlKey && !ctrlHeldRef.current)) trackpadActiveRef.current = true;
-        clearTimeout(trackpadTimerRef.current);
-        trackpadTimerRef.current = setTimeout(() => { trackpadActiveRef.current = false; }, 400);
+      const configuredDevice = getNavigationInputDevice();
+      const automaticEnabled = configuredDevice === "auto";
+      if (automaticEnabled) {
+        if (e.deltaX !== 0 || (e.ctrlKey && !ctrlHeldRef.current)) autoTrackpadActiveRef.current = true;
+        clearTimeout(autoTrackpadTimerRef.current);
+        autoTrackpadTimerRef.current = setTimeout(() => { autoTrackpadActiveRef.current = false; }, 400);
+      } else {
+        autoTrackpadActiveRef.current = false;
+        clearTimeout(autoTrackpadTimerRef.current);
       }
+      const action = getWheelNavigationAction(configuredDevice, e, ctrlHeldRef.current, cfg, autoTrackpadActiveRef.current);
       const rect = el.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
-      if (cfg.trackpadEnabled && e.ctrlKey && !ctrlHeldRef.current) {
+      if (action === "pinch-zoom") {
         const factor = 1 - e.deltaY * 0.01 * cfg.zoomSpeed;
         const newZ = Math.min(4, Math.max(0.1, z * factor));
         const ratio = newZ / z;
         setViewport(newZ, { x: mx * (1 - ratio) + p.x * ratio, y: my * (1 - ratio) + p.y * ratio });
         return;
       }
-      if (!e.ctrlKey && !e.shiftKey && trackpadActiveRef.current) {
+      if (action === "pan-free") {
         setViewport(z, { x: p.x - e.deltaX * cfg.panSpeed, y: p.y - e.deltaY * cfg.panSpeed });
         return;
       }
-      const action = e.ctrlKey ? cfg.ctrlScroll : e.shiftKey ? cfg.shiftScroll : cfg.scroll;
       const delta = e.deltaY;
       if (action === "zoom") {
         const factor = 1 - delta * 0.001 * cfg.zoomSpeed;
@@ -286,7 +292,7 @@ export default function PrintSheetRenderer({ page }: Props) {
       }
     };
     el.addEventListener("wheel", handler, { passive: false, capture: true });
-    return () => { el.removeEventListener("wheel", handler, { capture: true }); clearTimeout(trackpadTimerRef.current); };
+    return () => { el.removeEventListener("wheel", handler, { capture: true }); clearTimeout(autoTrackpadTimerRef.current); };
   }, [setViewport]);
 
   // ── Viewport interaction ─────────────────────────────────────────

@@ -133,19 +133,25 @@ export const CATEGORY_ORDER_DEFAULT: string[] = [
 
 /** Migrate legacy scrollBehavior to ScrollConfig, or use provided scrollConfig */
 function resolveScrollConfig(data: { scrollBehavior?: string; scrollConfig?: Partial<ScrollConfig> }): ScrollConfig {
-  if (data.scrollConfig) return { ...DEFAULT_SCROLL_CONFIG, ...data.scrollConfig };
+  if (data.scrollConfig) return { ...DEFAULT_SCROLL_CONFIG, ...data.scrollConfig, trackpadEnabled: DEFAULT_SCROLL_CONFIG.trackpadEnabled };
   if (data.scrollBehavior === "pan") return { ...DEFAULT_SCROLL_CONFIG, scroll: "pan-y", shiftScroll: "pan-x", ctrlScroll: "zoom" };
   return { ...DEFAULT_SCROLL_CONFIG };
 }
 
-/** True if the scroll config matches the default (omit from JSON when saving) */
+/** True if persisted scroll settings match the default (omit from JSON when saving). */
 function isDefaultScrollConfig(c: ScrollConfig): boolean {
   return c.scroll === DEFAULT_SCROLL_CONFIG.scroll
     && c.shiftScroll === DEFAULT_SCROLL_CONFIG.shiftScroll
     && c.ctrlScroll === DEFAULT_SCROLL_CONFIG.ctrlScroll
     && c.zoomSpeed === DEFAULT_SCROLL_CONFIG.zoomSpeed
-    && c.panSpeed === DEFAULT_SCROLL_CONFIG.panSpeed
-    && c.trackpadEnabled === DEFAULT_SCROLL_CONFIG.trackpadEnabled;
+    && c.panSpeed === DEFAULT_SCROLL_CONFIG.panSpeed;
+}
+
+/** The deprecated trackpad toggle no longer belongs in schematic data. */
+function serializeScrollConfig(c: ScrollConfig): Partial<ScrollConfig> | undefined {
+  if (isDefaultScrollConfig(c)) return undefined;
+  const { trackpadEnabled: _, ...persisted } = c;
+  return persisted;
 }
 
 /** Coerce a persisted labelCase value to a known mode. Anything unrecognized falls back to default. */
@@ -4394,7 +4400,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       reportLayouts: Object.keys(state.reportLayouts).length > 0 ? state.reportLayouts : undefined,
       globalReportHeaderLayout: state.globalReportHeaderLayout ?? undefined,
       globalReportFooterLayout: state.globalReportFooterLayout ?? undefined,
-      scrollConfig: isDefaultScrollConfig(state.scrollConfig) ? undefined : state.scrollConfig,
+      scrollConfig: serializeScrollConfig(state.scrollConfig),
       cableNamingScheme: state.cableNamingScheme !== "type-prefix" ? state.cableNamingScheme : undefined,
       labelCase: state.labelCase !== "as-typed" ? state.labelCase : undefined,
       currency: state.currency !== "USD" ? state.currency : undefined,
@@ -4640,7 +4646,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       reportLayouts: Object.keys(state.reportLayouts).length > 0 ? state.reportLayouts : undefined,
       globalReportHeaderLayout: state.globalReportHeaderLayout ?? undefined,
       globalReportFooterLayout: state.globalReportFooterLayout ?? undefined,
-      scrollConfig: isDefaultScrollConfig(state.scrollConfig) ? undefined : state.scrollConfig,
+      scrollConfig: serializeScrollConfig(state.scrollConfig),
       cableNamingScheme: state.cableNamingScheme !== "type-prefix" ? state.cableNamingScheme : undefined,
       labelCase: state.labelCase !== "as-typed" ? state.labelCase : undefined,
       currency: state.currency !== "USD" ? state.currency : undefined,
