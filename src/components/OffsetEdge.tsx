@@ -459,9 +459,11 @@ function OffsetEdgeComponent({
   const showTgtLabel = showAnyCustom && !!edgeTargetLabel;
 
   // Calculate custom label endpoint offset (past cable ID badge when cable ID is also at the same endpoint)
+  const MIN_CABLE_ID_ENDPOINT_GAP = 10;
+  const cableIdEndpointGap = Math.max(cableIdGap, MIN_CABLE_ID_ENDPOINT_GAP);
   const cableIdBadgeWidth = labelText ? estimateBadgeWidth(labelText, 9, 3) : 0;
   const customEndpointOffset = (showCableId && cableIdLabelMode === "endpoint")
-    ? cableIdGap + cableIdBadgeWidth + 3 // base gap + badge + 3px padding
+    ? cableIdEndpointGap + cableIdBadgeWidth + 3 // minimum clearance + badge + 3px padding
     : CUSTOM_LABEL_GAP;
 
   // Compute midpoint position along the path (for cable ID midpoint and custom midpoint label)
@@ -472,9 +474,9 @@ function OffsetEdgeComponent({
   const cableIdLabels = showCableId ? (
     cableIdLabelMode === "endpoint" ? (
       <>
-        {!sourceIsStub && makeEndpointLabel(true, cableIdGap, labelText, cableIdLabelStyle, "cid-src",
+        {!sourceIsStub && makeEndpointLabel(true, cableIdEndpointGap, labelText, cableIdLabelStyle, "cid-src",
           sourceX, sourceY, srcDx, srcDy)}
-        {!targetIsStub && makeEndpointLabel(false, cableIdGap, labelText, cableIdLabelStyle, "cid-tgt",
+        {!targetIsStub && makeEndpointLabel(false, cableIdEndpointGap, labelText, cableIdLabelStyle, "cid-tgt",
           tgtLabelX, tgtLabelY, -tgtDx, -tgtDy)}
       </>
     ) : (

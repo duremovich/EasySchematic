@@ -348,6 +348,8 @@ export function emitCableIdLabels(
 
   const height = cssFontPxToDxfHeight(9); // matches canvas 9pt cable ID label
   const gap = edge.data?.cableIdGap ?? globalGap;
+  const MIN_CABLE_ID_ENDPOINT_GAP = 10;
+  const effectiveGap = Math.max(gap, MIN_CABLE_ID_ENDPOINT_GAP);
   const midOffset = edge.data?.cableIdMidOffset ?? globalMidOffset;
 
   const style: EntityStyle = { trueColor, linetype: "CONTINUOUS" };
@@ -370,7 +372,7 @@ export function emitCableIdLabels(
   } else {
     // Emit at both ends
     for (const nearStart of [true, false]) {
-      const pos = findEndpointLabelPos(routed, nearStart, gap);
+      const pos = findEndpointLabelPos(routed, nearStart, effectiveGap);
       writer.addMText(
         CANONICAL_LAYERS.LABELS,
         pxToIn(pos.x), -pxToIn(pos.y),
