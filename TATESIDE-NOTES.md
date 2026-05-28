@@ -140,6 +140,22 @@ Current behavior:
 - `Automatic` retains the existing detection behavior for users who do not select a device mode.
 - Confirmed locally on the Tateside setup that `Trackpad` mode works as intended.
 
+### Cable Move Preservation
+
+Commit: `e663a14` - `Refine BLU cable nudge preservation`
+
+Intent:
+
+- Moving a device should preserve the cable geometry users intentionally shaped, while letting ordinary auto-routed links redraw cleanly.
+- Mouse drag and arrow-key nudges should behave the same way.
+
+Current behavior:
+
+- Manual multi-point cable routes keep their preserved shape when a connected device moves.
+- Single-anchor manual cables are treated carefully so the stationary endpoint stays pinned to its real handle row.
+- Arrow-key nudges now reuse the same move logic as mouse dragging instead of following React Flow's built-in keyboard movement.
+- The BLU-100 nudge case is tuned so the nearby amp outputs straighten while the BSS inputs and the lower amp feed remain stable.
+
 ## Useful Runtime Checks
 
 Test live site:
