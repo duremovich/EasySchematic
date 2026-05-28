@@ -94,6 +94,20 @@ function CanvasOriginOverlay() {
   );
 }
 
+function getAbsoluteNodePosition(node: SchematicNode, nodeMap: Map<string, SchematicNode>): { x: number; y: number } {
+  let x = node.position.x;
+  let y = node.position.y;
+  let parentId = node.parentId;
+  while (parentId) {
+    const parent = nodeMap.get(parentId);
+    if (!parent) break;
+    x += parent.position.x;
+    y += parent.position.y;
+    parentId = parent.parentId;
+  }
+  return { x, y };
+}
+
 /** Returns true if a polyline segment (a→b) intersects an axis-aligned rect. */
 function segmentIntersectsRect(
   a: { x: number; y: number },
@@ -516,6 +530,9 @@ function SchematicCanvas() {
   const [showDeviceCreator, setShowDeviceCreator] = useState(false);
   const deviceCreatorPosRef = useRef<{ x: number; y: number } | undefined>(undefined);
   const lastPaneClickRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
+  const dragStartAbsPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+  const dragStartManualWaypointsRef = useRef<Map<string, { x: number; y: number }[]>>(new Map());
+  const dragStartRoutedWaypointsRef = useRef<Map<string, { x: number; y: number }[]>>(new Map());
 
   // Viewport transform for rendering flow-space overlays
   const { x: vx, y: vy, zoom } = useViewport();
@@ -1237,6 +1254,22 @@ function SchematicCanvas() {
 
   const onNodeDragStart = useCallback(() => {
     setPendingUndoSnapshot();
+    const state = useSchematicStore.getState();
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n] as const));
+    dragStartAbsPositionsRef.current = new Map(
+      state.nodes.map((n) => [n.id, getAbsoluteNodePosition(n, nodeMap)]),
+    );
+    dragStartManualWaypointsRef.current = new Map(
+      state.edges
+        .filter((e) => e.data?.manualWaypoints?.length)
+        .map((e) => [e.id, e.data!.manualWaypoints!.map((p) => ({ x: p.x, y: p.y }))] as const),
+    );
+    dragStartRoutedWaypointsRef.current = new Map(
+      Object.entries(state.routedEdges).map(([edgeId, routed]) => [
+        edgeId,
+        routed.waypoints.map((p) => ({ x: p.x, y: p.y })),
+      ]),
+    );
     useSchematicStore.setState({ isDragging: true });
   }, [setPendingUndoSnapshot]);
 
@@ -1359,6 +1392,9 @@ function SchematicCanvas() {
           }) as SchematicNode[];
 
           const updatedNodeById = new Map(updatedNodes.map((n) => [n.id, n] as const));
+          const dragStartAbs = dragStartAbsPositionsRef.current;
+          const dragStartManualWaypoints = dragStartManualWaypointsRef.current;
+          const dragStartRoutedWaypoints = dragStartRoutedWaypointsRef.current;
           const movesWithSelection = (nodeId: string) => {
             let current = updatedNodeById.get(nodeId);
             while (current) {
@@ -1367,25 +1403,61 @@ function SchematicCanvas() {
             }
             return false;
           };
+          const movementDelta = (nodeId: string) => {
+            const node = updatedNodeById.get(nodeId);
+            const start = dragStartAbs.get(nodeId);
+            if (!node || !start) return null;
+            const current = getAbsoluteNodePosition(node, updatedNodeById);
+            return { x: current.x - start.x, y: current.y - start.y };
+          };
 
           updatedEdges = state.edges.map((e) => {
-            if (!movesWithSelection(e.source) || !movesWithSelection(e.target)) return e;
+            const sourceDelta = movementDelta(e.source);
+            const targetDelta = movementDelta(e.target);
+            const sourceMoves = movesWithSelection(e.source);
+            const targetMoves = movesWithSelection(e.target);
+            const startManualWaypoints = dragStartManualWaypoints.get(e.id);
 
-            if (e.data?.manualWaypoints?.length) {
-              return {
-                ...e,
-                data: {
-                  ...e.data!,
-                  manualWaypoints: e.data.manualWaypoints.map((p) => ({ x: p.x + dx, y: p.y + dy })),
-                },
-              };
+            if (startManualWaypoints?.length) {
+              if (sourceMoves && targetMoves && sourceDelta && targetDelta) {
+                if (sourceDelta.x !== targetDelta.x || sourceDelta.y !== targetDelta.y) return e;
+                return {
+                  ...e,
+                  data: {
+                    ...e.data!,
+                    manualWaypoints: startManualWaypoints.map((p) => ({
+                      x: p.x + sourceDelta.x,
+                      y: p.y + sourceDelta.y,
+                    })),
+                  },
+                };
+              }
+
+              if (sourceMoves !== targetMoves) {
+                const movedDelta = sourceMoves ? sourceDelta : targetDelta;
+                if (!movedDelta) return e;
+                return {
+                  ...e,
+                  data: {
+                    ...e.data!,
+                    manualWaypoints: startManualWaypoints.map((p) => ({
+                      x: p.x + movedDelta.x,
+                      y: p.y + movedDelta.y,
+                    })),
+                  },
+                };
+              }
             }
 
-            const routed = state.routedEdges[e.id];
-            if (!routed || routed.waypoints.length <= 2) return e;
-            const translatedInterior = routed.waypoints
+            if (!sourceMoves || !targetMoves) return e;
+            if (!sourceDelta || !targetDelta) return e;
+            if (sourceDelta.x !== targetDelta.x || sourceDelta.y !== targetDelta.y) return e;
+
+            const startRoutedWaypoints = dragStartRoutedWaypoints.get(e.id);
+            if (!startRoutedWaypoints || startRoutedWaypoints.length <= 2) return e;
+            const translatedInterior = startRoutedWaypoints
               .slice(1, -1)
-              .map((p) => ({ x: p.x + dx, y: p.y + dy }));
+              .map((p) => ({ x: p.x + sourceDelta.x, y: p.y + sourceDelta.y }));
             if (translatedInterior.length === 0) return e;
 
             return {
@@ -1431,6 +1503,9 @@ function SchematicCanvas() {
           if (dn.type === "room") anyRoomMoved = true;
         }
         if (anyRoomMoved) reparentAllDevices({ skipUndo: true });
+        dragStartAbsPositionsRef.current = new Map();
+        dragStartManualWaypointsRef.current = new Map();
+        dragStartRoutedWaypointsRef.current = new Map();
         flushPendingSnapshot();
         return;
       }
@@ -1520,6 +1595,9 @@ function SchematicCanvas() {
       if (draggedNode.type === "room") {
         reparentAllDevices({ skipUndo: true });
       }
+      dragStartAbsPositionsRef.current = new Map();
+      dragStartManualWaypointsRef.current = new Map();
+      dragStartRoutedWaypointsRef.current = new Map();
       flushPendingSnapshot();
     },
     [reparentNode, reparentAllDevices, flushPendingSnapshot],
