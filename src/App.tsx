@@ -51,7 +51,7 @@ import PageTabs from "./components/PageTabs";
 import RackPage from "./components/RackPage";
 import PrintSheetPage from "./components/PrintSheetPage";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
-import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode } from "./types";
+import type { AnnotationData, ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode } from "./types";
 import { EXTERNAL_ENDPOINT_HEIGHT, EXTERNAL_ENDPOINT_MIN_WIDTH } from "./externalEndpoint";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
@@ -113,6 +113,31 @@ function ResizeSnapGuides({ dragGuides }: { dragGuides: GuideLine[] }) {
     ? [...dragGuides, ...resizeGuides]
     : [];
   return <SnapGuides guides={combined} />;
+}
+
+function isDrawBoxNode(node: SchematicNode): boolean {
+  if (node.type !== "annotation") return false;
+  const data = node.data as AnnotationData;
+  return data.role === "draw-box" || (data.shape === "rectangle" && data.borderStyle === "dashed");
+}
+
+function nudgeSelectedDrawBoxes(dx: number, dy: number): boolean {
+  const state = useSchematicStore.getState();
+  const selectedDrawBoxes = state.nodes.filter((n) => n.selected && isDrawBoxNode(n));
+  if (selectedDrawBoxes.length === 0) return false;
+  if (state.nodes.some((n) => n.selected && !isDrawBoxNode(n))) return false;
+
+  const selectedIds = new Set(selectedDrawBoxes.map((n) => n.id));
+  state.pushSnapshot();
+  useSchematicStore.setState({
+    nodes: state.nodes.map((n) =>
+      selectedIds.has(n.id)
+        ? { ...n, position: { x: n.position.x + dx, y: n.position.y + dy } }
+        : n,
+    ) as SchematicNode[],
+  });
+  state.saveToLocalStorage();
+  return true;
 }
 
 function AutoRouteChip() {
@@ -1758,6 +1783,20 @@ export default function App() {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement).isContentEditable) return;
 
+      if (activePage === "schematic" && (e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        const step = e.ctrlKey || e.metaKey ? 1 : GRID_SIZE;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        if (dx !== 0 || dy !== 0) {
+          if (nudgeSelectedDrawBoxes(dx, dy)) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return;
+          }
+        }
+      }
+
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "Z") {
         e.preventDefault();
         redo();
@@ -1785,9 +1824,9 @@ export default function App() {
         s.setPrintView(!s.printView);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo]);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [activePage, nudgeSelectedDrawBoxes, undo, redo]);
 
   return (
     <div className="flex flex-col h-full">
