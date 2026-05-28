@@ -59,7 +59,7 @@ import { loadSharedSchematic, checkSession } from "./templateApi";
 import { refreshCloudCache } from "./cloudSync";
 import { useTheme } from "./hooks/useTheme";
 import { getNavigationInputDevice, getWheelNavigationAction } from "./navigationPreferences";
-import { reconcileWaypointNodes } from "./waypointSync";
+import { reconcileWaypointNodes, syncEdgesFromWaypointNodes } from "./waypointSync";
 
 /** Darkens the canvas area left of x=0 and above y=0, marking the printable origin. */
 function CanvasOriginOverlay() {
@@ -106,6 +106,34 @@ function getAbsoluteNodePosition(node: SchematicNode, nodeMap: Map<string, Schem
     parentId = parent.parentId;
   }
   return { x, y };
+}
+
+function preserveSingleNodeManualWaypoints(
+  startManualWaypoints: { x: number; y: number }[],
+  movedDelta: { x: number; y: number },
+  movedEndpoint: "source" | "target",
+  stationaryHandleY?: number,
+): { x: number; y: number }[] {
+  if (startManualWaypoints.length === 1) {
+    const anchor = startManualWaypoints[0];
+    const stationaryAnchorY = stationaryHandleY ?? anchor.y;
+    const stationaryAnchor = { x: anchor.x, y: stationaryAnchorY };
+    const shifted = { x: anchor.x + movedDelta.x, y: anchor.y + movedDelta.y };
+    return movedEndpoint === "source"
+      ? [shifted, stationaryAnchor]
+      : [stationaryAnchor, shifted];
+  }
+  return startManualWaypoints.map((p, index, all) => {
+    const isStationarySideAnchor =
+      movedEndpoint === "source" ? index === all.length - 1 : index === 0;
+    if (isStationarySideAnchor) {
+      return { x: p.x, y: stationaryHandleY ?? p.y };
+    }
+    return {
+      x: p.x + movedDelta.x,
+      y: p.y + movedDelta.y,
+    };
+  });
 }
 
 /** Returns true if a polyline segment (a→b) intersects an axis-aligned rect. */
@@ -1542,11 +1570,35 @@ function SchematicCanvas() {
         const updated = state.nodes.map((n) =>
           n.id === draggedNode.id ? { ...n, position: { x: finalX, y: finalY } } : n,
         );
+        const nodeById = new Map(updated.map((n) => [n.id, n] as const));
+        const currentAbs = getAbsoluteNodePosition(updated.find((n) => n.id === draggedNode.id) as SchematicNode, nodeById);
+        const startAbs = dragStartAbsPositionsRef.current.get(draggedNode.id);
+        const movedDelta = startAbs ? { x: currentAbs.x - startAbs.x, y: currentAbs.y - startAbs.y } : null;
         const updatedEdges = state.edges.map((e) => {
           if (e.source !== draggedNode.id && e.target !== draggedNode.id) return e;
-          if (!e.data?.autoRouteWaypoints) return e;
-          const { manualWaypoints: _mw, autoRouteWaypoints: _ar, ...restData } = e.data;
-          return { ...e, data: restData as typeof e.data };
+          if (!movedDelta) return e;
+
+          const startManualWaypoints = dragStartManualWaypointsRef.current.get(e.id);
+          if (startManualWaypoints?.length) {
+            const startRoutedWaypoints = dragStartRoutedWaypointsRef.current.get(e.id);
+            const stationaryHandleY = e.source === draggedNode.id
+              ? startRoutedWaypoints?.[startRoutedWaypoints.length - 1]?.y
+              : startRoutedWaypoints?.[0]?.y;
+            return {
+              ...e,
+              data: {
+                ...e.data!,
+                manualWaypoints: preserveSingleNodeManualWaypoints(
+                  startManualWaypoints,
+                  movedDelta,
+                  e.source === draggedNode.id ? "source" : "target",
+                  stationaryHandleY,
+                ),
+                autoRouteWaypoints: true,
+              },
+            };
+          }
+          return e;
         });
         useSchematicStore.setState({
           nodes: reconcileWaypointNodes(updated as SchematicNode[], updatedEdges),
@@ -1561,11 +1613,35 @@ function SchematicCanvas() {
         // reparentNode below early-returns when there's no parent change.
         useSchematicStore.getState().saveToLocalStorage();
       } else {
+        const nodeById = new Map(state.nodes.map((n) => [n.id, n] as const));
+        const startAbs = dragStartAbsPositionsRef.current.get(draggedNode.id);
+        const currentAbs = getAbsoluteNodePosition(draggedNode as SchematicNode, nodeById);
+        const movedDelta = startAbs ? { x: currentAbs.x - startAbs.x, y: currentAbs.y - startAbs.y } : null;
         const updatedEdges = state.edges.map((e) => {
           if (e.source !== draggedNode.id && e.target !== draggedNode.id) return e;
-          if (!e.data?.autoRouteWaypoints) return e;
-          const { manualWaypoints: _mw, autoRouteWaypoints: _ar, ...restData } = e.data;
-          return { ...e, data: restData as typeof e.data };
+          if (!movedDelta) return e;
+
+          const startManualWaypoints = dragStartManualWaypointsRef.current.get(e.id);
+          if (startManualWaypoints?.length) {
+            const startRoutedWaypoints = dragStartRoutedWaypointsRef.current.get(e.id);
+            const stationaryHandleY = e.source === draggedNode.id
+              ? startRoutedWaypoints?.[startRoutedWaypoints.length - 1]?.y
+              : startRoutedWaypoints?.[0]?.y;
+            return {
+              ...e,
+              data: {
+                ...e.data!,
+                manualWaypoints: preserveSingleNodeManualWaypoints(
+                  startManualWaypoints,
+                  movedDelta,
+                  e.source === draggedNode.id ? "source" : "target",
+                  stationaryHandleY,
+                ),
+                autoRouteWaypoints: true,
+              },
+            };
+          }
+          return e;
         });
         useSchematicStore.setState({
           edges: updatedEdges,
@@ -1602,6 +1678,198 @@ function SchematicCanvas() {
     },
     [reparentNode, reparentAllDevices, flushPendingSnapshot],
   );
+
+  const nudgeSelectedNodes = useCallback((dx: number, dy: number): boolean => {
+    if (nudgeSelectedDrawBoxes(dx, dy)) return true;
+
+    const state = useSchematicStore.getState();
+    const selectedNodes = state.nodes.filter((n) => n.selected);
+    if (selectedNodes.length === 0) return false;
+
+    const selectedIds = new Set(selectedNodes.map((n) => n.id));
+    state.pushSnapshot();
+
+    const dragStartAbs = new Map(
+      state.nodes.map((n) => [n.id, getAbsoluteNodePosition(n, new Map(state.nodes.map((nn) => [nn.id, nn] as const)))]),
+    );
+    const dragStartManualWaypoints = new Map(
+      state.edges
+        .filter((e) => e.data?.manualWaypoints?.length)
+        .map((e) => [e.id, e.data!.manualWaypoints!.map((p) => ({ x: p.x, y: p.y }))] as const),
+    );
+    const dragStartRoutedWaypoints = new Map(
+      Object.entries(state.routedEdges).map(([edgeId, routed]) => [
+        edgeId,
+        routed.waypoints.map((p) => ({ x: p.x, y: p.y })),
+      ]),
+    );
+
+    const updatedNodes = state.nodes.map((n) => {
+      if (!selectedIds.has(n.id)) return n;
+      if (n.parentId && selectedIds.has(n.parentId)) return n;
+      return { ...n, position: { x: n.position.x + dx, y: n.position.y + dy } };
+    }) as SchematicNode[];
+
+    const selectedWaypointIds = new Set(selectedNodes.filter((n) => n.type === "waypoint").map((n) => n.id));
+    const selectedNonWaypointNodes = selectedNodes.filter((n) => n.type !== "waypoint");
+    let updatedEdges = state.edges;
+
+    if (selectedNonWaypointNodes.length > 1) {
+      const updatedNodeById = new Map(updatedNodes.map((n) => [n.id, n] as const));
+      const movesWithSelection = (nodeId: string) => {
+        let current = updatedNodeById.get(nodeId);
+        while (current) {
+          if (selectedIds.has(current.id)) return true;
+          current = current.parentId ? updatedNodeById.get(current.parentId) : undefined;
+        }
+        return false;
+      };
+      const movementDelta = (nodeId: string) => {
+        const node = updatedNodeById.get(nodeId);
+        const start = dragStartAbs.get(nodeId);
+        if (!node || !start) return null;
+        const current = getAbsoluteNodePosition(node, updatedNodeById);
+        return { x: current.x - start.x, y: current.y - start.y };
+      };
+
+      updatedEdges = state.edges.map((e) => {
+        const sourceDelta = movementDelta(e.source);
+        const targetDelta = movementDelta(e.target);
+        const sourceMoves = movesWithSelection(e.source);
+        const targetMoves = movesWithSelection(e.target);
+        const startManualWaypoints = dragStartManualWaypoints.get(e.id);
+
+        if (startManualWaypoints?.length) {
+          if (sourceMoves && targetMoves && sourceDelta && targetDelta) {
+            if (sourceDelta.x !== targetDelta.x || sourceDelta.y !== targetDelta.y) return e;
+            return {
+              ...e,
+              data: {
+                ...e.data!,
+                manualWaypoints: startManualWaypoints.map((p) => ({
+                  x: p.x + sourceDelta.x,
+                  y: p.y + sourceDelta.y,
+                })),
+              },
+            };
+          }
+
+          if (sourceMoves !== targetMoves) {
+            const movedDelta = sourceMoves ? sourceDelta : targetDelta;
+            if (!movedDelta) return e;
+            return {
+              ...e,
+              data: {
+                ...e.data!,
+                manualWaypoints: startManualWaypoints.map((p) => ({
+                  x: p.x + movedDelta.x,
+                  y: p.y + movedDelta.y,
+                })),
+              },
+            };
+          }
+        }
+
+        if (!sourceMoves || !targetMoves) return e;
+        if (!sourceDelta || !targetDelta) return e;
+        if (sourceDelta.x !== targetDelta.x || sourceDelta.y !== targetDelta.y) return e;
+
+        const startRoutedWaypoints = dragStartRoutedWaypoints.get(e.id);
+        if (!startRoutedWaypoints || startRoutedWaypoints.length <= 2) return e;
+        const translatedInterior = startRoutedWaypoints
+          .slice(1, -1)
+          .map((p) => ({ x: p.x + sourceDelta.x, y: p.y + sourceDelta.y }));
+        if (translatedInterior.length === 0) return e;
+
+        return {
+          ...e,
+          data: {
+            ...e.data,
+            manualWaypoints: translatedInterior,
+            autoRouteWaypoints: true,
+          },
+        };
+      }) as ConnectionEdge[];
+    } else if (selectedNonWaypointNodes.length === 1) {
+      const movedNode = selectedNonWaypointNodes[0];
+      const updatedNodeById = new Map(updatedNodes.map((n) => [n.id, n] as const));
+      const currentAbs = getAbsoluteNodePosition(updatedNodeById.get(movedNode.id) as SchematicNode, updatedNodeById);
+      const startAbs = dragStartAbs.get(movedNode.id);
+      const movedDelta = startAbs ? { x: currentAbs.x - startAbs.x, y: currentAbs.y - startAbs.y } : null;
+
+      updatedEdges = state.edges.map((e) => {
+        if (e.source !== movedNode.id && e.target !== movedNode.id) return e;
+        if (!movedDelta) return e;
+
+        const startManualWaypoints = dragStartManualWaypoints.get(e.id);
+        if (startManualWaypoints?.length) {
+          const startRoutedWaypoints = dragStartRoutedWaypoints.get(e.id);
+          const stationaryHandleY = e.source === movedNode.id
+            ? startRoutedWaypoints?.[startRoutedWaypoints.length - 1]?.y
+            : startRoutedWaypoints?.[0]?.y;
+          return {
+            ...e,
+            data: {
+              ...e.data!,
+              manualWaypoints: preserveSingleNodeManualWaypoints(
+                startManualWaypoints,
+                movedDelta,
+                e.source === movedNode.id ? "source" : "target",
+                stationaryHandleY,
+              ),
+              autoRouteWaypoints: true,
+            },
+          };
+        }
+        return e;
+      });
+    }
+
+    if (selectedWaypointIds.size > 0) {
+      updatedEdges = syncEdgesFromWaypointNodes(updatedEdges, updatedNodes);
+    }
+
+    const reconciledNodes = reconcileWaypointNodes(updatedNodes, updatedEdges);
+    useSchematicStore.setState({
+      nodes: reconciledNodes,
+      edges: updatedEdges,
+      overlapNodeId: null,
+    });
+
+    let anyRoomMoved = false;
+    const reconciledNodeById = new Map(reconciledNodes.map((n) => [n.id, n] as const));
+    for (const selectedNode of selectedNonWaypointNodes) {
+      if (selectedNode.parentId && selectedIds.has(selectedNode.parentId as string)) continue;
+      const node = reconciledNodeById.get(selectedNode.id);
+      if (!node) continue;
+      let absX = node.position.x;
+      let absY = node.position.y;
+      let parentId: string | undefined = node.parentId as string | undefined;
+      while (parentId) {
+        const parent = reconciledNodeById.get(parentId);
+        if (!parent) break;
+        absX += parent.position.x;
+        absY += parent.position.y;
+        parentId = parent.parentId as string | undefined;
+      }
+      reparentNode(node.id, { x: absX, y: absY }, { skipUndo: true });
+      if (node.type === "room") anyRoomMoved = true;
+    }
+    if (anyRoomMoved) reparentAllDevices({ skipUndo: true });
+
+    useSchematicStore.getState().saveToLocalStorage();
+    return true;
+  }, [reparentAllDevices, reparentNode]);
+
+  useEffect(() => {
+    const onNudgeSelected = (event: Event) => {
+      const detail = (event as CustomEvent<{ dx: number; dy: number }>).detail;
+      if (!detail) return;
+      nudgeSelectedNodes(detail.dx, detail.dy);
+    };
+    window.addEventListener("easyschematic:nudge-selected", onNudgeSelected);
+    return () => window.removeEventListener("easyschematic:nudge-selected", onNudgeSelected);
+  }, [nudgeSelectedNodes]);
 
   // Dynamic minZoom: allow zooming out just enough to see all nodes, with padding
   const minZoom = useMemo(() => {
@@ -1741,6 +2009,7 @@ function SchematicCanvas() {
       minZoom={minZoom}
       elevateNodesOnSelect={false}
       elevateEdgesOnSelect={false}
+      disableKeyboardA11y
       deleteKeyCode={null}
       selectionKeyCode={null}
       multiSelectionKeyCode={null}
@@ -1958,12 +2227,11 @@ export default function App() {
         const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
         const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
         if (dx !== 0 || dy !== 0) {
-          if (nudgeSelectedDrawBoxes(dx, dy)) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            return;
-          }
+          window.dispatchEvent(new CustomEvent("easyschematic:nudge-selected", { detail: { dx, dy } }));
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return;
         }
       }
 
@@ -1996,7 +2264,7 @@ export default function App() {
     };
     window.addEventListener("keydown", handleKeyDown, true);
     return () => window.removeEventListener("keydown", handleKeyDown, true);
-  }, [activePage, nudgeSelectedDrawBoxes, undo, redo]);
+  }, [activePage, undo, redo]);
 
   return (
     <div className="flex flex-col h-full">
