@@ -6,38 +6,6 @@ import { LINE_STYLE_LABELS, LINE_STYLE_DASHARRAY, type DeviceData, type LineStyl
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
 import MenuSubmenu from "./MenuSubmenu";
 
-/** Project a point onto the nearest segment and return the projected point. */
-function projectOntoSegments(
-  px: number,
-  py: number,
-  waypoints: { x: number; y: number }[],
-): { x: number; y: number; segIdx: number } {
-  let bestX = px;
-  let bestY = py;
-  let bestDist = Infinity;
-  let bestSeg = 0;
-
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    const ax = waypoints[i].x, ay = waypoints[i].y;
-    const bx = waypoints[i + 1].x, by = waypoints[i + 1].y;
-    const dx = bx - ax, dy = by - ay;
-    const lenSq = dx * dx + dy * dy;
-    if (lenSq === 0) continue;
-    const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
-    const cx = ax + t * dx;
-    const cy = ay + t * dy;
-    const dist = (px - cx) ** 2 + (py - cy) ** 2;
-    if (dist < bestDist) {
-      bestDist = dist;
-      bestX = cx;
-      bestY = cy;
-      bestSeg = i;
-    }
-  }
-
-  return { x: bestX, y: bestY, segIdx: bestSeg };
-}
-
 export default function EdgeContextMenu() {
   const menu = useSchematicStore((s) => s.edgeContextMenu);
   const { setCenter, getZoom, getInternalNode } = useReactFlow();
@@ -65,92 +33,9 @@ export default function EdgeContextMenu() {
   const addHandle = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
-    const edge = store.edges.find((e) => e.id === menu.edgeId);
-    if (!edge) return;
-
-    store.pushSnapshot();
-    const GRID = 20;
-    const newPtSnapped = {
-      x: Math.round(menu.flowX / GRID) * GRID,
-      y: Math.round(menu.flowY / GRID) * GRID,
-    };
-
-    // For stubbed edges, add waypoint to the closer stub (source or target)
-    if (edge.data?.stubbed) {
-      const srcNode = store.nodes.find((n) => n.id === edge.source);
-      const tgtNode = store.nodes.find((n) => n.id === edge.target);
-      const srcX = srcNode?.position.x ?? 0;
-      const tgtX = tgtNode?.position.x ?? 0;
-      const distToSrc = Math.abs(menu.flowX - srcX);
-      const distToTgt = Math.abs(menu.flowX - tgtX);
-      const field = distToSrc <= distToTgt ? "stubSourceWaypoints" : "stubTargetWaypoints";
-      const existing = (field === "stubSourceWaypoints" ? edge.data.stubSourceWaypoints : edge.data.stubTargetWaypoints) ?? [];
-      store.patchEdgeData(menu.edgeId, { [field]: [...existing, newPtSnapped] });
-
-      useSchematicStore.setState({
-        edgeContextMenu: null,
-        edges: useSchematicStore.getState().edges.map((e) => ({
-          ...e,
-          selected: e.id === menu.edgeId,
-        })),
-      });
-      return;
-    }
-
-    // Get existing manual waypoints (just user-placed handles, not auto-route copies)
-    const manualWps: { x: number; y: number }[] =
-      edge.data?.manualWaypoints?.map((p) => ({ ...p })) ?? [];
-
-    // Get the current visual path to project the click onto it
-    const route = store.routedEdges[menu.edgeId];
-    if (!route || route.waypoints.length < 2) return;
-
-    // Project click position onto nearest segment of the current path
-    const projected = projectOntoSegments(menu.flowX, menu.flowY, route.waypoints);
-
-    // For orthogonal segments, lock the fixed axis and snap only the free axis.
-    const segStart = route.waypoints[projected.segIdx];
-    const segEnd = route.waypoints[projected.segIdx + 1];
-    let newPt: { x: number; y: number };
-    if (segStart && segEnd && Math.abs(segStart.y - segEnd.y) < 1) {
-      newPt = { x: Math.round(projected.x / GRID) * GRID, y: segStart.y };
-    } else if (segStart && segEnd && Math.abs(segStart.x - segEnd.x) < 1) {
-      newPt = { x: segStart.x, y: Math.round(projected.y / GRID) * GRID };
-    } else {
-      newPt = {
-        x: Math.round(projected.x / GRID) * GRID,
-        y: Math.round(projected.y / GRID) * GRID,
-      };
-    }
-
-    if (manualWps.length === 0) {
-      manualWps.push(newPt);
-    } else {
-      // Find the correct insertion position by comparing the new point's
-      // position along the routed path to each existing manual waypoint's
-      // position. projected.segIdx indexes the routed path (many A* segments),
-      // NOT the manual waypoints array — we need to map between the two.
-      const manualSegIdxes = manualWps.map((wp) =>
-        projectOntoSegments(wp.x, wp.y, route.waypoints).segIdx,
-      );
-      let insertIdx = manualWps.length; // default: after all existing
-      for (let i = 0; i < manualSegIdxes.length; i++) {
-        if (projected.segIdx <= manualSegIdxes[i]) {
-          insertIdx = i;
-          break;
-        }
-      }
-      manualWps.splice(insertIdx, 0, newPt);
-    }
-
-    store.setManualWaypoints(menu.edgeId, manualWps);
-
+    store.addEdgeHandle(menu.edgeId, { x: menu.flowX, y: menu.flowY });
     useSchematicStore.setState({
       edgeContextMenu: null,
-      edges: useSchematicStore.getState().edges.map((e) => ({
-        ...e,
-        selected: e.id === menu.edgeId,
-      })),
     });
   }, [menu]);
 

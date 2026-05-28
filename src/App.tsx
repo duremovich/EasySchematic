@@ -1624,6 +1624,12 @@ function SchematicCanvas() {
           },
         });
       }}
+      onEdgeDoubleClick={(event, edge) => {
+        event.preventDefault();
+        event.stopPropagation();
+        useSchematicStore.getState().addEdgeHandle(edge.id, screenToFlowPosition({ x: event.clientX, y: event.clientY }));
+        useSchematicStore.setState({ edgeContextMenu: null });
+      }}
     >
       <ResizeSnapGuides dragGuides={snapGuides} />
       {printView && <PageBoundaryOverlay />}

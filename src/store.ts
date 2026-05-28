@@ -385,6 +385,7 @@ interface SchematicState {
   // Edge data
   patchEdgeData: (edgeId: string, patch: Partial<import("./types").ConnectionData>) => void;
   batchPatchEdgeData: (changes: { edgeId: string; patch: Partial<import("./types").ConnectionData> }[]) => void;
+  addEdgeHandle: (edgeId: string, flowPos: { x: number; y: number }) => void;
 
   // Stub conversion (real React Flow nodes for the labels)
   convertEdgeToStubs: (edgeId: string) => void;
@@ -1135,6 +1136,38 @@ function saveCategoryOrder(order: string[] | null) {
     if (order) localStorage.setItem(CATEGORY_ORDER_KEY, JSON.stringify(order));
     else localStorage.removeItem(CATEGORY_ORDER_KEY);
   } catch { /* silently fail */ }
+}
+
+/** Project a point onto the nearest segment of a routed edge and return the projection. */
+function projectOntoSegments(
+  px: number,
+  py: number,
+  waypoints: { x: number; y: number }[],
+): { x: number; y: number; segIdx: number } {
+  let bestX = px;
+  let bestY = py;
+  let bestDist = Infinity;
+  let bestSeg = 0;
+
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    const ax = waypoints[i].x, ay = waypoints[i].y;
+    const bx = waypoints[i + 1].x, by = waypoints[i + 1].y;
+    const dx = bx - ax, dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) continue;
+    const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / lenSq));
+    const cx = ax + t * dx;
+    const cy = ay + t * dy;
+    const dist = (px - cx) ** 2 + (py - cy) ** 2;
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestX = cx;
+      bestY = cy;
+      bestSeg = i;
+    }
+  }
+
+  return { x: bestX, y: bestY, segIdx: bestSeg };
 }
 
 const _initCustomTemplates = loadCustomTemplates();
@@ -4961,6 +4994,91 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         }
         return { ...e, data: merged };
       }),
+    });
+    get().saveToLocalStorage();
+  },
+
+  addEdgeHandle: (edgeId, flowPos) => {
+    const state = get();
+    const edge = state.edges.find((e) => e.id === edgeId);
+    if (!edge) return;
+    if (!edge.data?.stubbed && (!state.routedEdges[edgeId] || state.routedEdges[edgeId].waypoints.length < 2)) {
+      return;
+    }
+
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+
+    const GRID = 20;
+    const newPtSnapped = {
+      x: Math.round(flowPos.x / GRID) * GRID,
+      y: Math.round(flowPos.y / GRID) * GRID,
+    };
+
+    let newEdges = state.edges;
+
+    // For stubbed edges, add the handle to the closer stub leg.
+    if (edge.data?.stubbed) {
+      const srcNode = state.nodes.find((n) => n.id === edge.source);
+      const tgtNode = state.nodes.find((n) => n.id === edge.target);
+      const srcX = srcNode?.position.x ?? 0;
+      const tgtX = tgtNode?.position.x ?? 0;
+      const distToSrc = Math.abs(flowPos.x - srcX);
+      const distToTgt = Math.abs(flowPos.x - tgtX);
+      const field = distToSrc <= distToTgt ? "stubSourceWaypoints" : "stubTargetWaypoints";
+      const existing = (field === "stubSourceWaypoints" ? edge.data.stubSourceWaypoints : edge.data.stubTargetWaypoints) ?? [];
+      newEdges = state.edges.map((e) =>
+        e.id === edgeId
+          ? { ...e, data: { ...e.data!, [field]: [...existing, newPtSnapped] } }
+          : e,
+      );
+    } else {
+      const manualWps: { x: number; y: number }[] =
+        edge.data?.manualWaypoints?.map((p) => ({ ...p })) ?? [];
+
+      const route = state.routedEdges[edgeId];
+      if (!route || route.waypoints.length < 2) return;
+
+      const projected = projectOntoSegments(flowPos.x, flowPos.y, route.waypoints);
+      const segStart = route.waypoints[projected.segIdx];
+      const segEnd = route.waypoints[projected.segIdx + 1];
+      let newPt: { x: number; y: number };
+      if (segStart && segEnd && Math.abs(segStart.y - segEnd.y) < 1) {
+        newPt = { x: Math.round(projected.x / GRID) * GRID, y: segStart.y };
+      } else if (segStart && segEnd && Math.abs(segStart.x - segEnd.x) < 1) {
+        newPt = { x: segStart.x, y: Math.round(projected.y / GRID) * GRID };
+      } else {
+        newPt = newPtSnapped;
+      }
+
+      if (manualWps.length === 0) {
+        manualWps.push(newPt);
+      } else {
+        const manualSegIdxes = manualWps.map((wp) =>
+          projectOntoSegments(wp.x, wp.y, route.waypoints).segIdx,
+        );
+        let insertIdx = manualWps.length;
+        for (let i = 0; i < manualSegIdxes.length; i++) {
+          if (projected.segIdx <= manualSegIdxes[i]) {
+            insertIdx = i;
+            break;
+          }
+        }
+        manualWps.splice(insertIdx, 0, newPt);
+      }
+
+      newEdges = state.edges.map((e) =>
+        e.id === edgeId
+          ? { ...e, data: { ...e.data!, manualWaypoints: manualWps, autoRouteWaypoints: undefined } }
+          : e,
+      );
+    }
+
+    set({
+      edges: newEdges.map((e) => ({
+        ...e,
+        selected: e.id === edgeId,
+      })),
+      nodes: edge.data?.stubbed ? state.nodes : reconcileWaypointNodes(state.nodes, newEdges),
     });
     get().saveToLocalStorage();
   },
