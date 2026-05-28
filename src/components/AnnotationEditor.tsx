@@ -51,6 +51,11 @@ function buildRgba(hex: string, opacity: number): string {
   return `rgba(${r}, ${g}, ${b}, ${(opacity / 100).toFixed(2)})`;
 }
 
+function parseNumberInput(value: string, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
 export default function AnnotationEditor() {
   const editingNodeId = useSchematicStore((s) => s.editingNodeId);
   const nodes = useSchematicStore((s) => s.nodes);
@@ -67,6 +72,8 @@ export default function AnnotationEditor() {
   const [fillHex, setFillHex] = useState("#3b82f6");
   const [fillOpacity, setFillOpacity] = useState(15);
   const [borderColor, setBorderColor] = useState("#3b82f6");
+  const [labelOffsetX, setLabelOffsetX] = useState(8);
+  const [labelOffsetY, setLabelOffsetY] = useState(6);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
@@ -79,10 +86,13 @@ export default function AnnotationEditor() {
     setFillHex(parsed.hex);
     setFillOpacity(parsed.opacity);
     setBorderColor(d.borderColor ?? "#3b82f6");
+    setLabelOffsetX(d.labelOffsetX ?? 8);
+    setLabelOffsetY(d.labelOffsetY ?? 6);
   }, [node]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const close = useCallback(() => setEditingNodeId(null), [setEditingNodeId]);
+  const isDrawBox = node?.data.role === "draw-box";
 
   const handleSave = useCallback(() => {
     if (!editingNodeId) return;
@@ -93,9 +103,10 @@ export default function AnnotationEditor() {
       fontSize,
       color,
       borderColor,
+      ...(isDrawBox ? { labelOffsetX, labelOffsetY } : {}),
     });
     close();
-  }, [editingNodeId, label, shape, fontSize, fillHex, fillOpacity, borderColor, updateAnnotation, close]);
+  }, [editingNodeId, label, shape, fontSize, fillHex, fillOpacity, borderColor, labelOffsetX, labelOffsetY, isDrawBox, updateAnnotation, close]);
 
   if (!editingNodeId || !node) return null;
 
@@ -146,6 +157,39 @@ export default function AnnotationEditor() {
               ))}
             </select>
           </div>
+
+          {isDrawBox && (
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+                Label Position
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <label className="block">
+                  <span className="block text-[10px] text-[var(--color-text-muted)] mb-1">Right</span>
+                  <input
+                    type="number"
+                    step={1}
+                    value={labelOffsetX}
+                    onChange={(e) => setLabelOffsetX(parseNumberInput(e.target.value, 8))}
+                    className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="block text-[10px] text-[var(--color-text-muted)] mb-1">Down</span>
+                  <input
+                    type="number"
+                    step={1}
+                    value={labelOffsetY}
+                    onChange={(e) => setLabelOffsetY(parseNumberInput(e.target.value, 6))}
+                    className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                  />
+                </label>
+              </div>
+              <p className="mt-1 text-[10px] text-[var(--color-text-muted)]">
+                Measured in pixels from the box&apos;s top-left corner. Increase `Right` to move the label right and `Down` to move it lower.
+              </p>
+            </div>
+          )}
 
           {/* Shape */}
           <div>

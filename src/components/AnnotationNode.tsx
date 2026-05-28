@@ -13,6 +13,8 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
   const isDrawBox = annotationData.role === "draw-box" || (
     shape === "rectangle" && annotationData.borderStyle === "dashed"
   );
+  const labelOffsetX = annotationData.labelOffsetX ?? 8;
+  const labelOffsetY = annotationData.labelOffsetY ?? 6;
 
   const handleDoubleClick = () => {
     useSchematicStore.getState().setEditingNodeId(id);
@@ -20,7 +22,7 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
 
   const labelStyle: CSSProperties = {
     position: "absolute",
-    inset: isDrawBox ? "6px auto auto 8px" : 0,
+    inset: isDrawBox ? `${labelOffsetY}px auto auto ${labelOffsetX}px` : 0,
     display: "flex",
     alignItems: isDrawBox ? "flex-start" : "center",
     justifyContent: isDrawBox ? "flex-start" : "center",

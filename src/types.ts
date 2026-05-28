@@ -359,6 +359,10 @@ export interface AnnotationData {
   label?: string;
   /** Font size for the label in px */
   fontSize?: number;
+  /** Draw-box label horizontal offset in px from the top-left corner */
+  labelOffsetX?: number;
+  /** Draw-box label vertical offset in px from the top-left corner */
+  labelOffsetY?: number;
 }
 
 export type AnnotationNode = Node<AnnotationData, "annotation">;
