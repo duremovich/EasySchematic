@@ -27,6 +27,7 @@ export function reconcileWaypointNodes(
   const expected: Expected[] = [];
   const expectedById = new Map<string, Expected>();
   for (const edge of edges) {
+    if (edge.data?.autoRouteWaypoints) continue;
     const wps = edge.data?.manualWaypoints;
     if (!Array.isArray(wps) || wps.length === 0) continue;
     for (let i = 0; i < wps.length; i++) {

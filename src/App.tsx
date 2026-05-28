@@ -59,6 +59,7 @@ import { loadSharedSchematic, checkSession } from "./templateApi";
 import { refreshCloudCache } from "./cloudSync";
 import { useTheme } from "./hooks/useTheme";
 import { getNavigationInputDevice, getWheelNavigationAction } from "./navigationPreferences";
+import { reconcileWaypointNodes } from "./waypointSync";
 
 /** Darkens the canvas area left of x=0 and above y=0, marking the printable origin. */
 function CanvasOriginOverlay() {
@@ -1349,13 +1350,60 @@ function SchematicCanvas() {
         const dy = snap.y - draggedNode.position.y;
         const draggedIds = new Set(draggedNodes.map((n) => n.id));
         let updatedNodes: SchematicNode[] = state.nodes;
+        let updatedEdges = state.edges;
         if (dx !== 0 || dy !== 0) {
           updatedNodes = state.nodes.map((n) => {
             if (!draggedIds.has(n.id)) return n;
             if (n.parentId && draggedIds.has(n.parentId)) return n;
             return { ...n, position: { x: n.position.x + dx, y: n.position.y + dy } };
           }) as SchematicNode[];
-          useSchematicStore.setState({ nodes: updatedNodes, isDragging: false, overlapNodeId: null });
+
+          const updatedNodeById = new Map(updatedNodes.map((n) => [n.id, n] as const));
+          const movesWithSelection = (nodeId: string) => {
+            let current = updatedNodeById.get(nodeId);
+            while (current) {
+              if (draggedIds.has(current.id)) return true;
+              current = current.parentId ? updatedNodeById.get(current.parentId) : undefined;
+            }
+            return false;
+          };
+
+          updatedEdges = state.edges.map((e) => {
+            if (!movesWithSelection(e.source) || !movesWithSelection(e.target)) return e;
+
+            if (e.data?.manualWaypoints?.length) {
+              return {
+                ...e,
+                data: {
+                  ...e.data!,
+                  manualWaypoints: e.data.manualWaypoints.map((p) => ({ x: p.x + dx, y: p.y + dy })),
+                },
+              };
+            }
+
+            const routed = state.routedEdges[e.id];
+            if (!routed || routed.waypoints.length <= 2) return e;
+            const translatedInterior = routed.waypoints
+              .slice(1, -1)
+              .map((p) => ({ x: p.x + dx, y: p.y + dy }));
+            if (translatedInterior.length === 0) return e;
+
+            return {
+              ...e,
+              data: {
+                ...e.data,
+                manualWaypoints: translatedInterior,
+                autoRouteWaypoints: true,
+              },
+            };
+          }) as ConnectionEdge[];
+
+          useSchematicStore.setState({
+            nodes: reconcileWaypointNodes(updatedNodes, updatedEdges),
+            edges: updatedEdges,
+            isDragging: false,
+            overlapNodeId: null,
+          });
           useSchematicStore.getState().saveToLocalStorage();
         } else {
           useSchematicStore.setState({ isDragging: false, overlapNodeId: null });
@@ -1419,7 +1467,18 @@ function SchematicCanvas() {
         const updated = state.nodes.map((n) =>
           n.id === draggedNode.id ? { ...n, position: { x: finalX, y: finalY } } : n,
         );
-        useSchematicStore.setState({ nodes: updated as SchematicNode[], isDragging: false, overlapNodeId: null });
+        const updatedEdges = state.edges.map((e) => {
+          if (e.source !== draggedNode.id && e.target !== draggedNode.id) return e;
+          if (!e.data?.autoRouteWaypoints) return e;
+          const { manualWaypoints: _mw, autoRouteWaypoints: _ar, ...restData } = e.data;
+          return { ...e, data: restData as typeof e.data };
+        });
+        useSchematicStore.setState({
+          nodes: reconcileWaypointNodes(updated as SchematicNode[], updatedEdges),
+          edges: updatedEdges,
+          isDragging: false,
+          overlapNodeId: null,
+        });
         // Persist the snap-corrected position. onNodesChange already saved the
         // grid-aligned drag position via its own saveToLocalStorage; without this
         // explicit save, our correction (e.g. stub label centering on a sub-grid
@@ -1427,7 +1486,18 @@ function SchematicCanvas() {
         // reparentNode below early-returns when there's no parent change.
         useSchematicStore.getState().saveToLocalStorage();
       } else {
-        useSchematicStore.setState({ isDragging: false, overlapNodeId: null });
+        const updatedEdges = state.edges.map((e) => {
+          if (e.source !== draggedNode.id && e.target !== draggedNode.id) return e;
+          if (!e.data?.autoRouteWaypoints) return e;
+          const { manualWaypoints: _mw, autoRouteWaypoints: _ar, ...restData } = e.data;
+          return { ...e, data: restData as typeof e.data };
+        });
+        useSchematicStore.setState({
+          edges: updatedEdges,
+          nodes: reconcileWaypointNodes(state.nodes, updatedEdges),
+          isDragging: false,
+          overlapNodeId: null,
+        });
       }
 
       // Compute absolute position by walking the full parent chain
