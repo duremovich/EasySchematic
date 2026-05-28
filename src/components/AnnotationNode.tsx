@@ -15,6 +15,15 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
   );
   const labelOffsetX = annotationData.labelOffsetX ?? 8;
   const labelOffsetY = annotationData.labelOffsetY ?? 6;
+  const resizeHandleStyle = isDrawBox
+    ? {
+        width: 16,
+        height: 16,
+        borderRadius: 4,
+        border: "1px solid var(--color-border)",
+        backgroundColor: "white",
+      }
+    : undefined;
 
   const handleDoubleClick = () => {
     useSchematicStore.getState().setEditingNodeId(id);
@@ -46,7 +55,12 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
   if (shape === "diamond" || shape === "triangle") {
     return (
       <>
-        <NodeResizer isVisible={!!selected} minWidth={60} minHeight={40} />
+        <NodeResizer
+          isVisible={!!selected}
+          minWidth={60}
+          minHeight={40}
+          handleStyle={resizeHandleStyle}
+        />
         <div
           style={{ position: "relative", width: "100%", height: "100%" }}
           onDoubleClick={handleDoubleClick}
@@ -79,7 +93,12 @@ function AnnotationNode({ id, data, selected }: NodeProps) {
 
   return (
     <>
-      <NodeResizer isVisible={!!selected} minWidth={60} minHeight={40} />
+      <NodeResizer
+        isVisible={!!selected}
+        minWidth={60}
+        minHeight={40}
+        handleStyle={resizeHandleStyle}
+      />
       <div
         style={{
           position: "relative",
