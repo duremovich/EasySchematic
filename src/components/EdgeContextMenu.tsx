@@ -109,6 +109,16 @@ export default function EdgeContextMenu() {
   const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable" | "source" | "target" | "cableId">(false);
   const [labelValue, setLabelValue] = useState("");
 
+  useEffect(() => {
+    if (!menu?.openEditor) return;
+    if (menu.openEditor === "cableId") {
+      const store = useSchematicStore.getState();
+      const edge = store.edges.find((e) => e.id === menu.edgeId);
+      setLabelValue((edge?.data?.cableId as string) ?? "");
+      setEditingLabel("cableId");
+    }
+  }, [menu?.edgeId, menu?.openEditor]);
+
   const setEdgeColor = useCallback((hex: string) => {
     if (!menu) return;
     useSchematicStore.getState().patchEdgeData(menu.edgeId, { color: hex });

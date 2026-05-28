@@ -396,7 +396,7 @@ interface SchematicState {
   clearManualWaypoints: (edgeId: string) => void;
   deviceContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   setDeviceContextMenu: (menu: { nodeId: string; screenX: number; screenY: number } | null) => void;
-  edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number } | null;
+  edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number; openEditor?: "cableId" } | null;
   roomContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   stubLabelContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   portContextMenu: { nodeId: string; portId: string; screenX: number; screenY: number } | null;

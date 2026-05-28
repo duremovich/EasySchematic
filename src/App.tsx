@@ -1624,6 +1624,22 @@ function SchematicCanvas() {
           },
         });
       }}
+      onEdgeClick={(event, edge) => {
+        if (!event.ctrlKey) return;
+        event.preventDefault();
+        event.stopPropagation();
+        const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+        useSchematicStore.setState({
+          edgeContextMenu: {
+            edgeId: edge.id,
+            screenX: event.clientX,
+            screenY: event.clientY,
+            flowX: flowPos.x,
+            flowY: flowPos.y,
+            openEditor: "cableId",
+          },
+        });
+      }}
       onEdgeDoubleClick={(event, edge) => {
         event.preventDefault();
         event.stopPropagation();
