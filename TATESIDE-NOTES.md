@@ -156,6 +156,21 @@ Current behavior:
 - Arrow-key nudges now reuse the same move logic as mouse dragging instead of following React Flow's built-in keyboard movement.
 - The BLU-100 nudge case is tuned so the nearby amp outputs straighten while the BSS inputs and the lower amp feed remain stable.
 
+### Recent Commit Notes
+
+Recent commits on `master` are:
+
+- `6a20a5d` - `Document BLU cable nudge behavior`
+- `e663a14` - `Refine BLU cable nudge preservation`
+- `768c87f` - `Stabilize tight selection edge moves`
+- `e457efc` - `Preserve group move edge routing`
+- `3406a82` - `Widen draw box resize handles`
+- `0fedc69` - `Fix draw box reload snapping`
+- `e64d298` - `Open cable ID editor on ctrl-click`
+- `06f5a5a` - `Add double-click cable handle insertion`
+
+These are all present in both the local repo and the pushed `origin/master` branch.
+
 ## Useful Runtime Checks
 
 Test live site:
