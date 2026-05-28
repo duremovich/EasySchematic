@@ -2836,6 +2836,24 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
     const updates = new Map<string, { parentId: string | undefined; position: { x: number; y: number } }>();
 
+    // Diagnostic fingerprint — should never fire on current code paths. If it
+    // does, some mutation is parenting waypoints under rooms despite the skip
+    // here and the migration. Surfaces in user consoles too so support can ask
+    // "do you see [waypoint-orphan] anywhere?" for a 5-second triage.
+    const orphaned = state.nodes.filter((n) => n.type === "waypoint" && n.parentId);
+    if (orphaned.length > 0) {
+      console.warn(
+        "[waypoint-orphan]",
+        orphaned.length,
+        "waypoints carrying parentId at reparent time",
+        orphaned.slice(0, 5).map((n) => ({
+          id: n.id,
+          parentId: n.parentId,
+          edgeId: (n.data as { edgeId?: string } | undefined)?.edgeId,
+        })),
+      );
+    }
+
     for (const node of state.nodes) {
       // Waypoints belong to edges, not rooms — reparenting them turns their
       // .position into relative-to-room coords, which downstream sync code

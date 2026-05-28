@@ -1,19 +1,31 @@
 import { useState } from "react";
 import { DEVICE_TEMPLATES } from "../deviceLibrary";
+import { forceFullReset } from "../sw-register";
 
 declare const __APP_VERSION__: string;
 declare const __BUILD_HASH__: string;
 
+type Env = "prod" | "beta" | "dev";
+
+function detectEnv(): Env {
+  const host = typeof window !== "undefined" ? window.location.hostname : "";
+  if (host === "easyschematic.live" || host === "www.easyschematic.live") return "prod";
+  if (host.startsWith("beta.")) return "beta";
+  return "dev";
+}
+
 export default function AboutDialog({ onClose }: { onClose: () => void }) {
   const [copied, setCopied] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   const version = typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev";
   const hash = typeof __BUILD_HASH__ !== "undefined" ? __BUILD_HASH__ : "local";
   const shortHash = hash.length > 7 ? hash.slice(0, 7) : hash;
+  const env = detectEnv();
 
   const copyDebugInfo = async () => {
     const info = [
-      `EasySchematic v${version} (${shortHash})`,
+      `EasySchematic v${version} (${shortHash}) \u00b7 ${env}`,
       `UA: ${navigator.userAgent}`,
       `Viewport: ${window.innerWidth}\u00d7${window.innerHeight}`,
       `Date: ${new Date().toISOString().split("T")[0]}`,
@@ -21,6 +33,17 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
     await navigator.clipboard.writeText(info);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleForceUpdate = async () => {
+    if (resetting) return;
+    const ok = window.confirm(
+      "Force update: this unregisters the service worker and clears the app cache, then reloads. " +
+        "Your saved schematics (in browser storage) are NOT affected. Continue?",
+    );
+    if (!ok) return;
+    setResetting(true);
+    await forceFullReset();
   };
 
   return (
@@ -53,7 +76,16 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
               EasySchematic
             </div>
             <div className="text-xs text-[var(--color-text-muted)] mt-0.5">
-              Version {version} ({shortHash})
+              Version {version} ({shortHash}) ·{" "}
+              <span
+                className="inline-block px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide font-semibold"
+                style={{
+                  backgroundColor: env === "prod" ? "#dcfce7" : env === "beta" ? "#fef3c7" : "#e5e7eb",
+                  color: env === "prod" ? "#166534" : env === "beta" ? "#92400e" : "#374151",
+                }}
+              >
+                {env}
+              </span>
             </div>
           </div>
 
@@ -101,19 +133,29 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[var(--color-border)]">
+        <div className="flex items-center justify-between gap-2 px-5 py-3 border-t border-[var(--color-border)]">
           <button
-            onClick={copyDebugInfo}
-            className="px-3 py-1.5 text-xs rounded border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer text-[var(--color-text)]"
+            onClick={handleForceUpdate}
+            disabled={resetting}
+            title="Unregister the service worker, clear app cache, and reload. Schematic data is preserved."
+            className="px-3 py-1.5 text-xs rounded border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer text-[var(--color-text-muted)] disabled:opacity-50 disabled:cursor-wait"
           >
-            {copied ? "Copied!" : "Copy Debug Info"}
+            {resetting ? "Reloading…" : "Force Update"}
           </button>
-          <button
-            onClick={onClose}
-            className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={copyDebugInfo}
+              className="px-3 py-1.5 text-xs rounded border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer text-[var(--color-text)]"
+            >
+              {copied ? "Copied!" : "Copy Debug Info"}
+            </button>
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>

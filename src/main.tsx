@@ -3,6 +3,9 @@ import { createRoot } from "react-dom/client";
 import { ReactFlowProvider } from "@xyflow/react";
 import "./index.css";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
+import { initServiceWorkerUpdates } from "./sw-register";
+
+initServiceWorkerUpdates();
 
 const App = lazy(() => import("./App.tsx"));
 const LandingPage = lazy(() => import("./components/LandingPage.tsx"));

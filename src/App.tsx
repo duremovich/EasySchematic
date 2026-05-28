@@ -36,6 +36,7 @@ import MobileGate from "./components/MobileGate";
 import ToastContainer from "./components/ToastContainer";
 import PendingSubmissionBanner from "./components/PendingSubmissionBanner";
 import BetaBanner from "./components/BetaBanner";
+import UpdatePill from "./components/UpdatePill";
 import PortContextMenu from "./components/PortContextMenu";
 import RoutingDebugOverlay from "./components/RoutingDebugOverlay";
 import RoutingTuningPanel from "./components/RoutingTuningPanel";
@@ -1731,6 +1732,7 @@ export default function App() {
       <div data-print-hide>
         <MenuBar />
       </div>
+      <UpdatePill />
       <BetaBanner />
       <DemoBanner />
       <PendingSubmissionBanner />
