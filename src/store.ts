@@ -203,7 +203,7 @@ import { GRID_SIZE } from "./gridConstants";
  *  which is not necessarily the background grid Y, so retain their Y. */
 function snapNodesToGrid(nodes: SchematicNode[]): SchematicNode[] {
   for (const n of nodes) {
-    if (n.type === "stub-label") continue;
+    if (n.type === "stub-label" || isDrawBoxNode(n)) continue;
     n.position.x = Math.round(n.position.x / GRID_SIZE) * GRID_SIZE;
     if (!(n.type === "device" && isExternalEndpointData(n.data as DeviceData))) {
       n.position.y = Math.round(n.position.y / GRID_SIZE) * GRID_SIZE;
