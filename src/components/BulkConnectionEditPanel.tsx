@@ -2,6 +2,7 @@ import { useState, useMemo } from "react";
 
 import { useSchematicStore } from "../store";
 import { LINE_STYLE_LABELS, LINE_STYLE_DASHARRAY, type LineStyle } from "../types";
+import { generateIncrementingLabelSeries } from "../spreadsheet/fillSeries";
 
 const LINE_STYLES: LineStyle[] = ["solid", "dashed", "dotted", "dash-dot"];
 
@@ -32,6 +33,7 @@ export default function BulkConnectionEditPanel({ onClose }: Props) {
   const [srcLabelInput, setSrcLabelInput] = useState("");
   const [midLabelInput, setMidLabelInput] = useState("");
   const [tgtLabelInput, setTgtLabelInput] = useState("");
+  const [cableIdInput, setCableIdInput] = useState("");
 
   const hasEdges = selectedEdges.length >= 2;
 
@@ -98,11 +100,35 @@ export default function BulkConnectionEditPanel({ onClose }: Props) {
     setTgtLabelInput("");
   };
 
+  const applyCableIds = () => {
+    const start = cableIdInput.trim();
+    if (!start) return;
+    const series = generateIncrementingLabelSeries(start, selectedEdges.length, 1);
+    useSchematicStore.getState().batchPatchEdgeData(
+      selectedEdges.map((e, index) => ({
+        edgeId: e.id,
+        patch: { cableId: series[index] },
+      })),
+    );
+    setCableIdInput("");
+  };
+
+  const clearAllCableIds = () => {
+    useSchematicStore.getState().batchPatchEdgeData(
+      selectedEdges.map((e) => ({
+        edgeId: e.id,
+        patch: { cableId: undefined },
+      })),
+    );
+    setCableIdInput("");
+  };
+
   const anyLabelSet = selectedEdges.some(
     (e) => (e.data?.sourceLabel as string | undefined)
       || (e.data?.label as string | undefined)
       || (e.data?.targetLabel as string | undefined),
   );
+  const anyCableIdSet = selectedEdges.some((e) => (e.data?.cableId as string | undefined));
 
   // Color override — true when every selected edge has the same color set.
   const colorValues = selectedEdges.map((e) => (e.data?.color as string | undefined) ?? "");
@@ -149,6 +175,39 @@ export default function BulkConnectionEditPanel({ onClose }: Props) {
       )}
 
       {hasEdges && <>{/* Labels */}
+      <section className="mb-3">
+        <div className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
+          Cable ID
+        </div>
+        <p className="text-[10px] text-[var(--color-text-muted)] leading-tight mb-1.5">
+          Applies a series across the selection. Example: Output 1, Output 2 or SPK-101-HL, SPK-102-HL.
+        </p>
+        <input
+          className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-0.5 text-xs outline-none focus:border-blue-500"
+          value={cableIdInput}
+          onChange={(e) => setCableIdInput(e.target.value)}
+          onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter") applyCableIds(); }}
+          placeholder="Cable ID start value…"
+        />
+        <div className="flex gap-1 mt-1.5">
+          <button
+            onClick={applyCableIds}
+            disabled={!cableIdInput.trim()}
+            className="flex-1 px-2 py-0.5 text-[10px] bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-40 cursor-pointer"
+          >
+            Apply
+          </button>
+          <button
+            onClick={clearAllCableIds}
+            disabled={!anyCableIdSet}
+            className="flex-1 px-2 py-0.5 text-[10px] text-[var(--color-text-muted)] hover:text-red-600 border border-[var(--color-border)] rounded hover:border-red-300 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Clear all
+          </button>
+        </div>
+      </section>
+
+      {/* Labels */}
       <section className="mb-3">
         <div className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
           Labels

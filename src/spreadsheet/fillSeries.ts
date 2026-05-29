@@ -1,6 +1,23 @@
 import type { FillSeriesConfig } from "./types";
 import { ipToNumber, numberToIp, isValidIpv4, isValidSubnetMask, isValidVlan } from "../networkValidation";
 
+export function generateIncrementingLabelSeries(start: string, count: number, step: number): string[] {
+  if (count <= 0) return [];
+
+  const match = start.match(/^(.*?)(\d+)(\D*)$/);
+  if (match) {
+    const [, prefix, numStr, suffix] = match;
+    const padLen = numStr.length;
+    const startNum = Number(numStr);
+    return Array.from({ length: count }, (_, i) => {
+      const val = startNum + i * step;
+      return `${prefix}${String(val).padStart(padLen, "0")}${suffix}`;
+    });
+  }
+
+  return Array.from({ length: count }, (_, i) => `${start} ${1 + i * step}`);
+}
+
 export const FILL_SERIES_CONFIGS: Record<string, FillSeriesConfig> = {
   ip: {
     label: "IP Address",
@@ -86,17 +103,7 @@ export const FILL_SERIES_CONFIGS: Record<string, FillSeriesConfig> = {
     defaultStep: 1,
     stepLabel: "Increment by",
     generateSeries(start: string, count: number, step: number): string[] {
-      const match = start.match(/^(.*?)(\d+)$/);
-      if (match) {
-        const prefix = match[1];
-        const padLen = match[2].length;
-        const startNum = Number(match[2]);
-        return Array.from({ length: count }, (_, i) =>
-          prefix + String(startNum + i * step).padStart(padLen, "0")
-        );
-      } else {
-        return Array.from({ length: count }, (_, i) => `${start} ${1 + i * step}`);
-      }
+      return generateIncrementingLabelSeries(start, count, step);
     },
   },
 };
