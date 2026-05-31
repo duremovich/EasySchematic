@@ -7,11 +7,11 @@ function normalize(value: string | null | undefined): string {
 }
 
 export function compareTemplatesByModel(a: Pick<DeviceTemplate, "manufacturer" | "modelNumber" | "label">, b: Pick<DeviceTemplate, "manufacturer" | "modelNumber" | "label">): number {
-  const labelCmp = COLLATOR.compare(normalize(a.label), normalize(b.label));
-  if (labelCmp !== 0) return labelCmp;
-
   const manufacturerCmp = COLLATOR.compare(normalize(a.manufacturer), normalize(b.manufacturer));
   if (manufacturerCmp !== 0) return manufacturerCmp;
 
-  return COLLATOR.compare(normalize(a.modelNumber), normalize(b.modelNumber));
+  const modelCmp = COLLATOR.compare(normalize(a.modelNumber), normalize(b.modelNumber));
+  if (modelCmp !== 0) return modelCmp;
+
+  return COLLATOR.compare(normalize(a.label), normalize(b.label));
 }

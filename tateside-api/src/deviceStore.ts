@@ -71,9 +71,9 @@ export function listCurrentTemplates(db: DatabaseSync): DeviceTemplate[] {
       WHERE d.deleted_at IS NULL
       ORDER BY
         lower(coalesce(d.category, '')),
-        lower(d.label),
         lower(coalesce(d.manufacturer, '')),
-        lower(coalesce(d.model_number, ''))
+        lower(coalesce(d.model_number, d.label, '')),
+        lower(d.label)
     `)
     .all() as unknown as DeviceRow[];
 
