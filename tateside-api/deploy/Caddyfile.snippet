@@ -1,0 +1,10 @@
+# Add this route inside the existing schematic.tateside.online site block,
+# before the frontend reverse_proxy / fallback route.
+#
+# Cloudflare Access sends identity headers to the origin through the tunnel.
+# The API only listens on localhost and requires Cf-Access-Authenticated-User-Email
+# when TATESIDE_REQUIRE_ACCESS_IDENTITY=1.
+
+handle_path /api/tateside/* {
+	reverse_proxy 127.0.0.1:8788
+}

@@ -366,6 +366,7 @@ npm run tateside:api
 - Default VPS database path should be `/var/lib/tateside-schematic/tateside.db`.
 - API should bind to `127.0.0.1:8788` and be routed by the existing web stack/tunnel at `/api/tateside/*`.
 - When deployed behind Cloudflare Access, set `TATESIDE_REQUIRE_ACCESS_IDENTITY=1` so writes require `Cf-Access-Authenticated-User-Email`.
+- Added deployment helpers in `tateside-api/deploy/` for systemd, Caddy routing, and the VPS deployment checklist.
 
 ## Resume Context For Future Chat
 

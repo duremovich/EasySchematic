@@ -1,0 +1,23 @@
+[Unit]
+Description=TateSide Schematic API
+After=network.target
+
+[Service]
+Type=simple
+User=debian
+WorkingDirectory=/home/debian/EasySchematic
+Environment=NODE_ENV=production
+Environment=TATESIDE_DATA_DIR=/var/lib/tateside-schematic
+Environment=TATESIDE_DB_PATH=/var/lib/tateside-schematic/tateside.db
+Environment=TATESIDE_API_HOST=127.0.0.1
+Environment=TATESIDE_API_PORT=8788
+Environment=TATESIDE_ALLOWED_ORIGIN=https://schematic.tateside.online
+Environment=TATESIDE_REQUIRE_ACCESS_IDENTITY=1
+ExecStart=/usr/bin/node /home/debian/EasySchematic/dist-tateside-api/tateside-api/src/server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
