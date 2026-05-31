@@ -28,6 +28,11 @@
   "scripts": {
     "dev": "vite",
     "generate-fallback": "npx tsx api/seed/generate-fallback.ts",
+    "jetbuilt:export": "node scripts/jetbuilt-export.mjs",
+    "jetbuilt:cleanup": "node scripts/jetbuilt-cleanup.mjs",
+    "jetbuilt:spec-enrich": "node scripts/jetbuilt-spec-enrich.mjs",
+    "jetbuilt:finalize": "node scripts/jetbuilt-finalize.mjs",
+    "tateside:seed:jetbuilt": "node tateside-api/scripts/seed-jetbuilt-library.mjs",
     "build": "npm run generate-fallback && tsc -b && vite build",
     "build:dev-reference": "typedoc",
     "lint": "eslint .",

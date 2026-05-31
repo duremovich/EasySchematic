@@ -259,6 +259,35 @@ Next likely work:
 
 ## App Login And Cloud UI Removal
 
+## Jetbuilt Import Workflow
+
+Use the exporter script when you want to pull recent Jetbuilt quote activity into the TateSide device library.
+
+Run it from the repo root after setting your API key:
+
+```powershell
+$env:JETBUILT_API_KEY = "..."
+npm run jetbuilt:export -- --days=180
+```
+
+Outputs land in `.tateside-data/jetbuilt/`:
+
+- `projects.csv` and `projects.json` for the quote list
+- `items.csv` for the filtered quote line items
+- `devices.csv` for the deduped device candidates
+- `devices.json` for the import-ready EasySchematic templates
+- `unresolved.json` for items that still need manual port/spec review
+
+The exporter is rate-limited and retries on Jetbuilt `429`/`5xx` responses so it can run politely against the API.
+
+To replace the TateSide device library with the official-spec enriched set, use:
+
+```powershell
+npm run tateside:seed:jetbuilt
+```
+
+That script wipes the current TateSide device rows from the local SQLite database and seeds only the Jetbuilt records that were enriched from official manufacturer sources.
+
 Completed on `2026-05-31`.
 
 Intent:
