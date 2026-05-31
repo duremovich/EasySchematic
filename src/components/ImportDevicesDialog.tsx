@@ -4,7 +4,7 @@ import type { DeviceTemplate } from "../types";
 import { parseJsonImport } from "../import/parseJson";
 import { parseCsvImport } from "../import/parseCsv";
 import type { ParsedTemplate } from "../import/types";
-import { createSubmission } from "../templateApi";
+import { saveTatesideDeviceTemplates } from "../tatesideApi";
 
 type Tab = "json" | "csv";
 
@@ -46,9 +46,9 @@ export default function ImportDevicesDialog({ open, onClose }: Props) {
 
   const [tab, setTab] = useState<Tab>("json");
   const [text, setText] = useState("");
-  const [submitterNote, setSubmitterNote] = useState("");
+  const [libraryNote, setLibraryNote] = useState("");
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
-  const [submitting, setSubmitting] = useState(false);
+  const [savingShared, setSavingShared] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const result = useMemo(() => {
@@ -61,7 +61,7 @@ export default function ImportDevicesDialog({ open, onClose }: Props) {
   const close = () => {
     setText("");
     setSkipped(new Set());
-    setSubmitterNote("");
+    setLibraryNote("");
     onClose();
   };
 
@@ -85,52 +85,36 @@ export default function ImportDevicesDialog({ open, onClose }: Props) {
     (pt) => !skipped.has(pt.template.id ?? pt.template.label) && pt.validation.ok,
   );
 
-  const handleAddToLibrary = () => {
+  const handleAddLocalOnly = () => {
     if (selectedTemplates.length === 0) return;
     importCustomTemplates(selectedTemplates.map((pt) => pt.template));
-    addToast(`Added ${selectedTemplates.length} template${selectedTemplates.length === 1 ? "" : "s"} to your library`, "success");
+    addToast(`Added ${selectedTemplates.length} template${selectedTemplates.length === 1 ? "" : "s"} locally`, "success");
     close();
   };
 
-  const handleAddAndSubmit = async () => {
+  const handleAddToTatesideLibrary = async () => {
     if (selectedTemplates.length === 0) return;
-    setSubmitting(true);
-    importCustomTemplates(selectedTemplates.map((pt) => pt.template));
-
-    let submitted = 0;
-    const failures: { label: string; reason: string }[] = [];
+    setSavingShared(true);
     const source = tab === "json" ? "bulk-json" : "bulk-csv";
-    for (const pt of selectedTemplates) {
-      try {
-        // Strip id/version since the submission API generates these
-        const { id, version, ...data } = pt.template as DeviceTemplate & { version?: number };
-        void id; void version;
-        await createSubmission("create", data, undefined, submitterNote || undefined, source);
-        submitted++;
-      } catch (err) {
-        const reason = err instanceof Error ? err.message : String(err);
-        failures.push({ label: pt.template.label || "(no label)", reason });
-        console.error("Submission failed:", pt.template.label, reason);
-      }
-    }
-    setSubmitting(false);
+    const templates = selectedTemplates.map((pt) => {
+      const { id, version, ...data } = pt.template as DeviceTemplate & { version?: number };
+      void id; void version;
+      return data;
+    });
 
-    if (failures.length > 0) {
-      // Summarize unique rejection reasons so users actually know what went wrong
-      // instead of a useless "N failed" count.
-      const grouped = new Map<string, number>();
-      for (const f of failures) grouped.set(f.reason, (grouped.get(f.reason) ?? 0) + 1);
-      const summary = Array.from(grouped.entries())
-        .map(([reason, n]) => `${n}× ${reason}`)
-        .join(" · ");
+    try {
+      const result = await saveTatesideDeviceTemplates(templates, { note: libraryNote || undefined, source });
+      importCustomTemplates(result.templates.length > 0 ? result.templates : selectedTemplates.map((pt) => pt.template));
       addToast(
-        `Added ${selectedTemplates.length} to library. Submitted ${submitted}, ${failures.length} failed: ${summary}`,
-        "error",
+        `Added ${selectedTemplates.length} template${selectedTemplates.length === 1 ? "" : "s"} to TateSide library`,
+        "success",
       );
-    } else {
-      addToast(`Added ${selectedTemplates.length} to library and submitted to community`, "success");
+      close();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Could not add devices to TateSide library", "error");
+    } finally {
+      setSavingShared(false);
     }
-    close();
   };
 
   return (
@@ -157,7 +141,7 @@ export default function ImportDevicesDialog({ open, onClose }: Props) {
             <button onClick={close} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer">✕</button>
           </div>
           <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-            Bulk-add device templates to your library. See the{" "}
+            Bulk-add device templates to the shared TateSide library, with a local-only fallback while the API is being built. See the{" "}
             <a href="https://docs.easyschematic.live/import-devices" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
               import guide
             </a>{" "}
@@ -262,11 +246,11 @@ export default function ImportDevicesDialog({ open, onClose }: Props) {
           {selectedTemplates.length > 0 && (
             <div>
               <label className="block text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1">
-                Submitter note (optional, used if you submit to community)
+                Library note (optional)
               </label>
               <input
-                value={submitterNote}
-                onChange={(e) => setSubmitterNote(e.target.value)}
+                value={libraryNote}
+                onChange={(e) => setLibraryNote(e.target.value)}
                 placeholder="e.g. Imported from Extron stencil 2024.1"
                 className="w-full px-2 py-1 text-xs rounded border outline-none focus:border-blue-500"
                 style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}
@@ -284,19 +268,19 @@ export default function ImportDevicesDialog({ open, onClose }: Props) {
             Cancel
           </button>
           <button
-            onClick={handleAddAndSubmit}
-            disabled={selectedTemplates.length === 0 || submitting}
-            className="px-3 py-1.5 rounded border border-blue-300 bg-white text-xs text-blue-700 hover:bg-blue-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            title="Adds to your library AND submits to the community library for review"
+            onClick={handleAddLocalOnly}
+            disabled={selectedTemplates.length === 0 || savingShared}
+            className="px-3 py-1.5 rounded border border-[var(--color-border)] bg-white text-xs hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            title="Adds only to this browser's local custom device library"
           >
-            {submitting ? "Submitting…" : `Add & Submit (${selectedTemplates.length})`}
+            Add Locally Only
           </button>
           <button
-            onClick={handleAddToLibrary}
-            disabled={selectedTemplates.length === 0 || submitting}
+            onClick={handleAddToTatesideLibrary}
+            disabled={selectedTemplates.length === 0 || savingShared}
             className="px-4 py-1.5 rounded bg-blue-500 text-white text-xs hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
-            Add {selectedTemplates.length} to Library
+            {savingShared ? "Saving..." : `Add ${selectedTemplates.length} to TateSide Library`}
           </button>
         </div>
       </div>

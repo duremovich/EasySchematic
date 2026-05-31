@@ -18,6 +18,7 @@ import ShowInfoPanel from "./ShowInfoPanel";
 import CsvImportWizard from "./CsvImportWizard";
 import SignalColorPanel from "./SignalColorPanel";
 import { useTheme } from "../hooks/useTheme";
+import SharePointProjectDialog from "./SharePointProjectDialog";
 
 // ─── Menu data types ─────────────────────────────────────────────
 
@@ -139,6 +140,7 @@ export default function MenuBar() {
   const [showPreferences, setShowPreferences] = useState(false);
   const [showRoomDistances, setShowRoomDistances] = useState(false);
   const [showCsvImport, setShowCsvImport] = useState(false);
+  const [showSharePointProjects, setShowSharePointProjects] = useState(false);
   const fileHandle = useSchematicStore((s) => s.fileHandle);
   const isOnline = useSchematicStore((s) => s.isOnline);
 
@@ -455,6 +457,7 @@ export default function MenuBar() {
       { type: "item", label: "Save", shortcut: "Ctrl+S", onClick: handleSave },
       { type: "item", label: "Save As...", shortcut: "Ctrl+Shift+S", onClick: handleSaveAs },
       { type: "item", label: "Open...", shortcut: "Ctrl+O", onClick: handleOpen },
+      { type: "item", label: "SharePoint Projects...", onClick: () => setShowSharePointProjects(true) },
       { type: "separator" },
       { type: "item", label: "Save Device Archive", onClick: handleSaveArchive },
       { type: "item", label: "Import Device Archive...", onClick: handleOpenArchive },
@@ -543,13 +546,13 @@ export default function MenuBar() {
     Help: [
       {
         type: "item",
-        label: "Documentation \u2197",
-        onClick: () => window.open("https://docs.easyschematic.live", "_blank", "noopener,noreferrer"),
+        label: "TateSide Schematic \u2197",
+        onClick: () => window.open("https://schematic.tateside.online", "_blank", "noopener,noreferrer"),
       },
       {
         type: "item",
-        label: "Device Database \u2197",
-        onClick: () => window.open("https://devices.easyschematic.live", "_blank", "noopener,noreferrer"),
+        label: "TateSide Fork \u2197",
+        onClick: () => window.open("https://github.com/seanliamdarcy-code/EasySchematic", "_blank", "noopener,noreferrer"),
       },
       { type: "separator" },
       {
@@ -901,6 +904,9 @@ export default function MenuBar() {
       )}
       {showCsvImport && (
         <CsvImportWizard onClose={() => setShowCsvImport(false)} />
+      )}
+      {showSharePointProjects && (
+        <SharePointProjectDialog onClose={() => setShowSharePointProjects(false)} />
       )}
     </div>
   );

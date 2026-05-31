@@ -254,7 +254,7 @@ curl -I -H "Host: schematic.tateside.online" http://127.0.0.1:8080
 Next likely work:
 
 - Replace EasySchematic cloud save/login flows with Microsoft/SharePoint save and open.
-- Build a TateSide-owned shared device library and submission workflow.
+- Build a TateSide-owned shared device library. Since the app is private to TateSide staff, direct staff additions are preferred over a public review queue.
 - Later decide whether to keep or remove any spare test tunnel hostname once no longer needed.
 
 ## App Login And Cloud UI Removal
@@ -308,7 +308,7 @@ Target outcome:
 
 - TateSide owns its own shared device database.
 - Staff can use the protected TateSide app without upstream EasySchematic login.
-- Staff can add or submit devices into the TateSide shared library.
+- Staff can add devices directly into the TateSide shared library.
 - Users can browse SharePoint project folders and save schematic JSON plus exported files into the chosen project folder.
 
 Likely architecture:
@@ -322,10 +322,50 @@ Likely architecture:
 Important design questions for the next phase:
 
 - Which SharePoint site/library should schematics live in?
-- Should every TateSide user be able to add devices directly, or should additions go into a review queue?
+- Decision on `2026-05-31`: every TateSide staff user can add devices directly. No separate device admin/review portal is needed for the initial TateSide-only workflow.
 - Should device records include commercial fields such as cost, supplier, rack units, power draw, heat, PoE, and support links?
 - Should saved projects contain only `.json`, or also exports such as PDF, PNG, DXF, cable schedules, and device reports?
 - Should SharePoint folder access simply follow each user's existing Microsoft 365 permissions?
+
+First implementation slice started on `2026-05-31`:
+
+- Added a TateSide-specific browser API client in `src/tatesideApi.ts`.
+- Device library loading now tries the TateSide shared device endpoint first, then falls back to the existing bundled/upstream template source while the TateSide API is being built.
+- Bulk device import now saves directly to the TateSide shared device library endpoint instead of using any EasySchematic community/review flow.
+- Added `File > SharePoint Projects...` as the first SharePoint workflow surface for browsing folders, opening schematic JSON, and saving the current schematic JSON into the selected folder.
+
+Frontend API contract introduced:
+
+```text
+GET  /api/tateside/devices/templates
+POST /api/tateside/devices/templates
+GET  /api/tateside/sharepoint/children?folderId=<optional>
+PUT  /api/tateside/sharepoint/schematics
+GET  /api/tateside/sharepoint/schematics/:fileId
+```
+
+The front end also supports `VITE_TATESIDE_API_URL` if the TateSide API is hosted on a different origin. Default is same-origin `/api/tateside`.
+
+Device database direction:
+
+- Use a TateSide API on the VPS with a small database, likely SQLite initially.
+- Keep SharePoint for project schematic JSON and generated exports, not as the primary device database.
+- A separate `devices.schematic.tateside.online` portal is not needed for the initial workflow.
+
+VPS API implementation started:
+
+- Added `tateside-api/` as a small Node service using built-in `node:sqlite`.
+- Added SQL migration `tateside-api/migrations/0001_device_library.sql`.
+- Added local commands:
+
+```bash
+npm run tateside:api:build
+npm run tateside:api
+```
+
+- Default VPS database path should be `/var/lib/tateside-schematic/tateside.db`.
+- API should bind to `127.0.0.1:8788` and be routed by the existing web stack/tunnel at `/api/tateside/*`.
+- When deployed behind Cloudflare Access, set `TATESIDE_REQUIRE_ACCESS_IDENTITY=1` so writes require `Cf-Access-Authenticated-User-Email`.
 
 ## Resume Context For Future Chat
 

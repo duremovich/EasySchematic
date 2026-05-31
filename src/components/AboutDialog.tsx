@@ -64,7 +64,7 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
 
           <div className="flex flex-col gap-1 text-xs text-[var(--color-text)]">
             <span>{Math.floor(DEVICE_TEMPLATES.length / 10) * 10}+ bundled device templates</span>
-            <span>2,000+ in the community library</span>
+            <span>TateSide shared device library ready</span>
             <span>68 signal types</span>
           </div>
 
@@ -72,13 +72,9 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
 
           <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs">
             {[
-              { label: "Website", href: "https://easyschematic.live" },
-              { label: "Docs", href: "https://docs.easyschematic.live" },
-              { label: "GitHub", href: "https://github.com/duremovich/EasySchematic" },
-              { label: "Device Database", href: "https://devices.easyschematic.live" },
-              { label: "Support", href: "mailto:support@easyschematic.live" },
-              { label: "Report a Bug", href: "https://github.com/duremovich/EasySchematic/issues" },
-              { label: "Discord", href: "https://discord.gg/dxXn3Jk2a6" },
+              { label: "Live App", href: "https://schematic.tateside.online" },
+              { label: "Fork", href: "https://github.com/seanliamdarcy-code/EasySchematic" },
+              { label: "Upstream", href: "https://github.com/duremovich/EasySchematic" },
             ].map((link) => (
               <a
                 key={link.label}

@@ -1,5 +1,6 @@
 import type { DeviceTemplate } from "./types";
 import fallbackData from "./deviceLibrary.fallback.json";
+import { fetchTatesideDeviceTemplates } from "./tatesideApi";
 
 const API_URL =
   import.meta.env?.VITE_TEMPLATE_API_URL ?? "https://api.easyschematic.live";
@@ -275,9 +276,12 @@ export async function createSubmission(
 export async function fetchTemplates(): Promise<DeviceTemplate[]> {
   if (cached) return effectiveTemplates();
 
-  const res = await fetch(`${API_URL}/templates`);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  const data = (await res.json()) as DeviceTemplate[];
-  cached = data;
+  try {
+    cached = await fetchTatesideDeviceTemplates();
+  } catch {
+    const res = await fetch(`${API_URL}/templates`);
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    cached = (await res.json()) as DeviceTemplate[];
+  }
   return effectiveTemplates();
 }
