@@ -554,15 +554,6 @@ export default function MenuBar() {
         label: "TateSide Fork \u2197",
         onClick: () => window.open("https://github.com/seanliamdarcy-code/EasySchematic", "_blank", "noopener,noreferrer"),
       },
-      { type: "separator" },
-      {
-        type: "item",
-        label: "Landing Page",
-        onClick: () => {
-          localStorage.removeItem("easyschematic-skip-landing");
-          window.location.href = "/";
-        },
-      },
       {
         type: "item",
         label: "About EasySchematic",
