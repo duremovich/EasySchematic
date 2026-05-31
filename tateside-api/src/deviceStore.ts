@@ -69,7 +69,11 @@ export function listCurrentTemplates(db: DatabaseSync): DeviceTemplate[] {
       FROM devices d
       JOIN device_versions v ON v.id = d.current_version_id
       WHERE d.deleted_at IS NULL
-      ORDER BY lower(coalesce(d.category, '')), lower(coalesce(d.manufacturer, '')), lower(d.label)
+      ORDER BY
+        lower(coalesce(d.category, '')),
+        lower(coalesce(d.manufacturer, '')),
+        lower(coalesce(d.model_number, d.label, '')),
+        lower(d.label)
     `)
     .all() as unknown as DeviceRow[];
 

@@ -4,6 +4,7 @@ import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate } from "../types";
 import { useSchematicStore, GRID_SIZE } from "../store";
 import { scoreTemplate } from "../templateSearch";
+import { compareTemplatesByModel } from "../templateOrdering";
 import {
   EXTERNAL_ENDPOINT_HEIGHT,
   EXTERNAL_ENDPOINT_MIN_WIDTH,
@@ -129,13 +130,20 @@ export default function QuickAddDevice({
       const specials = specialItems.map((s) => s.item);
       const favs = deviceItems
         .filter((d) => d.item.type === "device" && favoriteSet.has(d.item.template.id ?? d.item.template.deviceType))
+        .sort((a, b) => {
+          if (a.item.type === "device" && b.item.type === "device") {
+            return compareTemplatesByModel(a.item.template, b.item.template);
+          }
+          return 0;
+        })
         .map((d) => d.item);
       const rest = deviceItems
         .filter((d) => d.item.type === "device" && !favoriteSet.has(d.item.template.id ?? d.item.template.deviceType))
         .sort((a, b) => {
-          const al = a.item.type === "device" ? a.item.template.label : "";
-          const bl = b.item.type === "device" ? b.item.template.label : "";
-          return al.localeCompare(bl);
+          if (a.item.type === "device" && b.item.type === "device") {
+            return compareTemplatesByModel(a.item.template, b.item.template);
+          }
+          return 0;
         })
         .map((d) => d.item);
       return [...specials, ...favs, ...rest].slice(0, MAX_RESULTS);
@@ -143,7 +151,7 @@ export default function QuickAddDevice({
 
     return all
       .filter((r) => r.score > 0)
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => b.score - a.score || (a.item.type === "device" && b.item.type === "device" ? compareTemplatesByModel(a.item.template, b.item.template) : 0))
       .map((r) => r.item)
       .slice(0, MAX_RESULTS);
   }, [allTemplates, selectedCategories, selectedBrands, query, favoriteSet, hasFilter]);

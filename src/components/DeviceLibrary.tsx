@@ -5,6 +5,7 @@ import type { DeviceTemplate, CustomTemplateGroup, OwnedGearFile, OwnedGearItem,
 import { useSchematicStore, CATEGORY_ORDER_DEFAULT } from "../store";
 import { scoreTemplate } from "../templateSearch";
 import { inventoryKeyFromDeviceData, inventoryKeyFromTemplate } from "../inventoryKey";
+import { compareTemplatesByModel } from "../templateOrdering";
 import DeviceCreatorPicker from "./DeviceCreatorPicker";
 import ImportDevicesDialog from "./ImportDevicesDialog";
 
@@ -874,7 +875,7 @@ function OwnedGearTab({ query }: { query: string }) {
     return [...items].sort((a, b) => {
       const aMissing = Math.max((usedCounts.get(inventoryKeyFromTemplate(a.template)) ?? 0) - a.quantity, 0);
       const bMissing = Math.max((usedCounts.get(inventoryKeyFromTemplate(b.template)) ?? 0) - b.quantity, 0);
-      return bMissing - aMissing || a.template.label.localeCompare(b.template.label);
+      return bMissing - aMissing || compareTemplatesByModel(a.template, b.template);
     });
   }, [ownedGear, query, usedCounts]);
 
@@ -1166,7 +1167,7 @@ export default function DeviceLibrary() {
         return { template: t, score };
       })
       .filter((r) => r.score > 0)
-      .sort((a, b) => b.score - a.score || a.template.label.localeCompare(b.template.label));
+      .sort((a, b) => b.score - a.score || compareTemplatesByModel(a.template, b.template));
     return scored.map((r) => r.template);
   }, [templates, customTemplates, query, favoriteSet, selectedCategories, selectedBrands, selectedSignalTypes, matchesSignalFilter]);
 
@@ -1180,7 +1181,7 @@ export default function DeviceLibrary() {
     if (selectedCategories.size > 0) favs = favs.filter((t) => t.category && selectedCategories.has(t.category));
     if (selectedBrands.size > 0) favs = favs.filter((t) => t.manufacturer && selectedBrands.has(t.manufacturer));
     if (selectedSignalTypes.size > 0) favs = favs.filter(matchesSignalFilter);
-    return favs;
+    return favs.sort(compareTemplatesByModel);
   }, [templates, customTemplates, favoriteTemplates, selectedCategories, selectedBrands, selectedSignalTypes, matchesSignalFilter]);
 
   const filteredCategories = useMemo(() => {
@@ -1198,7 +1199,7 @@ export default function DeviceLibrary() {
       else groups.set(cat, [t]);
     }
     // Sort each group alphabetically
-    for (const arr of groups.values()) arr.sort((a, b) => a.label.localeCompare(b.label));
+    for (const arr of groups.values()) arr.sort(compareTemplatesByModel);
     // Sort categories by user's custom order (or default), unknown ones alphabetically at end
     const effectiveOrder = categoryOrder ?? CATEGORY_ORDER_DEFAULT;
     const orderIndex = new Map(effectiveOrder.map((c, i) => [c, i]));

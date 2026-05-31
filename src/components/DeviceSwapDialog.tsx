@@ -11,6 +11,7 @@ import {
 } from "../deviceSwap";
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { scoreTemplate } from "../templateSearch";
+import { compareTemplatesByModel } from "../templateOrdering";
 import { SIGNAL_LABELS, CONNECTOR_LABELS } from "../types";
 import type { DeviceTemplate, DeviceNode, Port } from "../types";
 
@@ -78,7 +79,7 @@ export default function DeviceSwapDialog() {
     return allTemplates
       .map((t) => ({ template: t, score: scoreTemplate(t, q) }))
       .filter((r) => r.score > 0)
-      .sort((a, b) => b.score - a.score || a.template.label.localeCompare(b.template.label))
+      .sort((a, b) => b.score - a.score || compareTemplatesByModel(a.template, b.template))
       .slice(0, 50)
       .map((r) => r.template);
   }, [allTemplates, search]);

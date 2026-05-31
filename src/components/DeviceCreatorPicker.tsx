@@ -4,6 +4,7 @@ import { useSchematicStore, GRID_SIZE } from "../store";
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { scoreTemplate } from "../templateSearch";
 import type { DeviceTemplate } from "../types";
+import { compareTemplatesByModel } from "../templateOrdering";
 
 export default function DeviceCreatorPicker({
   position: positionProp,
@@ -53,7 +54,7 @@ export default function DeviceCreatorPicker({
     return allTemplates
       .map((t) => ({ template: t, score: scoreTemplate(t, q) }))
       .filter((r) => r.score > 0)
-      .sort((a, b) => b.score - a.score || a.template.label.localeCompare(b.template.label))
+      .sort((a, b) => b.score - a.score || compareTemplatesByModel(a.template, b.template))
       .slice(0, 50)
       .map((r) => r.template);
   }, [allTemplates, search]);
