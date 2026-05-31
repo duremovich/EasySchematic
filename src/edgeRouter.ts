@@ -618,15 +618,41 @@ export function routeAllEdges(
     obs.rects.push(...tbRects);
   }
 
+  // Resolve an edge's handle to a HandlePos, healing stale bare↔directional
+  // references. A port that is (or became) bidirectional renders `-in` (left) and
+  // `-out` (right) handles, but an edge authored against the bare port id stores
+  // `pXXX-N` with no suffix → exact lookup misses and the edge would be silently
+  // dropped (rendering as a straight line through everything in-app). Conversely a
+  // directional ref can outlive a port reverting to a single bare handle. Resolve by
+  // role: a source prefers the `-out` side, a target the `-in` side; fall back to the
+  // other side, then to stripping/adding the suffix. Exact-keyed (no prefix matching)
+  // so `pXXX-1` never collides with `pXXX-14`.
+  const resolveHandle = (
+    nodeId: string,
+    handleId: string | null | undefined,
+    role: "source" | "target",
+  ): HandlePos | undefined => {
+    if (handleId == null) return undefined;
+    const exact = handleMap.get(`${nodeId}:${handleId}`);
+    if (exact) return exact;
+    const preferred = role === "source" ? "-out" : "-in";
+    const other = role === "source" ? "-in" : "-out";
+    // bare → directional
+    return (
+      handleMap.get(`${nodeId}:${handleId}${preferred}`) ??
+      handleMap.get(`${nodeId}:${handleId}${other}`) ??
+      // directional → bare (port reverted to a single handle)
+      (handleId.endsWith("-in") || handleId.endsWith("-out")
+        ? handleMap.get(`${nodeId}:${handleId.replace(/-(in|out)$/, "")}`)
+        : undefined)
+    );
+  };
+
   // Resolve edge endpoints
   const edgeEndpoints: EdgeEndpoints[] = [];
   for (const edge of edges) {
-    const srcHandle = handleMap.get(
-      `${edge.source}:${edge.sourceHandle}`,
-    );
-    const tgtHandle = handleMap.get(
-      `${edge.target}:${edge.targetHandle}`,
-    );
+    const srcHandle = resolveHandle(edge.source, edge.sourceHandle, "source");
+    const tgtHandle = resolveHandle(edge.target, edge.targetHandle, "target");
 
     if (!srcHandle || !tgtHandle) continue; // node not measured yet
 

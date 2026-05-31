@@ -3,14 +3,14 @@
   "nonHorizontalArrivals": 0,
   "nonOrthogonalSegments": 0,
   "sharedParallelSegments": 0,
-  "crossingPairs": 0,
+  "crossingPairs": 1,
   "weavingPairs": 0,
   "crossTypeSepViolations": 0,
   "backwardSegments": 0,
-  "turnsTotal": 54,
+  "turnsTotal": 56,
   "turnsMax": 4,
   "detourRatioMax": 1.069,
   "detourRatioMean": 1.002,
   "fallbackCount": 0,
-  "unroutedEdges": 1
+  "unroutedEdges": 0
 }
