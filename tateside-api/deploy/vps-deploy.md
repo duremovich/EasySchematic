@@ -46,3 +46,11 @@ Port expectations:
 frontend container: 127.0.0.1:8080
 TateSide API:       127.0.0.1:8788
 ```
+
+If Cloudflare Tunnel is configured to send `schematic.tateside.online` straight to
+`http://127.0.0.1:8080`, the checked-in Docker Nginx config proxies
+`/api/tateside/*` from the frontend container to the host API via:
+
+```text
+host.docker.internal:8788
+```

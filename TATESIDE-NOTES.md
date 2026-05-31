@@ -367,6 +367,7 @@ npm run tateside:api
 - API should bind to `127.0.0.1:8788` and be routed by the existing web stack/tunnel at `/api/tateside/*`.
 - When deployed behind Cloudflare Access, set `TATESIDE_REQUIRE_ACCESS_IDENTITY=1` so writes require `Cf-Access-Authenticated-User-Email`.
 - Added deployment helpers in `tateside-api/deploy/` for systemd, Caddy routing, and the VPS deployment checklist.
+- Because the current Cloudflare Tunnel origin is `http://127.0.0.1:8080`, Docker Nginx also proxies `/api/tateside/*` to the host API via `host.docker.internal:8788`.
 
 ## Resume Context For Future Chat
 
