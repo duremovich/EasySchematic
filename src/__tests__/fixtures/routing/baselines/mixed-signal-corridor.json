@@ -12,5 +12,8 @@
   "detourRatioMax": 1,
   "detourRatioMean": 1,
   "fallbackCount": 0,
-  "unroutedEdges": 0
+  "unroutedEdges": 0,
+  "channelDensity": 3,
+  "distinctTrackXs": 5,
+  "doglegCount": 0
 }
