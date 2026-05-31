@@ -19,9 +19,8 @@ import {
   type SlotDefinition,
 } from "../types";
 import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES, resolvePortGender, shouldDefaultMultiConnect } from "../connectorTypes";
-import { getBundledTemplates, getCardsByFamily, checkSession, createDraft, createHandoff } from "../templateApi";
+import { getBundledTemplates, getCardsByFamily } from "../templateApi";
 import { getTemplateDrift } from "../templateSync";
-import LoginDialog from "./LoginDialog";
 import CardCreatorDialog from "./CardCreatorDialog";
 import TemplateSyncDialog from "./TemplateSyncDialog";
 import { isValidIpv4, isValidSubnetMask, isValidVlan, findDuplicateIps } from "../networkValidation";
@@ -204,8 +203,6 @@ export default function DeviceEditor() {
     return () => document.removeEventListener("mousedown", onDown);
   }, [auxFieldMenuIdx]);
 
-  // Login dialog for community submission
-  const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showSyncDialog, setShowSyncDialog] = useState(false);
 
   // Face-plate editor
@@ -510,78 +507,6 @@ export default function DeviceEditor() {
     });
     handleSave();
   }, [node, ports, label, shortName, hostname, updateCustomTemplate, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isVenueProvided, deviceType, color, manufacturer, modelNumber, referenceUrl, category, auxiliaryData, searchTermsRaw, handleSave]);
-
-  const handleSubmitToCommunity = useCallback(async () => {
-    const finalPorts: Port[] = ports
-      .filter((p) => p.label.trim())
-      .map((p, i) => ({
-        ...p,
-        id: `tpl-${i}`,
-        label: p.label.trim(),
-      }));
-
-    if (finalPorts.length === 0) return;
-
-    const existing = node?.data;
-    let dt = deviceType.trim() || "custom";
-    if (dt.startsWith("custom-")) dt = "";
-
-    const trimmedAux = trimTrailingEmpty(auxiliaryData);
-
-    const draftData: Record<string, unknown> = {
-      label: label.trim() || "Custom Device",
-      ...(shortName.trim() ? { shortName: shortName.trim() } : {}),
-      deviceType: dt,
-      ports: finalPorts,
-      ...(color ? { color } : {}),
-      ...(manufacturer.trim() ? { manufacturer: manufacturer.trim() } : {}),
-      ...(modelNumber.trim() ? { modelNumber: modelNumber.trim() } : {}),
-      ...(referenceUrl.trim() ? { referenceUrl: referenceUrl.trim() } : {}),
-      ...(category.trim() ? { category: category.trim() } : {}),
-      ...(existing?.slots ? { slots: existing.slots } : {}),
-      ...(existing?.slotFamily ? { slotFamily: existing.slotFamily } : {}),
-      ...(hostname.trim() ? { hostname: hostname.trim() } : {}),
-      ...(powerDrawW != null ? { powerDrawW } : {}),
-      ...(powerCapacityW != null ? { powerCapacityW } : {}),
-      ...(voltage ? { voltage } : {}),
-      ...(thermalBtuh != null ? { thermalBtuh } : {}),
-      ...(poeBudgetW != null ? { poeBudgetW } : {}),
-      ...(poeDrawW != null ? { poeDrawW } : {}),
-      ...(unitCost != null ? { unitCost } : {}),
-      ...(heightMm != null ? { heightMm } : {}),
-      ...(widthMm != null ? { widthMm } : {}),
-      ...(depthMm != null ? { depthMm } : {}),
-      ...(weightKg != null ? { weightKg } : {}),
-      ...(isVenueProvided ? { isVenueProvided: true } : {}),
-      ...(trimmedAux.some((r) => r.text.trim()) ? { auxiliaryData: trimmedAux } : {}),
-      ...(() => { const t = searchTermsRaw.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 20); return t.length > 0 ? { searchTerms: t } : {}; })(),
-    };
-
-    const devicesUrl = import.meta.env.VITE_DEVICES_URL ?? "https://devices.easyschematic.live";
-
-    const user = await checkSession();
-    if (!user) {
-      // Save to localStorage and show login dialog
-      localStorage.setItem("easyschematic-pending-submission", JSON.stringify({
-        data: draftData,
-        timestamp: Date.now(),
-      }));
-      setShowLoginDialog(true);
-      return;
-    }
-
-    try {
-      const draftId = await createDraft(draftData);
-      let url = `${devicesUrl}/#/submit?draft=${draftId}`;
-      try {
-        const authToken = await createHandoff();
-        url += `&auth=${authToken}`;
-      } catch { /* cookie domain should handle it */ }
-      window.open(url, "_blank");
-    } catch (e) {
-      console.error("Failed to create draft:", e);
-    }
-  }, [ports, label, shortName, deviceType, color, node, hostname, poeBudgetW, poeDrawW, unitCost, manufacturer, modelNumber, referenceUrl, category, powerDrawW, powerCapacityW, voltage, thermalBtuh, heightMm, widthMm, depthMm, weightKg, isVenueProvided, auxiliaryData, searchTermsRaw]);
 
   const handleSaveAsPreset = useCallback(() => {
     if (!editingNodeId || !node?.data.templateId) return;
@@ -1439,7 +1364,7 @@ export default function DeviceEditor() {
             </summary>
             <div className="pt-1 pl-2">
               <p className="text-[10px] text-[var(--color-text-muted)] mb-1">
-                Comma-separated keywords used to find this device in the library. Edit here and "Submit to Community" to contribute improvements back.
+                Comma-separated keywords used to make this device easier to find in the library.
               </p>
               <input
                 type="text"
@@ -1666,15 +1591,6 @@ export default function DeviceEditor() {
             >
               Save as User Template
             </button>
-            {(!templateId || dirtyVsTemplate || customTemplates.some((t) => t.id === templateId)) && ports.some((p) => p.label.trim()) && (
-            <button
-              onClick={handleSubmitToCommunity}
-              className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
-              title="Submit this device to the community device library"
-            >
-              Submit to Community
-            </button>
-            )}
             {templateId && customTemplates.some((t) => t.id === templateId) ? (
             <button
               onClick={handleUpdateUserTemplate}
@@ -1727,7 +1643,6 @@ export default function DeviceEditor() {
           </button>
         </div>
       </div>
-      <LoginDialog open={showLoginDialog} onClose={() => setShowLoginDialog(false)} />
       {showFacePlateEditor && node && (
         <FacePlateEditor
           deviceData={node.data as DeviceData}

@@ -185,6 +185,148 @@ Test local container on VPS:
 curl -I http://127.0.0.1:8080
 ```
 
+## Private Access Setup
+
+Completed on `2026-05-29`.
+
+Goal achieved:
+
+- `schematic.tateside.online` is now private behind Microsoft login.
+- Public direct access to the VPS for the schematic app has been removed from the live hostname path.
+- Traffic now reaches the app through Cloudflare Tunnel instead of the old direct `A` record.
+
+Current live access architecture:
+
+- DNS for `tateside.online` is managed in Cloudflare.
+- `schematic.tateside.online` is routed through a Cloudflare Tunnel named `tateside-schematic`.
+- Tunnel origin target is `http://127.0.0.1:8080`.
+- Cloudflare Access protects `schematic.tateside.online`.
+- Identity provider is Microsoft Entra ID / Azure AD.
+- Access policy currently allows users with emails ending in `@tateside.com`.
+- Session duration is set to `24 hours`.
+
+Key external setup details:
+
+- Cloudflare Zero Trust team domain: `tateside.cloudflareaccess.com`
+- Entra app registration name: `Cloudflare Zero Trust Access`
+- Entra redirect URI:
+
+```text
+https://tateside.cloudflareaccess.com/cdn-cgi/access/callback
+```
+
+Important deployment notes:
+
+- The old direct Cloudflare DNS `A` record for `schematic.tateside.online -> 37.59.122.48` was removed during cutover so the live host could not bypass Access.
+- A temporary test hostname `schematic-test.tateside.online` was used during tunnel testing.
+- If login starts redirecting to the wrong host again, check the Cloudflare Access application destinations and make sure only the intended live hostname is present.
+- When the test hostname was left in the Access app, post-login redirects could incorrectly return users to `schematic-test.tateside.online`.
+
+VPS tunnel install notes:
+
+- Server access used:
+
+```bash
+ssh debian@37.59.122.48
+```
+
+- `cloudflared` was installed from Cloudflare's Debian repository.
+- Tunnel service was installed with:
+
+```bash
+sudo cloudflared service install <token>
+```
+
+- Tunnel service check:
+
+```bash
+sudo systemctl status cloudflared --no-pager
+sudo journalctl -u cloudflared -n 100 --no-pager
+```
+
+Origin verification that passed during setup:
+
+```bash
+curl -I http://127.0.0.1:8080
+curl -I -H "Host: schematic.tateside.online" http://127.0.0.1:8080
+```
+
+Next likely work:
+
+- Replace EasySchematic cloud save/login flows with Microsoft/SharePoint save and open.
+- Build a TateSide-owned shared device library and submission workflow.
+- Later decide whether to keep or remove any spare test tunnel hostname once no longer needed.
+
+## App Login And Cloud UI Removal
+
+Completed on `2026-05-31`.
+
+Intent:
+
+- Cloudflare Access is now responsible for site-level authentication.
+- The app should no longer show or rely on EasySchematic's original login, community submission, or cloud-save UI.
+- Future save/open work should target TateSide-owned Microsoft 365/SharePoint storage rather than the upstream EasySchematic cloud API.
+
+Current behavior:
+
+- The old EasySchematic login/user menu has been removed from the top bar and mobile menu.
+- `File > Save to Cloud` and `File > My Schematics...` have been removed.
+- Device editor no longer shows `Submit to Community`.
+- The pending community-submission banner has been removed.
+- New schematics start from the local blank/default state rather than attempting to fetch a cloud template for logged-in users.
+- Local file save/open behavior remains in place.
+
+Verification:
+
+```bash
+npm run build
+npm test
+```
+
+Both passed locally on `2026-05-31`.
+
+Local dev server note:
+
+- If Codex-launched hidden Vite processes appear to start but the browser says the site cannot be reached, start Vite in a persistent visible PowerShell window instead:
+
+```powershell
+cd C:\Users\seanl\Documents\codex\EasySchematic\repo
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+- Then open:
+
+```text
+http://127.0.0.1:5173/
+```
+
+- During setup, hidden/sandboxed Codex launches printed Vite "ready" but the Node process exited, so no server was listening. The app build and tests were still healthy.
+
+## Next Phase Direction
+
+Target outcome:
+
+- TateSide owns its own shared device database.
+- Staff can use the protected TateSide app without upstream EasySchematic login.
+- Staff can add or submit devices into the TateSide shared library.
+- Users can browse SharePoint project folders and save schematic JSON plus exported files into the chosen project folder.
+
+Likely architecture:
+
+- Keep Cloudflare Access + Microsoft Entra as the front-door login for the whole app.
+- Add a small TateSide API layer for privileged Microsoft Graph operations rather than calling Graph directly from browser-only code with broad permissions.
+- Use Microsoft Graph for SharePoint folder browsing, file save, file open, and exports.
+- Store the shared device library either as versioned JSON in SharePoint initially, or in a small backend database if approval workflow, locking, and richer search become important.
+- Keep local JSON save/open as a fallback while SharePoint integration is built.
+
+Important design questions for the next phase:
+
+- Which SharePoint site/library should schematics live in?
+- Should every TateSide user be able to add devices directly, or should additions go into a review queue?
+- Should device records include commercial fields such as cost, supplier, rack units, power draw, heat, PoE, and support links?
+- Should saved projects contain only `.json`, or also exports such as PDF, PNG, DXF, cable schedules, and device reports?
+- Should SharePoint folder access simply follow each user's existing Microsoft 365 permissions?
+
 ## Resume Context For Future Chat
 
 If starting a new Codex chat, paste this summary:
@@ -195,5 +337,9 @@ It is deployed on my VPS at https://schematic.tateside.online.
 My GitHub fork is https://github.com/seanliamdarcy-code/EasySchematic.
 The original upstream is https://github.com/duremovich/EasySchematic.
 We added Tateside branding, a Draw Box tool, External Endpoint nodes, and explicit Trackpad navigation mode.
+The live schematic site is now private behind Cloudflare Access + Microsoft Entra login via a Cloudflare Tunnel to http://127.0.0.1:8080.
+The old EasySchematic in-app login/cloud/community UI has been removed because Cloudflare Access now protects the whole app.
+Next phase is a TateSide-owned device database and Microsoft 365/SharePoint save/open/export workflow.
+Please read the Private Access Setup section in TATESIDE-NOTES.md before changing hosting/authentication.
 Please read TATESIDE-NOTES.md and inspect git log/status before making changes.
 ```

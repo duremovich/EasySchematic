@@ -5,7 +5,6 @@ import { exportImage } from "../exportUtils";
 import { exportDxf } from "../dxfExport";
 import { exportPdf } from "../pdfExport";
 import { exportTemplatesToFile, readTemplateFile } from "../templateExport";
-import { loadSchematicTemplate } from "../templateApi";
 import { getPaperSize } from "../printConfig";
 import type { SchematicFile, SchematicNode, AnnotationData } from "../types";
 import ReportsDialog, { type ReportsTab } from "./ReportsDialog";
@@ -14,10 +13,6 @@ import AboutDialog from "./AboutDialog";
 import PreferencesDialog from "./PreferencesDialog";
 import RoomDistancesDialog from "./RoomDistancesDialog";
 import AlignmentMenu from "./AlignmentMenu";
-import UserMenuButton from "./UserMenuButton";
-import SchematicBrowser from "./SchematicBrowser";
-import LoginDialog from "./LoginDialog";
-import { checkSession, saveSchematicToCloud, updateSchematicInCloud } from "../templateApi";
 import ViewOptionsPanel from "./ViewOptionsPanel";
 import ShowInfoPanel from "./ShowInfoPanel";
 import CsvImportWizard from "./CsvImportWizard";
@@ -144,18 +139,6 @@ export default function MenuBar() {
   const [showPreferences, setShowPreferences] = useState(false);
   const [showRoomDistances, setShowRoomDistances] = useState(false);
   const [showCsvImport, setShowCsvImport] = useState(false);
-  const [showSchematicBrowser, setShowSchematicBrowser] = useState(false);
-  const [showCloudLogin, setShowCloudLogin] = useState(false);
-  const [cloudSaving, setCloudSaving] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  // Check login state on mount
-  useEffect(() => {
-    checkSession().then((u) => setIsLoggedIn(!!u));
-  }, []);
-
-  const cloudSchematicId = useSchematicStore((s) => s.cloudSchematicId);
-  const cloudSavedAt = useSchematicStore((s) => s.cloudSavedAt);
   const fileHandle = useSchematicStore((s) => s.fileHandle);
   const isOnline = useSchematicStore((s) => s.isOnline);
 
@@ -242,19 +225,6 @@ export default function MenuBar() {
   const handleSave = useCallback(async () => {
     const store = useSchematicStore.getState();
 
-    // Cloud-backed schematic: update cloud (local file handle still used if present)
-    if (store.cloudSchematicId && store.isOnline) {
-      checkSession().then((session) => {
-        if (!session) return;
-        const data = store.exportToJSON();
-        updateSchematicInCloud(store.cloudSchematicId!, data)
-          .then((result) => store.setCloudSavedAt(result.updated_at))
-          .catch((e: unknown) => {
-            store.addToast(e instanceof Error ? e.message : "Cloud save failed", "error");
-          });
-      });
-    }
-
     // Has a local file handle: silently overwrite
     if (store.fileHandle) {
       try {
@@ -267,10 +237,7 @@ export default function MenuBar() {
       }
     }
 
-    // If cloud-backed but no local handle, cloud save is enough
-    if (store.cloudSchematicId) return;
-
-    // No handle, no cloud — first save. Use File System Access API if available.
+  // No file handle yet — first save. Use File System Access API if available.
     if ("showSaveFilePicker" in window) {
       const handle = await pickFileHandle();
       if (!handle) return;
@@ -295,11 +262,6 @@ export default function MenuBar() {
       const handle = await pickFileHandle();
       if (!handle) return;
       const store = useSchematicStore.getState();
-      // Detach from cloud — user explicitly chose local destination
-      if (store.cloudSchematicId) {
-        store.setCloudSchematicId(null);
-        store.setCloudSavedAt(null);
-      }
       store.setFileHandle(handle);
       const name = handle.name.replace(/\.json$/i, "");
       if (name) store.setSchematicName(name);
@@ -395,38 +357,6 @@ export default function MenuBar() {
     [],
   );
 
-  const handleCloudSave = useCallback(async () => {
-    const store = useSchematicStore.getState();
-
-    if (!navigator.onLine) {
-      store.addToast("You're offline. Use File → Save to save a copy to your computer.", "info");
-      return;
-    }
-
-    const session = await checkSession();
-    if (!session) {
-      setShowCloudLogin(true);
-      return;
-    }
-    setCloudSaving(true);
-    try {
-      const data = exportToJSON();
-      if (store.cloudSchematicId) {
-        const result = await updateSchematicInCloud(store.cloudSchematicId, data);
-        store.setCloudSavedAt(result.updated_at);
-      } else {
-        const result = await saveSchematicToCloud(data);
-        store.setCloudSchematicId(result.id);
-        store.setCloudSavedAt(result.updated_at);
-      }
-      setIsLoggedIn(true);
-    } catch (e) {
-      useSchematicStore.getState().addToast(e instanceof Error ? e.message : "Failed to save to cloud", "error");
-    } finally {
-      setCloudSaving(false);
-    }
-  }, [exportToJSON]);
-
   // Listen for keyboard shortcut events from App.tsx
   useEffect(() => {
     const onSave = () => { handleSave(); };
@@ -512,18 +442,9 @@ export default function MenuBar() {
     state.saveToLocalStorage();
   }, [reactFlowInstance]);
 
-  const handleNew = useCallback(async () => {
-    if (isLoggedIn && isOnline) {
-      try {
-        const tpl = await loadSchematicTemplate();
-        if (tpl) {
-          newSchematic(tpl as SchematicFile);
-          return;
-        }
-      } catch { /* fall through to blank */ }
-    }
+  const handleNew = useCallback(() => {
     newSchematic();
-  }, [isLoggedIn, isOnline, newSchematic]);
+  }, [newSchematic]);
 
   const closeMenu = () => setOpenMenu(null);
 
@@ -534,9 +455,6 @@ export default function MenuBar() {
       { type: "item", label: "Save", shortcut: "Ctrl+S", onClick: handleSave },
       { type: "item", label: "Save As...", shortcut: "Ctrl+Shift+S", onClick: handleSaveAs },
       { type: "item", label: "Open...", shortcut: "Ctrl+O", onClick: handleOpen },
-      { type: "separator" },
-      { type: "item", label: cloudSaving ? "Saving..." : isOnline ? "Save to Cloud" : "Save to Cloud (Offline)", disabled: cloudSaving || !isOnline, onClick: handleCloudSave },
-      { type: "item", label: "My Schematics...", disabled: !isLoggedIn, title: isLoggedIn ? undefined : "Must be logged in", onClick: () => setShowSchematicBrowser(true) },
       { type: "separator" },
       { type: "item", label: "Save Device Archive", onClick: handleSaveArchive },
       { type: "item", label: "Import Device Archive...", onClick: handleOpenArchive },
@@ -761,19 +679,7 @@ export default function MenuBar() {
               >
                 {schematicName}
               </span>
-              {cloudSchematicId && (
-                <span
-                  title={
-                    !isOnline ? "Offline — cloud sync paused" :
-                    cloudSavedAt ? `Cloud saved: ${new Date(cloudSavedAt + "Z").toLocaleString()}` : "Cloud-backed schematic"
-                  }
-                >
-                  <svg className={`w-3.5 h-3.5 ${isOnline ? "text-blue-500" : "text-amber-500"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-                  </svg>
-                </span>
-              )}
-              {fileHandle && !cloudSchematicId && (
+              {fileHandle && (
                 <span title={`Saving to: ${fileHandle.name}`}>
                   <svg className="w-3.5 h-3.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v18l7-5 7 5V3H5z" />
@@ -836,7 +742,6 @@ export default function MenuBar() {
             )}
           </button>
           <div className="w-px h-5 bg-[var(--color-border)] mx-1" />
-          <UserMenuButton />
         </div>
       </div>
 
@@ -945,10 +850,6 @@ export default function MenuBar() {
             </div>
           </div>
 
-          {/* Footer: user section */}
-          <div className="border-t border-[var(--color-border)] px-4 py-3 shrink-0">
-            <UserMenuButton />
-          </div>
         </div>
       )}
 
@@ -1001,10 +902,6 @@ export default function MenuBar() {
       {showCsvImport && (
         <CsvImportWizard onClose={() => setShowCsvImport(false)} />
       )}
-      {showSchematicBrowser && (
-        <SchematicBrowser onClose={() => setShowSchematicBrowser(false)} />
-      )}
-      <LoginDialog open={showCloudLogin} onClose={() => setShowCloudLogin(false)} />
     </div>
   );
 }

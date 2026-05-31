@@ -34,7 +34,6 @@ import IncompatibleConnectionDialog from "./components/IncompatibleConnectionDia
 import DeviceSwapDialog from "./components/DeviceSwapDialog";
 import MobileGate from "./components/MobileGate";
 import ToastContainer from "./components/ToastContainer";
-import PendingSubmissionBanner from "./components/PendingSubmissionBanner";
 import BetaBanner from "./components/BetaBanner";
 import PortContextMenu from "./components/PortContextMenu";
 import RoutingDebugOverlay from "./components/RoutingDebugOverlay";
@@ -55,8 +54,7 @@ import type { AnnotationData, ConnectionEdge, DeviceData, DeviceTemplate, Schema
 import { EXTERNAL_ENDPOINT_HEIGHT, EXTERNAL_ENDPOINT_MIN_WIDTH } from "./externalEndpoint";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
-import { loadSharedSchematic, checkSession } from "./templateApi";
-import { refreshCloudCache } from "./cloudSync";
+import { loadSharedSchematic } from "./templateApi";
 import { useTheme } from "./hooks/useTheme";
 import { getNavigationInputDevice, getWheelNavigationAction } from "./navigationPreferences";
 import { reconcileWaypointNodes, syncEdgesFromWaypointNodes } from "./waypointSync";
@@ -573,24 +571,13 @@ function SchematicCanvas() {
     loadFromLocalStorage();
   }, [loadFromLocalStorage]);
 
-  // Online/offline detection + cloud cache sync
+  // Online/offline detection
   useEffect(() => {
     const store = useSchematicStore.getState();
-    const goOnline = () => {
-      store.setIsOnline(true);
-      refreshCloudCache();
-    };
+    const goOnline = () => store.setIsOnline(true);
     const goOffline = () => store.setIsOnline(false);
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
-
-    // Refresh cache on tab focus (if online and logged in)
-    const onFocus = () => {
-      if (document.visibilityState === "visible" && navigator.onLine) {
-        checkSession().then((u) => { if (u) refreshCloudCache(); });
-      }
-    };
-    document.addEventListener("visibilitychange", onFocus);
 
     // Poll navigator.onLine every 3s as a fallback — browser events
     // don't always fire reliably (especially with DevTools offline toggle)
@@ -598,17 +585,12 @@ function SchematicCanvas() {
       const current = navigator.onLine;
       if (current !== useSchematicStore.getState().isOnline) {
         useSchematicStore.getState().setIsOnline(current);
-        if (current) refreshCloudCache();
       }
     }, 3000);
-
-    // Populate cache on mount if logged in
-    checkSession().then((u) => { if (u) refreshCloudCache(); });
 
     return () => {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
-      document.removeEventListener("visibilitychange", onFocus);
       clearInterval(interval);
     };
   }, []);
@@ -2273,7 +2255,6 @@ export default function App() {
       </div>
       <BetaBanner />
       <DemoBanner />
-      <PendingSubmissionBanner />
       {printView && isSchematicActive && <PrintViewBar />}
       {isSchematicActive && <PrintTitleBlock />}
       <PageTabs />
