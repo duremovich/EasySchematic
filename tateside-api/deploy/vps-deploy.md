@@ -13,7 +13,8 @@ sudo install -m 0644 tateside-api/deploy/tateside-schematic-api.service /etc/sys
 sudo systemctl daemon-reload
 sudo systemctl enable --now tateside-schematic-api
 sudo systemctl status tateside-schematic-api --no-pager
-curl -i http://127.0.0.1:8788/health
+curl -i http://172.17.0.1:8788/health
+sudo ufw allow in proto tcp from 172.16.0.0/12 to 172.17.0.1 port 8788 comment "TateSide schematic API from Docker bridges"
 ```
 
 Update `/etc/caddy/Caddyfile` by adding the contents of:
@@ -29,7 +30,7 @@ Then validate and reload Caddy:
 ```bash
 sudo caddy validate --config /etc/caddy/Caddyfile
 sudo systemctl reload caddy
-curl -i http://127.0.0.1:8080/api/tateside/devices/templates
+curl -i http://127.0.0.1:8080/api/tateside/devices/templates -H "Cf-Access-Authenticated-User-Email: deploy-smoke@tateside.com"
 ```
 
 Rebuild the frontend container after the pull:
@@ -44,7 +45,7 @@ Port expectations:
 
 ```text
 frontend container: 127.0.0.1:8080
-TateSide API:       127.0.0.1:8788
+TateSide API:       172.17.0.1:8788
 ```
 
 If Cloudflare Tunnel is configured to send `schematic.tateside.online` straight to
@@ -54,3 +55,7 @@ If Cloudflare Tunnel is configured to send `schematic.tateside.online` straight 
 ```text
 host.docker.internal:8788
 ```
+
+The API binds to the Docker bridge address rather than public interfaces. UFW
+must allow Docker bridge traffic to `172.17.0.1:8788`; the port should not be
+opened publicly.
