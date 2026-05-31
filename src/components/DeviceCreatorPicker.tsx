@@ -22,7 +22,7 @@ export default function DeviceCreatorPicker({
   const [libraryTemplates, setLibraryTemplates] = useState<DeviceTemplate[]>(getBundledTemplates);
 
   useEffect(() => {
-    fetchTemplates().then(setLibraryTemplates).catch(() => { /* keep bundled fallback */ });
+    fetchTemplates().then(setLibraryTemplates).catch(() => { /* keep empty TateSide fallback */ });
   }, []);
 
   // Compute canvas position: use provided position or center of viewport

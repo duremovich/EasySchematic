@@ -19,7 +19,7 @@ import {
   type SlotDefinition,
 } from "../types";
 import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES, resolvePortGender, shouldDefaultMultiConnect } from "../connectorTypes";
-import { getBundledTemplates, getCardsByFamily } from "../templateApi";
+import { getBundledCardTemplates, getCardsByFamily, getTemplateById } from "../templateApi";
 import { getTemplateDrift } from "../templateSync";
 import CardCreatorDialog from "./CardCreatorDialog";
 import TemplateSyncDialog from "./TemplateSyncDialog";
@@ -215,9 +215,7 @@ export default function DeviceEditor() {
   /* eslint-disable react-hooks/set-state-in-effect -- syncing props to local editor state */
   useEffect(() => {
     if (!node) return;
-    const tpl = node.data.templateId
-      ? getBundledTemplates().find((t) => t.id === node.data.templateId)
-      : undefined;
+    const tpl = node.data.templateId ? getTemplateById(node.data.templateId, customTemplates) : undefined;
     setLabel(node.data.label);
     setShortName(node.data.shortName ?? "");
     setUseShortName(node.data.useShortName);
@@ -537,10 +535,7 @@ export default function DeviceEditor() {
   const handleRevertToTemplate = useCallback(() => {
     if (!node) return;
     const templateId = node.data.templateId;
-    const tpl = templateId
-      ? getBundledTemplates().find((t) => t.id === templateId) ??
-        customTemplates.find((t) => t.id === templateId)
-      : undefined;
+    const tpl = templateId ? getTemplateById(templateId, customTemplates) : undefined;
     if (!tpl) return;
 
     setPorts(tpl.ports.map((p) => ({
@@ -690,8 +685,7 @@ export default function DeviceEditor() {
   const { dirtyVsPreset, dirtyVsTemplate } = useMemo(() => {
     if (!templateId) return { dirtyVsPreset: false, dirtyVsTemplate: false };
 
-    const tpl = getBundledTemplates().find((t) => t.id === templateId) ??
-      customTemplates.find((t) => t.id === templateId);
+    const tpl = getTemplateById(templateId, customTemplates);
     const preset = templatePresets[templateId];
 
     const portsMatch = (a: PortDraft[], b: Port[]) => {
@@ -957,9 +951,7 @@ export default function DeviceEditor() {
           </div>}
 
           {!isExternalEndpoint && (() => {
-            const tpl = node.data.templateId
-              ? getBundledTemplates().find((t) => t.id === node.data.templateId)
-              : undefined;
+            const tpl = node.data.templateId ? getTemplateById(node.data.templateId, customTemplates) : undefined;
             const url = referenceUrl.trim() || tpl?.referenceUrl;
             return url ? (
               <div className="text-[10px] text-[var(--color-text-muted)] -mt-2 flex items-center gap-1">
@@ -1273,9 +1265,7 @@ export default function DeviceEditor() {
 
           {/* Expansion Slots */}
           {(() => {
-            const templateDef = node.data.templateId
-              ? getBundledTemplates().find((t) => t.id === node.data.templateId)
-              : undefined;
+            const templateDef = node.data.templateId ? getTemplateById(node.data.templateId, customTemplates) : undefined;
             const slotDefs = templateDef?.slots ?? [];
             return (
               <SlotEditSection
@@ -2792,7 +2782,7 @@ function SlotEditSection({
   const knownFamilies = useMemo(
     () => [
       ...new Set([
-        ...getBundledTemplates().map((t) => t.slotFamily),
+        ...getBundledCardTemplates().map((t) => t.slotFamily),
         ...customTemplates.map((t) => t.slotFamily),
       ].filter((f): f is string => !!f)),
     ],

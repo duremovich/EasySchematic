@@ -1133,7 +1133,7 @@ export default function DeviceLibrary() {
   const hasFilter = selectedCategories.size > 0 || selectedBrands.size > 0 || selectedSignalTypes.size > 0;
 
   useEffect(() => {
-    fetchTemplates().then(setTemplates).catch(() => console.warn("Using bundled device library (API unavailable)"));
+    fetchTemplates().then(setTemplates).catch(() => console.warn("TateSide device library API unavailable"));
   }, []);
 
   const handleAddToOwned = useCallback((template: DeviceTemplate) => {

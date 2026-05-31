@@ -35,7 +35,7 @@ export default function DeviceSwapDialog() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchTemplates().then(setLibraryTemplates).catch(() => { /* keep fallback */ });
+    fetchTemplates().then(setLibraryTemplates).catch(() => { /* keep empty TateSide fallback */ });
   }, []);
 
   // Reset internal state when the target opens / closes / changes.

@@ -1,5 +1,5 @@
 import type { DeviceTemplate } from "./types";
-import fallbackData from "./deviceLibrary.fallback.json";
+import { CARD_TEMPLATES } from "./deviceLibrary";
 import { fetchTatesideDeviceTemplates } from "./tatesideApi";
 
 const API_URL =
@@ -8,29 +8,30 @@ const API_URL =
 let cached: DeviceTemplate[] | null = null;
 
 export function getBundledTemplates(): DeviceTemplate[] {
-  return fallbackData as DeviceTemplate[];
+  return [];
 }
 
-/** Bundled templates as a floor under whatever the API returned. Used so a freshly-added
- *  card in src/devices/* shows up in slot pickers and lookups even before its row lands
- *  in D1. D1 wins on ID conflict (lets prod overrides shadow bundled defaults). */
+export function getBundledCardTemplates(): DeviceTemplate[] {
+  return CARD_TEMPLATES;
+}
+
+/** TateSide should not silently fall back to the old EasySchematic public catalogue. */
 function effectiveTemplates(): DeviceTemplate[] {
-  const bundled = fallbackData as DeviceTemplate[];
-  if (!cached) return bundled;
-  const cachedIds = new Set(cached.map((t) => t.id).filter((id): id is string => !!id));
-  const bundledFloor = bundled.filter((t) => t.id && !cachedIds.has(t.id));
-  return [...cached, ...bundledFloor];
+  return cached ?? [];
 }
 
-/** Look up a card template by ID from cached API data, bundled fallback, or caller-supplied extras (user's custom templates). */
+/** Look up a template by ID from TateSide API data, built-in card templates, or caller-supplied extras. */
 export function getTemplateById(id: string, extra: DeviceTemplate[] = []): DeviceTemplate | undefined {
-  return effectiveTemplates().find((t) => t.id === id) ?? extra.find((t) => t.id === id);
+  return effectiveTemplates().find((t) => t.id === id)
+    ?? CARD_TEMPLATES.find((t) => t.id === id)
+    ?? extra.find((t) => t.id === id);
 }
 
-/** Return all card templates that belong to a given slot family, merging bundled and caller-supplied extras. */
+/** Return all card templates that belong to a given slot family, merging API, built-in cards, and caller extras. */
 export function getCardsByFamily(family: string, extra: DeviceTemplate[] = []): DeviceTemplate[] {
   return [
     ...effectiveTemplates().filter((t) => t.slotFamily === family),
+    ...CARD_TEMPLATES.filter((t) => t.slotFamily === family),
     ...extra.filter((t) => t.slotFamily === family),
   ];
 }
@@ -276,12 +277,6 @@ export async function createSubmission(
 export async function fetchTemplates(): Promise<DeviceTemplate[]> {
   if (cached) return effectiveTemplates();
 
-  try {
-    cached = await fetchTatesideDeviceTemplates();
-  } catch {
-    const res = await fetch(`${API_URL}/templates`);
-    if (!res.ok) throw new Error(`API ${res.status}`);
-    cached = (await res.json()) as DeviceTemplate[];
-  }
+  cached = await fetchTatesideDeviceTemplates();
   return effectiveTemplates();
 }

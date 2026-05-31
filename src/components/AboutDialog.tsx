@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { DEVICE_TEMPLATES } from "../deviceLibrary";
 
 declare const __APP_VERSION__: string;
 declare const __BUILD_HASH__: string;
@@ -63,8 +62,8 @@ export default function AboutDialog({ onClose }: { onClose: () => void }) {
           </p>
 
           <div className="flex flex-col gap-1 text-xs text-[var(--color-text)]">
-            <span>{Math.floor(DEVICE_TEMPLATES.length / 10) * 10}+ bundled device templates</span>
-            <span>TateSide shared device library ready</span>
+            <span>TateSide shared device library</span>
+            <span>VPS-backed device database ready</span>
             <span>68 signal types</span>
           </div>
 
