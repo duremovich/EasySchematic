@@ -14,6 +14,7 @@ const DB_PATH = process.env.TATESIDE_DB_PATH
   ? path.resolve(process.env.TATESIDE_DB_PATH)
   : path.resolve(DATA_DIR, "tateside.db");
 const SUMMARY_PATH = path.resolve(DATA_DIR, "jetbuilt", "seed-summary.json");
+const SANITIZED_OUTPUT_PATH = path.resolve(DATA_DIR, "jetbuilt", "devices-library-ready.json");
 
 const SCHEMA_SQL = `
 PRAGMA journal_mode = WAL;
@@ -73,6 +74,10 @@ function normalize(value) {
   return String(value ?? "").trim();
 }
 
+function compact(value) {
+  return normalize(value).replace(/\s+/g, " ");
+}
+
 function slug(value) {
   return normalize(value)
     .toLowerCase()
@@ -98,8 +103,86 @@ function portIds(ports) {
   return (ports ?? []).map((port, index) => ({
     ...port,
     id: normalize(port.id) || `port-${index + 1}`,
-    label: normalize(port.label),
+    label: compact(port.label),
   }));
+}
+
+const NETWORK_CONNECTORS = new Set(["rj45", "ethercon", "sfp", "lc", "sc", "opticalcon", "qsfp", "qsfp28", "mpo"]);
+const VIRTUAL_NETWORK_SIGNALS = new Set([
+  "dante",
+  "aes67",
+  "avb",
+  "ndi",
+  "srt",
+  "st2110",
+  "rtsp",
+  "rtmp",
+  "mpeg-ts",
+  "soundgrid",
+  "artnet",
+  "sacn",
+  "ultranet",
+  "aes50",
+  "stageconnect",
+  "ydif",
+  "dx5",
+  "dxlink",
+  "gigaace",
+  "fibreace",
+  "dsnake",
+  "digilink",
+  "blu-link",
+  "cresnet",
+  "ebus",
+]);
+
+function isNetworkConnector(port) {
+  return NETWORK_CONNECTORS.has(normalize(port.connectorType).toLowerCase());
+}
+
+function hasPhysicalNetworkPort(ports) {
+  return ports.some((port) => normalize(port.signalType).toLowerCase() === "ethernet" && isNetworkConnector(port));
+}
+
+function isVirtualNetworkChannelPort(port) {
+  const signalType = normalize(port.signalType).toLowerCase();
+  const label = compact(port.label).toLowerCase();
+  if (!VIRTUAL_NETWORK_SIGNALS.has(signalType)) return false;
+  if (!isNetworkConnector(port)) return false;
+  return /\b(rx|tx|channel|ch)\s*\d+\b/.test(label) || /\b\d+\s*x\s*\d+\b/.test(label);
+}
+
+function sanitizePorts(ports) {
+  const normalizedPorts = portIds(ports);
+  const hasNetworkJack = hasPhysicalNetworkPort(normalizedPorts);
+  const filteredPorts = normalizedPorts.filter((port) => !(hasNetworkJack && isVirtualNetworkChannelPort(port)));
+  return filteredPorts.map((port, index) => ({
+    ...port,
+    id: `port-${index + 1}`,
+  }));
+}
+
+function makeDisplayLabel(template) {
+  const manufacturer = compact(template.manufacturer);
+  const modelNumber = compact(template.modelNumber);
+  const label = compact(template.label);
+  if (manufacturer && modelNumber) return `${manufacturer} ${modelNumber}`;
+  if (modelNumber) return modelNumber;
+  if (label) return label;
+  return manufacturer || "Unknown Device";
+}
+
+function sanitizeTemplate(template) {
+  return {
+    ...template,
+    label: makeDisplayLabel(template),
+    shortName: compact(template.modelNumber) || template.shortName,
+    manufacturer: template.manufacturer != null ? compact(template.manufacturer) : undefined,
+    modelNumber: template.modelNumber != null ? compact(template.modelNumber) : undefined,
+    category: template.category != null ? compact(template.category) : undefined,
+    referenceUrl: template.referenceUrl != null ? compact(template.referenceUrl) : undefined,
+    ports: sanitizePorts(template.ports),
+  };
 }
 
 function mergePorts(basePorts, overridePorts) {
@@ -128,16 +211,16 @@ function isEnriched(template) {
 }
 
 const raw = JSON.parse(readFileSync(INPUT_PATH, "utf8"));
-const templates = raw.filter(isEnriched).map((template) => ({
+const templates = raw.filter(isEnriched).map((template) => sanitizeTemplate({
   ...template,
-  label: normalize(template.label),
+  label: compact(template.label),
   deviceType: normalize(template.deviceType),
-  manufacturer: template.manufacturer != null ? normalize(template.manufacturer) : undefined,
-  modelNumber: template.modelNumber != null ? normalize(template.modelNumber) : undefined,
-  category: template.category != null ? normalize(template.category) : undefined,
-  shortName: template.shortName != null ? normalize(template.shortName) : undefined,
-  referenceUrl: template.referenceUrl != null ? normalize(template.referenceUrl) : undefined,
-  ports: portIds(template.ports),
+  manufacturer: template.manufacturer != null ? compact(template.manufacturer) : undefined,
+  modelNumber: template.modelNumber != null ? compact(template.modelNumber) : undefined,
+  category: template.category != null ? compact(template.category) : undefined,
+  shortName: template.shortName != null ? compact(template.shortName) : undefined,
+  referenceUrl: template.referenceUrl != null ? compact(template.referenceUrl) : undefined,
+  ports: template.ports,
 }));
 
 const deduped = new Map();
@@ -169,6 +252,7 @@ if (!uniqueTemplates.length) {
 
 mkdirSync(path.dirname(DB_PATH), { recursive: true });
 mkdirSync(path.dirname(SUMMARY_PATH), { recursive: true });
+writeFileSync(SANITIZED_OUTPUT_PATH, JSON.stringify(uniqueTemplates, null, 2) + "\n", "utf8");
 
 const db = new DatabaseSync(DB_PATH);
 db.exec(SCHEMA_SQL);
@@ -197,9 +281,9 @@ const insertAudit = db.prepare(`
 
 db.exec("BEGIN");
 try {
-  db.exec("DELETE FROM device_audit_log");
-  db.exec("DELETE FROM device_versions");
   db.exec("DELETE FROM devices");
+  db.exec("DELETE FROM device_versions");
+  db.exec("DELETE FROM device_audit_log");
 
   let inserted = 0;
   for (const template of uniqueTemplates) {
@@ -251,6 +335,7 @@ try {
 const summary = {
   dbPath: DB_PATH,
   sourcePath: INPUT_PATH,
+  sanitizedOutputPath: SANITIZED_OUTPUT_PATH,
   importedCount: uniqueTemplates.length,
   sourceCount: raw.length,
   matchedCount: uniqueTemplates.length,
