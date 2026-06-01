@@ -21,6 +21,8 @@ import {
   simplifyWaypoints,
   waypointsToSvgPath,
   waypointsToSvgPathWithHops,
+  beginRoutingBudget,
+  routingBudgetExceeded,
   type PenaltyZone,
   type Rect,
 } from "./pathfinding";
@@ -581,7 +583,11 @@ export interface RouteAllResult {
   overBudget: boolean;
 }
 
-const DEFAULT_TIME_BUDGET_MS = 3000;
+// Deterministic work budget: max cumulative A* node expansions for one routeAllEdges run. Replaces
+// the old 3000ms wall-clock budget (which made routing nondeterministic under load). Calibrated well
+// above what the densest real fixtures consume (~10× headroom) so normal schematics never hit it and
+// route identically; it only bounds pathological inputs. See pathfinding beginRoutingBudget.
+const DEFAULT_OPS_BUDGET = 20_000_000;
 
 export function routeAllEdges(
   nodes: SchematicNode[],
@@ -589,11 +595,11 @@ export function routeAllEdges(
   handles: HandleSnapshot,
   debug?: boolean,
   printConfig?: PrintConfig,
-  _timeBudgetMs: number = DEFAULT_TIME_BUDGET_MS,
+  _opsBudget: number = DEFAULT_OPS_BUDGET,
   bundles: Record<string, BundleMeta> = {},
 ): RouteAllResult {
   let overBudget = false;
-  const routingStart = Date.now();
+  beginRoutingBudget(_opsBudget);
 
   // Build node map for O(1) lookups
   const nodeMap = new Map<string, SchematicNode>();
@@ -794,9 +800,9 @@ export function routeAllEdges(
     growPenaltyIndex(penaltySpatialIdx, runningPenalties);
   };
 
-  /** Check time budget and set overBudget flag. */
+  /** Check the deterministic work budget and latch the overBudget flag. */
   const checkBudget = () => {
-    if (!overBudget && Date.now() - routingStart > _timeBudgetMs) {
+    if (!overBudget && routingBudgetExceeded()) {
       overBudget = true;
     }
     return overBudget;

@@ -22,7 +22,7 @@ ctx.onmessage = (ev) => {
   g.__routingParams = req.routingParams;
 
   const { routes, overBudget } = routeAllEdges(
-    req.nodes, req.edges, req.handles, req.debug, undefined, req.timeBudgetMs, req.bundles,
+    req.nodes, req.edges, req.handles, req.debug, undefined, req.opsBudget, req.bundles,
   );
 
   ctx.postMessage({

@@ -87,6 +87,28 @@ export const ROUTING_PARAMS: typeof ROUTING_DEFAULTS = new Proxy(ROUTING_DEFAULT
   },
 }) as typeof ROUTING_DEFAULTS;
 
+// ---------- Deterministic work budget ----------
+// Replaces a wall-clock time budget (Date.now()), which made routing nondeterministic under load —
+// edges past the cutoff fell back to L-shapes, so the SAME input could route differently run-to-run.
+// A* instead counts node expansions and bails when the cumulative count for the current
+// routeAllEdges run exceeds the cap. Expansions are a pure function of geometry + params, so routing
+// is reproducible (a prerequisite for caching candidate scores and comparing portfolio runs).
+let _astarOps = 0;
+let _astarOpsCap = Infinity;
+/** Reset the per-run A* expansion counter and set the cap. Call once at the start of a routing run. */
+export function beginRoutingBudget(cap = Infinity): void {
+  _astarOps = 0;
+  _astarOpsCap = cap;
+}
+/** True once this run's cumulative A* expansions have reached the cap. Deterministic. */
+export function routingBudgetExceeded(): boolean {
+  return _astarOps >= _astarOpsCap;
+}
+/** Total A* expansions consumed this run (for calibration / telemetry). */
+export function routingOpsUsed(): number {
+  return _astarOps;
+}
+
 const CORNER_RADIUS = 8;
 export const ARC_R = 6;
 export const GAP_HALF = 3;
@@ -409,6 +431,8 @@ export function astarOrthogonal(
 
   while (open.length > 0) {
     const current = open.pop()!;
+    // Deterministic work budget: count every expansion; bail (→ caller falls back) once over cap.
+    if (++_astarOps >= _astarOpsCap) return null;
     const ck = (current.xi * rows + current.yi) * NUM_DIRS + current.dir;
 
     if (current.xi === eci && current.yi === eri) {

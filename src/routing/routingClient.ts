@@ -23,7 +23,7 @@ export interface RoutingRequest {
   handles: HandleSnapshot;
   bundles: Record<string, BundleMeta>;
   debug: boolean;
-  timeBudgetMs?: number;
+  opsBudget?: number;
   /** window.__routingParams snapshot (live tuning overrides) — re-applied inside the worker. */
   routingParams?: Record<string, number>;
 }
@@ -104,7 +104,7 @@ function postToWorker(req: RoutingRequest): void {
 function runSync(req: RoutingRequest): void {
   // Main-thread fallback. Routing params already live on window here, so no re-apply needed.
   const { routes, overBudget } = routeAllEdges(
-    req.nodes, req.edges, req.handles, req.debug, undefined, req.timeBudgetMs, req.bundles,
+    req.nodes, req.edges, req.handles, req.debug, undefined, req.opsBudget, req.bundles,
   );
   const g = globalThis as Record<string, unknown>;
   // Keep the async shape so the caller's apply path is uniform whether or not a worker exists.

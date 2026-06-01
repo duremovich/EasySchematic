@@ -15,7 +15,7 @@ export interface RoutedFixture {
 export function routeFixture(
   nodes: SchematicNode[],
   edges: ConnectionEdge[],
-  opts: { timeBudgetMs?: number; bundles?: Record<string, BundleMeta> } = {},
+  opts: { opsBudget?: number; bundles?: Record<string, BundleMeta> } = {},
 ): RoutedFixture {
   const rf = createMockRfInstance(nodes);
   const handles = buildHandleSnapshot(nodes, rf);
@@ -25,7 +25,7 @@ export function routeFixture(
     handles,
     false,
     undefined,
-    opts.timeBudgetMs,
+    opts.opsBudget,
     opts.bundles,
   );
   return { nodes, edges, routes, overBudget };
