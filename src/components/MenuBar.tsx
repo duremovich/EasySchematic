@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useSchematicStore } from "../store";
+import { clearCache } from "../cloudCache";
 import { exportImage } from "../exportUtils";
 import { exportDxf } from "../dxfExport";
 import { exportPdf } from "../pdfExport";
@@ -19,6 +20,8 @@ import CsvImportWizard from "./CsvImportWizard";
 import SignalColorPanel from "./SignalColorPanel";
 import { useTheme } from "../hooks/useTheme";
 import SharePointProjectDialog from "./SharePointProjectDialog";
+
+const ACCESS_LOGOUT_URL = "https://tateside.cloudflareaccess.com/cdn-cgi/access/logout";
 
 // ─── Menu data types ─────────────────────────────────────────────
 
@@ -143,6 +146,24 @@ export default function MenuBar() {
   const [showSharePointProjects, setShowSharePointProjects] = useState(false);
   const fileHandle = useSchematicStore((s) => s.fileHandle);
   const isOnline = useSchematicStore((s) => s.isOnline);
+
+  const getAccessLogoutUrl = useCallback(() => {
+    const { hostname } = window.location;
+    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
+      return ACCESS_LOGOUT_URL;
+    }
+    return `${window.location.origin}/cdn-cgi/access/logout`;
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await clearCache();
+    } catch {
+      // IndexedDB may be unavailable; logout should still proceed.
+    } finally {
+      window.location.replace(getAccessLogoutUrl());
+    }
+  }, [getAccessLogoutUrl]);
 
   // Keep nameValue in sync when schematicName changes externally
   useEffect(() => {
@@ -546,6 +567,11 @@ export default function MenuBar() {
     Help: [
       {
         type: "item",
+        label: "Log out",
+        onClick: handleLogout,
+      },
+      {
+        type: "item",
         label: "TateSide Schematic \u2197",
         onClick: () => window.open("https://schematic.tateside.online", "_blank", "noopener,noreferrer"),
       },
@@ -736,6 +762,14 @@ export default function MenuBar() {
             )}
           </button>
           <div className="w-px h-5 bg-[var(--color-border)] mx-1" />
+          <button
+            onClick={handleLogout}
+            title="Log out of Cloudflare Access"
+            className="px-2 py-1 rounded border border-red-200 dark:border-red-900/50 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors cursor-pointer"
+          >
+            Log out
+          </button>
+          <div className="w-px h-5 bg-[var(--color-border)] mx-1" />
         </div>
       </div>
 
@@ -841,6 +875,14 @@ export default function MenuBar() {
                   {label}
                 </button>
               ))}
+            </div>
+            <div className="border-t border-[var(--color-border)] p-3">
+              <button
+                onClick={handleLogout}
+                className="w-full px-4 py-2.5 rounded border border-red-200 dark:border-red-900/50 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left"
+              >
+                Log out
+              </button>
             </div>
           </div>
 
