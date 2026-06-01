@@ -90,10 +90,10 @@ export default function BulkDeviceEditPanel({ onClose }: Props) {
   );
 
   const compatible = useMemo(() => {
-    if (selectedDevices.length < 2 || selectedEdgeCount > 0) return false;
+    if (selectedDevices.length < 2) return false;
     const identity = deviceIdentityKey(selectedDevices[0].data);
     return selectedDevices.every((device) => deviceIdentityKey(device.data) === identity);
-  }, [selectedDevices, selectedEdgeCount]);
+  }, [selectedDevices]);
 
   const sharedPorts = useMemo(
     () => (compatible ? buildSharedPortRows(selectedDevices) : []),
@@ -138,7 +138,13 @@ export default function BulkDeviceEditPanel({ onClose }: Props) {
 
       {!compatible && (
         <p className="text-xs text-[var(--color-text-muted)] text-center py-3">
-          Select 2 or more identical devices with no cables selected to group edit shared ports.
+          Select 2 or more identical devices to group edit shared ports.
+        </p>
+      )}
+
+      {selectedEdgeCount > 0 && compatible && (
+        <p className="text-[10px] text-[var(--color-text-muted)] leading-tight mb-2">
+          {selectedEdgeCount} connected selection{selectedEdgeCount === 1 ? " item was" : " items were"} ignored while editing devices.
         </p>
       )}
 

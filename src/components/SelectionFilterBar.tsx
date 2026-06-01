@@ -64,7 +64,7 @@ export default function SelectionFilterBar() {
     () => useSchematicStore.getState().nodes.filter((n): n is DeviceNode => !!n.selected && n.type === "device"),
     [selectionKey],
   );
-  const deviceOnlySelection = selectedDevices.length >= 2 && totalSelected === selectedDevices.length;
+  const multiDeviceSelection = selectedDevices.length >= 2;
   const edgeOnlySelection = edgeCount >= 2 && totalSelected === edgeCount;
 
   const [connectionPanelOpen, setConnectionPanelOpen] = useState(false);
@@ -133,7 +133,7 @@ export default function SelectionFilterBar() {
               </button>
             );
           })}
-        {(deviceOnlySelection || devicePanelOpen) && (
+        {(multiDeviceSelection || devicePanelOpen) && (
           <button
             title="Edit shared properties of selected devices"
             className={`px-2 py-0.5 text-[11px] rounded border transition-colors cursor-pointer ${
