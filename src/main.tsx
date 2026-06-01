@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { ReactFlowProvider } from "@xyflow/react";
 import "./index.css";
 import ErrorBoundary from "./components/ErrorBoundary.tsx";
+import { ensureLatestBuild } from "./buildVersion";
 
 const App = lazy(() => import("./App.tsx"));
 
@@ -16,10 +17,17 @@ function Root() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <Root />
-    </ErrorBoundary>
-  </StrictMode>,
-);
+async function bootstrap() {
+  const shouldRender = await ensureLatestBuild();
+  if (!shouldRender) return;
+
+  createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+      <ErrorBoundary>
+        <Root />
+      </ErrorBoundary>
+    </StrictMode>,
+  );
+}
+
+void bootstrap();

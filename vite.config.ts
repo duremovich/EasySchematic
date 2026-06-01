@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
@@ -16,6 +17,23 @@ try {
   gitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf-8' }).trim()
 } catch { /* not a git repo or git not available */ }
 
+function buildInfoPlugin(): Plugin {
+  return {
+    name: 'build-info-file',
+    generateBundle(this: { emitFile: (file: { type: "asset"; fileName: string; source: string }) => void }) {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'build-info.json',
+        source: JSON.stringify({
+          version: pkg.version,
+          hash: gitHash,
+          builtAt: new Date().toISOString(),
+        }, null, 2),
+      })
+    },
+  }
+}
+
 export default defineConfig({
   // Resolve TypeScript sources before .js so stale emitted .js shadows can't silently win.
   resolve: {
@@ -23,6 +41,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    buildInfoPlugin(),
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
@@ -35,6 +54,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         globPatterns: ['**/*.{js,css,html,svg,png,ttf,json}'],
         globIgnores: [
+          '**/build-info.json',
           '**/deviceLibrary.fallback.json',
           '**/og-image.png',
           '**/github-social.png',
