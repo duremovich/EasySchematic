@@ -152,7 +152,7 @@ export default function MenuBar() {
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
       return ACCESS_LOGOUT_URL;
     }
-    return `${window.location.origin}/cdn-cgi/access/logout`;
+    return ACCESS_LOGOUT_URL;
   }, []);
 
   const handleLogout = useCallback(async () => {
