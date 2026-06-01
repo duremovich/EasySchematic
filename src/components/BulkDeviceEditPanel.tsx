@@ -9,7 +9,8 @@ interface Props {
 
 interface SharedPortRow {
   key: string;
-  templatePortId: string;
+  portIndex: number;
+  templatePortId?: string;
   label: string;
   direction: Port["direction"];
   hiddenCount: number;
@@ -25,6 +26,18 @@ function deviceIdentityKey(data: DeviceData): string {
     : `shape:${data.deviceType}::${data.ports.map((port, index) => portMatchKey(port, index)).join("|")}`;
 }
 
+function findMatchingPort(device: DeviceNode, row: Pick<SharedPortRow, "portIndex" | "templatePortId" | "label" | "direction">): Port | undefined {
+  if (row.templatePortId) {
+    const byTemplatePortId = device.data.ports.find((port) => port.templatePortId === row.templatePortId);
+    if (byTemplatePortId) return byTemplatePortId;
+  }
+
+  const byIndex = device.data.ports[row.portIndex];
+  if (byIndex && byIndex.direction === row.direction && byIndex.label === row.label) return byIndex;
+
+  return device.data.ports.find((port) => port.direction === row.direction && port.label === row.label);
+}
+
 function buildSharedPortRows(devices: DeviceNode[]): SharedPortRow[] {
   if (devices.length < 2) return [];
 
@@ -37,14 +50,20 @@ function buildSharedPortRows(devices: DeviceNode[]): SharedPortRow[] {
 
     for (const device of rest) {
       const hidden = new Set(device.data.hiddenPorts ?? []);
-      const candidate = device.data.ports.find((other, otherIndex) => portMatchKey(other, otherIndex) === matchKey);
+      const candidate = findMatchingPort(device, {
+        portIndex: index,
+        templatePortId: port.templatePortId,
+        label: port.label,
+        direction: port.direction,
+      });
       if (!candidate) return [];
       matches.push({ nodeId: device.id, portId: candidate.id, hidden: hidden.has(candidate.id) });
     }
 
     return [{
       key: matchKey,
-      templatePortId: matchKey,
+      portIndex: index,
+      templatePortId: port.templatePortId,
       label: port.label,
       direction: port.direction,
       hiddenCount: matches.filter((entry) => entry.hidden).length,
@@ -85,7 +104,7 @@ export default function BulkDeviceEditPanel({ onClose }: Props) {
     const changes: { nodeId: string; patch: Partial<DeviceData> }[] = [];
     for (const device of selectedDevices) {
       const current = new Set(device.data.hiddenPorts ?? []);
-      const port = device.data.ports.find((candidate, index) => portMatchKey(candidate, index) === row.templatePortId);
+      const port = findMatchingPort(device, row);
       if (!port) continue;
       if (hide) current.add(port.id);
       else current.delete(port.id);
