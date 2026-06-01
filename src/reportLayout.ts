@@ -296,6 +296,7 @@ export function createDefaultCableScheduleLayout(): ReportLayout {
           { key: "sourceRoom",      header: "Src Room",    widthMm: 24, visible: true },
           { key: "targetRoom",      header: "Tgt Room",    widthMm: 24, visible: true },
           { key: "multicableLabel", header: "Snake",       widthMm: 24, visible: true },
+          { key: "bundle",          header: "Bundle",      widthMm: 22, visible: false },
         ],
         groupBy: null,
         groupByOptions: [
@@ -304,6 +305,7 @@ export function createDefaultCableScheduleLayout(): ReportLayout {
           { key: "signalType", label: "Signal Type" },
           { key: "cableType",  label: "Cable Type" },
           { key: "multicableLabel", label: "Snake" },
+          { key: "bundle",     label: "Bundle" },
         ],
         sortBy: "cableId",
         sortDir: "asc",

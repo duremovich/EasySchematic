@@ -3,6 +3,7 @@ import type {
   ConnectionEdge,
   SignalType,
   DistanceSettings,
+  BundleMeta,
 } from "./types";
 import { SIGNAL_LABELS, CONNECTOR_LABELS, DEFAULT_DISTANCE_SETTINGS } from "./types";
 import { getCableType } from "./cableTypes";
@@ -35,6 +36,9 @@ export interface CableScheduleRow {
   sourceRoom: string;
   targetRoom: string;
   multicableLabel: string;
+  /** Bundle display name (custom label, else "Bundle N") — blank if not bundled. Each
+   *  bundled member stays its own row; bundling never collapses physical cable counts. */
+  bundle: string;
 }
 
 /** Prefix letter for each signal type when using type-prefix cable naming */
@@ -117,7 +121,25 @@ export function computeCableSchedule(
   edges: ConnectionEdge[],
   namingScheme: "sequential" | "type-prefix" = "sequential",
   distanceContext?: CableScheduleDistanceContext,
+  bundles?: Record<string, BundleMeta>,
 ): CableScheduleRow[] {
+  // Bundle display names: a bundle is real only with >=2 members. Custom label wins,
+  // else a stable "Bundle N" numbered by first appearance in edge order. Members each
+  // keep their own row (the count is never collapsed) — this is just a grouping label.
+  const bundleMemberCounts = new Map<string, number>();
+  for (const e of edges) {
+    const bid = e.data?.bundleId;
+    if (bid) bundleMemberCounts.set(bid, (bundleMemberCounts.get(bid) ?? 0) + 1);
+  }
+  const bundleDisplay = new Map<string, string>();
+  let bundleSeq = 0;
+  for (const e of edges) {
+    const bid = e.data?.bundleId;
+    if (!bid || bundleDisplay.has(bid) || (bundleMemberCounts.get(bid) ?? 0) < 2) continue;
+    bundleSeq += 1;
+    bundleDisplay.set(bid, bundles?.[bid]?.label?.trim() || `Bundle ${bundleSeq}`);
+  }
+  const bundleOf = (e: ConnectionEdge): string => bundleDisplay.get(e.data?.bundleId ?? "") ?? "";
   // For stubbed connections (split into 2 stub-leg edges sharing a linkedConnectionId),
   // emit ONE row per logical cable using the source-side leg as canonical and following
   // through to the target-side leg to find the real target device. The target-side leg
@@ -177,6 +199,7 @@ export function computeCableSchedule(
         storedCableId: e.data?.cableId as string | undefined,
         storedCableLength: (e.data?.cableLength as string | undefined) ?? "",
         multicableLabel: (e.data?.multicableLabel as string) ?? "",
+        bundle: bundleOf(e),
         sourceDevice,
         sourcePort,
         sourceConnector,
@@ -216,6 +239,7 @@ export function computeCableSchedule(
         sourceRoom: c.sourceRoom,
         targetRoom: c.targetRoom,
         multicableLabel: c.multicableLabel,
+        bundle: c.bundle,
       };
     });
   }
@@ -236,6 +260,7 @@ export function computeCableSchedule(
     sourceRoom: c.sourceRoom,
     targetRoom: c.targetRoom,
     multicableLabel: c.multicableLabel,
+    bundle: c.bundle,
   }));
 }
 
@@ -266,14 +291,14 @@ export function exportCableScheduleCsv(
     "Cable ID", "Source", "Src Port", "Src Conn",
     "Target", "Tgt Port", "Tgt Conn",
     "Cable Type", "Signal", "Length", "Est. Length",
-    "Src Room", "Tgt Room", "Snake",
+    "Src Room", "Tgt Room", "Snake", "Bundle",
   ]));
   for (const r of rows) {
     lines.push(csvRow([
       r.cableId, r.sourceDevice, r.sourcePort, r.sourceConnector,
       r.targetDevice, r.targetPort, r.targetConnector,
       r.cableType, r.signalType, r.cableLength, r.computedLength ?? "",
-      r.sourceRoom, r.targetRoom, r.multicableLabel,
+      r.sourceRoom, r.targetRoom, r.multicableLabel, r.bundle,
     ]));
   }
 
@@ -307,6 +332,7 @@ export function getCableScheduleTableData(
     sourceRoom: r.sourceRoom,
     targetRoom: r.targetRoom,
     multicableLabel: r.multicableLabel,
+    bundle: r.bundle,
   }));
 
   // Sorting
@@ -333,6 +359,8 @@ export function getCableScheduleTableData(
     groupedRows = groupBy(sorted, (r) => r.cableType);
   } else if (groupByKey === "multicableLabel") {
     groupedRows = groupBy(sorted, (r) => r.multicableLabel || "Ungrouped");
+  } else if (groupByKey === "bundle") {
+    groupedRows = groupBy(sorted, (r) => r.bundle || "Unbundled");
   }
 
   return [

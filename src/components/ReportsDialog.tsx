@@ -86,7 +86,7 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
       const rows = computeCableSchedule(nodes, edges, s.cableNamingScheme, {
         roomDistances: s.roomDistances,
         distanceSettings: s.distanceSettings,
-      });
+      }, s.bundles);
       exportCableScheduleCsv(rows, schematicName);
     } else if (tab === "patchPanel") {
       const s = useSchematicStore.getState();
@@ -250,7 +250,7 @@ function ReportsDialog({ initialTab, onClose }: ReportsDialogProps) {
               computeCableSchedule(nodes, edges, s.cableNamingScheme, {
                 roomDistances: s.roomDistances,
                 distanceSettings: s.distanceSettings,
-              }),
+              }, s.bundles),
               layout,
             );
           }}
@@ -1487,9 +1487,10 @@ function CableScheduleTabInline() {
   const cableNamingScheme = useSchematicStore((s) => s.cableNamingScheme);
   const roomDistances = useSchematicStore((s) => s.roomDistances);
   const distanceSettings = useSchematicStore((s) => s.distanceSettings);
+  const bundles = useSchematicStore((s) => s.bundles);
   const rows = useMemo(
-    () => computeCableSchedule(nodes, edges, cableNamingScheme, { roomDistances, distanceSettings }),
-    [nodes, edges, cableNamingScheme, roomDistances, distanceSettings],
+    () => computeCableSchedule(nodes, edges, cableNamingScheme, { roomDistances, distanceSettings }, bundles),
+    [nodes, edges, cableNamingScheme, roomDistances, distanceSettings, bundles],
   );
 
   const filtered = useMemo(() => {
