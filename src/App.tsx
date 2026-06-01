@@ -293,6 +293,7 @@ function SchematicCanvas() {
     removeSelected,
     copySelected,
     pasteClipboard,
+    setPastePosition,
     pushSnapshot,
     setPendingUndoSnapshot,
     flushPendingSnapshot,
@@ -364,6 +365,21 @@ function SchematicCanvas() {
     el.addEventListener("contextmenu", handler, true); // capture phase
     return () => el.removeEventListener("contextmenu", handler, true);
   }, [screenToFlowPosition]);
+
+  useEffect(() => {
+    const updatePastePosition = (e: MouseEvent) => {
+      const el = rfContainerRef.current;
+      if (!el || !el.contains(e.target as Node)) return;
+      setPastePosition(screenToFlowPosition({ x: e.clientX, y: e.clientY }));
+    };
+    const clearPastePosition = () => setPastePosition(null);
+    window.addEventListener("mousemove", updatePastePosition);
+    window.addEventListener("blur", clearPastePosition);
+    return () => {
+      window.removeEventListener("mousemove", updatePastePosition);
+      window.removeEventListener("blur", clearPastePosition);
+    };
+  }, [screenToFlowPosition, setPastePosition]);
 
   // Space-held state for pan-on-drag (Vectorworks-style)
   const [spaceHeld, setSpaceHeld] = useState(false);

@@ -256,8 +256,6 @@ export interface Toast {
 interface Clipboard {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
-  /** Height of the copied selection's bounding box, used for paste offset */
-  boundsHeight: number;
 }
 
 interface SchematicState {
@@ -272,6 +270,7 @@ interface SchematicState {
   ownedGear: OwnedGearItem[];
   showOwnedGearPane: boolean;
   libraryActiveTab: "devices" | "owned";
+  pastePosition: { x: number; y: number } | null;
 
   // React Flow handlers
   onNodesChange: OnNodesChange<SchematicNode>;
@@ -285,6 +284,7 @@ interface SchematicState {
   deleteNodeAndChildren: (nodeId: string) => void;
   copySelected: () => void;
   pasteClipboard: () => void;
+  setPastePosition: (position: { x: number; y: number } | null) => void;
   alignSelectedNodes: (op: AlignOperation) => void;
   isValidConnection: (connection: Connection) => boolean;
   updateDeviceLabel: (nodeId: string, label: string) => void;
@@ -801,6 +801,22 @@ function syncCounters(nodes: SchematicNode[], edges: ConnectionEdge[]) {
 let clipboard: Clipboard | null = null;
 const PASTE_GAP = 20;
 
+function getNodeBounds(nodes: SchematicNode[]): { minX: number; minY: number; maxX: number; maxY: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const n of nodes) {
+    const w = fallbackNodeWidth(n);
+    const h = fallbackNodeHeight(n);
+    minX = Math.min(minX, n.position.x);
+    minY = Math.min(minY, n.position.y);
+    maxX = Math.max(maxX, n.position.x + w);
+    maxY = Math.max(maxY, n.position.y + h);
+  }
+  return { minX, minY, maxX, maxY };
+}
+
 // Undo/redo history
 interface Snapshot {
   nodes: SchematicNode[];
@@ -1186,6 +1202,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   ownedGear: [],
   showOwnedGearPane: false,
   libraryActiveTab: "devices",
+  pastePosition: null,
   customTemplateGroups: _initCustomMeta.groups,
   customTemplateOrder: _initCustomMeta.order,
   customTemplateGroupAssignments: _initCustomMeta.groupAssignments,
@@ -1723,19 +1740,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       (e) => selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target),
     );
 
-    // Compute bounding box height of selection
-    let minY = Infinity;
-    let maxY = -Infinity;
-    for (const n of selectedNodes) {
-      const h = fallbackNodeHeight(n);
-      minY = Math.min(minY, n.position.y);
-      maxY = Math.max(maxY, n.position.y + h);
-    }
-
     clipboard = {
       nodes: selectedNodes.map((n) => structuredClone(n)),
       edges: connectedEdges.map((e) => structuredClone(e)),
-      boundsHeight: maxY - minY,
     };
   },
 
@@ -1743,6 +1750,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!clipboard || clipboard.nodes.length === 0) return;
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
+    const pastePosition = state.pastePosition;
+    const bounds = getNodeBounds(clipboard.nodes);
 
     // Build old ID → new ID mapping for nodes and ports
     const nodeIdMap = new Map<string, string>();
@@ -1761,7 +1770,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       return v;
     };
 
-    const yOffset = clipboard.boundsHeight + PASTE_GAP;
+    const xOffset = pastePosition ? pastePosition.x - bounds.minX + PASTE_GAP : 0;
+    const yOffset = pastePosition ? pastePosition.y - bounds.minY + PASTE_GAP : (bounds.maxY - bounds.minY) + PASTE_GAP;
 
     const newNodes: SchematicNode[] = clipboard.nodes.map((n) => {
       const newId = n.type === "room" ? nextRoomId() : nextNodeId();
@@ -1780,7 +1790,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return {
           ...n,
           id: newId,
-          position: { x: n.position.x, y: n.position.y + yOffset },
+          position: { x: n.position.x + xOffset, y: n.position.y + yOffset },
           selected: true,
           data: {
             ...deviceData,
@@ -1794,7 +1804,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return {
           ...n,
           id: newId,
-          position: { x: n.position.x, y: n.position.y + yOffset },
+          position: { x: n.position.x + xOffset, y: n.position.y + yOffset },
           selected: true,
           data: { ...sd, linkedConnectionId: remapLink(sd.linkedConnectionId) },
         };
@@ -1802,7 +1812,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       return {
         ...n,
         id: newId,
-        position: { x: n.position.x, y: n.position.y + yOffset },
+        position: { x: n.position.x + xOffset, y: n.position.y + yOffset },
         selected: true,
       };
     });
@@ -1843,13 +1853,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     clipboard = {
       nodes: clipboard.nodes.map((n) => ({
         ...n,
-        position: { x: n.position.x, y: n.position.y + yOffset },
+        position: { x: n.position.x + xOffset, y: n.position.y + yOffset },
       })),
       edges: clipboard.edges,
-      boundsHeight: clipboard.boundsHeight,
     };
 
     get().saveToLocalStorage();
+  },
+
+  setPastePosition: (position) => {
+    set({ pastePosition: position });
   },
 
   alignSelectedNodes: (op) => {
