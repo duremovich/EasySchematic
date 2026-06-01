@@ -227,28 +227,61 @@ function isCodeLikeLabel(value) {
   return false;
 }
 
-function chooseDisplayLabel(template) {
+function compressProductName(value) {
+  let term = compact(value).replace(/\s*\([^)]*\)\s*$/g, "");
+  term = term.replace(/\s*[-–—]\s*(white|black|silver|grey|gray|pearl|ivory|w|b|wh|bk|blk|hz|lz|eu|us|uk|jp)\b.*$/i, "");
+  const tokens = term.split(/\s+/);
+  const stopWords = new Set([
+    "loudspeaker",
+    "loudspeakers",
+    "speaker",
+    "speakers",
+    "amplifier",
+    "amplifiers",
+    "processor",
+    "processors",
+    "controller",
+    "controllers",
+    "adapter",
+    "adapters",
+    "encoder",
+    "encoders",
+    "decoder",
+    "decoders",
+    "switcher",
+    "switchers",
+    "module",
+    "modules",
+    "receiver",
+    "receivers",
+    "transmitter",
+    "transmitters",
+    "subwoofer",
+    "system",
+  ]);
+  const stopIndex = tokens.findIndex((token, index) => index > 0 && stopWords.has(token.toLowerCase().replace(/[^a-z]/g, "")));
+  if (stopIndex > 0) term = tokens.slice(0, stopIndex).join(" ");
+  return compact(term);
+}
+
+function chooseCanonicalModelName(template) {
   const manufacturer = compact(template.manufacturer);
-  const modelNumber = sanitizeModelNumber(template.modelNumber);
-  const modelCombo = compact(`${manufacturer} ${modelNumber}`.trim());
+  const rawModelNumber = sanitizeModelNumber(template.modelNumber);
+  const rawLabel = compact(template.label);
 
-  const candidates = [
-    compact(template.label),
-    ...(template.searchTerms ?? []).map(compact),
-  ].filter(Boolean);
+  if (rawModelNumber && /[a-z]/i.test(rawModelNumber)) return rawModelNumber;
 
+  const candidates = [rawLabel, ...(template.searchTerms ?? []).map(compact)].filter(Boolean);
   for (const candidate of candidates) {
-    const lower = candidate.toLowerCase();
-    if (!isCodeLikeLabel(candidate)) {
-      if (lower !== manufacturer.toLowerCase() && lower !== modelNumber.toLowerCase() && lower !== modelCombo.toLowerCase()) {
-        return candidate;
-      }
+    const compressed = compressProductName(candidate);
+    const lower = compressed.toLowerCase();
+    if (!isCodeLikeLabel(compressed) && lower !== manufacturer.toLowerCase()) {
+      return compressed;
     }
   }
 
-  if (manufacturer && modelNumber) return `${manufacturer} ${modelNumber}`;
-  if (modelNumber) return modelNumber;
-  if (candidates[0]) return candidates[0];
+  if (rawModelNumber) return rawModelNumber;
+  if (rawLabel) return compressProductName(rawLabel) || rawLabel;
   return manufacturer || "Unknown Device";
 }
 
@@ -285,16 +318,17 @@ function normalizeClassification(template) {
 }
 
 function makeDisplayLabel(template) {
-  return chooseDisplayLabel(template);
+  return chooseCanonicalModelName(template);
 }
 
 function sanitizeTemplate(template) {
+  const canonicalModelName = chooseCanonicalModelName(template);
   return normalizeClassification({
     ...template,
-    label: makeDisplayLabel(template),
-    shortName: sanitizeModelNumber(template.modelNumber) || template.shortName,
+    label: canonicalModelName,
+    shortName: canonicalModelName,
     manufacturer: template.manufacturer != null ? compact(template.manufacturer) : undefined,
-    modelNumber: template.modelNumber != null ? sanitizeModelNumber(template.modelNumber) : undefined,
+    modelNumber: canonicalModelName,
     category: template.category != null ? compact(template.category) : undefined,
     referenceUrl: template.referenceUrl != null ? compact(template.referenceUrl) : undefined,
     searchTerms: sanitizeSearchTerms(template),
