@@ -1591,11 +1591,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return n && n.type !== "waypoint";
       }),
     );
+    const linkedIdsToDrop = new Set<string>();
+    for (const e of state.edges) {
+      const touchesDeletedNode = deletedConnectingNodes.has(e.source) || deletedConnectingNodes.has(e.target);
+      const isSelectedEdge = selectedEdgeIds.has(e.id);
+      if ((touchesDeletedNode || isSelectedEdge) && e.data?.linkedConnectionId) {
+        linkedIdsToDrop.add(e.data.linkedConnectionId);
+      }
+    }
     const survivingEdges = state.edges.filter(
       (e) =>
         !selectedEdgeIds.has(e.id) &&
         !deletedConnectingNodes.has(e.source) &&
-        !deletedConnectingNodes.has(e.target),
+        !deletedConnectingNodes.has(e.target) &&
+        !(e.data?.linkedConnectionId && linkedIdsToDrop.has(e.data.linkedConnectionId)),
     );
 
     // Splice manualWaypoints entries for each selected waypoint node so their
@@ -1605,6 +1614,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     const remainingNodes = state.nodes
       .filter((n) => !n.selected)
+      .filter((n) => n.type !== "stub-label" || !linkedIdsToDrop.has((n.data as import("./types").StubLabelData).linkedConnectionId))
       .map((n) => {
         if (n.parentId && deletedRoomIds.has(n.parentId)) {
           // Convert to absolute position — walk the full parent chain
