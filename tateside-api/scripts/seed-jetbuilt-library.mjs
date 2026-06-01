@@ -114,6 +114,15 @@ function portIds(ports) {
 }
 
 const NETWORK_CONNECTORS = new Set(["rj45", "ethercon", "sfp", "lc", "sc", "opticalcon", "qsfp", "qsfp28", "mpo"]);
+const DEVICE_TYPE_TO_CATEGORY = {
+  "touch-screen": "Control",
+  "stage-box": "Audio I/O",
+  "adapter": "Processing",
+  "audio-dsp": "Audio",
+  "monitor": "Displays",
+  "access-point": "Networking",
+  "switcher": "Switching",
+};
 const VIRTUAL_NETWORK_SIGNALS = new Set([
   "dante",
   "aes67",
@@ -209,6 +218,38 @@ function sanitizeSearchTerms(template) {
   return unique;
 }
 
+function normalizeClassification(template) {
+  const manufacturer = compact(template.manufacturer).toLowerCase();
+  const modelNumber = sanitizeModelNumber(template.modelNumber).toLowerCase();
+  const label = compact(template.label).toLowerCase();
+  const searchBlob = (template.searchTerms ?? []).join(" ").toLowerCase();
+  const ports = template.ports ?? [];
+
+  const analogInputs = ports.filter((port) => normalize(port.signalType).toLowerCase() === "analog-audio" && normalize(port.direction).toLowerCase() === "input").length;
+  const analogOutputs = ports.filter((port) => normalize(port.signalType).toLowerCase() === "analog-audio" && normalize(port.direction).toLowerCase() === "output").length;
+  const hasEthernet = ports.some((port) => normalize(port.signalType).toLowerCase() === "ethernet");
+  const hasVideoSignals = ports.some((port) => ["hdmi", "sdi", "displayport", "hdbaset", "ndi"].includes(normalize(port.signalType).toLowerCase()));
+
+  let deviceType = template.deviceType;
+
+  if ((manufacturer.includes("apple") && (label.includes("ipad") || modelNumber.includes("ipad") || searchBlob.includes("ipad"))) || label.includes("neat pad") || modelNumber.includes("neatpad")) {
+    deviceType = "touch-screen";
+  } else if (
+    (manufacturer.includes("allen & heath") && /^ar\d+/i.test(template.modelNumber ?? "")) ||
+    (deviceType === "switcher" && analogInputs >= 8 && analogOutputs >= 4 && hasEthernet && !hasVideoSignals)
+  ) {
+    deviceType = "stage-box";
+  } else if (deviceType === "access-point" && /adapter/.test(`${label} ${modelNumber}`) && !/wireless access point|wifi|wi-fi|unifi|wap|ap\b/.test(`${label} ${searchBlob}`)) {
+    deviceType = "adapter";
+  }
+
+  return {
+    ...template,
+    deviceType,
+    category: DEVICE_TYPE_TO_CATEGORY[deviceType] ?? template.category,
+  };
+}
+
 function makeDisplayLabel(template) {
   const manufacturer = compact(template.manufacturer);
   const modelNumber = sanitizeModelNumber(template.modelNumber);
@@ -220,7 +261,7 @@ function makeDisplayLabel(template) {
 }
 
 function sanitizeTemplate(template) {
-  return {
+  return normalizeClassification({
     ...template,
     label: makeDisplayLabel(template),
     shortName: sanitizeModelNumber(template.modelNumber) || template.shortName,
@@ -230,7 +271,7 @@ function sanitizeTemplate(template) {
     referenceUrl: template.referenceUrl != null ? compact(template.referenceUrl) : undefined,
     searchTerms: sanitizeSearchTerms(template),
     ports: sanitizePorts(template.ports),
-  };
+  });
 }
 
 function mergePorts(basePorts, overridePorts) {
