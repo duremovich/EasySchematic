@@ -309,6 +309,8 @@ interface SchematicState {
 
   // Selection
   selectAll: () => void;
+  /** Select exactly the given edge ids (deselecting all other edges and all nodes). */
+  selectEdges: (ids: string[]) => void;
 
   // Custom templates
   addCustomTemplate: (template: DeviceTemplate) => void;
@@ -2984,6 +2986,18 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({
       nodes: state.nodes.map((n) => ({ ...n, selected: n.type !== "room" })),
       edges: state.edges.map((e) => ({ ...e, selected: true })),
+    });
+  },
+
+  selectEdges: (ids) => {
+    const want = new Set(ids);
+    const state = get();
+    set({
+      nodes: state.nodes.some((n) => n.selected) ? state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)) : state.nodes,
+      edges: state.edges.map((e) => {
+        const sel = want.has(e.id);
+        return e.selected === sel ? e : { ...e, selected: sel };
+      }),
     });
   },
 

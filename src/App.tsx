@@ -39,6 +39,7 @@ import BetaBanner from "./components/BetaBanner";
 import UpdatePill from "./components/UpdatePill";
 import PortContextMenu from "./components/PortContextMenu";
 import RoutingDebugOverlay from "./components/RoutingDebugOverlay";
+import BundleTrunkLayer from "./components/BundleTrunkLayer";
 import RoutingTuningPanel from "./components/RoutingTuningPanel";
 import SelectionFilterBar from "./components/SelectionFilterBar";
 import RoomContextMenu from "./components/RoomContextMenu";
@@ -565,7 +566,7 @@ function SchematicCanvas() {
   );
   // Digest of edge connectivity
   const edgeDigest = useSchematicStore((s) =>
-    s.edges.map((e) => `${e.id}:${e.source}:${e.sourceHandle}:${e.target}:${e.targetHandle}:${e.data?.manualWaypoints?.length ?? 0}:${e.data?.stubbed ? "s" : ""}`).join("|"),
+    s.edges.map((e) => `${e.id}:${e.source}:${e.sourceHandle}:${e.target}:${e.targetHandle}:${e.data?.manualWaypoints?.length ?? 0}:${e.data?.stubbed ? "s" : ""}:${e.data?.bundleId ?? ""}`).join("|"),
   );
 
   // Filter out edges whose signal type is hidden (presentation-only — store edges stay complete)
@@ -1586,6 +1587,7 @@ function SchematicCanvas() {
         </div>
       )}
       {!printView && <CanvasOriginOverlay />}
+      {!printView && <BundleTrunkLayer />}
       <Background variant={BackgroundVariant.Dots} gap={GRID_SIZE} size={1} color={isDark ? "#374151" : "#d4d4d4"} />
       <Controls position="bottom-right" />
       <AutoRouteChip />
