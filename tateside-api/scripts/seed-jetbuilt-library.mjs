@@ -78,6 +78,12 @@ function compact(value) {
   return normalize(value).replace(/\s+/g, " ");
 }
 
+function stripDecorativePrefixes(value) {
+  return compact(value)
+    .replace(/^\*+\s*[^*]+\*+\s*/g, "")
+    .replace(/^\(\d+\)\s*/g, "");
+}
+
 function slug(value) {
   return normalize(value)
     .toLowerCase()
@@ -162,9 +168,16 @@ function sanitizePorts(ports) {
   }));
 }
 
+function sanitizeModelNumber(value) {
+  let modelNumber = stripDecorativePrefixes(value);
+  modelNumber = modelNumber.replace(/\s*\((wework|supplied with[^)]*|purchased on[^)]*|for [^)]*|single)\)\s*$/i, "");
+  modelNumber = compact(modelNumber);
+  return modelNumber;
+}
+
 function makeDisplayLabel(template) {
   const manufacturer = compact(template.manufacturer);
-  const modelNumber = compact(template.modelNumber);
+  const modelNumber = sanitizeModelNumber(template.modelNumber);
   const label = compact(template.label);
   if (manufacturer && modelNumber) return `${manufacturer} ${modelNumber}`;
   if (modelNumber) return modelNumber;
@@ -176,9 +189,9 @@ function sanitizeTemplate(template) {
   return {
     ...template,
     label: makeDisplayLabel(template),
-    shortName: compact(template.modelNumber) || template.shortName,
+    shortName: sanitizeModelNumber(template.modelNumber) || template.shortName,
     manufacturer: template.manufacturer != null ? compact(template.manufacturer) : undefined,
-    modelNumber: template.modelNumber != null ? compact(template.modelNumber) : undefined,
+    modelNumber: template.modelNumber != null ? sanitizeModelNumber(template.modelNumber) : undefined,
     category: template.category != null ? compact(template.category) : undefined,
     referenceUrl: template.referenceUrl != null ? compact(template.referenceUrl) : undefined,
     ports: sanitizePorts(template.ports),
@@ -216,7 +229,7 @@ const templates = raw.filter(isEnriched).map((template) => sanitizeTemplate({
   label: compact(template.label),
   deviceType: normalize(template.deviceType),
   manufacturer: template.manufacturer != null ? compact(template.manufacturer) : undefined,
-  modelNumber: template.modelNumber != null ? compact(template.modelNumber) : undefined,
+  modelNumber: template.modelNumber != null ? sanitizeModelNumber(template.modelNumber) : undefined,
   category: template.category != null ? compact(template.category) : undefined,
   shortName: template.shortName != null ? compact(template.shortName) : undefined,
   referenceUrl: template.referenceUrl != null ? compact(template.referenceUrl) : undefined,
