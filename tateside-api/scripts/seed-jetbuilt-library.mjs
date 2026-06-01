@@ -175,6 +175,40 @@ function sanitizeModelNumber(value) {
   return modelNumber;
 }
 
+function isUsefulSearchTerm(value) {
+  const term = compact(value);
+  const lower = term.toLowerCase();
+  if (!term) return false;
+  if (term.length > 120) return false;
+  if (/[*]{2}|purchased on|supplied with|to use dsp from|lectern content ingest|remote hdmi input plates|mass quantity pricing/i.test(term)) return false;
+  if (/\bwework\b/i.test(term)) return false;
+  if ((term.match(/[.,;:]/g) ?? []).length > 3) return false;
+  if (lower.split(" ").length > 12) return false;
+  return true;
+}
+
+function sanitizeSearchTerms(template) {
+  const baseTerms = [
+    compact(template.manufacturer),
+    sanitizeModelNumber(template.modelNumber),
+    compact(template.label),
+    `${compact(template.manufacturer)} ${sanitizeModelNumber(template.modelNumber)}`.trim(),
+    template.shortName ? compact(template.shortName) : "",
+    ...(template.searchTerms ?? []).map(compact),
+  ];
+
+  const unique = [];
+  const seen = new Set();
+  for (const term of baseTerms) {
+    if (!isUsefulSearchTerm(term)) continue;
+    const key = term.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(term);
+  }
+  return unique;
+}
+
 function makeDisplayLabel(template) {
   const manufacturer = compact(template.manufacturer);
   const modelNumber = sanitizeModelNumber(template.modelNumber);
@@ -194,6 +228,7 @@ function sanitizeTemplate(template) {
     modelNumber: template.modelNumber != null ? sanitizeModelNumber(template.modelNumber) : undefined,
     category: template.category != null ? compact(template.category) : undefined,
     referenceUrl: template.referenceUrl != null ? compact(template.referenceUrl) : undefined,
+    searchTerms: sanitizeSearchTerms(template),
     ports: sanitizePorts(template.ports),
   };
 }
