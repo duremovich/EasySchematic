@@ -369,7 +369,7 @@ function SchematicCanvas() {
   useEffect(() => {
     const updatePastePosition = (e: MouseEvent) => {
       const el = rfContainerRef.current;
-      if (!el || !el.contains(e.target as Node)) return;
+      if (!el || !(e.target instanceof HTMLElement) || !el.contains(e.target)) return;
       setPastePosition(screenToFlowPosition({ x: e.clientX, y: e.clientY }));
     };
     const clearPastePosition = () => setPastePosition(null);
