@@ -1,11 +1,12 @@
-import { memo, useState, useRef, useEffect } from "react";
+import { memo, useState, useRef, useEffect, type PointerEvent as ReactPointerEvent } from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
   type EdgeProps,
+  useReactFlow,
 } from "@xyflow/react";
 import { useSchematicStore } from "../store";
-import { LINE_STYLE_DASHARRAY, type ConnectionEdge, type LineStyle } from "../types";
+import { LINE_STYLE_DASHARRAY, type CableIdLabelMode, type ConnectionEdge, type LineStyle } from "../types";
 
 function OffsetEdgeComponent({
   id,
@@ -18,6 +19,7 @@ function OffsetEdgeComponent({
   selected,
   interactionWidth,
 }: EdgeProps<ConnectionEdge>) {
+  const { screenToFlowPosition } = useReactFlow();
   const debugEdges = useSchematicStore((s) => s.debugEdges);
   const debugShowLabels = useSchematicStore((s) => s.debugShowLabels);
 
@@ -25,6 +27,9 @@ function OffsetEdgeComponent({
   const [isHovered, setIsHovered] = useState(false);
   // Tooltip state — tracks which updater circle the mouse is over
   const [tooltipType, setTooltipType] = useState<"source" | "target" | null>(null);
+  const [manualDragPosition, setManualDragPosition] = useState<number | null>(null);
+  const [isDraggingCableId, setIsDraggingCableId] = useState(false);
+  const cleanupManualDragRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const el = document.querySelector(`.react-flow__edge[data-id="${id}"]`);
@@ -54,6 +59,11 @@ function OffsetEdgeComponent({
       tgtUpdater?.removeEventListener('mouseleave', onLeaveUpdater);
     };
   }, [id]);
+
+  useEffect(() => () => {
+    cleanupManualDragRef.current?.();
+    cleanupManualDragRef.current = null;
+  }, []);
 
   // Read pre-computed route from store (serialized to string to avoid re-render loops)
   const routeStr = useSchematicStore((s) => {
@@ -133,7 +143,11 @@ function OffsetEdgeComponent({
   });
   const edgeCableIdLabelMode = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
-    return edge?.data?.cableIdLabelMode as "endpoint" | "midpoint" | undefined;
+    return edge?.data?.cableIdLabelMode as CableIdLabelMode | undefined;
+  });
+  const edgeCableIdManualPosition = useSchematicStore((s) => {
+    const edge = s.edges.find((e) => e.id === id);
+    return edge?.data?.cableIdManualPosition as number | undefined;
   });
 
   // Endpoint cable-ID labels are suppressed at any stub-label endpoint — the stub box
@@ -360,6 +374,35 @@ function OffsetEdgeComponent({
     return { ...last, dx: 1, dy: 0 };
   };
 
+  const pointAtNormalizedDistance = (normalizedPos: number) =>
+    pointAtDistance(totalLen * Math.max(0, Math.min(1, normalizedPos)));
+
+  const projectToPathPosition = (x: number, y: number): number | null => {
+    if (pathWps.length < 2 || totalLen <= 0) return null;
+
+    let bestDistSq = Infinity;
+    let bestNormalized = 0.5;
+    for (let i = 1; i < pathWps.length; i++) {
+      const a = pathWps[i - 1];
+      const b = pathWps[i];
+      const vx = b.x - a.x;
+      const vy = b.y - a.y;
+      const segLenSq = vx * vx + vy * vy;
+      const t = segLenSq > 0
+        ? Math.max(0, Math.min(1, ((x - a.x) * vx + (y - a.y) * vy) / segLenSq))
+        : 0;
+      const px = a.x + vx * t;
+      const py = a.y + vy * t;
+      const distSq = (x - px) * (x - px) + (y - py) * (y - py);
+      if (distSq < bestDistSq) {
+        const segLen = Math.sqrt(segLenSq);
+        bestDistSq = distSq;
+        bestNormalized = totalLen > 0 ? (cumDist[i - 1] + segLen * t) / totalLen : 0.5;
+      }
+    }
+    return Math.max(0, Math.min(1, bestNormalized));
+  };
+
   const cableIdLabelStyle: React.CSSProperties = {
     position: "absolute",
     pointerEvents: "none",
@@ -372,6 +415,15 @@ function OffsetEdgeComponent({
     borderRadius: 2,
     whiteSpace: "nowrap",
     border: `1px solid ${signalColor}`,
+  };
+
+  const manualCableIdLabelStyle: React.CSSProperties = {
+    ...cableIdLabelStyle,
+    pointerEvents: "auto",
+    cursor: isDraggingCableId ? "grabbing" : "grab",
+    userSelect: "none",
+    touchAction: "none",
+    boxShadow: isDraggingCableId ? "0 0 0 1px rgba(59,130,246,0.35)" : undefined,
   };
 
   const customLabelStyle: React.CSSProperties = {
@@ -452,6 +504,8 @@ function OffsetEdgeComponent({
   // Determine which labels to show
   const showCableId = showCableIdLabels && !hideCableId && labelText && routeStr;
   const showAnyCustom = !!showCustomLabels && !!routeStr;
+  const effectiveCableIdMode = (edgeCableIdLabelMode ?? globalCableIdLabelMode) as CableIdLabelMode;
+  const activeManualPosition = manualDragPosition ?? edgeCableIdManualPosition ?? 0.5;
 
   // Each custom label slot is visible iff its text is non-empty (#114 rework).
   const showSrcLabel = showAnyCustom && !!edgeSourceLabel;
@@ -468,17 +522,79 @@ function OffsetEdgeComponent({
 
   // Compute midpoint position along the path (for cable ID midpoint and custom midpoint label)
   const cidMidPt = totalLen > 0 ? pointAtDistance(totalLen / 2 + cidMidOff) : { x: lx, y: ly };
+  const cidManualPt = totalLen > 0 ? pointAtNormalizedDistance(activeManualPosition) : { x: lx, y: ly, dx: 1, dy: 0 };
   const customMidPt = totalLen > 0 ? pointAtDistance(totalLen / 2) : { x: lx, y: ly };
 
-  // Cable ID labels — at endpoints or midpoint depending on mode (unchanged)
+  useEffect(() => {
+    setManualDragPosition(null);
+    setIsDraggingCableId(false);
+  }, [edgeCableIdManualPosition, routeWpStr]);
+
+  const handleCableIdPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (!showCableId || effectiveCableIdMode !== "manual" || totalLen <= 0) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingCableId(true);
+
+    const updateFromPointer = (clientX: number, clientY: number) => {
+      const flowPos = screenToFlowPosition({ x: clientX, y: clientY });
+      const normalized = projectToPathPosition(flowPos.x, flowPos.y);
+      if (normalized != null) setManualDragPosition(normalized);
+      return normalized;
+    };
+
+    updateFromPointer(e.clientX, e.clientY);
+
+    const onPointerMove = (evt: PointerEvent) => {
+      evt.preventDefault();
+      updateFromPointer(evt.clientX, evt.clientY);
+    };
+
+    const onPointerUp = (evt: PointerEvent) => {
+      const normalized = updateFromPointer(evt.clientX, evt.clientY);
+      cleanupManualDragRef.current?.();
+      cleanupManualDragRef.current = null;
+      setIsDraggingCableId(false);
+      setManualDragPosition(null);
+      if (normalized != null) {
+        useSchematicStore.getState().patchEdgeData(id, {
+          cableIdLabelMode: "manual",
+          cableIdManualPosition: normalized,
+        });
+      }
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    cleanupManualDragRef.current = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+  };
+
+  // Cable ID labels — endpoints, midpoint, or draggable manual placement.
   const cableIdLabels = showCableId ? (
-    cableIdLabelMode === "endpoint" ? (
+    effectiveCableIdMode === "endpoint" ? (
       <>
         {!sourceIsStub && makeEndpointLabel(true, cableIdEndpointGap, labelText, cableIdLabelStyle, "cid-src",
           sourceX, sourceY, srcDx, srcDy)}
         {!targetIsStub && makeEndpointLabel(false, cableIdEndpointGap, labelText, cableIdLabelStyle, "cid-tgt",
           tgtLabelX, tgtLabelY, -tgtDx, -tgtDy)}
       </>
+    ) : effectiveCableIdMode === "manual" ? (
+      <div
+        key="cid-manual"
+        className="nodrag nopan"
+        onPointerDown={handleCableIdPointerDown}
+        style={{
+          ...manualCableIdLabelStyle,
+          transform: `translate(-50%, -50%) translate(${cidManualPt.x}px, ${cidManualPt.y}px)`,
+        }}
+        title="Drag to place cable ID"
+      >
+        {labelText}
+      </div>
     ) : (
       <div
         key="cid-mid"

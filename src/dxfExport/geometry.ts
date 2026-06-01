@@ -1,6 +1,6 @@
 import { ARC_R, GAP_HALF } from "../pathfinding";
 import type { RoutedEdge } from "../edgeRouter";
-import type { ConnectionEdge, LineStyle, SignalType } from "../types";
+import type { CableIdLabelMode, ConnectionEdge, LineStyle, SignalType } from "../types";
 import type { DxfWriter, EntityStyle } from "./writer";
 import { cssFontPxToDxfHeight, pxToIn } from "./units";
 import { CANONICAL_LAYERS } from "./layers";
@@ -333,12 +333,50 @@ export function findEndpointLabelPos(
   }
 }
 
+export function findLabelPosAlongRoute(
+  routed: RoutedEdge,
+  normalizedPos = 0.5,
+): { x: number; y: number; rotationDeg: number } {
+  const pts = routed.waypoints;
+  if (pts.length < 2) return { x: routed.labelX, y: routed.labelY, rotationDeg: 0 };
+
+  const clamped = Math.max(0, Math.min(1, normalizedPos));
+  let totalLen = 0;
+  const segLens: number[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    const segLen = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+    segLens.push(segLen);
+    totalLen += segLen;
+  }
+  if (totalLen <= 0) return { x: routed.labelX, y: routed.labelY, rotationDeg: 0 };
+
+  const targetLen = totalLen * clamped;
+  let traversed = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const segLen = segLens[i - 1];
+    if (traversed + segLen >= targetLen) {
+      const a = pts[i - 1];
+      const b = pts[i];
+      const t = segLen > 0 ? (targetLen - traversed) / segLen : 0;
+      return {
+        x: a.x + (b.x - a.x) * t,
+        y: a.y + (b.y - a.y) * t,
+        rotationDeg: 0,
+      };
+    }
+    traversed += segLen;
+  }
+
+  const last = pts[pts.length - 1];
+  return { x: last.x, y: last.y, rotationDeg: 0 };
+}
+
 /** Emit cable ID label(s) for an edge. */
 export function emitCableIdLabels(
   writer: DxfWriter,
   edge: ConnectionEdge,
   routed: RoutedEdge,
-  mode: "endpoint" | "midpoint",
+  mode: CableIdLabelMode,
   globalGap: number,
   globalMidOffset: number,
   trueColor: number,
@@ -351,11 +389,26 @@ export function emitCableIdLabels(
   const MIN_CABLE_ID_ENDPOINT_GAP = 10;
   const effectiveGap = Math.max(gap, MIN_CABLE_ID_ENDPOINT_GAP);
   const midOffset = edge.data?.cableIdMidOffset ?? globalMidOffset;
+  const manualPos = edge.data?.cableIdManualPosition ?? 0.5;
 
   const style: EntityStyle = { trueColor, linetype: "CONTINUOUS" };
   const effectiveMode = edge.data?.cableIdLabelMode ?? mode;
 
-  if (effectiveMode === "midpoint") {
+  if (effectiveMode === "manual") {
+    const pos = findLabelPosAlongRoute(routed, manualPos);
+    writer.addMText(
+      CANONICAL_LAYERS.LABELS,
+      pxToIn(pos.x), -pxToIn(pos.y),
+      edge.data.cableId,
+      {
+        height,
+        attachment: 5,
+        style,
+        backgroundAci: 7,
+        backgroundScale: 1.2,
+      },
+    );
+  } else if (effectiveMode === "midpoint") {
     const pos = findMidpointLabelPos(routed, midOffset);
     writer.addMText(
       CANONICAL_LAYERS.LABELS,

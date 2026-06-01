@@ -16,7 +16,7 @@ import { defaultStubPlacement } from "./stubPlacement";
 import { getPortAbsolutePositions } from "./snapUtils";
 import type { SchematicNode } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 39;
+export const CURRENT_SCHEMA_VERSION = 40;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Migration = (data: any) => any;
@@ -482,6 +482,21 @@ const migrations: Record<number, Migration> = {
     delete data.customLabelGap;
     delete data.customLabelMidOffset;
     data.version = 39;
+    return data;
+  },
+
+  39: (data) => {
+    // v39 → v40: reserve manual cable-ID placement fields. Clamp imported manual
+    // positions to the normalized 0-1 range so malformed files don't place labels
+    // off-route.
+    if (Array.isArray(data.edges)) {
+      for (const e of data.edges) {
+        const d = e?.data;
+        if (!d || typeof d.cableIdManualPosition !== "number") continue;
+        d.cableIdManualPosition = Math.max(0, Math.min(1, d.cableIdManualPosition));
+      }
+    }
+    data.version = 40;
     return data;
   },
 

@@ -34,7 +34,7 @@ import type {
   CustomTemplateMeta,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
-import type { SignalType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings, PanMode, StubLabelPageMode } from "./types";
+import type { SignalType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings, PanMode, StubLabelPageMode, CableIdLabelMode } from "./types";
 import { defaultStubPlacement } from "./stubPlacement";
 import { getPortAbsolutePositions } from "./snapUtils";
 import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_SHOW_ROOM, DEFAULT_STUB_LABEL_PAGE_MODE } from "./types";
@@ -587,8 +587,8 @@ interface SchematicState {
   setCableIdGap: (gap: number) => void;
   cableIdMidOffset: number;
   setCableIdMidOffset: (offset: number) => void;
-  cableIdLabelMode: "endpoint" | "midpoint";
-  setCableIdLabelMode: (mode: "endpoint" | "midpoint") => void;
+  cableIdLabelMode: CableIdLabelMode;
+  setCableIdLabelMode: (mode: CableIdLabelMode) => void;
   stubLabelShowPort: boolean;
   setStubLabelShowPort: (show: boolean) => void;
   stubLabelShowRoom: boolean;
@@ -1257,7 +1257,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   showCustomLabels: true,
   cableIdGap: 4,
   cableIdMidOffset: 0,
-  cableIdLabelMode: "endpoint" as "endpoint" | "midpoint",
+  cableIdLabelMode: "endpoint" as CableIdLabelMode,
   stubLabelShowPort: DEFAULT_STUB_LABEL_SHOW_PORT,
   stubLabelShowRoom: DEFAULT_STUB_LABEL_SHOW_ROOM,
   stubLabelPageMode: DEFAULT_STUB_LABEL_PAGE_MODE,
@@ -4945,7 +4945,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         showCustomLabels: true,
         cableIdGap: 4,
         cableIdMidOffset: 0,
-        cableIdLabelMode: "endpoint" as "endpoint" | "midpoint",
+        cableIdLabelMode: "endpoint" as CableIdLabelMode,
         stubLabelShowPort: DEFAULT_STUB_LABEL_SHOW_PORT,
         stubLabelShowRoom: DEFAULT_STUB_LABEL_SHOW_ROOM,
         stubLabelPageMode: DEFAULT_STUB_LABEL_PAGE_MODE,

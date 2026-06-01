@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import { SIGNAL_LABELS, SIGNAL_COLORS, LINE_STYLE_DASHARRAY, type SignalType, type LineStyle, type Port } from "../types";
+import { SIGNAL_LABELS, SIGNAL_COLORS, LINE_STYLE_DASHARRAY, type CableIdLabelMode, type SignalType, type LineStyle, type Port } from "../types";
 import { useSchematicStore } from "../store";
 import { DEFAULT_SIGNAL_COLORS, loadSignalColors } from "../signalColors";
 
@@ -345,33 +345,40 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
           <span className="text-xs text-[var(--color-text)]">Cable ID position</span>
           <select
             value={cableIdLabelMode}
-            onChange={(e) => setCableIdLabelMode(e.target.value as "endpoint" | "midpoint")}
+            onChange={(e) => setCableIdLabelMode(e.target.value as CableIdLabelMode)}
             className="text-xs bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-0.5 text-[var(--color-text)] cursor-pointer"
           >
             <option value="endpoint">At endpoints</option>
             <option value="midpoint">At midpoint</option>
+            <option value="manual">Manual</option>
           </select>
         </div>
-        <div className="flex items-center gap-2 px-1 py-0.5">
-          <span className="text-xs text-[var(--color-text)]">
-            {cableIdLabelMode === "endpoint" ? "Cable ID spacing" : "Cable ID offset"}
-          </span>
-          <input
-            type="range"
-            min={cableIdLabelMode === "endpoint" ? 1 : -100}
-            max={cableIdLabelMode === "endpoint" ? 40 : 100}
-            step={1}
-            value={cableIdLabelMode === "endpoint" ? cableIdGap : cableIdMidOffset}
-            onChange={(e) => cableIdLabelMode === "endpoint"
-              ? setCableIdGap(Number(e.target.value))
-              : setCableIdMidOffset(Number(e.target.value))
-            }
-            className="w-16 h-3 accent-blue-500 cursor-pointer"
-          />
-          <span className="text-[10px] text-[var(--color-text-muted)] w-5 text-right">
-            {cableIdLabelMode === "endpoint" ? cableIdGap : cableIdMidOffset}
-          </span>
-        </div>
+        {cableIdLabelMode === "manual" ? (
+          <div className="px-1 py-0.5 text-[10px] text-[var(--color-text-muted)]">
+            Drag cable ID labels directly on the canvas to place them along each cable.
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-1 py-0.5">
+            <span className="text-xs text-[var(--color-text)]">
+              {cableIdLabelMode === "endpoint" ? "Cable ID spacing" : "Cable ID offset"}
+            </span>
+            <input
+              type="range"
+              min={cableIdLabelMode === "endpoint" ? 1 : -100}
+              max={cableIdLabelMode === "endpoint" ? 40 : 100}
+              step={1}
+              value={cableIdLabelMode === "endpoint" ? cableIdGap : cableIdMidOffset}
+              onChange={(e) => cableIdLabelMode === "endpoint"
+                ? setCableIdGap(Number(e.target.value))
+                : setCableIdMidOffset(Number(e.target.value))
+              }
+              className="w-16 h-3 accent-blue-500 cursor-pointer"
+            />
+            <span className="text-[10px] text-[var(--color-text-muted)] w-5 text-right">
+              {cableIdLabelMode === "endpoint" ? cableIdGap : cableIdMidOffset}
+            </span>
+          </div>
+        )}
 
         {/* Divider */}
         <div className="border-t border-[var(--color-border)] my-2" />

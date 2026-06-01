@@ -2,7 +2,7 @@ import { useEffect, useCallback, useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import { resolvePort } from "../packList";
-import { LINE_STYLE_LABELS, LINE_STYLE_DASHARRAY, type DeviceData, type LineStyle } from "../types";
+import { LINE_STYLE_LABELS, LINE_STYLE_DASHARRAY, type CableIdLabelMode, type DeviceData, type LineStyle } from "../types";
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
 import MenuSubmenu from "./MenuSubmenu";
 
@@ -224,8 +224,11 @@ export default function EdgeContextMenu() {
     if (!menu) return;
     const store = useSchematicStore.getState();
     const edge = store.edges.find((e) => e.id === menu.edgeId);
-    const current = (edge?.data?.cableIdLabelMode as string) ?? store.cableIdLabelMode;
-    const next = current === "endpoint" ? "midpoint" : "endpoint";
+    const current = (edge?.data?.cableIdLabelMode as CableIdLabelMode | undefined) ?? store.cableIdLabelMode;
+    const next: CableIdLabelMode =
+      current === "endpoint" ? "midpoint"
+      : current === "midpoint" ? "manual"
+      : "endpoint";
     store.patchEdgeData(menu.edgeId, { cableIdLabelMode: next });
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
@@ -282,7 +285,7 @@ export default function EdgeContextMenu() {
   const hasManual = !!(edge?.data?.manualWaypoints?.length);
   const isStubbed = !!edge?.data?.linkedConnectionId;
   const isCableIdHidden = edge?.data?.hideCableId === true;
-  const edgeCableIdMode = (edge?.data?.cableIdLabelMode as string) ?? useSchematicStore.getState().cableIdLabelMode;
+  const edgeCableIdMode = (edge?.data?.cableIdLabelMode as CableIdLabelMode | undefined) ?? useSchematicStore.getState().cableIdLabelMode;
   // NOTE: Stub label show-port / page-mode overrides moved to StubLabelNode.data
   // (per-stub, not per-edge). Right-click on a stub label node will surface these
   // options in a future menu; for now they fall back to the global setting.
@@ -412,7 +415,11 @@ export default function EdgeContextMenu() {
         onClick={toggleHideCableId}
       />
       <MenuItem
-        label={edgeCableIdMode === "endpoint" ? "Cable ID at Midpoint" : "Cable ID at Endpoints"}
+        label={
+          edgeCableIdMode === "endpoint" ? "Cable ID at Midpoint"
+          : edgeCableIdMode === "midpoint" ? "Cable ID Manual Placement"
+          : "Cable ID at Endpoints"
+        }
         onClick={toggleEdgeCableIdMode}
       />
       <MenuItem

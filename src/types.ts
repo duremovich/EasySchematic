@@ -402,6 +402,8 @@ export type WaypointNode = Node<WaypointData, "waypoint">;
 
 export type SchematicNode = DeviceNode | RoomNode | NoteNode | AnnotationNode | StubLabelNode | WaypointNode;
 
+export type CableIdLabelMode = "endpoint" | "midpoint" | "manual";
+
 export interface ConnectionData {
   [key: string]: unknown;
   signalType: SignalType;
@@ -442,7 +444,9 @@ export interface ConnectionData {
   /** Per-edge: cable ID midpoint offset along path in pixels (#61) */
   cableIdMidOffset?: number;
   /** Per-edge: cable ID label display mode override (#61) */
-  cableIdLabelMode?: "endpoint" | "midpoint";
+  cableIdLabelMode?: CableIdLabelMode;
+  /** Per-edge: normalized manual cable ID position along the routed path (0-1). */
+  cableIdManualPosition?: number;
   /** @deprecated v31+: moved to StubLabelData.showPort. */
   stubLabelShowPort?: boolean;
   /** @deprecated v31+: moved to StubLabelData.pageMode. */
@@ -736,8 +740,8 @@ export interface SchematicFile {
   cableIdGap?: number;
   /** Cable ID midpoint offset along path in pixels (#61) */
   cableIdMidOffset?: number;
-  /** Cable ID label display mode — at endpoints or midpoint (#61) */
-  cableIdLabelMode?: "endpoint" | "midpoint";
+  /** Cable ID label display mode — at endpoints, midpoint, or manual placement (#61) */
+  cableIdLabelMode?: CableIdLabelMode;
   /** Global toggle: when true, all adapters default to hidden on schematic */
   hideAdapters?: boolean;
   /** When false, edges use simple orthogonal L-shapes instead of A* routing */
