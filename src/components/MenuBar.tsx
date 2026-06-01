@@ -21,7 +21,7 @@ import SignalColorPanel from "./SignalColorPanel";
 import { useTheme } from "../hooks/useTheme";
 import SharePointProjectDialog from "./SharePointProjectDialog";
 
-const ACCESS_LOGOUT_URL = "https://tateside.cloudflareaccess.com/cdn-cgi/access/logout";
+const MICROSOFT_LOGOUT_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/logout";
 
 // ─── Menu data types ─────────────────────────────────────────────
 
@@ -147,12 +147,8 @@ export default function MenuBar() {
   const fileHandle = useSchematicStore((s) => s.fileHandle);
   const isOnline = useSchematicStore((s) => s.isOnline);
 
-  const getAccessLogoutUrl = useCallback(() => {
-    const { hostname } = window.location;
-    if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
-      return ACCESS_LOGOUT_URL;
-    }
-    return ACCESS_LOGOUT_URL;
+  const getLogoutUrl = useCallback(() => {
+    return MICROSOFT_LOGOUT_URL;
   }, []);
 
   const handleLogout = useCallback(async () => {
@@ -161,9 +157,9 @@ export default function MenuBar() {
     } catch {
       // IndexedDB may be unavailable; logout should still proceed.
     } finally {
-      window.location.replace(getAccessLogoutUrl());
+      window.location.replace(getLogoutUrl());
     }
-  }, [getAccessLogoutUrl]);
+  }, [getLogoutUrl]);
 
   // Keep nameValue in sync when schematicName changes externally
   useEffect(() => {
