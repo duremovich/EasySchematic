@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { useSchematicStore } from "../store";
-import type { SchematicNode, ConnectionEdge } from "../types";
+import type { SchematicNode, ConnectionEdge, DeviceNode } from "../types";
 import BulkConnectionEditPanel from "./BulkConnectionEditPanel";
+import BulkDeviceEditPanel from "./BulkDeviceEditPanel";
 
 type EntityKind = "device" | "room" | "stub-label" | "note" | "annotation" | "waypoint" | "edge";
 
@@ -59,11 +60,18 @@ export default function SelectionFilterBar() {
   const edgeCount = counts.edge ?? 0;
   const presentKinds = KIND_ORDER.filter((k) => (counts[k] ?? 0) > 0);
   const totalSelected = presentKinds.reduce((sum, k) => sum + (counts[k] ?? 0), 0);
+  const selectedDevices = useMemo(
+    () => useSchematicStore.getState().nodes.filter((n): n is DeviceNode => !!n.selected && n.type === "device"),
+    [selectionKey],
+  );
+  const deviceOnlySelection = selectedDevices.length >= 2 && totalSelected === selectedDevices.length;
+  const edgeOnlySelection = edgeCount >= 2 && totalSelected === edgeCount;
 
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [connectionPanelOpen, setConnectionPanelOpen] = useState(false);
+  const [devicePanelOpen, setDevicePanelOpen] = useState(false);
 
   // Show bar whenever 2+ entities are selected, or the edit panel is pinned open
-  if (totalSelected < 2 && !panelOpen) return null;
+  if (totalSelected < 2 && !connectionPanelOpen && !devicePanelOpen) return null;
 
   const apply = (kind: EntityKind, mode: "deselect" | "solo") => {
     const state = useSchematicStore.getState();
@@ -91,11 +99,14 @@ export default function SelectionFilterBar() {
       nodes: state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
       edges: state.edges.map((e) => (e.selected ? { ...e, selected: false } : e)),
     });
+    setConnectionPanelOpen(false);
+    setDevicePanelOpen(false);
   };
 
   return (
     <>
-      {panelOpen && <BulkConnectionEditPanel onClose={() => setPanelOpen(false)} />}
+      {connectionPanelOpen && <BulkConnectionEditPanel onClose={() => setConnectionPanelOpen(false)} />}
+      {devicePanelOpen && <BulkDeviceEditPanel onClose={() => setDevicePanelOpen(false)} />}
       <div
         className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[40] flex items-center gap-1.5 px-2 py-1.5 bg-white border border-[var(--color-border)] rounded-lg shadow-lg"
         data-print-hide
@@ -122,15 +133,34 @@ export default function SelectionFilterBar() {
               </button>
             );
           })}
-        {(edgeCount >= 2 || panelOpen) && (
+        {(deviceOnlySelection || devicePanelOpen) && (
           <button
-            title="Edit properties of selected connections"
+            title="Edit shared properties of selected devices"
             className={`px-2 py-0.5 text-[11px] rounded border transition-colors cursor-pointer ${
-              panelOpen
+              devicePanelOpen
                 ? "bg-blue-600 text-white border-blue-600"
                 : "text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100"
             }`}
-            onClick={() => setPanelOpen((v) => !v)}
+            onClick={() => {
+              setDevicePanelOpen((v) => !v);
+              setConnectionPanelOpen(false);
+            }}
+          >
+            {selectedDevices.length >= 2 ? `Edit ${selectedDevices.length} devices…` : "Edit devices…"}
+          </button>
+        )}
+        {(edgeOnlySelection || connectionPanelOpen) && (
+          <button
+            title="Edit properties of selected connections"
+            className={`px-2 py-0.5 text-[11px] rounded border transition-colors cursor-pointer ${
+              connectionPanelOpen
+                ? "bg-blue-600 text-white border-blue-600"
+                : "text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100"
+            }`}
+            onClick={() => {
+              setConnectionPanelOpen((v) => !v);
+              setDevicePanelOpen(false);
+            }}
           >
             {edgeCount >= 2 ? `Edit ${edgeCount}…` : "Edit connections…"}
           </button>

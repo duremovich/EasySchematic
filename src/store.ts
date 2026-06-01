@@ -294,6 +294,8 @@ interface SchematicState {
   updateDevice: (nodeId: string, data: DeviceData) => void;
   /** Patch device data without clearing baseLabel (for spreadsheet edits). */
   patchDeviceData: (nodeId: string, patch: Partial<DeviceData>) => void;
+  /** Apply per-device patches in one undo step. */
+  batchPatchDeviceData: (changes: { nodeId: string; patch: Partial<DeviceData> }[]) => void;
   /** Merge two paired ports into a single passthrough port and re-anchor their edges atomically. */
   convertPortsToPassthrough: (nodeId: string, inputPortId: string, outputPortId: string, newPort: import("./types").Port) => void;
   /** Merge every input/output port pair on a device into passthrough ports in one atomic undo step. */
@@ -2190,6 +2192,22 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({
       nodes: state.nodes.map((n) => {
         if (n.id !== nodeId || n.type !== "device") return n;
+        return { ...n, data: { ...n.data, ...patch } } as DeviceNode;
+      }),
+    });
+    get().saveToLocalStorage();
+  },
+
+  batchPatchDeviceData: (changes) => {
+    if (changes.length === 0) return;
+    const state = get();
+    const patchMap = new Map(changes.map((change) => [change.nodeId, change.patch]));
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      nodes: state.nodes.map((n) => {
+        if (n.type !== "device") return n;
+        const patch = patchMap.get(n.id);
+        if (!patch) return n;
         return { ...n, data: { ...n.data, ...patch } } as DeviceNode;
       }),
     });
