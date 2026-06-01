@@ -9,8 +9,8 @@ import { compareTemplatesByModel } from "../templateOrdering";
 import DeviceCreatorPicker from "./DeviceCreatorPicker";
 import ImportDevicesDialog from "./ImportDevicesDialog";
 
-const APP_VERSION = __APP_VERSION__;
 const BUILD_HASH = __BUILD_HASH__;
+const SHORT_BUILD_HASH = BUILD_HASH.length > 7 ? BUILD_HASH.slice(0, 7) : BUILD_HASH;
 
 function onDragStart(event: DragEvent, template: DeviceTemplate) {
   event.dataTransfer.setData(
@@ -1620,7 +1620,7 @@ export default function DeviceLibrary() {
 
       {/* Version */}
       <div className="px-3 py-1.5 border-t border-[var(--color-border)] text-[10px] text-[var(--color-text-muted)]">
-        v{APP_VERSION} ({BUILD_HASH})
+        git {SHORT_BUILD_HASH}
       </div>
     </div>
   );
