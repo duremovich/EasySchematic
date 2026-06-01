@@ -218,6 +218,40 @@ function sanitizeSearchTerms(template) {
   return unique;
 }
 
+function isCodeLikeLabel(value) {
+  const term = compact(value);
+  if (!term) return true;
+  if (!/[a-z]/i.test(term)) return true;
+  if (/^\d+(?:[-/]\d+)*$/.test(term)) return true;
+  if (/^[a-z]{1,3}\d[\w-]*$/i.test(term) && !/\s/.test(term)) return true;
+  return false;
+}
+
+function chooseDisplayLabel(template) {
+  const manufacturer = compact(template.manufacturer);
+  const modelNumber = sanitizeModelNumber(template.modelNumber);
+  const modelCombo = compact(`${manufacturer} ${modelNumber}`.trim());
+
+  const candidates = [
+    compact(template.label),
+    ...(template.searchTerms ?? []).map(compact),
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    const lower = candidate.toLowerCase();
+    if (!isCodeLikeLabel(candidate)) {
+      if (lower !== manufacturer.toLowerCase() && lower !== modelNumber.toLowerCase() && lower !== modelCombo.toLowerCase()) {
+        return candidate;
+      }
+    }
+  }
+
+  if (manufacturer && modelNumber) return `${manufacturer} ${modelNumber}`;
+  if (modelNumber) return modelNumber;
+  if (candidates[0]) return candidates[0];
+  return manufacturer || "Unknown Device";
+}
+
 function normalizeClassification(template) {
   const manufacturer = compact(template.manufacturer).toLowerCase();
   const modelNumber = sanitizeModelNumber(template.modelNumber).toLowerCase();
@@ -251,13 +285,7 @@ function normalizeClassification(template) {
 }
 
 function makeDisplayLabel(template) {
-  const manufacturer = compact(template.manufacturer);
-  const modelNumber = sanitizeModelNumber(template.modelNumber);
-  const label = compact(template.label);
-  if (manufacturer && modelNumber) return `${manufacturer} ${modelNumber}`;
-  if (modelNumber) return modelNumber;
-  if (label) return label;
-  return manufacturer || "Unknown Device";
+  return chooseDisplayLabel(template);
 }
 
 function sanitizeTemplate(template) {
