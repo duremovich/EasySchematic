@@ -55,6 +55,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
   const [researchResults, setResearchResults] = useState<QuoteImportDraftReview[]>([]);
   const [possibleMatchDecisions, setPossibleMatchDecisions] = useState<Record<string, PossibleMatchDecision>>({});
   const [selectedDraftKeys, setSelectedDraftKeys] = useState<Set<string>>(new Set());
+  const [excludedExtractedKeys, setExcludedExtractedKeys] = useState<Set<string>>(new Set());
   const [ignoredDraftKeys, setIgnoredDraftKeys] = useState<Set<string>>(new Set());
   const [editingDraft, setEditingDraft] = useState<EditingDraftState | null>(null);
 
@@ -70,6 +71,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
     setResearchResults([]);
     setPossibleMatchDecisions({});
     setSelectedDraftKeys(new Set());
+    setExcludedExtractedKeys(new Set());
     setIgnoredDraftKeys(new Set());
     setEditingDraft(null);
     onClose();
@@ -80,7 +82,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
     [extraction, possibleMatchDecisions],
   );
 
-  const devicesNeedingResearch = useMemo(() => {
+  const missingDevices = useMemo(() => {
     if (!extraction) return [];
     return extraction.results.filter((item) => {
       const key = keyForExtractedDevice(item);
@@ -89,6 +91,11 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
       return false;
     });
   }, [extraction, possibleMatchDecisions]);
+
+  const devicesNeedingResearch = useMemo(
+    () => missingDevices.filter((item) => !excludedExtractedKeys.has(keyForExtractedDevice(item))),
+    [missingDevices, excludedExtractedKeys],
+  );
 
   const alreadyInLibraryItems = useMemo(() => {
     if (!extraction) return [];
@@ -123,6 +130,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
     setResearchResults([]);
     setPossibleMatchDecisions({});
     setSelectedDraftKeys(new Set());
+    setExcludedExtractedKeys(new Set());
     setIgnoredDraftKeys(new Set());
   };
 
@@ -261,6 +269,16 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
     });
   };
 
+  const toggleExcludedExtracted = (item: QuoteImportResultItem) => {
+    const key = keyForExtractedDevice(item);
+    setExcludedExtractedKeys((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
   const handleDraftEdited = (updatedTemplate: DeviceTemplate) => {
     if (!editingDraft) return;
     setResearchResults((current) => current.map((item) => (
@@ -345,7 +363,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
                   <SummaryCard label="Extracted devices" value={String(extraction.extractedCount)} tone="default" />
                   <SummaryCard label="Already in library" value={String(alreadyInLibraryItems.length)} tone="success" />
                   <SummaryCard label="Possible matches" value={String((extraction.results ?? []).filter((item) => item.status === "possible_match").length)} tone="warning" />
-                  <SummaryCard label="Missing devices" value={String(devicesNeedingResearch.length)} tone="danger" />
+                  <SummaryCard label="Missing devices" value={String(missingDevices.length)} tone="danger" />
                 </div>
 
                 <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
@@ -382,7 +400,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
                   )}
                 </SectionCard>
 
-                <SectionCard title="Missing Devices" count={devicesNeedingResearch.length} action={(
+                <SectionCard title="Missing Devices" count={missingDevices.length} action={(
                   <button
                     onClick={handleResearchMissing}
                     disabled={devicesNeedingResearch.length === 0 || researching || unresolvedPossibleMatches.length > 0}
@@ -391,8 +409,13 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
                     {researching ? "Researching..." : "Research Missing Devices"}
                   </button>
                 )}>
-                  {devicesNeedingResearch.length > 0 ? devicesNeedingResearch.map((item) => (
-                    <ExtractionRow key={keyForExtractedDevice(item)} item={item} />
+                  {missingDevices.length > 0 ? missingDevices.map((item) => (
+                    <ExtractionRow
+                      key={keyForExtractedDevice(item)}
+                      item={item}
+                      excluded={excludedExtractedKeys.has(keyForExtractedDevice(item))}
+                      onToggleExcluded={() => toggleExcludedExtracted(item)}
+                    />
                   )) : (
                     <EmptyState text="No devices are queued for research." />
                   )}
@@ -537,34 +560,60 @@ function SummaryCard({
   );
 }
 
-function ExtractionRow({ item }: { item: QuoteImportResultItem }) {
+function ExtractionRow({
+  item,
+  excluded = false,
+  onToggleExcluded,
+}: {
+  item: QuoteImportResultItem;
+  excluded?: boolean;
+  onToggleExcluded?: () => void;
+}) {
   return (
-    <div className="px-3 py-3 border-b text-xs" style={{ borderColor: "var(--color-border)" }}>
-      <div className="flex flex-wrap items-center gap-2 mb-1.5">
-        <span className="font-medium text-[var(--color-text-heading)]">
-          {[item.manufacturer, item.model].filter(Boolean).join(" ")}
-        </span>
-        <span className={`px-2 py-0.5 rounded-full border text-[10px] ${STATUS_CLASSES[item.status]}`}>
-          {STATUS_LABELS[item.status]}
-        </span>
-        {typeof item.quantity === "number" && (
-          <span className="text-[10px] rounded bg-[var(--color-bg)] px-2 py-0.5 border border-[var(--color-border)]">
-            Qty {item.quantity}
-          </span>
+    <div className={`px-3 py-3 border-b text-xs ${excluded ? "opacity-55" : ""}`} style={{ borderColor: "var(--color-border)" }}>
+      <div className="flex items-start gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span className="font-medium text-[var(--color-text-heading)]">
+              {[item.manufacturer, item.model].filter(Boolean).join(" ")}
+            </span>
+            <span className={`px-2 py-0.5 rounded-full border text-[10px] ${STATUS_CLASSES[item.status]}`}>
+              {STATUS_LABELS[item.status]}
+            </span>
+            {typeof item.quantity === "number" && (
+              <span className="text-[10px] rounded bg-[var(--color-bg)] px-2 py-0.5 border border-[var(--color-border)]">
+                Qty {item.quantity}
+              </span>
+            )}
+            {excluded && (
+              <span className="px-2 py-0.5 rounded-full border text-[10px] border-slate-300 bg-slate-100 text-slate-700">
+                Excluded from research
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-[var(--color-text-muted)] space-y-0.5">
+            {item.description && <div>{item.description}</div>}
+            {item.sourceLineText && <div>Quote text: {item.sourceLineText}</div>}
+            <div>Lookup key: <span className="font-mono">{item.normalizedLookupKey || "(none)"}</span></div>
+          </div>
+          {item.exactMatch && (
+            <div className="mt-2 rounded border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-[11px] text-emerald-800">
+              <div className="font-medium">{item.exactMatch.label}</div>
+              <div>{[item.exactMatch.manufacturer, item.exactMatch.modelNumber].filter(Boolean).join(" ")}</div>
+              <div className="opacity-80">{item.exactMatch.matchReason}</div>
+            </div>
+          )}
+        </div>
+        {onToggleExcluded && (
+          <button
+            onClick={onToggleExcluded}
+            className="shrink-0 px-2 py-1 rounded border border-[var(--color-border)] bg-white text-[11px] hover:bg-[var(--color-surface-hover)] cursor-pointer"
+            title={excluded ? "Include this device in research again" : "Exclude this device from research"}
+          >
+            {excluded ? "Restore" : "Exclude"}
+          </button>
         )}
       </div>
-      <div className="text-[11px] text-[var(--color-text-muted)] space-y-0.5">
-        {item.description && <div>{item.description}</div>}
-        {item.sourceLineText && <div>Quote text: {item.sourceLineText}</div>}
-        <div>Lookup key: <span className="font-mono">{item.normalizedLookupKey || "(none)"}</span></div>
-      </div>
-      {item.exactMatch && (
-        <div className="mt-2 rounded border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-[11px] text-emerald-800">
-          <div className="font-medium">{item.exactMatch.label}</div>
-          <div>{[item.exactMatch.manufacturer, item.exactMatch.modelNumber].filter(Boolean).join(" ")}</div>
-          <div className="opacity-80">{item.exactMatch.matchReason}</div>
-        </div>
-      )}
     </div>
   );
 }
