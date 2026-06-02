@@ -7,6 +7,7 @@ export interface ApiConfig {
   port: number;
   allowedOrigin: string;
   requireAccessIdentity: boolean;
+  quoteImportMaxFileBytes: number;
 }
 
 const defaultDataDir =
@@ -24,5 +25,6 @@ export function getConfig(): ApiConfig {
     port: Number(process.env.TATESIDE_API_PORT || "8788"),
     allowedOrigin: process.env.TATESIDE_ALLOWED_ORIGIN || "https://schematic.tateside.online",
     requireAccessIdentity: process.env.TATESIDE_REQUIRE_ACCESS_IDENTITY === "1",
+    quoteImportMaxFileBytes: Number(process.env.OPENAI_QUOTE_IMPORT_MAX_FILE_BYTES || `${15 * 1024 * 1024}`),
   };
 }

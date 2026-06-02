@@ -10,10 +10,12 @@ export default function DeviceCreatorPicker({
   position: positionProp,
   onClose,
   onImport,
+  onImportQuote,
 }: {
   position?: { x: number; y: number };
   onClose: () => void;
   onImport?: () => void;
+  onImportQuote?: () => void;
 }) {
   const [search, setSearch] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -126,10 +128,23 @@ export default function DeviceCreatorPicker({
               className="w-full text-left px-2.5 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-blue-400 hover:bg-blue-50 transition-colors mb-2"
             >
               <div className="text-xs font-medium text-[var(--color-text-heading)]">
-                Import from JSON or CSV
+                Import Local Device Templates
               </div>
               <div className="text-[10px] text-[var(--color-text-muted)]">
-                Bulk-add devices from external data
+                Legacy JSON/CSV template import
+              </div>
+            </button>
+          )}
+          {onImportQuote && (
+            <button
+              onClick={() => { onClose(); onImportQuote(); }}
+              className="w-full text-left px-2.5 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-blue-400 hover:bg-blue-50 transition-colors mb-2"
+            >
+              <div className="text-xs font-medium text-[var(--color-text-heading)]">
+                Import Devices from Quote
+              </div>
+              <div className="text-[10px] text-[var(--color-text-muted)]">
+                Upload a quote PDF and review matches against the TateSide library
               </div>
             </button>
           )}

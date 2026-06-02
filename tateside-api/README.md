@@ -9,6 +9,8 @@ Implemented endpoints:
 ```text
 GET  /api/tateside/devices/templates
 POST /api/tateside/devices/templates
+POST /api/tateside/quote-import/extract
+POST /api/tateside/quote-import/research
 GET  /health
 ```
 
@@ -48,7 +50,17 @@ TATESIDE_API_HOST=127.0.0.1
 TATESIDE_API_PORT=8788
 TATESIDE_ALLOWED_ORIGIN=https://schematic.tateside.online
 TATESIDE_REQUIRE_ACCESS_IDENTITY=1
+OPENAI_API_KEY=<required for AI quote import>
+OPENAI_QUOTE_EXTRACTION_MODEL=gpt-5.4-nano
+OPENAI_DEVICE_RESEARCH_MODEL=gpt-5.4-mini
+OPENAI_DEVICE_ESCALATION_MODEL=gpt-5.4
+OPENAI_QUOTE_EXTRACTION_REASONING_EFFORT=low
+OPENAI_DEVICE_RESEARCH_REASONING_EFFORT=medium
+OPENAI_DEVICE_ESCALATION_REASONING_EFFORT=medium
+OPENAI_QUOTE_IMPORT_MAX_FILE_BYTES=15728640
 ```
+
+If `OPENAI_API_KEY` is missing, the rest of the TateSide app still works normally and only the AI quote-import workflow is unavailable.
 
 `TATESIDE_REQUIRE_ACCESS_IDENTITY=1` requires the Cloudflare Access header:
 

@@ -1,4 +1,9 @@
 import type { DeviceTemplate } from "./types";
+import type {
+  ExtractedQuoteDevice,
+  QuoteImportExtractionResponse,
+  QuoteImportResearchResponse,
+} from "./quoteImportTypes";
 
 const DEFAULT_TATESIDE_API_URL = "/api/tateside";
 
@@ -75,7 +80,7 @@ export async function fetchTatesideDeviceTemplates(): Promise<DeviceTemplate[]> 
 
 export async function saveTatesideDeviceTemplates(
   templates: Omit<DeviceTemplate, "id" | "version">[],
-  options: { note?: string; source?: "bulk-json" | "bulk-csv" } = {},
+  options: { note?: string; source?: string } = {},
 ): Promise<{ templates: DeviceTemplate[] }> {
   return requestJson("/devices/templates", {
     method: "POST",
@@ -130,4 +135,42 @@ export async function saveSchematicToSharePoint(
 
 export async function loadSchematicFromSharePoint(fileId: string): Promise<unknown> {
   return requestJson<unknown>(`/sharepoint/schematics/${encodeURIComponent(fileId)}`);
+}
+
+export async function importDevicesFromQuote(file: File): Promise<QuoteImportExtractionResponse> {
+  const res = await fetch(`${TATESIDE_API_URL}/quote-import/extract`, {
+    method: "POST",
+    headers: {
+      "Content-Type": file.type || "application/pdf",
+      "X-Tateside-Upload-Filename": encodeURIComponent(file.name),
+    },
+    credentials: "include",
+    body: file,
+  });
+
+  if (!res.ok) {
+    const fallback =
+      res.status === 404
+        ? "TateSide quote import endpoint is not available yet"
+        : `TateSide API request failed (${res.status})`;
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new TatesideApiError(data?.error || fallback, res.status);
+  }
+
+  return res.json() as Promise<QuoteImportExtractionResponse>;
+}
+
+export async function researchQuoteDevices(
+  fileName: string,
+  devices: ExtractedQuoteDevice[],
+  options: { forceEscalation?: boolean } = {},
+): Promise<QuoteImportResearchResponse> {
+  return requestJson<QuoteImportResearchResponse>("/quote-import/research", {
+    method: "POST",
+    body: {
+      fileName,
+      devices,
+      ...(options.forceEscalation ? { forceEscalation: true } : {}),
+    },
+  });
 }

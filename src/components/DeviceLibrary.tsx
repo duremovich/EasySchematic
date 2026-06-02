@@ -8,6 +8,7 @@ import { inventoryKeyFromDeviceData, inventoryKeyFromTemplate } from "../invento
 import { compareTemplatesByModel } from "../templateOrdering";
 import DeviceCreatorPicker from "./DeviceCreatorPicker";
 import ImportDevicesDialog from "./ImportDevicesDialog";
+import ImportQuoteDevicesDialog from "./ImportQuoteDevicesDialog";
 import ManageTatesideTemplateDialog from "./ManageTatesideTemplateDialog";
 
 const BUILD_HASH = __BUILD_HASH__;
@@ -1135,6 +1136,7 @@ export default function DeviceLibrary() {
   const [search, setSearch] = useState("");
   const [showDeviceCreator, setShowDeviceCreator] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showImportQuoteDialog, setShowImportQuoteDialog] = useState(false);
   const [managingTemplate, setManagingTemplate] = useState<DeviceTemplate | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [templates, setTemplates] = useState(getBundledTemplates);
@@ -1429,12 +1431,17 @@ export default function DeviceLibrary() {
         <DeviceCreatorPicker
           onClose={() => setShowDeviceCreator(false)}
           onImport={() => setShowImportDialog(true)}
+          onImportQuote={() => setShowImportQuoteDialog(true)}
         />
       )}
       <ImportDevicesDialog
         open={showImportDialog}
         onClose={() => setShowImportDialog(false)}
         onLibraryChanged={reloadSharedTemplates}
+      />
+      <ImportQuoteDevicesDialog
+        open={showImportQuoteDialog}
+        onClose={() => setShowImportQuoteDialog(false)}
       />
       <ManageTatesideTemplateDialog
         open={!!managingTemplate}

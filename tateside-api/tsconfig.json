@@ -15,5 +15,10 @@
     "rootDir": "..",
     "outDir": "../dist-tateside-api"
   },
-  "include": ["src/**/*.ts", "../src/types.ts"]
+  "include": [
+    "src/**/*.ts",
+    "../src/types.ts",
+    "../src/quoteImportTypes.ts",
+    "../src/deviceTypeCategories.ts"
+  ]
 }

@@ -3,8 +3,11 @@ import { URL } from "node:url";
 import { getConfig } from "./config.js";
 import { openDatabase, runMigrations } from "./db.js";
 import { deleteTemplate, listCurrentTemplates, saveTemplates, updateTemplate } from "./deviceStore.js";
+import type { ExtractedQuoteDevice } from "../../src/quoteImportTypes.js";
+import { researchQuoteDevices } from "./deviceResearch.js";
+import { importQuoteDevicesFromPdf } from "./quoteImport.js";
 
-const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const MAX_JSON_BODY_BYTES = 2 * 1024 * 1024;
 
 interface RequestContext {
   req: http.IncomingMessage;
@@ -31,14 +34,14 @@ function sendEmpty(res: http.ServerResponse, status: number, headers: Record<str
   res.end();
 }
 
-function readJson(req: http.IncomingMessage): Promise<unknown> {
+function readBody(req: http.IncomingMessage, maxBytes: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let size = 0;
 
     req.on("data", (chunk: Buffer) => {
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
+      if (size > maxBytes) {
         reject(new Error("Request body is too large"));
         req.destroy();
         return;
@@ -47,16 +50,21 @@ function readJson(req: http.IncomingMessage): Promise<unknown> {
     });
 
     req.on("end", () => {
-      try {
-        const raw = Buffer.concat(chunks).toString("utf8");
-        resolve(raw ? JSON.parse(raw) : null);
-      } catch {
-        reject(new Error("Invalid JSON body"));
-      }
+      resolve(Buffer.concat(chunks));
     });
 
     req.on("error", reject);
   });
+}
+
+async function readJson(req: http.IncomingMessage): Promise<unknown> {
+  try {
+    const raw = (await readBody(req, MAX_JSON_BODY_BYTES)).toString("utf8");
+    return raw ? JSON.parse(raw) : null;
+  } catch (err) {
+    if (err instanceof Error && err.message === "Request body is too large") throw err;
+    throw new Error("Invalid JSON body");
+  }
 }
 
 function accessEmail(req: http.IncomingMessage): string | null {
@@ -126,6 +134,69 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
       actorEmail: email,
     });
     sendJson(ctx.res, 201, { templates }, corsHeaders);
+    return;
+  }
+
+  if (ctx.req.method === "POST" && path === "/api/tateside/quote-import/extract") {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    void email;
+
+    if (!process.env.OPENAI_API_KEY) {
+      sendJson(ctx.res, 503, {
+        error: "Import Devices from Quote is not available because OPENAI_API_KEY is not configured on the TateSide API server",
+      }, corsHeaders);
+      return;
+    }
+
+    const contentType = ctx.req.headers["content-type"] ?? "";
+    const fileNameHeader = ctx.req.headers["x-tateside-upload-filename"];
+    const fileNameRaw = Array.isArray(fileNameHeader) ? fileNameHeader[0] : fileNameHeader;
+    const fileName = fileNameRaw ? decodeURIComponent(fileNameRaw) : "quote.pdf";
+
+    if (!contentType.toLowerCase().includes("application/pdf")) {
+      sendJson(ctx.res, 400, { error: "Import Devices from Quote currently supports PDF files only" }, corsHeaders);
+      return;
+    }
+
+    const fileBuffer = await readBody(ctx.req, config.quoteImportMaxFileBytes);
+    const result = await importQuoteDevicesFromPdf(db, fileName, fileBuffer, "application/pdf");
+    sendJson(ctx.res, 200, result, corsHeaders);
+    return;
+  }
+
+  if (ctx.req.method === "POST" && path === "/api/tateside/quote-import/research") {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    void email;
+
+    if (!process.env.OPENAI_API_KEY) {
+      sendJson(ctx.res, 503, {
+        error: "AI quote import is not available because OPENAI_API_KEY is not configured on the TateSide API server",
+      }, corsHeaders);
+      return;
+    }
+
+    const body = await readJson(ctx.req) as {
+      fileName?: unknown;
+      devices?: unknown[];
+      forceEscalation?: unknown;
+    } | null;
+
+    const fileName = typeof body?.fileName === "string" && body.fileName.trim() ? body.fileName.trim() : "quote.pdf";
+    const devices = Array.isArray(body?.devices) ? body.devices as ExtractedQuoteDevice[] : [];
+
+    if (devices.length === 0) {
+      sendJson(ctx.res, 400, { error: "At least one missing device is required for research" }, corsHeaders);
+      return;
+    }
+
+    const result = await researchQuoteDevices({
+      fileName,
+      devices,
+      forceEscalation: body?.forceEscalation === true,
+    });
+    sendJson(ctx.res, 200, result, corsHeaders);
     return;
   }
 

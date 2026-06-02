@@ -314,6 +314,43 @@ export interface FacePlateLabel {
   y: number; // 0-100 percentage
 }
 
+export interface AiDeviceGenerationSourceReference {
+  title: string;
+  url: string;
+  sourceType:
+    | "manufacturer_product_page"
+    | "manufacturer_datasheet"
+    | "manufacturer_manual"
+    | "manufacturer_support"
+    | "distributor_archive"
+    | "other";
+}
+
+export interface AiDeviceGenerationModelCall {
+  modelUsed: string;
+  reasoningEffort: "low" | "medium" | "high";
+  purpose: "quote_extraction" | "routine_generation" | "escalated_verification";
+}
+
+export interface AiDeviceGenerationMetadata {
+  origin: "ai_quote_import";
+  quoteFilename: string;
+  extractedManufacturer: string | null;
+  extractedModel: string;
+  modelUsed: string;
+  reasoningEffort: "low" | "medium" | "high";
+  researchedAt: string;
+  confidence: "high" | "medium" | "low";
+  officialSourceFound: boolean;
+  sourceReferences: AiDeviceGenerationSourceReference[];
+  warnings: string[];
+  escalationRequired: boolean;
+  escalationReason: string | null;
+  escalationOccurred?: boolean;
+  approvedAt?: string;
+  modelCallRecords?: AiDeviceGenerationModelCall[];
+}
+
 export type DeviceNode = Node<DeviceData, "device">;
 
 export interface RoomData {
@@ -495,6 +532,7 @@ export interface DeviceTemplate {
   rackForm?: "full" | "half" | "shelf-only"; // Optional override for the size-based rack-form heuristic
   auxiliaryData?: AuxRow[];      // Aux rows shown on the node (each row carries its own header/footer slot)
   facePlateLayout?: FacePlateLayout; // Custom face-plate connector positions
+  aiMetadata?: AiDeviceGenerationMetadata;
 }
 
 export interface CustomTemplateGroup {

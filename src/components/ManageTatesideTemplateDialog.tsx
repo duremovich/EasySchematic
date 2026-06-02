@@ -11,14 +11,17 @@ import {
   type PortDirection,
   type SignalType,
 } from "../types";
-import { deleteTatesideDeviceTemplate, updateTatesideDeviceTemplate } from "../tatesideApi";
+import { deleteTatesideDeviceTemplate, saveTatesideDeviceTemplates, updateTatesideDeviceTemplate } from "../tatesideApi";
 
 interface Props {
   open: boolean;
   template: DeviceTemplate | null;
   onClose: () => void;
   onSaved: (template: DeviceTemplate) => void;
-  onDeleted: (templateId: string) => void;
+  onDeleted?: (templateId: string) => void;
+  saveMode?: "update" | "create";
+  saveSource?: string;
+  title?: string;
 }
 
 const ALL_SIGNAL_TYPES = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
@@ -306,6 +309,9 @@ export default function ManageTatesideTemplateDialog({
   onClose,
   onSaved,
   onDeleted,
+  saveMode = "update",
+  saveSource,
+  title,
 }: Props) {
   const addToast = useSchematicStore((s) => s.addToast);
   const [draft, setDraft] = useState<Omit<DeviceTemplate, "id" | "version"> | null>(null);
@@ -388,7 +394,7 @@ export default function ManageTatesideTemplateDialog({
   };
 
   const handleSave = async () => {
-    if (!template.id) {
+    if (saveMode === "update" && !template.id) {
       addToast("This shared template is missing its library ID", "error");
       return;
     }
@@ -409,21 +415,36 @@ export default function ManageTatesideTemplateDialog({
 
     setSaving(true);
     try {
-      const result = await updateTatesideDeviceTemplate(template.id, normalized, {
-        note: note || undefined,
-        source: "manual-edit",
-      });
-      addToast(`Updated ${result.template.label} in the TateSide library`, "success");
-      onSaved(result.template);
+      if (saveMode === "create") {
+        const result = await saveTatesideDeviceTemplates([normalized], {
+          note: note || undefined,
+          source: saveSource || "ai-quote-import-approval",
+        });
+        const saved = result.templates[0];
+        if (!saved) throw new Error("No library template was returned after save");
+        addToast(`Added ${saved.label} to the TateSide library`, "success");
+        onSaved(saved);
+      } else {
+        const result = await updateTatesideDeviceTemplate(template.id!, normalized, {
+          note: note || undefined,
+          source: saveSource || "manual-edit",
+        });
+        addToast(`Updated ${result.template.label} in the TateSide library`, "success");
+        onSaved(result.template);
+      }
       onClose();
     } catch (err) {
-      addToast(err instanceof Error ? err.message : "Could not update the TateSide template", "error");
+      addToast(err instanceof Error ? err.message : "Could not save the TateSide template", "error");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
+    if (saveMode === "create") {
+      onClose();
+      return;
+    }
     if (!template.id) {
       addToast("This shared template is missing its library ID", "error");
       return;
@@ -434,7 +455,7 @@ export default function ManageTatesideTemplateDialog({
     try {
       await deleteTatesideDeviceTemplate(template.id, { note: note || undefined });
       addToast(`Removed ${template.label} from the TateSide library`, "success");
-      onDeleted(template.id);
+      onDeleted?.(template.id);
       onClose();
     } catch (err) {
       addToast(err instanceof Error ? err.message : "Could not remove the TateSide template", "error");
@@ -462,7 +483,7 @@ export default function ManageTatesideTemplateDialog({
       >
         <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
           <div className="text-lg font-semibold text-[var(--color-text-heading)]">
-            Library Device Properties
+            {title ?? (saveMode === "create" ? "Draft Device Properties" : "Library Device Properties")}
           </div>
           <button
             onClick={onClose}
@@ -655,7 +676,7 @@ export default function ManageTatesideTemplateDialog({
         <div className="px-4 py-3 border-t border-[var(--color-border)] flex items-center gap-2">
           <button
             onClick={handleDelete}
-            disabled={saving || deleting}
+            disabled={saving || deleting || saveMode === "create"}
             className="px-3 py-1.5 text-xs rounded border border-red-400/40 text-red-500 hover:text-red-400 hover:border-red-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {deleting ? "Removing..." : "Remove From Library"}
@@ -673,7 +694,7 @@ export default function ManageTatesideTemplateDialog({
             disabled={saving || deleting}
             className="px-3 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {saving ? "Saving..." : "Apply"}
+            {saving ? "Saving..." : saveMode === "create" ? "Save To TateSide Library" : "Apply"}
           </button>
         </div>
       </div>

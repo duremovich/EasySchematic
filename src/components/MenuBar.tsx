@@ -477,7 +477,7 @@ export default function MenuBar() {
       { type: "item", label: "SharePoint Projects...", onClick: () => setShowSharePointProjects(true) },
       { type: "separator" },
       { type: "item", label: "Save Device Archive", onClick: handleSaveArchive },
-      { type: "item", label: "Import Device Archive...", onClick: handleOpenArchive },
+      { type: "item", label: "Import Local Device Templates (Legacy)...", onClick: handleOpenArchive },
       { type: "item", label: "Import Cable Schedule...", onClick: () => setShowCsvImport(true) },
       { type: "separator" },
       { type: "item", label: "Preferences...", onClick: () => setShowPreferences(true) },
