@@ -205,7 +205,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
       const projects = await searchJetbuiltProjects(query);
       setJetbuiltProjects(projects);
       if (projects.length === 0) {
-        addToast(`No Jetbuilt projects matched ${query}`, "info");
+        addToast(`No Jetbuilt projects matched ${query}. Try a P number, project name, or Jetbuilt project id.`, "info");
       }
     } catch (err) {
       const message = err instanceof TatesideApiError ? err.message : err instanceof Error ? err.message : "Jetbuilt project search failed";
@@ -481,7 +481,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
               <div>
                 <div className="text-xs font-medium text-[var(--color-text-heading)]">Import from Jetbuilt Project</div>
                 <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                  Preferred route. Search by P number, Jetbuilt project name, or Jetbuilt project id.
+                  Preferred route. Search by P number, project name, or Jetbuilt project id.
                 </div>
               </div>
 
@@ -502,7 +502,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
                       void handleSearchJetbuilt();
                     }
                   }}
-                  placeholder="Search Jetbuilt project, for example P-5844"
+                  placeholder="Search P number or project name, for example P-5844 or O2 Meeting Rooms"
                   className="flex-1 min-w-[240px] bg-white border border-[var(--color-border)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 placeholder:text-[var(--color-text-muted)]"
                 />
                 <button
