@@ -5,6 +5,7 @@ import { getConfig } from "./config.js";
 import { openDatabase, runMigrations } from "./db.js";
 import { deleteTemplate, listCurrentTemplates, saveTemplates, updateTemplate } from "./deviceStore.js";
 import type { ExtractedQuoteDevice, QuoteImportResearchJobResponse, QuoteImportResearchResponse } from "../../src/quoteImportTypes.js";
+import { importJetbuiltProject, searchJetbuiltProjects } from "./jetbuilt.js";
 import { researchQuoteDevices } from "./deviceResearch.js";
 import { importQuoteDevicesFromPdf } from "./quoteImport.js";
 
@@ -250,6 +251,59 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
 
     const fileBuffer = await readBody(ctx.req, config.quoteImportMaxFileBytes);
     const result = await importQuoteDevicesFromPdf(db, fileName, fileBuffer, "application/pdf");
+    sendJson(ctx.res, 200, result, corsHeaders);
+    return;
+  }
+
+  if (ctx.req.method === "GET" && path === "/api/tateside/jetbuilt/projects") {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    void email;
+
+    if (!process.env.JETBUILT_API_KEY) {
+      sendJson(ctx.res, 503, {
+        error: "Import from Jetbuilt Project is not available because JETBUILT_API_KEY is not configured on the TateSide API server",
+      }, corsHeaders);
+      return;
+    }
+
+    const query = (ctx.url.searchParams.get("query") ?? "").trim();
+    if (!query) {
+      sendJson(ctx.res, 200, { projects: [] }, corsHeaders);
+      return;
+    }
+
+    const projects = await searchJetbuiltProjects(query, {
+      apiKey: process.env.JETBUILT_API_KEY,
+      baseUrl: config.jetbuiltApiBaseUrl,
+    });
+    sendJson(ctx.res, 200, { projects }, corsHeaders);
+    return;
+  }
+
+  if (ctx.req.method === "POST" && path === "/api/tateside/jetbuilt/import") {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    void email;
+
+    if (!process.env.JETBUILT_API_KEY) {
+      sendJson(ctx.res, 503, {
+        error: "Import from Jetbuilt Project is not available because JETBUILT_API_KEY is not configured on the TateSide API server",
+      }, corsHeaders);
+      return;
+    }
+
+    const body = await readJson(ctx.req) as { projectId?: unknown } | null;
+    const projectId = typeof body?.projectId === "string" ? body.projectId.trim() : "";
+    if (!projectId) {
+      sendJson(ctx.res, 400, { error: "Jetbuilt projectId is required" }, corsHeaders);
+      return;
+    }
+
+    const result = await importJetbuiltProject(db, projectId, {
+      apiKey: process.env.JETBUILT_API_KEY,
+      baseUrl: config.jetbuiltApiBaseUrl,
+    });
     sendJson(ctx.res, 200, result, corsHeaders);
     return;
   }

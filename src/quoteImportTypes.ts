@@ -72,3 +72,15 @@ export interface QuoteImportResearchJobResponse {
   result: QuoteImportResearchResponse | null;
   error: string | null;
 }
+
+export interface JetbuiltProjectSearchResult {
+  id: string;
+  customId: string | null;
+  name: string;
+  stage: string | null;
+  active: boolean | null;
+  updatedAt: string | null;
+  itemCount: number | null;
+  currency: string | null;
+  total: number | null;
+}

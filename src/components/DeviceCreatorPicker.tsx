@@ -141,10 +141,10 @@ export default function DeviceCreatorPicker({
               className="w-full text-left px-2.5 py-2 rounded border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-blue-400 hover:bg-blue-50 transition-colors mb-2"
             >
               <div className="text-xs font-medium text-[var(--color-text-heading)]">
-                Import Devices from Quote
+                Import from Jetbuilt Project
               </div>
               <div className="text-[10px] text-[var(--color-text-muted)]">
-                Upload a quote PDF and review matches against the TateSide library
+                Preferred route, with quote PDF upload still available as a fallback
               </div>
             </button>
           )}

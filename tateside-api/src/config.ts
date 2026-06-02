@@ -8,6 +8,7 @@ export interface ApiConfig {
   allowedOrigin: string;
   requireAccessIdentity: boolean;
   quoteImportMaxFileBytes: number;
+  jetbuiltApiBaseUrl: string;
 }
 
 const defaultDataDir =
@@ -26,5 +27,6 @@ export function getConfig(): ApiConfig {
     allowedOrigin: process.env.TATESIDE_ALLOWED_ORIGIN || "https://schematic.tateside.online",
     requireAccessIdentity: process.env.TATESIDE_REQUIRE_ACCESS_IDENTITY === "1",
     quoteImportMaxFileBytes: Number(process.env.OPENAI_QUOTE_IMPORT_MAX_FILE_BYTES || `${15 * 1024 * 1024}`),
+    jetbuiltApiBaseUrl: process.env.JETBUILT_API_BASE_URL || "https://app.jetbuilt.com/api",
   };
 }

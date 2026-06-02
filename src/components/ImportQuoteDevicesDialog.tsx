@@ -3,15 +3,18 @@ import { useSchematicStore } from "../store";
 import type { DeviceTemplate } from "../types";
 import type {
   ExtractedQuoteDevice,
+  JetbuiltProjectSearchResult,
   LibraryMatchStatus,
   QuoteImportDraftReview,
   QuoteImportExtractionResponse,
   QuoteImportResultItem,
 } from "../quoteImportTypes";
 import {
+  importDevicesFromJetbuiltProject,
   importDevicesFromQuote,
   researchQuoteDevices,
   saveTatesideDeviceTemplates,
+  searchJetbuiltProjects,
   TatesideApiError,
 } from "../tatesideApi";
 import ManageTatesideTemplateDialog from "./ManageTatesideTemplateDialog";
@@ -47,6 +50,11 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importSourceLabel, setImportSourceLabel] = useState<string | null>(null);
+  const [jetbuiltQuery, setJetbuiltQuery] = useState("");
+  const [jetbuiltSearching, setJetbuiltSearching] = useState(false);
+  const [jetbuiltImporting, setJetbuiltImporting] = useState(false);
+  const [jetbuiltProjects, setJetbuiltProjects] = useState<JetbuiltProjectSearchResult[]>([]);
   const [extracting, setExtracting] = useState(false);
   const [researching, setResearching] = useState(false);
   const [researchProgress, setResearchProgress] = useState<{ current: number; total: number; label: string } | null>(null);
@@ -64,6 +72,11 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
 
   const reset = () => {
     setSelectedFile(null);
+    setImportSourceLabel(null);
+    setJetbuiltQuery("");
+    setJetbuiltSearching(false);
+    setJetbuiltImporting(false);
+    setJetbuiltProjects([]);
     setExtracting(false);
     setResearching(false);
     setResearchProgress(null);
@@ -127,6 +140,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
 
   const handleFileSelected = (file: File | null) => {
     setSelectedFile(file);
+    setImportSourceLabel(file?.name ?? null);
     setError(null);
     setExtraction(null);
     setResearchResults([]);
@@ -144,6 +158,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
     try {
       const response = await importDevicesFromQuote(selectedFile);
       setExtraction(response);
+      setImportSourceLabel(selectedFile.name);
       setResearchResults([]);
       addToast(`Extracted ${response.extractedCount} quote device candidate${response.extractedCount === 1 ? "" : "s"}`, "success");
     } catch (err) {
@@ -151,6 +166,47 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
       setError(message);
     } finally {
       setExtracting(false);
+    }
+  };
+
+  const handleSearchJetbuilt = async () => {
+    const query = jetbuiltQuery.trim();
+    if (!query) return;
+    setJetbuiltSearching(true);
+    setError(null);
+    try {
+      const projects = await searchJetbuiltProjects(query);
+      setJetbuiltProjects(projects);
+      if (projects.length === 0) {
+        addToast(`No Jetbuilt projects matched ${query}`, "info");
+      }
+    } catch (err) {
+      const message = err instanceof TatesideApiError ? err.message : err instanceof Error ? err.message : "Jetbuilt project search failed";
+      setError(message);
+      setJetbuiltProjects([]);
+    } finally {
+      setJetbuiltSearching(false);
+    }
+  };
+
+  const handleImportJetbuiltProject = async (project: JetbuiltProjectSearchResult) => {
+    setJetbuiltImporting(true);
+    setError(null);
+    try {
+      const response = await importDevicesFromJetbuiltProject(project.id);
+      setExtraction(response);
+      setImportSourceLabel(project.customId ? `${project.customId} ${project.name}` : project.name);
+      setResearchResults([]);
+      setPossibleMatchDecisions({});
+      setSelectedDraftKeys(new Set());
+      setExcludedExtractedKeys(new Set());
+      setIgnoredDraftKeys(new Set());
+      addToast(`Imported ${response.extractedCount} Jetbuilt device candidate${response.extractedCount === 1 ? "" : "s"}`, "success");
+    } catch (err) {
+      const message = err instanceof TatesideApiError ? err.message : err instanceof Error ? err.message : "Jetbuilt project import failed";
+      setError(message);
+    } finally {
+      setJetbuiltImporting(false);
     }
   };
 
@@ -237,7 +293,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
   };
 
   const handleSaveSelectedToLibrary = async () => {
-    if (selectedDraftTemplates.length === 0 || !selectedFile) return;
+    if (selectedDraftTemplates.length === 0 || !extraction) return;
     setSaving(true);
     setError(null);
     try {
@@ -257,7 +313,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
       });
       const result = await saveTatesideDeviceTemplates(templatesToSave, {
         source: "ai-quote-import-approval",
-        note: `Approved from quote import: ${selectedFile.name}`,
+        note: `Approved from import workflow: ${importSourceLabel ?? extraction.fileName}`,
       });
       await onLibraryChanged?.();
       addToast(`Saved ${result.templates.length} AI-reviewed device${result.templates.length === 1 ? "" : "s"} to the TateSide library`, "success");
@@ -339,11 +395,10 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-sm font-semibold" style={{ color: "var(--color-text-heading)" }}>
-                  Import Devices from Quote
+                  Import Devices
                 </h2>
                 <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
-                  Upload quote PDF, extract unique device models, match them to the TateSide library, research only missing devices,
-                  then explicitly approve any generated drafts before saving.
+                  Import directly from a Jetbuilt project first, then fall back to quote PDF upload only when needed.
                 </p>
               </div>
               <button onClick={reset} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer">✕</button>
@@ -351,7 +406,73 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="rounded border p-3 space-y-3" style={{ borderColor: "var(--color-border)" }}>
+              <div>
+                <div className="text-xs font-medium text-[var(--color-text-heading)]">Import from Jetbuilt Project</div>
+                <div className="text-[11px] text-[var(--color-text-muted)] mt-1">
+                  Preferred route. Search by P number, Jetbuilt project name, or Jetbuilt project id.
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  type="text"
+                  value={jetbuiltQuery}
+                  onChange={(e) => setJetbuiltQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void handleSearchJetbuilt();
+                    }
+                  }}
+                  placeholder="Search Jetbuilt project, for example P-5844"
+                  className="flex-1 min-w-[240px] bg-white border border-[var(--color-border)] rounded px-2.5 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 placeholder:text-[var(--color-text-muted)]"
+                />
+                <button
+                  onClick={handleSearchJetbuilt}
+                  disabled={!jetbuiltQuery.trim() || jetbuiltSearching}
+                  className="px-4 py-1.5 rounded bg-blue-500 text-white text-xs hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  {jetbuiltSearching ? "Searching..." : "Search Jetbuilt"}
+                </button>
+              </div>
+
+              {jetbuiltProjects.length > 0 && (
+                <div className="rounded border overflow-hidden" style={{ borderColor: "var(--color-border)" }}>
+                  <div className="max-h-56 overflow-y-auto">
+                    {jetbuiltProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="px-3 py-2 border-b flex items-center gap-3"
+                        style={{ borderColor: "var(--color-border)" }}
+                      >
+                        <div className="flex-1 min-w-0 text-xs">
+                          <div className="font-medium text-[var(--color-text-heading)] truncate">
+                            {project.customId ? `${project.customId} - ${project.name}` : project.name}
+                          </div>
+                          <div className="text-[11px] text-[var(--color-text-muted)] truncate">
+                            Jetbuilt #{project.id}
+                            {project.stage ? ` · ${project.stage}` : ""}
+                            {typeof project.itemCount === "number" ? ` · ${project.itemCount} items` : ""}
+                            {project.updatedAt ? ` · updated ${new Date(project.updatedAt).toLocaleDateString()}` : ""}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => void handleImportJetbuiltProject(project)}
+                          disabled={jetbuiltImporting}
+                          className="px-3 py-1.5 rounded border border-[var(--color-border)] bg-white text-xs hover:bg-[var(--color-surface-hover)] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          {jetbuiltImporting ? "Importing..." : "Import"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="rounded border p-3" style={{ borderColor: "var(--color-border)" }}>
+              <div className="text-xs font-medium text-[var(--color-text-heading)] mb-2">Fallback Quote PDF Upload</div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -367,7 +488,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
                   onChange={(e) => handleFileSelected(e.target.files?.[0] ?? null)}
                 />
                 <div className="text-xs text-[var(--color-text-muted)]">
-                  {selectedFile ? selectedFile.name : "PDF only for the MVP. CSV/XLSX quote parsing remains follow-on work."}
+                  {selectedFile ? selectedFile.name : "Keep this as a fallback when Jetbuilt project import is not suitable."}
                 </div>
                 <button
                   onClick={handleExtract}
@@ -397,6 +518,12 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
                 <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
                   Extraction model: <strong>{extraction.extractionModel}</strong> with <strong>{extraction.extractionReasoningEffort}</strong> reasoning effort.
                 </div>
+
+                {importSourceLabel && (
+                  <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                    Import source: <strong>{importSourceLabel}</strong>
+                  </div>
+                )}
 
                 {extraction.warnings.length > 0 && (
                   <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 space-y-1">

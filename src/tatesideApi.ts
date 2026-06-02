@@ -1,6 +1,7 @@
 import type { DeviceTemplate } from "./types";
 import type {
   ExtractedQuoteDevice,
+  JetbuiltProjectSearchResult,
   QuoteImportResearchJobResponse,
   QuoteImportExtractionResponse,
   QuoteImportResearchResponse,
@@ -163,6 +164,20 @@ export async function importDevicesFromQuote(file: File): Promise<QuoteImportExt
   }
 
   return res.json() as Promise<QuoteImportExtractionResponse>;
+}
+
+export async function searchJetbuiltProjects(query: string): Promise<JetbuiltProjectSearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const response = await requestJson<{ projects: JetbuiltProjectSearchResult[] }>(`/jetbuilt/projects?query=${encodeURIComponent(trimmed)}`);
+  return response.projects;
+}
+
+export async function importDevicesFromJetbuiltProject(projectId: string): Promise<QuoteImportExtractionResponse> {
+  return requestJson<QuoteImportExtractionResponse>("/jetbuilt/import", {
+    method: "POST",
+    body: { projectId },
+  });
 }
 
 export async function researchQuoteDevices(
