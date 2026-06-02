@@ -24,6 +24,8 @@ interface ResearchRouteOptions {
   forceEscalation?: boolean;
 }
 
+const MAX_CONCURRENT_RESEARCH_CALLS = 3;
+
 interface DraftPortShape {
   label: string;
   signalType: SignalType;
@@ -446,10 +448,8 @@ function portSummaryFromTemplate(template: Omit<DeviceTemplate, "id" | "version"
 
 export async function researchQuoteDevices(options: ResearchRouteOptions): Promise<QuoteImportResearchResponse> {
   const config = getOpenAiWorkflowConfig();
-  const results: QuoteImportDraftReview[] = [];
   const warnings: string[] = [];
-
-  for (const device of options.devices) {
+  const results = await runLimitedConcurrency(options.devices, MAX_CONCURRENT_RESEARCH_CALLS, async (device) => {
     const modelCallRecords: AiDeviceGenerationModelCall[] = [];
 
     try {
@@ -504,7 +504,7 @@ export async function researchQuoteDevices(options: ResearchRouteOptions): Promi
           ? "draft_ready"
           : "manual_review_required";
 
-      results.push({
+      return {
         extractedDevice: device,
         template,
         metadata,
@@ -512,10 +512,10 @@ export async function researchQuoteDevices(options: ResearchRouteOptions): Promi
         reviewStatus,
         error: null,
         portSummary: portSummaryFromTemplate(template),
-      });
+      } satisfies QuoteImportDraftReview;
     } catch (err) {
       warnings.push(`Research failed for ${device.model}`);
-      results.push({
+      return {
         extractedDevice: device,
         template: null,
         metadata: null,
@@ -527,15 +527,34 @@ export async function researchQuoteDevices(options: ResearchRouteOptions): Promi
         reviewStatus: "manual_review_required",
         error: err instanceof Error ? err.message : "Research failed",
         portSummary: [],
-      });
+      } satisfies QuoteImportDraftReview;
     }
-  }
+  });
 
   return {
     fileName: options.fileName,
     results,
     warnings,
   };
+}
+
+async function runLimitedConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  worker: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      results[currentIndex] = await worker(items[currentIndex]);
+    }
+  });
+
+  await Promise.all(runners);
+  return results;
 }
 
 export function getHighRiskDeviceTypes(): string[] {
