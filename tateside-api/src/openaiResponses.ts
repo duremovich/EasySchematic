@@ -1,4 +1,5 @@
 const OPENAI_API_URL = "https://api.openai.com/v1/responses";
+const OPENAI_FILES_API_URL = "https://api.openai.com/v1/files";
 
 export type ReasoningEffort = "low" | "medium" | "high";
 
@@ -51,6 +52,41 @@ export async function createOpenAiResponse(payload: unknown): Promise<unknown> {
   }
 
   return responseJson;
+}
+
+export async function uploadOpenAiFile(fileName: string, fileBuffer: Buffer, mimeType: string): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("AI quote import is not available because OPENAI_API_KEY is not configured on the TateSide API server");
+  }
+
+  const formData = new FormData();
+  formData.set("purpose", "user_data");
+  formData.set("file", new Blob([new Uint8Array(fileBuffer)], { type: mimeType }), fileName);
+
+  const response = await fetch(OPENAI_FILES_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: formData,
+  });
+
+  const responseJson = await response.json().catch(() => null);
+  if (!response.ok) {
+    const errorMessage = responseJson && typeof responseJson === "object"
+      ? ((responseJson as { error?: { message?: string } }).error?.message ?? `OpenAI file upload failed (${response.status})`)
+      : `OpenAI file upload failed (${response.status})`;
+    throw new Error(errorMessage);
+  }
+
+  const fileId = responseJson && typeof responseJson === "object"
+    ? (responseJson as { id?: unknown }).id
+    : undefined;
+  if (typeof fileId !== "string" || !fileId) {
+    throw new Error("OpenAI file upload did not return a file ID");
+  }
+  return fileId;
 }
 
 export function extractOutputText(responseJson: unknown): string {

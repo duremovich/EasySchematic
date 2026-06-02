@@ -7,7 +7,7 @@ import type {
   QuoteImportResultItem,
 } from "../../src/quoteImportTypes.js";
 import { listCurrentTemplates } from "./deviceStore.js";
-import { createOpenAiResponse, extractOutputText, getOpenAiWorkflowConfig } from "./openaiResponses.js";
+import { createOpenAiResponse, extractOutputText, getOpenAiWorkflowConfig, uploadOpenAiFile } from "./openaiResponses.js";
 
 interface OpenAiExtractionPayload {
   devices?: Array<{
@@ -242,8 +242,9 @@ function extractionPrompt(): string {
   ].join(" ");
 }
 
-async function extractDevicesFromPdf(fileName: string, fileBuffer: Buffer): Promise<ExtractedQuoteDevice[]> {
+async function extractDevicesFromPdf(fileName: string, fileBuffer: Buffer, fileType: string): Promise<ExtractedQuoteDevice[]> {
   const config = getOpenAiWorkflowConfig();
+  const fileId = await uploadOpenAiFile(fileName, fileBuffer, fileType);
   const responseJson = await createOpenAiResponse({
     model: config.quoteExtractionModel,
     reasoning: {
@@ -255,8 +256,7 @@ async function extractDevicesFromPdf(fileName: string, fileBuffer: Buffer): Prom
         content: [
           {
             type: "input_file",
-            filename: fileName,
-            file_data: fileBuffer.toString("base64"),
+            file_id: fileId,
           },
           {
             type: "input_text",
@@ -314,7 +314,7 @@ export async function importQuoteDevicesFromPdf(
   fileType = "application/pdf",
 ): Promise<QuoteImportExtractionResponse> {
   const config = getOpenAiWorkflowConfig();
-  const extractedDevices = await extractDevicesFromPdf(fileName, fileBuffer);
+  const extractedDevices = await extractDevicesFromPdf(fileName, fileBuffer, fileType);
   const results = inspectQuoteDevicesAgainstLibrary(db, extractedDevices);
 
   return {
