@@ -6,7 +6,7 @@ const TATESIDE_API_URL = (
   import.meta.env?.VITE_TATESIDE_API_URL ?? DEFAULT_TATESIDE_API_URL
 ).replace(/\/$/, "");
 
-type HttpMethod = "GET" | "POST" | "PUT";
+type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";
 
 export interface SharePointItem {
   id: string;
@@ -62,6 +62,10 @@ async function requestJson<T>(
     throw new TatesideApiError(data?.error || fallback, res.status);
   }
 
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
   return res.json() as Promise<T>;
 }
 
@@ -80,6 +84,31 @@ export async function saveTatesideDeviceTemplates(
       ...(options.note ? { note: options.note } : {}),
       ...(options.source ? { source: options.source } : {}),
     },
+  });
+}
+
+export async function updateTatesideDeviceTemplate(
+  templateId: string,
+  template: Omit<DeviceTemplate, "id" | "version">,
+  options: { note?: string; source?: string } = {},
+): Promise<{ template: DeviceTemplate }> {
+  return requestJson(`/devices/templates/${encodeURIComponent(templateId)}`, {
+    method: "PUT",
+    body: {
+      template,
+      ...(options.note ? { note: options.note } : {}),
+      ...(options.source ? { source: options.source } : {}),
+    },
+  });
+}
+
+export async function deleteTatesideDeviceTemplate(
+  templateId: string,
+  options: { note?: string } = {},
+): Promise<void> {
+  await requestJson(`/devices/templates/${encodeURIComponent(templateId)}`, {
+    method: "DELETE",
+    body: options.note ? { note: options.note } : {},
   });
 }
 

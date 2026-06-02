@@ -1,5 +1,5 @@
 import { type DragEvent, type ChangeEvent, useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { getBundledTemplates, fetchTemplates } from "../templateApi";
+import { getBundledTemplates, fetchTemplates, refreshTemplates } from "../templateApi";
 import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate, CustomTemplateGroup, OwnedGearFile, OwnedGearItem, SchematicNode, DeviceData } from "../types";
 import { useSchematicStore, CATEGORY_ORDER_DEFAULT } from "../store";
@@ -8,6 +8,7 @@ import { inventoryKeyFromDeviceData, inventoryKeyFromTemplate } from "../invento
 import { compareTemplatesByModel } from "../templateOrdering";
 import DeviceCreatorPicker from "./DeviceCreatorPicker";
 import ImportDevicesDialog from "./ImportDevicesDialog";
+import ManageTatesideTemplateDialog from "./ManageTatesideTemplateDialog";
 
 const BUILD_HASH = __BUILD_HASH__;
 const SHORT_BUILD_HASH = BUILD_HASH.length > 7 ? BUILD_HASH.slice(0, 7) : BUILD_HASH;
@@ -53,6 +54,7 @@ function TemplateItem({
   template,
   query,
   onDelete,
+  onManage,
   hasPreset,
   isFavorite,
   ownedQuantity,
@@ -62,6 +64,7 @@ function TemplateItem({
   template: DeviceTemplate;
   query: string;
   onDelete?: () => void;
+  onManage?: () => void;
   hasPreset?: boolean;
   isFavorite?: boolean;
   ownedQuantity?: number;
@@ -129,17 +132,33 @@ function TemplateItem({
           </span>
         )}
       </div>
-      {onDelete && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="opacity-0 group-hover:opacity-100 text-red-400/60 hover:text-red-500 text-sm cursor-pointer px-1 transition-opacity"
-          title="Delete template"
-        >
-          &times;
-        </button>
+      {(onManage || onDelete) && (
+        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+          {onManage && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onManage();
+              }}
+              className="text-blue-500/70 hover:text-blue-600 text-xs cursor-pointer px-1"
+              title="Manage shared library entry"
+            >
+              Edit
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              className="text-red-400/60 hover:text-red-500 text-sm cursor-pointer px-1"
+              title="Delete template"
+            >
+              &times;
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
@@ -151,6 +170,7 @@ function CategorySection({
   query,
   defaultOpen,
   onDelete,
+  onManage,
   presetIds,
   favoriteSet,
   ownedQuantityMap,
@@ -164,6 +184,7 @@ function CategorySection({
   query: string;
   defaultOpen: boolean;
   onDelete?: (deviceType: string) => void;
+  onManage?: (template: DeviceTemplate) => void;
   presetIds?: Set<string>;
   favoriteSet?: Set<string>;
   ownedQuantityMap?: Map<string, number>;
@@ -236,6 +257,7 @@ function CategorySection({
                 template={template}
                 query={query}
                 onDelete={onDelete ? () => onDelete(template.deviceType) : undefined}
+                onManage={onManage ? () => onManage(template) : undefined}
                 hasPreset={!!(template.id && presetIds?.has(template.id))}
                 isFavorite={favoriteSet?.has(key)}
                 ownedQuantity={ownedQuantityMap?.get(key)}
@@ -257,12 +279,14 @@ function BrandSection({
   query,
   isExpanded,
   onToggle,
+  onManage,
 }: {
   brand: string;
   categories: { label: string; templates: DeviceTemplate[] }[];
   query: string;
   isExpanded: boolean;
   onToggle: () => void;
+  onManage?: (template: DeviceTemplate) => void;
 }) {
   const count = categories.reduce((sum, c) => sum + c.templates.length, 0);
 
@@ -291,6 +315,7 @@ function BrandSection({
               templates={cat.templates}
               query={query}
               defaultOpen={false}
+              onManage={onManage}
               presetIds={undefined}
               favoriteSet={undefined}
               ownedQuantityMap={undefined}
@@ -1110,6 +1135,7 @@ export default function DeviceLibrary() {
   const [search, setSearch] = useState("");
   const [showDeviceCreator, setShowDeviceCreator] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [managingTemplate, setManagingTemplate] = useState<DeviceTemplate | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [templates, setTemplates] = useState(getBundledTemplates);
   const [selectedSignalTypes, setSelectedSignalTypes] = useState<Set<string>>(new Set());
@@ -1161,6 +1187,20 @@ export default function DeviceLibrary() {
   useEffect(() => {
     fetchTemplates().then(setTemplates).catch(() => console.warn("TateSide device library API unavailable"));
   }, []);
+
+  const reloadSharedTemplates = useCallback(async () => {
+    const refreshed = await refreshTemplates();
+    setTemplates(refreshed);
+  }, []);
+
+  const handleSharedTemplateSaved = useCallback(async (_updated: DeviceTemplate) => {
+    await reloadSharedTemplates();
+  }, [reloadSharedTemplates]);
+
+  const handleSharedTemplateDeleted = useCallback(async (templateId: string) => {
+    await reloadSharedTemplates();
+    setManagingTemplate((current) => (current?.id === templateId ? null : current));
+  }, [reloadSharedTemplates]);
 
   const handleAddToOwned = useCallback((template: DeviceTemplate) => {
     addOwnedGear(template, 1);
@@ -1391,7 +1431,18 @@ export default function DeviceLibrary() {
           onImport={() => setShowImportDialog(true)}
         />
       )}
-      <ImportDevicesDialog open={showImportDialog} onClose={() => setShowImportDialog(false)} />
+      <ImportDevicesDialog
+        open={showImportDialog}
+        onClose={() => setShowImportDialog(false)}
+        onLibraryChanged={reloadSharedTemplates}
+      />
+      <ManageTatesideTemplateDialog
+        open={!!managingTemplate}
+        template={managingTemplate}
+        onClose={() => setManagingTemplate(null)}
+        onSaved={handleSharedTemplateSaved}
+        onDeleted={handleSharedTemplateDeleted}
+      />
 
       {libraryActiveTab === "owned" ? (
         <OwnedGearTab query={query} />
@@ -1498,6 +1549,7 @@ export default function DeviceLibrary() {
                       template={template}
                       query={query}
                       onDelete={customTemplates.includes(template) ? () => removeCustomTemplate(template.id ?? template.deviceType) : undefined}
+                      onManage={!customTemplates.includes(template) ? () => setManagingTemplate(template) : undefined}
                       hasPreset={!!(template.id && presetIds.has(template.id))}
                       isFavorite={favoriteSet.has(key)}
                       ownedQuantity={ownedQuantityMap.get(key)}
@@ -1521,6 +1573,9 @@ export default function DeviceLibrary() {
                 templates={favoritesList}
                 query={query}
                 defaultOpen={true}
+                onManage={(template) => {
+                  if (!customTemplates.includes(template)) setManagingTemplate(template);
+                }}
                 presetIds={presetIds}
                 favoriteSet={favoriteSet}
                 ownedQuantityMap={ownedQuantityMap}
@@ -1546,6 +1601,7 @@ export default function DeviceLibrary() {
                   query={query}
                   isExpanded={expandedBrands.has(brand.brand)}
                   onToggle={() => toggleBrandExpanded(brand.brand)}
+                  onManage={(template) => setManagingTemplate(template)}
                 />
               ))}
             </div>

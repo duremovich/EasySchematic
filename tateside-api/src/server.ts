@@ -2,7 +2,7 @@ import http from "node:http";
 import { URL } from "node:url";
 import { getConfig } from "./config.js";
 import { openDatabase, runMigrations } from "./db.js";
-import { listCurrentTemplates, saveTemplates } from "./deviceStore.js";
+import { deleteTemplate, listCurrentTemplates, saveTemplates, updateTemplate } from "./deviceStore.js";
 
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 
@@ -74,7 +74,7 @@ function makeCorsHeaders(origin: string | undefined, allowedOrigin: string): Rec
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Credentials": "true",
     "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
     "Vary": "Origin",
   };
 }
@@ -127,6 +127,37 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
     });
     sendJson(ctx.res, 201, { templates }, corsHeaders);
     return;
+  }
+
+  const templateMatch = path.match(/^\/api\/tateside\/devices\/templates\/([^/]+)$/);
+  if (templateMatch) {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    const deviceId = decodeURIComponent(templateMatch[1]);
+
+    if (ctx.req.method === "PUT") {
+      const body = await readJson(ctx.req) as { template?: unknown; note?: unknown; source?: unknown } | null;
+      const template = updateTemplate(db, deviceId, {
+        template: body?.template,
+        note: typeof body?.note === "string" ? body.note : undefined,
+        source: typeof body?.source === "string" ? body.source : undefined,
+        actorEmail: email,
+      });
+      sendJson(ctx.res, 200, { template }, corsHeaders);
+      return;
+    }
+
+    if (ctx.req.method === "DELETE") {
+      const body = ctx.req.headers["content-length"] && ctx.req.headers["content-length"] !== "0"
+        ? await readJson(ctx.req) as { note?: unknown } | null
+        : null;
+      deleteTemplate(db, deviceId, {
+        actorEmail: email,
+        note: typeof body?.note === "string" ? body.note : undefined,
+      });
+      sendEmpty(ctx.res, 204, corsHeaders);
+      return;
+    }
   }
 
   if (path.startsWith("/api/tateside/sharepoint/")) {

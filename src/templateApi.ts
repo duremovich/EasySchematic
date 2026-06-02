@@ -280,3 +280,8 @@ export async function fetchTemplates(): Promise<DeviceTemplate[]> {
   cached = await fetchTatesideDeviceTemplates();
   return effectiveTemplates();
 }
+
+export async function refreshTemplates(): Promise<DeviceTemplate[]> {
+  cached = await fetchTatesideDeviceTemplates();
+  return effectiveTemplates();
+}

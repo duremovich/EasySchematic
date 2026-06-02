@@ -11,6 +11,7 @@ type Tab = "json" | "csv";
 interface Props {
   open: boolean;
   onClose: () => void;
+  onLibraryChanged?: () => void | Promise<void>;
 }
 
 const SAMPLE_JSON = `{
@@ -40,7 +41,7 @@ const SAMPLE_CSV = `model_number,manufacturer,label,device_type,height_mm,width_
 60-1271-01,Extron,Extron DTP2 T 212,hdbaset-extender,25,216,114,0.68,12,https://www.extron.com/product/dtp2t212,RS-232,bidirectional,serial,phoenix,Rear
 60-1271-01,Extron,Extron DTP2 T 212,hdbaset-extender,25,216,114,0.68,12,https://www.extron.com/product/dtp2t212,12V DC,input,power,barrel,Rear`;
 
-export default function ImportDevicesDialog({ open, onClose }: Props) {
+export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }: Props) {
   const importCustomTemplates = useSchematicStore((s) => s.importCustomTemplates);
   const addToast = useSchematicStore((s) => s.addToast);
 
@@ -105,6 +106,7 @@ export default function ImportDevicesDialog({ open, onClose }: Props) {
     try {
       const result = await saveTatesideDeviceTemplates(templates, { note: libraryNote || undefined, source });
       importCustomTemplates(result.templates.length > 0 ? result.templates : selectedTemplates.map((pt) => pt.template));
+      await onLibraryChanged?.();
       addToast(
         `Added ${selectedTemplates.length} template${selectedTemplates.length === 1 ? "" : "s"} to TateSide library`,
         "success",
