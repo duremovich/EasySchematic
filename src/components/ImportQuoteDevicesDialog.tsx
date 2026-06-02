@@ -3,6 +3,7 @@ import { useSchematicStore } from "../store";
 import type { DeviceTemplate } from "../types";
 import type {
   ExtractedQuoteDevice,
+  QuoteImportCandidateMatch,
   JetbuiltClientSearchResult,
   JetbuiltIndexStatus,
   JetbuiltProjectSearchResult,
@@ -12,6 +13,7 @@ import type {
   QuoteImportResultItem,
 } from "../quoteImportTypes";
 import {
+  fetchTatesideDeviceTemplates,
   fetchJetbuiltIndexStatus,
   importDevicesFromJetbuiltProject,
   importDevicesFromQuote,
@@ -22,6 +24,7 @@ import {
   searchJetbuiltProjects,
   TatesideApiError,
 } from "../tatesideApi";
+import { validateTemplate } from "../import/validate";
 import ManageTatesideTemplateDialog from "./ManageTatesideTemplateDialog";
 
 interface Props {
@@ -66,6 +69,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
   const [selectedJetbuiltClient, setSelectedJetbuiltClient] = useState<JetbuiltClientSearchResult | null>(null);
   const [clientProjects, setClientProjects] = useState<JetbuiltProjectSearchResult[]>([]);
   const [jetbuiltStatus, setJetbuiltStatus] = useState<JetbuiltIndexStatus | null>(null);
+  const [libraryTemplatesById, setLibraryTemplatesById] = useState<Record<string, DeviceTemplate>>({});
   const [extracting, setExtracting] = useState(false);
   const [researching, setResearching] = useState(false);
   const [researchProgress, setResearchProgress] = useState<{ current: number; total: number; label: string } | null>(null);
@@ -94,6 +98,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
     setSelectedJetbuiltClient(null);
     setClientProjects([]);
     setJetbuiltStatus(null);
+    setLibraryTemplatesById({});
     setExtracting(false);
     setResearching(false);
     setResearchProgress(null);
@@ -378,11 +383,11 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
         };
       });
       const result = await saveTatesideDeviceTemplates(templatesToSave, {
-        source: "ai-quote-import-approval",
+        source: "import-workflow-approval",
         note: `Approved from import workflow: ${importSourceLabel ?? extraction.fileName}`,
       });
       await onLibraryChanged?.();
-      addToast(`Saved ${result.templates.length} AI-reviewed device${result.templates.length === 1 ? "" : "s"} to the TateSide library`, "success");
+      addToast(`Saved ${result.templates.length} reviewed device draft${result.templates.length === 1 ? "" : "s"} to the TateSide library`, "success");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save selected devices");
     } finally {
@@ -393,7 +398,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
   const handleAddSelectedLocally = () => {
     if (selectedDraftTemplates.length === 0) return;
     importCustomTemplates(selectedDraftTemplates);
-    addToast(`Added ${selectedDraftTemplates.length} generated device draft${selectedDraftTemplates.length === 1 ? "" : "s"} locally`, "success");
+    addToast(`Added ${selectedDraftTemplates.length} reviewed device draft${selectedDraftTemplates.length === 1 ? "" : "s"} locally`, "success");
   };
 
   const setPossibleDecision = (item: QuoteImportResultItem, decision: PossibleMatchDecision) => {
@@ -437,6 +442,72 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
         : item
     )));
     setEditingDraft(null);
+  };
+
+  const ensureLibraryTemplatesLoaded = async (): Promise<Record<string, DeviceTemplate>> => {
+    if (Object.keys(libraryTemplatesById).length > 0) return libraryTemplatesById;
+    const templates = await fetchTatesideDeviceTemplates();
+    const byId = Object.fromEntries(
+      templates
+        .filter((template): template is DeviceTemplate & { id: string } => typeof template.id === "string" && template.id.length > 0)
+        .map((template) => [template.id, template]),
+    );
+    setLibraryTemplatesById(byId);
+    return byId;
+  };
+
+  const handleCopyPortsFromLibraryCandidate = async (item: QuoteImportResultItem, candidate: QuoteImportCandidateMatch) => {
+    setError(null);
+    try {
+      const templatesById = await ensureLibraryTemplatesLoaded();
+      const sourceTemplate = templatesById[candidate.id];
+      if (!sourceTemplate) {
+        throw new Error("The selected TateSide library device could not be loaded");
+      }
+
+      const copiedTemplate: DeviceTemplate = {
+        ...sourceTemplate,
+        label: [item.manufacturer ?? sourceTemplate.manufacturer, item.model].filter(Boolean).join(" "),
+        shortName: item.model,
+        manufacturer: item.manufacturer ?? sourceTemplate.manufacturer,
+        modelNumber: item.model,
+        ports: sourceTemplate.ports.map((port, index) => ({
+          ...port,
+          id: `port-copy-${index + 1}`,
+        })),
+      };
+      const validation = validateTemplate(copiedTemplate);
+      const draftKey = keyForExtractedDevice(item);
+      const review: QuoteImportDraftReview = {
+        extractedDevice: {
+          manufacturer: item.manufacturer,
+          model: item.model,
+          description: item.description,
+          quantity: item.quantity,
+          sourceLineText: item.sourceLineText,
+          normalizedLookupKey: item.normalizedLookupKey,
+        },
+        template: copiedTemplate,
+        metadata: null,
+        draftSource: "library_port_copy",
+        validation,
+        reviewStatus: validation.ok ? "draft_ready" : "manual_review_required",
+        error: null,
+        portSummary: copiedTemplate.ports.slice(0, 8).map((port) => `${port.label} - ${port.signalType} ${port.direction}`),
+      };
+
+      setResearchResults((current) => {
+        const remaining = current.filter((entry) => keyForExtractedDevice(entry.extractedDevice) !== draftKey);
+        return [...remaining, review];
+      });
+      setExcludedExtractedKeys((current) => new Set([...current, draftKey]));
+      if (validation.ok) {
+        setSelectedDraftKeys((current) => new Set([...current, draftKey]));
+      }
+      addToast(`Copied ports from ${candidate.label} into a draft for ${item.model}`, "success");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not copy ports from the TateSide library device");
+    }
   };
 
   useEffect(() => {
@@ -748,6 +819,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
                       item={item}
                       excluded={excludedExtractedKeys.has(keyForExtractedDevice(item))}
                       onToggleExcluded={() => toggleExcludedExtracted(item)}
+                      onCopyPortsFromCandidate={(candidate) => void handleCopyPortsFromLibraryCandidate(item, candidate)}
                     />
                   )) : (
                     <EmptyState text="No devices are queued for research." />
@@ -897,10 +969,12 @@ function ExtractionRow({
   item,
   excluded = false,
   onToggleExcluded,
+  onCopyPortsFromCandidate,
 }: {
   item: QuoteImportResultItem;
   excluded?: boolean;
   onToggleExcluded?: () => void;
+  onCopyPortsFromCandidate?: (candidate: QuoteImportCandidateMatch) => void;
 }) {
   return (
     <div className={`px-3 py-3 border-b text-xs ${excluded ? "opacity-55" : ""}`} style={{ borderColor: "var(--color-border)" }}>
@@ -934,6 +1008,30 @@ function ExtractionRow({
               <div className="font-medium">{item.exactMatch.label}</div>
               <div>{[item.exactMatch.manufacturer, item.exactMatch.modelNumber].filter(Boolean).join(" ")}</div>
               <div className="opacity-80">{item.exactMatch.matchReason}</div>
+            </div>
+          )}
+          {item.portReuseCandidates.length > 0 && onCopyPortsFromCandidate && (
+            <div className="mt-2 space-y-1">
+              <div className="text-[11px] font-medium text-[var(--color-text-heading)]">
+                Similar TateSide devices you can copy ports from first
+              </div>
+              {item.portReuseCandidates.map((candidate) => (
+                <div key={candidate.id} className="rounded border border-blue-200 bg-blue-50 px-2.5 py-2 text-[11px] text-blue-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium">{candidate.label}</div>
+                      <div>{[candidate.manufacturer, candidate.modelNumber].filter(Boolean).join(" ")}</div>
+                      <div className="opacity-80">{candidate.matchReason}</div>
+                    </div>
+                    <button
+                      onClick={() => onCopyPortsFromCandidate(candidate)}
+                      className="shrink-0 px-2.5 py-1 rounded border border-blue-300 bg-white text-[11px] hover:bg-blue-100 cursor-pointer"
+                    >
+                      Copy ports
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -1053,6 +1151,11 @@ function DraftReviewRow({
             {metadata && (
               <span className="px-2 py-0.5 rounded-full border border-blue-200 bg-blue-50 text-blue-700 text-[10px]">
                 {metadata.modelUsed}
+              </span>
+            )}
+            {item.draftSource === "library_port_copy" && (
+              <span className="px-2 py-0.5 rounded-full border border-violet-200 bg-violet-50 text-violet-700 text-[10px]">
+                Copied from library ports
               </span>
             )}
           </div>

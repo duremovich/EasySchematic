@@ -33,7 +33,7 @@ describe("quote import research config", () => {
     expect(config.deviceEscalationReasoningEffort).toBe("medium");
   });
 
-  it("flags low-confidence and high-risk drafts for escalation", () => {
+  it("avoids medium-confidence escalation for simple devices but keeps it for unresolved high-risk devices", () => {
     const highRiskTemplate: Omit<DeviceTemplate, "id" | "version"> = {
       label: "Q-SYS Core 110f",
       manufacturer: "QSC",
@@ -41,14 +41,43 @@ describe("quote import research config", () => {
       deviceType: "audio-dsp",
       category: "Audio",
       referenceUrl: "https://www.qsys.com/",
-      ports: [],
+      ports: [
+        {
+          id: "lan-1",
+          label: "LAN",
+          signalType: "ethernet",
+          connectorType: "rj45",
+          direction: "bidirectional",
+        },
+      ],
+    };
+    const simpleTemplate: Omit<DeviceTemplate, "id" | "version"> = {
+      label: "Samsung QM55C",
+      manufacturer: "Samsung",
+      modelNumber: "QM55C",
+      deviceType: "display",
+      category: "Displays",
+      referenceUrl: "https://displays.samsung.com/",
+      ports: [
+        {
+          id: "hdmi-1",
+          label: "HDMI In 1",
+          signalType: "hdmi",
+          connectorType: "hdmi",
+          direction: "input",
+        },
+      ],
     };
 
     expect(getHighRiskDeviceTypes()).toContain("audio-dsp");
+    expect(getEscalationReason(simpleTemplate, "medium", true, [], { ok: true, errors: [], warnings: [] }))
+      .toBeNull();
     expect(getEscalationReason(highRiskTemplate, "high", true, [], { ok: true, errors: [], warnings: [] }))
-      .toMatch(/High-risk device type/);
+      .toBeNull();
     expect(getEscalationReason(highRiskTemplate, "medium", true, [], { ok: true, errors: [], warnings: [] }))
-      .toBe("Confidence is medium");
+      .toMatch(/High-risk device type/);
+    expect(getEscalationReason(highRiskTemplate, "low", true, [], { ok: true, errors: [], warnings: [] }))
+      .toBe("Confidence is low");
     expect(getEscalationReason(highRiskTemplate, "high", false, [], { ok: true, errors: [], warnings: [] }))
       .toBe("No official manufacturer source was found");
   });

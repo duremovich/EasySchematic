@@ -7,6 +7,7 @@ import type {
   SignalType,
   ConnectorType,
 } from "../../src/types.js";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type {
   ExtractedQuoteDevice,
   QuoteImportDraftReview,
@@ -22,6 +23,7 @@ interface ResearchRouteOptions {
   fileName: string;
   devices: ExtractedQuoteDevice[];
   forceEscalation?: boolean;
+  cachePath?: string;
 }
 
 const MAX_CONCURRENT_RESEARCH_CALLS = 3;
@@ -42,13 +44,7 @@ interface OpenAiDraftPayload {
     modelNumber?: unknown;
     deviceType?: unknown;
     referenceUrl?: unknown;
-    searchTerms?: unknown;
     ports?: unknown;
-    powerDrawW?: unknown;
-    heightMm?: unknown;
-    widthMm?: unknown;
-    depthMm?: unknown;
-    weightKg?: unknown;
   } | null;
   confidence?: unknown;
   officialSourceFound?: unknown;
@@ -76,6 +72,50 @@ const HIGH_RISK_DEVICE_TYPES = new Set([
   "ndi-decoder",
   "audio-interface",
 ]);
+const PORT_WARNING_KEYWORDS = [
+  "port",
+  "connector",
+  "interface",
+  "input",
+  "output",
+  "hdmi",
+  "usb",
+  "ethernet",
+  "rj45",
+  "sdi",
+  "network",
+  "audio",
+  "video",
+  "control",
+  "serial",
+  "dante",
+  "hdbaset",
+  "relay",
+  "gpio",
+];
+
+type ResearchSourceResolverId = "jetbuilt" | "supplier_catalogue" | "manufacturer" | "web_search";
+
+interface ResearchSourceResolver {
+  id: ResearchSourceResolverId;
+  buildTools(): unknown[];
+  extractFallbackSources(responseJson: unknown): { title: string; url: string }[];
+}
+
+interface CachedResearchReview {
+  review: QuoteImportDraftReview;
+  cachedAt: string;
+}
+
+const WEB_SEARCH_RESOLVER: ResearchSourceResolver = {
+  id: "web_search",
+  buildTools() {
+    return [{ type: "web_search_preview", search_context_size: "low" }];
+  },
+  extractFallbackSources(responseJson: unknown) {
+    return extractWebSearchSources(responseJson);
+  },
+};
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -85,11 +125,6 @@ function cleanString(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
   return trimmed ? trimmed : undefined;
-}
-
-function cleanNumber(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value) && value >= 0) return value;
-  return undefined;
 }
 
 function normalizeSourceType(value: unknown): AiDeviceGenerationSourceReference["sourceType"] {
@@ -128,10 +163,6 @@ function researchSchema(): Record<string, unknown> {
               modelNumber: { type: "string" },
               deviceType: { type: "string" },
               referenceUrl: { type: ["string", "null"] },
-              searchTerms: {
-                type: ["array", "null"],
-                items: { type: "string" },
-              },
               ports: {
                 type: "array",
                 items: {
@@ -147,13 +178,8 @@ function researchSchema(): Record<string, unknown> {
                   required: ["label", "signalType", "direction", "connectorType", "section"],
                 },
               },
-              powerDrawW: { type: ["number", "null"] },
-              heightMm: { type: ["number", "null"] },
-              widthMm: { type: ["number", "null"] },
-              depthMm: { type: ["number", "null"] },
-              weightKg: { type: ["number", "null"] },
             },
-            required: ["label", "shortName", "manufacturer", "modelNumber", "deviceType", "referenceUrl", "searchTerms", "ports", "powerDrawW", "heightMm", "widthMm", "depthMm", "weightKg"],
+            required: ["label", "shortName", "manufacturer", "modelNumber", "deviceType", "referenceUrl", "ports"],
           },
         ],
       },
@@ -187,16 +213,19 @@ function buildResearchPrompt(
   purpose: "routine_generation" | "escalated_verification",
 ): string {
   return [
-    `Research this TateSide quote device and generate a conservative EasySchematic device template draft.`,
+    `Research this TateSide device and generate a conservative EasySchematic device template draft focused only on schematic connectivity.`,
     `Quote file: ${quoteFileName}.`,
     `Extracted manufacturer: ${device.manufacturer ?? "unknown"}.`,
     `Extracted model: ${device.model}.`,
     `Extracted description: ${device.description ?? "none"}.`,
     `Source quote line: ${device.sourceLineText ?? "none"}.`,
     `Search source priority: 1) official manufacturer product page, 2) official manufacturer datasheet, 3) official manufacturer manual, 4) official manufacturer support/download page, 5) reputable AV distributor/archive only if official documentation is unavailable.`,
-    `Do not invent ports. Only include ports/interfaces directly supported by sources.`,
-    `Distinguish functional AV ports from service-only, optional-card, or maintenance ports.`,
-    `If evidence is weak or ambiguous, return warnings and keep the draft conservative.`,
+    `Research only the device type, relevant port list, and the minimum source links needed to justify those ports.`,
+    `Do not return power, weight, dimensions, accessories, mounting details, package contents, or generic technical warnings.`,
+    `Do not invent ports. Only include ports or interfaces directly supported by sources.`,
+    `Exclude service-only, maintenance, optional-card, and accessory connectivity unless the main product ships with it and it is part of the schematic-facing device.`,
+    `If evidence is weak or ambiguous, return only port-related warnings and keep the draft conservative.`,
+    `Use no more than two high-quality sources in the response.`,
     `Use only these deviceType values: ${VALID_DEVICE_TYPES.join(", ")}.`,
     `Use only these signalType values: ${VALID_SIGNAL_TYPES.join(", ")}.`,
     `Use only these connectorType values: ${VALID_CONNECTOR_TYPES.join(", ")}.`,
@@ -235,15 +264,7 @@ function sanitizeTemplate(raw: OpenAiDraftPayload["template"], extracted: Extrac
     deviceType,
     category: DEVICE_TYPE_TO_CATEGORY[deviceType] ?? "Other",
     referenceUrl: cleanString(raw.referenceUrl),
-    searchTerms: Array.isArray(raw.searchTerms)
-      ? raw.searchTerms.filter((term): term is string => typeof term === "string" && term.trim().length > 0).map((term) => term.trim())
-      : undefined,
     ports,
-    powerDrawW: cleanNumber(raw.powerDrawW),
-    heightMm: cleanNumber(raw.heightMm),
-    widthMm: cleanNumber(raw.widthMm),
-    depthMm: cleanNumber(raw.depthMm),
-    weightKg: cleanNumber(raw.weightKg),
   };
 }
 
@@ -331,10 +352,13 @@ export function getEscalationReason(
   validation: QuoteImportDraftValidation,
 ): string | null {
   if (!officialSourceFound) return "No official manufacturer source was found";
-  if (confidence !== "high") return `Confidence is ${confidence}`;
+  if (confidence === "low") return "Confidence is low";
   if (!validation.ok) return "Template validation failed";
   if (warnings.length > 0) return "Warnings indicate ambiguous or uncertain connectivity";
-  if (template && HIGH_RISK_DEVICE_TYPES.has(template.deviceType)) return `High-risk device type "${template.deviceType}" requires stronger verification`;
+  if (template && template.ports.length === 0) return "No supported schematic ports were confirmed";
+  if (template && HIGH_RISK_DEVICE_TYPES.has(template.deviceType) && confidence !== "high") {
+    return `High-risk device type "${template.deviceType}" needs stronger verification when evidence is not high-confidence`;
+  }
   return null;
 }
 
@@ -354,13 +378,48 @@ function normalizeReferences(raw: unknown, fallbackSources: { title: string; url
     }
   }
 
-  if (references.length > 0) return references;
+  if (references.length > 0) return references.slice(0, 2);
 
-  return fallbackSources.map((source) => ({
+  return fallbackSources.slice(0, 2).map((source) => ({
     title: source.title,
     url: source.url,
     sourceType: "other",
   }));
+}
+
+function normalizeWarningList(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((warning): warning is string => typeof warning === "string" && warning.trim().length > 0)
+    .map((warning) => warning.trim())
+    .filter(isPortRelatedWarning)
+    .slice(0, 4);
+}
+
+function isPortRelatedWarning(warning: string): boolean {
+  const normalized = warning.toLowerCase();
+  return PORT_WARNING_KEYWORDS.some((keyword) => normalized.includes(keyword));
+}
+
+function cacheKeyForDevice(device: ExtractedQuoteDevice): string {
+  return (device.normalizedLookupKey || `${device.manufacturer ?? ""}::${device.model}`)
+    .trim()
+    .toLowerCase();
+}
+
+function readResearchCache(cachePath: string | undefined): Map<string, CachedResearchReview> {
+  if (!cachePath || !existsSync(cachePath)) return new Map();
+  try {
+    const raw = JSON.parse(readFileSync(cachePath, "utf8")) as Record<string, CachedResearchReview>;
+    return new Map(Object.entries(raw));
+  } catch {
+    return new Map();
+  }
+}
+
+function writeResearchCache(cachePath: string | undefined, cache: Map<string, CachedResearchReview>): void {
+  if (!cachePath) return;
+  writeFileSync(cachePath, JSON.stringify(Object.fromEntries(cache), null, 2), "utf8");
 }
 
 async function runResearchPass(
@@ -369,6 +428,7 @@ async function runResearchPass(
   model: string,
   reasoningEffort: ReasoningEffort,
   purpose: "routine_generation" | "escalated_verification",
+  resolver: ResearchSourceResolver,
 ): Promise<{
   template: Omit<DeviceTemplate, "id" | "version"> | null;
   confidence: "high" | "medium" | "low";
@@ -381,7 +441,7 @@ async function runResearchPass(
   const responseJson = await createOpenAiResponse({
     model,
     reasoning: { effort: reasoningEffort },
-    tools: [{ type: "web_search_preview" }],
+    tools: resolver.buildTools(),
     input: [
       {
         role: "user",
@@ -415,10 +475,8 @@ async function runResearchPass(
     throw new Error("OpenAI returned an unreadable research result");
   }
 
-  const fallbackSources = extractWebSearchSources(responseJson);
-  const warnings = Array.isArray(parsed.warnings)
-    ? parsed.warnings.filter((warning): warning is string => typeof warning === "string" && warning.trim().length > 0)
-    : [];
+  const fallbackSources = resolver.extractFallbackSources(responseJson);
+  const warnings = normalizeWarningList(parsed.warnings);
   const template = sanitizeTemplate(parsed.template, device);
   const validation = validateResearchDraftTemplate(template);
 
@@ -448,9 +506,16 @@ function portSummaryFromTemplate(template: Omit<DeviceTemplate, "id" | "version"
 
 export async function researchQuoteDevices(options: ResearchRouteOptions): Promise<QuoteImportResearchResponse> {
   const config = getOpenAiWorkflowConfig();
+  const resolver = WEB_SEARCH_RESOLVER;
+  const cache = readResearchCache(options.cachePath);
   const warnings: string[] = [];
   const results = await runLimitedConcurrency(options.devices, MAX_CONCURRENT_RESEARCH_CALLS, async (device) => {
     const modelCallRecords: AiDeviceGenerationModelCall[] = [];
+    const cacheKey = cacheKeyForDevice(device);
+    const cached = !options.forceEscalation ? cache.get(cacheKey) : undefined;
+    if (cached?.review?.metadata?.sourceReferences?.length) {
+      return cached.review;
+    }
 
     try {
       const firstPass = await runResearchPass(
@@ -459,6 +524,7 @@ export async function researchQuoteDevices(options: ResearchRouteOptions): Promi
         options.forceEscalation ? config.deviceEscalationModel : config.deviceResearchModel,
         options.forceEscalation ? config.deviceEscalationReasoningEffort : config.deviceResearchReasoningEffort,
         options.forceEscalation ? "escalated_verification" : "routine_generation",
+        resolver,
       );
       modelCallRecords.push(firstPass.modelCall);
 
@@ -474,6 +540,7 @@ export async function researchQuoteDevices(options: ResearchRouteOptions): Promi
           config.deviceEscalationModel,
           config.deviceEscalationReasoningEffort,
           "escalated_verification",
+          resolver,
         );
         modelCallRecords.push(escalatedPass.modelCall);
         finalPass = escalatedPass;
@@ -504,21 +571,30 @@ export async function researchQuoteDevices(options: ResearchRouteOptions): Promi
           ? "draft_ready"
           : "manual_review_required";
 
-      return {
+      const review = {
         extractedDevice: device,
         template,
         metadata,
+        draftSource: "ai_research",
         validation: finalPass.validation,
         reviewStatus,
         error: null,
         portSummary: portSummaryFromTemplate(template),
       } satisfies QuoteImportDraftReview;
+      if (!options.forceEscalation && metadata.sourceReferences.length > 0 && review.error == null) {
+        cache.set(cacheKey, {
+          review,
+          cachedAt: new Date().toISOString(),
+        });
+      }
+      return review;
     } catch (err) {
       warnings.push(`Research failed for ${device.model}`);
       return {
         extractedDevice: device,
         template: null,
         metadata: null,
+        draftSource: "ai_research",
         validation: {
           ok: false,
           errors: [],
@@ -530,6 +606,8 @@ export async function researchQuoteDevices(options: ResearchRouteOptions): Promi
       } satisfies QuoteImportDraftReview;
     }
   });
+
+  writeResearchCache(options.cachePath, cache);
 
   return {
     fileName: options.fileName,

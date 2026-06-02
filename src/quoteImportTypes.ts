@@ -26,6 +26,7 @@ export interface QuoteImportResultItem extends ExtractedQuoteDevice {
   status: LibraryMatchStatus;
   exactMatch: QuoteImportCandidateMatch | null;
   possibleMatches: QuoteImportCandidateMatch[];
+  portReuseCandidates: QuoteImportCandidateMatch[];
 }
 
 export interface QuoteImportExtractionResponse {
@@ -48,6 +49,7 @@ export interface QuoteImportDraftReview {
   extractedDevice: ExtractedQuoteDevice;
   template: DeviceTemplate | null;
   metadata: AiDeviceGenerationMetadata | null;
+  draftSource: "ai_research" | "library_port_copy";
   validation: QuoteImportDraftValidation;
   reviewStatus: "draft_ready" | "manual_review_required";
   error: string | null;

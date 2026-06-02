@@ -25,6 +25,20 @@ interface MatchContext {
   byModel: Map<string, DeviceTemplate[]>;
 }
 
+const PORT_REUSE_EXCLUDED_TYPES = new Set([
+  "adapter",
+  "cable-accessory",
+  "expansion-card",
+  "change-over",
+  "storage-media",
+]);
+
+const DESCRIPTION_STOPWORDS = new Set([
+  "the", "and", "with", "for", "from", "inch", "inches", "commercial", "professional",
+  "kit", "system", "series", "gen", "mk", "version", "qty", "quantity", "includes",
+  "include", "package", "bundle", "smart", "display", "monitor", "screen", "bar",
+]);
+
 function normalizeToken(value: string | null | undefined): string {
   return (value ?? "")
     .trim()
@@ -171,6 +185,68 @@ function findPossibleMatches(device: ExtractedQuoteDevice, context: MatchContext
   });
 }
 
+function tokenizeText(value: string | null | undefined): string[] {
+  return (value ?? "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/g)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2 && !DESCRIPTION_STOPWORDS.has(token));
+}
+
+function commonPrefixLength(a: string, b: string): number {
+  let length = 0;
+  while (length < a.length && length < b.length && a[length] === b[length]) {
+    length += 1;
+  }
+  return length;
+}
+
+function portReuseScore(device: ExtractedQuoteDevice, template: DeviceTemplate): number {
+  if (PORT_REUSE_EXCLUDED_TYPES.has(template.deviceType)) return 0;
+
+  const manufacturerKey = normalizeToken(device.manufacturer);
+  const templateManufacturerKey = normalizeToken(template.manufacturer);
+  if (manufacturerKey && templateManufacturerKey && manufacturerKey !== templateManufacturerKey) return 0;
+
+  const deviceModel = normalizeToken(device.model);
+  const templateModel = normalizeToken(template.modelNumber || template.label);
+  const prefix = commonPrefixLength(deviceModel, templateModel);
+  const deviceTokens = new Set([
+    ...tokenizeText(device.model),
+    ...tokenizeText(device.description),
+    ...tokenizeText(device.sourceLineText),
+  ]);
+  const templateTokens = new Set([
+    ...tokenizeText(template.label),
+    ...tokenizeText(template.modelNumber),
+    ...tokenizeText(template.category),
+    ...tokenizeText(template.deviceType),
+  ]);
+
+  let sharedTokenCount = 0;
+  for (const token of deviceTokens) {
+    if (templateTokens.has(token)) sharedTokenCount += 1;
+  }
+
+  let score = 0;
+  if (manufacturerKey && templateManufacturerKey && manufacturerKey === templateManufacturerKey) score += 400;
+  if (prefix >= 4) score += 280;
+  else if (prefix >= 2) score += 180;
+  if (template.ports.length > 0) score += 60;
+  score += Math.min(sharedTokenCount, 4) * 50;
+
+  return score;
+}
+
+function findPortReuseCandidates(device: ExtractedQuoteDevice, context: MatchContext): QuoteImportCandidateMatch[] {
+  return context.templates
+    .map((template) => ({ template, score: portReuseScore(device, template) }))
+    .filter((entry) => entry.score >= 450)
+    .sort((a, b) => b.score - a.score || a.template.label.localeCompare(b.template.label))
+    .slice(0, 3)
+    .map(({ template }) => toCandidate(template, "Same manufacturer with a similar model family. Reuse this library device's ports before AI research."));
+}
+
 export function matchQuoteDevicesAgainstLibrary(
   devices: ExtractedQuoteDevice[],
   templates: DeviceTemplate[],
@@ -188,15 +264,19 @@ export function matchQuoteDevicesAgainstLibrary(
         status: "already_in_library",
         exactMatch: toCandidate(exactMatches[0], "Exact manufacturer/model match in TateSide library"),
         possibleMatches: [],
+        portReuseCandidates: [],
       };
     }
 
     const possibleMatches = findPossibleMatches(device, context);
+    const portReuseCandidates = findPortReuseCandidates(device, context)
+      .filter((candidate) => !possibleMatches.some((match) => match.id === candidate.id));
     return {
       ...device,
       status: possibleMatches.length > 0 ? "possible_match" : "missing",
       exactMatch: null,
       possibleMatches,
+      portReuseCandidates,
     };
   });
 }

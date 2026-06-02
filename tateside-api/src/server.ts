@@ -179,6 +179,7 @@ async function runResearchJob(record: ResearchJobRecord, devices: ExtractedQuote
         fileName: record.fileName,
         devices: [device],
         forceEscalation,
+        cachePath: config.quoteResearchCachePath,
       });
 
       aggregatedResults.push(...response.results);

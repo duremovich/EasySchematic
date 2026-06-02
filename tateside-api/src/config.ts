@@ -12,6 +12,7 @@ export interface ApiConfig {
   jetbuiltApiBaseUrl: string;
   jetbuiltIndexPath: string;
   jetbuiltIndexRefreshMs: number;
+  quoteResearchCachePath: string;
 }
 
 const defaultDataDir =
@@ -34,5 +35,6 @@ export function getConfig(): ApiConfig {
     jetbuiltApiBaseUrl: process.env.JETBUILT_API_BASE_URL || "https://app.jetbuilt.com/api",
     jetbuiltIndexPath: process.env.JETBUILT_INDEX_PATH || path.join(dataDir, "jetbuilt-index.json"),
     jetbuiltIndexRefreshMs: Number(process.env.JETBUILT_INDEX_REFRESH_MS || `${60 * 60 * 1000}`),
+    quoteResearchCachePath: process.env.OPENAI_QUOTE_RESEARCH_CACHE_PATH || path.join(dataDir, "quote-research-cache.json"),
   };
 }

@@ -87,6 +87,35 @@ describe("quote import matching", () => {
     expect(results[2]?.possibleMatches).toHaveLength(0);
   });
 
+  it("suggests similar library devices for port reuse before AI research", () => {
+    const templates = [
+      { id: "samsung-qm55c", version: 1, ...createTemplate({
+        label: "Samsung QM55C",
+        manufacturer: "Samsung",
+        modelNumber: "QM55C",
+        deviceType: "display",
+        category: "Displays",
+      }) },
+    ];
+
+    const results = matchQuoteDevicesAgainstLibrary(
+      [
+        {
+          manufacturer: "Samsung",
+          model: "QM75C",
+          description: "75-inch Commercial 4K UHD Display, 500 NIT",
+          quantity: 1,
+          sourceLineText: "Samsung QM75C 75-inch Commercial 4K UHD Display, 500 NIT",
+          normalizedLookupKey: normalizedLookupKey("Samsung", "QM75C"),
+        },
+      ],
+      templates,
+    );
+
+    expect(results[0]?.status).toBe("missing");
+    expect(results[0]?.portReuseCandidates[0]?.id).toBe("samsung-qm55c");
+  });
+
   it("does not write to SQLite when only inspecting quote matches", () => {
     const dir = mkdtempSync(path.join(os.tmpdir(), "quote-import-test-"));
     tempDirs.push(dir);
