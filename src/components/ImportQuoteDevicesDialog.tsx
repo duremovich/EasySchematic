@@ -49,6 +49,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [researching, setResearching] = useState(false);
+  const [researchProgress, setResearchProgress] = useState<{ current: number; total: number; label: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [extraction, setExtraction] = useState<QuoteImportExtractionResponse | null>(null);
@@ -65,6 +66,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
     setSelectedFile(null);
     setExtracting(false);
     setResearching(false);
+    setResearchProgress(null);
     setSaving(false);
     setError(null);
     setExtraction(null);
@@ -132,6 +134,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
     setSelectedDraftKeys(new Set());
     setExcludedExtractedKeys(new Set());
     setIgnoredDraftKeys(new Set());
+    setResearchProgress(null);
   };
 
   const handleExtract = async () => {
@@ -158,35 +161,59 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
       return;
     }
     setResearching(true);
+    setResearchProgress({ current: 0, total: devicesNeedingResearch.length, label: "Starting research..." });
     setError(null);
     try {
-      const response = await researchQuoteDevices(
-        extraction.fileName,
-        devicesNeedingResearch.map((item) => ({
+      const aggregatedResults: QuoteImportDraftReview[] = [];
+      const warnings = new Set<string>();
+
+      for (let index = 0; index < devicesNeedingResearch.length; index += 1) {
+        const item = devicesNeedingResearch[index];
+        setResearchProgress({
+          current: index + 1,
+          total: devicesNeedingResearch.length,
+          label: `Researching ${item.manufacturer ? `${item.manufacturer} ` : ""}${item.model}`.trim(),
+        });
+
+        const response = await researchQuoteDevices(extraction.fileName, [{
           manufacturer: item.manufacturer,
           model: item.model,
           description: item.description,
           quantity: item.quantity,
           sourceLineText: item.sourceLineText,
           normalizedLookupKey: item.normalizedLookupKey,
-        })),
-      );
-      setResearchResults(response.results);
-      setSelectedDraftKeys(new Set(response.results.filter((item) => item.reviewStatus === "draft_ready" && item.template).map((item) => keyForExtractedDevice(item.extractedDevice))));
-      if (response.warnings.length > 0) {
-        addToast(response.warnings.join(" "), "info");
+        }]);
+
+        aggregatedResults.push(...response.results);
+        response.warnings.forEach((warning) => warnings.add(warning));
+        setResearchResults([...aggregatedResults]);
+        setSelectedDraftKeys((current) => {
+          const next = new Set(current);
+          response.results.forEach((result) => {
+            if (result.reviewStatus === "draft_ready" && result.template) {
+              next.add(keyForExtractedDevice(result.extractedDevice));
+            }
+          });
+          return next;
+        });
+      }
+
+      if (warnings.size > 0) {
+        addToast([...warnings].join(" "), "info");
       } else {
-        addToast(`Researched ${response.results.length} missing device candidate${response.results.length === 1 ? "" : "s"}`, "success");
+        addToast(`Researched ${aggregatedResults.length} missing device candidate${aggregatedResults.length === 1 ? "" : "s"}`, "success");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Missing-device research failed");
     } finally {
       setResearching(false);
+      setResearchProgress(null);
     }
   };
 
   const handleManualStrongerRetry = async (item: QuoteImportDraftReview) => {
     setResearching(true);
+    setResearchProgress({ current: 1, total: 1, label: `Retrying ${item.extractedDevice.model}` });
     setError(null);
     try {
       const response = await researchQuoteDevices(extraction?.fileName ?? selectedFile?.name ?? "quote.pdf", [item.extractedDevice], {
@@ -205,6 +232,7 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
       setError(err instanceof Error ? err.message : "Retry failed");
     } finally {
       setResearching(false);
+      setResearchProgress(null);
     }
   };
 
@@ -406,9 +434,16 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
                     disabled={devicesNeedingResearch.length === 0 || researching || unresolvedPossibleMatches.length > 0}
                     className="px-3 py-1.5 rounded bg-blue-500 text-white text-xs hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                   >
-                    {researching ? "Researching..." : "Research Missing Devices"}
+                    {researching
+                      ? (researchProgress ? `${researchProgress.current}/${researchProgress.total} Researching...` : "Researching...")
+                      : "Research Missing Devices"}
                   </button>
                 )}>
+                  {researchProgress && researching && (
+                    <div className="px-3 py-2 text-[11px] text-blue-700 border-b" style={{ borderColor: "var(--color-border)" }}>
+                      {researchProgress.label}
+                    </div>
+                  )}
                   {missingDevices.length > 0 ? missingDevices.map((item) => (
                     <ExtractionRow
                       key={keyForExtractedDevice(item)}
@@ -607,10 +642,10 @@ function ExtractionRow({
         {onToggleExcluded && (
           <button
             onClick={onToggleExcluded}
-            className="shrink-0 px-2 py-1 rounded border border-[var(--color-border)] bg-white text-[11px] hover:bg-[var(--color-surface-hover)] cursor-pointer"
+            className="shrink-0 w-8 h-8 rounded border border-[var(--color-border)] bg-white text-[14px] leading-none font-semibold hover:bg-[var(--color-surface-hover)] cursor-pointer flex items-center justify-center"
             title={excluded ? "Include this device in research again" : "Exclude this device from research"}
           >
-            {excluded ? "Restore" : "Exclude"}
+            {excluded ? "↺" : "×"}
           </button>
         )}
       </div>
