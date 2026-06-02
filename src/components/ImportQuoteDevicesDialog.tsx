@@ -976,6 +976,7 @@ function ExtractionRow({
   onToggleExcluded?: () => void;
   onCopyPortsFromCandidate?: (candidate: QuoteImportCandidateMatch) => void;
 }) {
+  const portReuseCandidates = item.portReuseCandidates ?? [];
   return (
     <div className={`px-3 py-3 border-b text-xs ${excluded ? "opacity-55" : ""}`} style={{ borderColor: "var(--color-border)" }}>
       <div className="flex items-start gap-3">
@@ -1010,12 +1011,12 @@ function ExtractionRow({
               <div className="opacity-80">{item.exactMatch.matchReason}</div>
             </div>
           )}
-          {item.portReuseCandidates.length > 0 && onCopyPortsFromCandidate && (
+          {portReuseCandidates.length > 0 && onCopyPortsFromCandidate && (
             <div className="mt-2 space-y-1">
               <div className="text-[11px] font-medium text-[var(--color-text-heading)]">
                 Similar TateSide devices you can copy ports from first
               </div>
-              {item.portReuseCandidates.map((candidate) => (
+              {portReuseCandidates.map((candidate) => (
                 <div key={candidate.id} className="rounded border border-blue-200 bg-blue-50 px-2.5 py-2 text-[11px] text-blue-800">
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
