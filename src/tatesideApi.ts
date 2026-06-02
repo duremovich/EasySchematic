@@ -1,6 +1,7 @@
 import type { DeviceTemplate } from "./types";
 import type {
   ExtractedQuoteDevice,
+  QuoteImportResearchJobResponse,
   QuoteImportExtractionResponse,
   QuoteImportResearchResponse,
 } from "./quoteImportTypes";
@@ -72,6 +73,10 @@ async function requestJson<T>(
   }
 
   return res.json() as Promise<T>;
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export async function fetchTatesideDeviceTemplates(): Promise<DeviceTemplate[]> {
@@ -165,7 +170,7 @@ export async function researchQuoteDevices(
   devices: ExtractedQuoteDevice[],
   options: { forceEscalation?: boolean } = {},
 ): Promise<QuoteImportResearchResponse> {
-  return requestJson<QuoteImportResearchResponse>("/quote-import/research", {
+  const startResponse = await requestJson<QuoteImportResearchJobResponse>("/quote-import/research", {
     method: "POST",
     body: {
       fileName,
@@ -173,4 +178,27 @@ export async function researchQuoteDevices(
       ...(options.forceEscalation ? { forceEscalation: true } : {}),
     },
   });
+
+  if (startResponse.status === "complete" && startResponse.result) {
+    return startResponse.result;
+  }
+
+  let jobResponse = startResponse;
+  const startedAt = Date.now();
+  const maxWaitMs = 30 * 60 * 1000;
+
+  while (jobResponse.status === "queued" || jobResponse.status === "running") {
+    if (Date.now() - startedAt > maxWaitMs) {
+      throw new TatesideApiError("Quote research is still running. Please try again in a moment.", 504);
+    }
+
+    await sleep(2000);
+    jobResponse = await requestJson<QuoteImportResearchJobResponse>(`/quote-import/research/${encodeURIComponent(jobResponse.jobId)}`);
+  }
+
+  if (jobResponse.status === "complete" && jobResponse.result) {
+    return jobResponse.result;
+  }
+
+  throw new TatesideApiError(jobResponse.error || "Missing-device research failed", 500);
 }

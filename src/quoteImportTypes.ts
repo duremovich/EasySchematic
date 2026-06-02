@@ -59,3 +59,16 @@ export interface QuoteImportResearchResponse {
   results: QuoteImportDraftReview[];
   warnings: string[];
 }
+
+export type QuoteImportResearchJobStatus = "queued" | "running" | "complete" | "error";
+
+export interface QuoteImportResearchJobResponse {
+  jobId: string;
+  status: QuoteImportResearchJobStatus;
+  fileName: string;
+  total: number;
+  completed: number;
+  currentLabel: string | null;
+  result: QuoteImportResearchResponse | null;
+  error: string | null;
+}

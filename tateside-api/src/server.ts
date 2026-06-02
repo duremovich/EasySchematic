@@ -1,9 +1,10 @@
 import http from "node:http";
+import { randomUUID } from "node:crypto";
 import { URL } from "node:url";
 import { getConfig } from "./config.js";
 import { openDatabase, runMigrations } from "./db.js";
 import { deleteTemplate, listCurrentTemplates, saveTemplates, updateTemplate } from "./deviceStore.js";
-import type { ExtractedQuoteDevice } from "../../src/quoteImportTypes.js";
+import type { ExtractedQuoteDevice, QuoteImportResearchJobResponse, QuoteImportResearchResponse } from "../../src/quoteImportTypes.js";
 import { researchQuoteDevices } from "./deviceResearch.js";
 import { importQuoteDevicesFromPdf } from "./quoteImport.js";
 
@@ -13,6 +14,19 @@ interface RequestContext {
   req: http.IncomingMessage;
   res: http.ServerResponse;
   url: URL;
+}
+
+interface ResearchJobRecord {
+  jobId: string;
+  fileName: string;
+  status: QuoteImportResearchJobResponse["status"];
+  total: number;
+  completed: number;
+  currentLabel: string | null;
+  result: QuoteImportResearchResponse | null;
+  error: string | null;
+  startedAt: string;
+  updatedAt: string;
 }
 
 function sendJson(res: http.ServerResponse, status: number, data: unknown, headers: Record<string, string> = {}): void {
@@ -100,6 +114,81 @@ function requireIdentity(ctx: RequestContext, requireAccessIdentity: boolean): s
 const config = getConfig();
 const db = openDatabase(config.dbPath);
 runMigrations(db);
+const quoteResearchJobs = new Map<string, ResearchJobRecord>();
+
+function publicResearchJob(record: ResearchJobRecord): QuoteImportResearchJobResponse {
+  return {
+    jobId: record.jobId,
+    status: record.status,
+    fileName: record.fileName,
+    total: record.total,
+    completed: record.completed,
+    currentLabel: record.currentLabel,
+    result: record.result,
+    error: record.error,
+  };
+}
+
+function createResearchJobRecord(fileName: string, devices: ExtractedQuoteDevice[]): ResearchJobRecord {
+  const now = new Date().toISOString();
+  return {
+    jobId: randomUUID(),
+    fileName,
+    status: "queued",
+    total: devices.length,
+    completed: 0,
+    currentLabel: null,
+    result: null,
+    error: null,
+    startedAt: now,
+    updatedAt: now,
+  };
+}
+
+async function runResearchJob(record: ResearchJobRecord, devices: ExtractedQuoteDevice[], forceEscalation: boolean): Promise<void> {
+  try {
+    record.status = "running";
+    record.updatedAt = new Date().toISOString();
+
+    const aggregatedResults: QuoteImportResearchResponse["results"] = [];
+    const warnings = new Set<string>();
+
+    for (let index = 0; index < devices.length; index += 1) {
+      const device = devices[index];
+      record.currentLabel = `${device.manufacturer ? `${device.manufacturer} ` : ""}${device.model}`.trim();
+      record.updatedAt = new Date().toISOString();
+
+      const response = await researchQuoteDevices({
+        fileName: record.fileName,
+        devices: [device],
+        forceEscalation,
+      });
+
+      aggregatedResults.push(...response.results);
+      response.warnings.forEach((warning) => warnings.add(warning));
+      record.completed = index + 1;
+      record.result = {
+        fileName: record.fileName,
+        results: [...aggregatedResults],
+        warnings: [...warnings],
+      };
+      record.updatedAt = new Date().toISOString();
+    }
+
+    record.status = "complete";
+    record.result = {
+      fileName: record.fileName,
+      results: [...aggregatedResults],
+      warnings: [...warnings],
+    };
+    record.currentLabel = null;
+    record.updatedAt = new Date().toISOString();
+  } catch (err) {
+    record.status = "error";
+    record.error = err instanceof Error ? err.message : "Research failed";
+    record.updatedAt = new Date().toISOString();
+  }
+}
 
 async function handleRequest(ctx: RequestContext): Promise<void> {
   const corsHeaders = makeCorsHeaders(ctx.req.headers.origin, config.allowedOrigin);
@@ -165,6 +254,22 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
     return;
   }
 
+  const researchJobMatch = path.match(/^\/api\/tateside\/quote-import\/research\/([^/]+)$/);
+  if (ctx.req.method === "GET" && researchJobMatch) {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    void email;
+
+    const jobId = decodeURIComponent(researchJobMatch[1]);
+    const job = quoteResearchJobs.get(jobId);
+    if (!job) {
+      sendJson(ctx.res, 404, { error: "Quote research job not found" }, corsHeaders);
+      return;
+    }
+    sendJson(ctx.res, 200, publicResearchJob(job), corsHeaders);
+    return;
+  }
+
   if (ctx.req.method === "POST" && path === "/api/tateside/quote-import/research") {
     const email = requireIdentity(ctx, config.requireAccessIdentity);
     if (email === undefined) return;
@@ -191,12 +296,10 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
       return;
     }
 
-    const result = await researchQuoteDevices({
-      fileName,
-      devices,
-      forceEscalation: body?.forceEscalation === true,
-    });
-    sendJson(ctx.res, 200, result, corsHeaders);
+    const job = createResearchJobRecord(fileName, devices);
+    quoteResearchJobs.set(job.jobId, job);
+    void runResearchJob(job, devices, body?.forceEscalation === true);
+    sendJson(ctx.res, 202, publicResearchJob(job), corsHeaders);
     return;
   }
 
