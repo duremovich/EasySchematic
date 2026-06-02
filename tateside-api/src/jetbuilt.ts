@@ -559,6 +559,33 @@ function sanitizeQuantity(value: unknown): number | null {
   return null;
 }
 
+export function canonicalizeJetbuiltModel(
+  rawModel: string,
+  context: {
+    description?: string | null;
+    productName?: string | null;
+    shortDescription?: string | null;
+  } = {},
+): string {
+  const trimmed = compact(rawModel);
+  if (!trimmed) return "";
+
+  const simpleSkuSuffixMatch = trimmed.match(/^([A-Z]+[0-9]+[A-Z0-9]*)-(\d{3,})$/i);
+  if (!simpleSkuSuffixMatch) return trimmed;
+
+  const candidate = compact(simpleSkuSuffixMatch[1]);
+  const evidenceText = normalizeText([
+    context.description,
+    context.productName,
+    context.shortDescription,
+  ].filter(Boolean).join(" "));
+
+  if (!evidenceText) return trimmed;
+
+  const candidateToken = normalizeText(candidate);
+  return candidateToken && evidenceText.includes(candidateToken) ? candidate : trimmed;
+}
+
 function mergeDevices(devices: ExtractedQuoteDevice[]): ExtractedQuoteDevice[] {
   const merged = new Map<string, ExtractedQuoteDevice>();
   for (const device of devices) {
@@ -592,13 +619,25 @@ function extractItemsToDevices(items: JetbuiltRawItem[]): ExtractedQuoteDevice[]
       .filter(isSchematicRelevant)
       .map((item) => {
         const manufacturer = compact(item.manufacturer_name ?? item.manufacturer) || null;
-        const model = compact(item.model ?? item.part_number ?? item.product_name);
-        if (!model) return null;
+        const rawModel = compact(item.model ?? item.part_number ?? item.product_name);
+        if (!rawModel) return null;
+        const model = canonicalizeJetbuiltModel(rawModel, {
+          description: compact(item.description),
+          productName: compact(item.product_name),
+          shortDescription: compact(item.short_description),
+        });
         const description = compact(item.short_description ?? item.description ?? item.product_name) || null;
         const quantity = sanitizeQuantity(item.quantity);
         const room = compact(item.room_name ?? item.room);
         const system = compact(item.system_name ?? item.system);
-        const sourceLineText = [manufacturer, model, description, room ? `Room: ${room}` : "", system ? `System: ${system}` : ""]
+        const sourceLineText = [
+          manufacturer,
+          model,
+          description,
+          rawModel !== model ? `Jetbuilt SKU: ${rawModel}` : "",
+          room ? `Room: ${room}` : "",
+          system ? `System: ${system}` : "",
+        ]
           .filter(Boolean)
           .join(" ")
           .trim();
