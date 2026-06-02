@@ -5,7 +5,15 @@ import { getConfig } from "./config.js";
 import { openDatabase, runMigrations } from "./db.js";
 import { deleteTemplate, listCurrentTemplates, saveTemplates, updateTemplate } from "./deviceStore.js";
 import type { ExtractedQuoteDevice, QuoteImportResearchJobResponse, QuoteImportResearchResponse } from "../../src/quoteImportTypes.js";
-import { importJetbuiltProject, searchJetbuiltProjects } from "./jetbuilt.js";
+import {
+  ensureJetbuiltIndexReady,
+  getJetbuiltIndexStatus,
+  importJetbuiltProject,
+  initializeJetbuiltIndex,
+  listJetbuiltProjectsForClient,
+  searchJetbuiltClients,
+  searchJetbuiltProjects,
+} from "./jetbuilt.js";
 import { researchQuoteDevices } from "./deviceResearch.js";
 import { importQuoteDevicesFromPdf } from "./quoteImport.js";
 
@@ -116,6 +124,14 @@ const config = getConfig();
 const db = openDatabase(config.dbPath);
 runMigrations(db);
 const quoteResearchJobs = new Map<string, ResearchJobRecord>();
+if (process.env.JETBUILT_API_KEY) {
+  initializeJetbuiltIndex({
+    apiKey: process.env.JETBUILT_API_KEY,
+    baseUrl: config.jetbuiltApiBaseUrl,
+    indexPath: config.jetbuiltIndexPath,
+    refreshMs: config.jetbuiltIndexRefreshMs,
+  });
+}
 
 function publicResearchJob(record: ResearchJobRecord): QuoteImportResearchJobResponse {
   return {
@@ -273,11 +289,90 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
       return;
     }
 
-    const projects = await searchJetbuiltProjects(query, {
+    await ensureJetbuiltIndexReady({
       apiKey: process.env.JETBUILT_API_KEY,
       baseUrl: config.jetbuiltApiBaseUrl,
+      indexPath: config.jetbuiltIndexPath,
+      refreshMs: config.jetbuiltIndexRefreshMs,
     });
+    const projects = searchJetbuiltProjects(query);
     sendJson(ctx.res, 200, { projects }, corsHeaders);
+    return;
+  }
+
+  if (ctx.req.method === "GET" && path === "/api/tateside/jetbuilt/clients") {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    void email;
+
+    if (!process.env.JETBUILT_API_KEY) {
+      sendJson(ctx.res, 503, {
+        error: "Import from Jetbuilt Project is not available because JETBUILT_API_KEY is not configured on the TateSide API server",
+      }, corsHeaders);
+      return;
+    }
+
+    const query = (ctx.url.searchParams.get("query") ?? "").trim();
+    if (!query) {
+      sendJson(ctx.res, 200, { clients: [] }, corsHeaders);
+      return;
+    }
+
+    await ensureJetbuiltIndexReady({
+      apiKey: process.env.JETBUILT_API_KEY,
+      baseUrl: config.jetbuiltApiBaseUrl,
+      indexPath: config.jetbuiltIndexPath,
+      refreshMs: config.jetbuiltIndexRefreshMs,
+    });
+    const clients = searchJetbuiltClients(query);
+    sendJson(ctx.res, 200, { clients }, corsHeaders);
+    return;
+  }
+
+  const clientProjectsMatch = path.match(/^\/api\/tateside\/jetbuilt\/clients\/([^/]+)\/projects$/);
+  if (ctx.req.method === "GET" && clientProjectsMatch) {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    void email;
+
+    if (!process.env.JETBUILT_API_KEY) {
+      sendJson(ctx.res, 503, {
+        error: "Import from Jetbuilt Project is not available because JETBUILT_API_KEY is not configured on the TateSide API server",
+      }, corsHeaders);
+      return;
+    }
+
+    await ensureJetbuiltIndexReady({
+      apiKey: process.env.JETBUILT_API_KEY,
+      baseUrl: config.jetbuiltApiBaseUrl,
+      indexPath: config.jetbuiltIndexPath,
+      refreshMs: config.jetbuiltIndexRefreshMs,
+    });
+    const clientId = decodeURIComponent(clientProjectsMatch[1]);
+    const projects = listJetbuiltProjectsForClient(clientId);
+    sendJson(ctx.res, 200, { projects }, corsHeaders);
+    return;
+  }
+
+  if (ctx.req.method === "GET" && path === "/api/tateside/jetbuilt/status") {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    void email;
+
+    if (!process.env.JETBUILT_API_KEY) {
+      sendJson(ctx.res, 503, {
+        error: "Import from Jetbuilt Project is not available because JETBUILT_API_KEY is not configured on the TateSide API server",
+      }, corsHeaders);
+      return;
+    }
+
+    await ensureJetbuiltIndexReady({
+      apiKey: process.env.JETBUILT_API_KEY,
+      baseUrl: config.jetbuiltApiBaseUrl,
+      indexPath: config.jetbuiltIndexPath,
+      refreshMs: config.jetbuiltIndexRefreshMs,
+    });
+    sendJson(ctx.res, 200, getJetbuiltIndexStatus(), corsHeaders);
     return;
   }
 
@@ -303,6 +398,8 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
     const result = await importJetbuiltProject(db, projectId, {
       apiKey: process.env.JETBUILT_API_KEY,
       baseUrl: config.jetbuiltApiBaseUrl,
+      indexPath: config.jetbuiltIndexPath,
+      refreshMs: config.jetbuiltIndexRefreshMs,
     });
     sendJson(ctx.res, 200, result, corsHeaders);
     return;

@@ -2,6 +2,7 @@ import { mkdirSync } from "node:fs";
 import path from "node:path";
 
 export interface ApiConfig {
+  dataDir: string;
   dbPath: string;
   host: string;
   port: number;
@@ -9,6 +10,8 @@ export interface ApiConfig {
   requireAccessIdentity: boolean;
   quoteImportMaxFileBytes: number;
   jetbuiltApiBaseUrl: string;
+  jetbuiltIndexPath: string;
+  jetbuiltIndexRefreshMs: number;
 }
 
 const defaultDataDir =
@@ -21,6 +24,7 @@ export function getConfig(): ApiConfig {
   mkdirSync(dataDir, { recursive: true });
 
   return {
+    dataDir,
     dbPath: process.env.TATESIDE_DB_PATH || path.join(dataDir, "tateside.db"),
     host: process.env.TATESIDE_API_HOST || "127.0.0.1",
     port: Number(process.env.TATESIDE_API_PORT || "8788"),
@@ -28,5 +32,7 @@ export function getConfig(): ApiConfig {
     requireAccessIdentity: process.env.TATESIDE_REQUIRE_ACCESS_IDENTITY === "1",
     quoteImportMaxFileBytes: Number(process.env.OPENAI_QUOTE_IMPORT_MAX_FILE_BYTES || `${15 * 1024 * 1024}`),
     jetbuiltApiBaseUrl: process.env.JETBUILT_API_BASE_URL || "https://app.jetbuilt.com/api",
+    jetbuiltIndexPath: process.env.JETBUILT_INDEX_PATH || path.join(dataDir, "jetbuilt-index.json"),
+    jetbuiltIndexRefreshMs: Number(process.env.JETBUILT_INDEX_REFRESH_MS || `${60 * 60 * 1000}`),
   };
 }

@@ -1,6 +1,8 @@
 import type { DeviceTemplate } from "./types";
 import type {
   ExtractedQuoteDevice,
+  JetbuiltClientSearchResult,
+  JetbuiltIndexStatus,
   JetbuiltProjectSearchResult,
   QuoteImportResearchJobResponse,
   QuoteImportExtractionResponse,
@@ -171,6 +173,22 @@ export async function searchJetbuiltProjects(query: string): Promise<JetbuiltPro
   if (!trimmed) return [];
   const response = await requestJson<{ projects: JetbuiltProjectSearchResult[] }>(`/jetbuilt/projects?query=${encodeURIComponent(trimmed)}`);
   return response.projects;
+}
+
+export async function searchJetbuiltClients(query: string): Promise<JetbuiltClientSearchResult[]> {
+  const trimmed = query.trim();
+  if (!trimmed) return [];
+  const response = await requestJson<{ clients: JetbuiltClientSearchResult[] }>(`/jetbuilt/clients?query=${encodeURIComponent(trimmed)}`);
+  return response.clients;
+}
+
+export async function listJetbuiltProjectsForClient(clientId: string): Promise<JetbuiltProjectSearchResult[]> {
+  const response = await requestJson<{ projects: JetbuiltProjectSearchResult[] }>(`/jetbuilt/clients/${encodeURIComponent(clientId)}/projects`);
+  return response.projects;
+}
+
+export async function fetchJetbuiltIndexStatus(): Promise<JetbuiltIndexStatus> {
+  return requestJson<JetbuiltIndexStatus>("/jetbuilt/status");
 }
 
 export async function importDevicesFromJetbuiltProject(projectId: string): Promise<QuoteImportExtractionResponse> {

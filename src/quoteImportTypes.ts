@@ -77,10 +77,28 @@ export interface JetbuiltProjectSearchResult {
   id: string;
   customId: string | null;
   name: string;
+  clientId: string | null;
+  clientName: string | null;
   stage: string | null;
   active: boolean | null;
   updatedAt: string | null;
   itemCount: number | null;
   currency: string | null;
   total: number | null;
+}
+
+export interface JetbuiltClientSearchResult {
+  id: string;
+  companyName: string;
+  primaryContactName: string | null;
+  updatedAt: string | null;
+  projectCount: number;
+}
+
+export interface JetbuiltIndexStatus {
+  syncedAt: string | null;
+  refreshing: boolean;
+  projectCount: number;
+  clientCount: number;
+  lastError: string | null;
 }
