@@ -160,6 +160,8 @@ Current behavior:
 
 Recent commits on `master` are:
 
+- `914ba41` - `Replace TateSide JSON editor with form UI`
+- `a082d47` - `Add TateSide library editor workflow`
 - `6a20a5d` - `Document BLU cable nudge behavior`
 - `e663a14` - `Refine BLU cable nudge preservation`
 - `768c87f` - `Stabilize tight selection edge moves`
@@ -368,6 +370,8 @@ Frontend API contract introduced:
 ```text
 GET  /api/tateside/devices/templates
 POST /api/tateside/devices/templates
+PUT  /api/tateside/devices/templates/:deviceId
+DELETE /api/tateside/devices/templates/:deviceId
 GET  /api/tateside/sharepoint/children?folderId=<optional>
 PUT  /api/tateside/sharepoint/schematics
 GET  /api/tateside/sharepoint/schematics/:fileId
@@ -399,6 +403,34 @@ npm run tateside:api
 - Because the current Cloudflare Tunnel origin is `http://127.0.0.1:8080`, Docker Nginx also proxies `/api/tateside/*` to the host API via `host.docker.internal:8788`.
 - UFW must allow Docker bridge traffic to `172.17.0.1:8788`, for example `sudo ufw allow in proto tcp from 172.16.0.0/12 to 172.17.0.1 port 8788 comment "TateSide schematic API from Docker bridges"`; do not open the API port publicly.
 
+### Shared Library Editor
+
+Implemented on `2026-06-02`.
+
+Current behavior:
+
+- Shared TateSide library entries can now be edited from the left device library panel by hovering a shared device and clicking `Edit`.
+- The editor now uses a structured `Library Device Properties` form rather than a raw JSON textarea.
+- The form currently supports top-level device fields, manual port editing for inputs/outputs/bidirectional ports, search terms, physical dimensions, and the venue-provided flag.
+- Saving creates a new version in the TateSide SQLite library.
+- Removing a shared entry marks it deleted in the TateSide library.
+
+Important implementation detail:
+
+- The frontend app is served from the Docker web container, but `/api/tateside/*` is proxied to a separate host-side Node service managed by `tateside-schematic-api.service`.
+- If frontend changes depend on new TateSide API routes, a normal `docker compose up -d --build` is not enough by itself.
+- On `2026-06-02`, the UI was updated to use `PUT /api/tateside/devices/templates/:deviceId`, but the host-side TateSide API service was still running the older build, which caused `Apply` to fail with `Not found`.
+- Fix was to rebuild the TateSide API output and restart the systemd service:
+
+```bash
+cd ~/EasySchematic
+npm run tateside:api:build
+sudo systemctl restart tateside-schematic-api
+sudo systemctl status tateside-schematic-api --no-pager
+```
+
+- After restart, the `PUT` route stopped returning `404` and the shared-library save path became live.
+
 ## Resume Context For Future Chat
 
 If starting a new Codex chat, paste this summary:
@@ -411,7 +443,9 @@ The original upstream is https://github.com/duremovich/EasySchematic.
 We added Tateside branding, a Draw Box tool, External Endpoint nodes, and explicit Trackpad navigation mode.
 The live schematic site is now private behind Cloudflare Access + Microsoft Entra login via a Cloudflare Tunnel to http://127.0.0.1:8080.
 The old EasySchematic in-app login/cloud/community UI has been removed because Cloudflare Access now protects the whole app.
-Next phase is a TateSide-owned device database and Microsoft 365/SharePoint save/open/export workflow.
+The TateSide shared library now has add/edit/remove support backed by SQLite and a host-side Node API service.
+When backend TateSide API routes change, remember the frontend container and the host-side systemd API service are deployed separately.
+Next phase is AI-assisted quote import plus the broader Microsoft 365/SharePoint save/open/export workflow.
 Please read the Private Access Setup section in TATESIDE-NOTES.md before changing hosting/authentication.
 Please read TATESIDE-NOTES.md and inspect git log/status before making changes.
 ```
