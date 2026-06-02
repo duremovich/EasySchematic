@@ -12,6 +12,7 @@ const REQUEST_TIMEOUT_MS = 30_000;
 
 let lastRequestAt = 0;
 let authMode: "Bearer" | "Token" = "Bearer";
+let cachedProjectIndex: { loadedAt: number; projects: JetbuiltProjectSearchResult[] } | null = null;
 
 interface JetbuiltClientOptions {
   apiKey: string;
@@ -242,6 +243,18 @@ async function fetchCollection(startUrl: string, options: JetbuiltClientOptions)
   return all;
 }
 
+function extractCollectionItems(json: unknown): unknown[] {
+  if (Array.isArray(json)) return json;
+  if (json && typeof json === "object") {
+    const record = json as Record<string, unknown>;
+    if (Array.isArray(record.projects)) return record.projects;
+    if (Array.isArray(record.items)) return record.items;
+    if (Array.isArray(record.line_items)) return record.line_items;
+    if (Array.isArray(record.data)) return record.data;
+  }
+  return [];
+}
+
 function projectScore(project: JetbuiltProjectSearchResult, query: string): number {
   const q = normalizeText(query);
   if (!q) return 0;
@@ -396,15 +409,23 @@ export async function searchJetbuiltProjects(query: string, options: JetbuiltCli
   const trimmed = query.trim();
   if (!trimmed) return [];
 
-  const baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
-  const projectUrl = new URL(`${baseUrl}/projects`);
-  projectUrl.searchParams.set("min_updated_at", toIsoDate(3650));
-  projectUrl.searchParams.set("limit", "250");
+  const now = Date.now();
+  if (!cachedProjectIndex || now - cachedProjectIndex.loadedAt > 10 * 60 * 1000) {
+    const baseUrl = (options.baseUrl ?? DEFAULT_BASE_URL).replace(/\/$/, "");
+    const projectUrl = new URL(`${baseUrl}/projects`);
+    projectUrl.searchParams.set("limit", "250");
+    projectUrl.searchParams.set("min_updated_at", toIsoDate(730));
 
-  const projects = await fetchCollection(projectUrl.toString(), options);
-  return projects
-    .map((project) => toProjectSearchResult(project as JetbuiltRawProject))
-    .filter((project): project is JetbuiltProjectSearchResult => project !== null)
+    const json = await requestJson<unknown>(projectUrl.toString(), options);
+    cachedProjectIndex = {
+      loadedAt: now,
+      projects: extractCollectionItems(json)
+        .map((project) => toProjectSearchResult(project as JetbuiltRawProject))
+        .filter((project): project is JetbuiltProjectSearchResult => project !== null),
+    };
+  }
+
+  return cachedProjectIndex.projects
     .map((project) => ({ project, score: projectScore(project, trimmed) }))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || (b.project.updatedAt ?? "").localeCompare(a.project.updatedAt ?? ""))
