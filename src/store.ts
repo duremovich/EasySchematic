@@ -64,6 +64,7 @@ import {
   snapExternalEndpointY,
 } from "./externalEndpoint";
 import { allocateEdgeId, maxEdgeCounterFromIds, newLinkedConnectionId, uniquifyEdgeIds } from "./idUtils";
+import { ALL_CATEGORIES } from "./deviceTypeCategories";
 
 /** Fix UTF-8 → Windows-1252 double-encoding in string values (e.g. → becomes â†').
  *  Applied on import so old/corrupted saves display correctly. */
@@ -97,6 +98,7 @@ const STORAGE_KEY = "easyschematic-autosave";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
 const TEMPLATE_META_KEY = "easyschematic-custom-template-meta";
 const CATEGORY_ORDER_KEY = "easyschematic-category-order";
+const CUSTOM_CATEGORIES_KEY = "easyschematic-custom-categories";
 
 export const CATEGORY_ORDER_DEFAULT: string[] = [
   "Sources",
@@ -383,6 +385,8 @@ interface SchematicState {
   categoryOrder: string[] | null;  // null = use default CATEGORY_ORDER
   reorderCategory: (category: string, targetIndex: number) => void;
   resetCategoryOrder: () => void;
+  customCategories: string[];
+  addCustomCategory: (category: string) => string | null;
 
   // Edge data
   patchEdgeData: (edgeId: string, patch: Partial<import("./types").ConnectionData>) => void;
@@ -1156,6 +1160,25 @@ function saveCategoryOrder(order: string[] | null) {
   } catch { /* silently fail */ }
 }
 
+function loadCustomCategories(): string[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_CATEGORIES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return [...new Set(parsed.filter((value): value is string => typeof value === "string" && value.trim().length > 0).map((value) => value.trim()))].sort((a, b) => a.localeCompare(b));
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomCategories(categories: string[]) {
+  try {
+    if (categories.length > 0) localStorage.setItem(CUSTOM_CATEGORIES_KEY, JSON.stringify(categories));
+    else localStorage.removeItem(CUSTOM_CATEGORIES_KEY);
+  } catch { /* silently fail */ }
+}
+
 /** Project a point onto the nearest segment of a routed edge and return the projection. */
 function projectOntoSegments(
   px: number,
@@ -1207,6 +1230,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   customTemplateOrder: _initCustomMeta.order,
   customTemplateGroupAssignments: _initCustomMeta.groupAssignments,
   categoryOrder: loadCategoryOrder(),
+  customCategories: loadCustomCategories(),
   routedEdges: {},
   routingDebugData: null,
   deviceContextMenu: null,
@@ -3345,6 +3369,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   resetCategoryOrder: () => {
     set({ categoryOrder: null });
     saveCategoryOrder(null);
+  },
+
+  addCustomCategory: (category) => {
+    const trimmed = category.trim();
+    if (!trimmed) return null;
+    if (ALL_CATEGORIES.includes(trimmed)) return trimmed;
+
+    const current = get().customCategories;
+    if (current.includes(trimmed)) return trimmed;
+
+    const next = [...current, trimmed].sort((a, b) => a.localeCompare(b));
+    set({ customCategories: next });
+    saveCustomCategories(next);
+    return trimmed;
   },
 
   dismissIncompatibleDialog: () => {

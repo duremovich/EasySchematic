@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_CONNECTOR } from "../connectorTypes";
+import { ALL_CATEGORIES } from "../deviceTypeCategories";
 import { useSchematicStore } from "../store";
 import {
   CONNECTOR_GROUPS,
@@ -317,11 +318,15 @@ export default function ManageTatesideTemplateDialog({
   title,
 }: Props) {
   const addToast = useSchematicStore((s) => s.addToast);
+  const customCategories = useSchematicStore((s) => s.customCategories);
+  const addCustomCategory = useSchematicStore((s) => s.addCustomCategory);
   const [draft, setDraft] = useState<Omit<DeviceTemplate, "id" | "version"> | null>(null);
   const [searchTermsRaw, setSearchTermsRaw] = useState("");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
+  const [customCategoryDraft, setCustomCategoryDraft] = useState("");
   const jsonInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -330,7 +335,21 @@ export default function ManageTatesideTemplateDialog({
     setDraft(editable);
     setSearchTermsRaw((editable.searchTerms ?? []).join(", "));
     setNote("");
+    setShowCustomCategoryInput(false);
+    setCustomCategoryDraft("");
   }, [open, template]);
+
+  const categoryOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: string[] = [];
+    for (const category of [...ALL_CATEGORIES, ...customCategories]) {
+      const trimmed = category.trim();
+      if (!trimmed || seen.has(trimmed)) continue;
+      seen.add(trimmed);
+      options.push(trimmed);
+    }
+    return options;
+  }, [customCategories]);
 
   const inputs = useMemo(() => draft?.ports.filter((port) => port.direction === "input") ?? [], [draft]);
   const outputs = useMemo(() => draft?.ports.filter((port) => port.direction === "output") ?? [], [draft]);
@@ -469,6 +488,26 @@ export default function ManageTatesideTemplateDialog({
   };
 
   const searchTermsCount = searchTermsRaw.split(",").map((term) => term.trim()).filter(Boolean).length;
+  const currentCategory = draft.category ?? "";
+  const categoryInList = currentCategory ? categoryOptions.includes(currentCategory) : false;
+  const showCategoryInput = showCustomCategoryInput || (!!currentCategory && !categoryInList);
+  const categoryInputValue = showCustomCategoryInput ? customCategoryDraft : (categoryInList ? "" : currentCategory);
+
+  const commitCustomCategory = () => {
+    const nextCategory = (customCategoryDraft || currentCategory).trim();
+    if (!nextCategory) {
+      addToast("Category name is required", "error");
+      return;
+    }
+    const saved = addCustomCategory(nextCategory);
+    if (!saved) {
+      addToast("Category name is required", "error");
+      return;
+    }
+    updateDraft({ category: saved });
+    setShowCustomCategoryInput(false);
+    setCustomCategoryDraft("");
+  };
 
   const handleJsonImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -587,11 +626,61 @@ export default function ManageTatesideTemplateDialog({
               />
             </Field>
             <Field label="Category">
-              <input
-                value={draft.category ?? ""}
-                onChange={(e) => updateDraft({ category: e.target.value || undefined })}
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-3 py-2 text-[var(--color-text-heading)] outline-none focus:border-blue-500"
-              />
+              <div className="space-y-2">
+                {(() => {
+                  const categorySelectValue = showCustomCategoryInput || (!!currentCategory && !categoryInList)
+                    ? "__custom__"
+                    : (currentCategory && categoryInList ? currentCategory : "");
+                  return (
+                <select
+                  value={categorySelectValue}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "__custom__") {
+                      setShowCustomCategoryInput(true);
+                      setCustomCategoryDraft(currentCategory);
+                      return;
+                    }
+                    setShowCustomCategoryInput(false);
+                    setCustomCategoryDraft("");
+                    updateDraft({ category: value || undefined });
+                  }}
+                  className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-3 py-2 text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="">Select category...</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                  <option value="__custom__">+ Add new category...</option>
+                </select>
+                  );
+                })()}
+                {showCategoryInput && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={categoryInputValue}
+                      onChange={(e) => setCustomCategoryDraft(e.target.value)}
+                      placeholder="New category name"
+                      className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-3 py-2 text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+                    />
+                    <button
+                      onClick={commitCustomCategory}
+                      className="px-2 py-1.5 text-xs rounded bg-blue-600 text-white hover:bg-blue-500 transition-colors cursor-pointer"
+                    >
+                      Add
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowCustomCategoryInput(false);
+                        setCustomCategoryDraft("");
+                      }}
+                      className="px-2 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] border border-[var(--color-border)] transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
             </Field>
             <Field label="Reference URL" className="col-span-1">
               <input
