@@ -1,12 +1,44 @@
 import { useMemo, useRef, useState } from "react";
 import { useSchematicStore } from "../store";
-import type { DeviceTemplate } from "../types";
+import { SIGNAL_LABELS, type DeviceTemplate, type SignalType } from "../types";
 import { parseJsonImport } from "../import/parseJson";
 import { parseCsvImport } from "../import/parseCsv";
 import type { ParsedTemplate } from "../import/types";
 import { saveTatesideDeviceTemplates } from "../tatesideApi";
 
 type Tab = "json" | "csv";
+
+const ALL_SIGNAL_TYPES = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
+  (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
+);
+
+function remapUnknownSignalTypes(raw: string, unknownSignalTypes: string[], replacement: SignalType): string | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+
+  const unknown = new Set(unknownSignalTypes);
+
+  function walk(value: unknown): unknown {
+    if (Array.isArray(value)) return value.map((item) => walk(item));
+    if (!value || typeof value !== "object") return value;
+
+    const out: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) {
+      if (key === "signalType" && typeof child === "string" && unknown.has(child)) {
+        out[key] = replacement;
+      } else {
+        out[key] = walk(child);
+      }
+    }
+    return out;
+  }
+
+  return JSON.stringify(walk(parsed), null, 2);
+}
 
 interface Props {
   open: boolean;
@@ -49,6 +81,7 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
 
   const [tab, setTab] = useState<Tab>("json");
   const [text, setText] = useState("");
+  const [signalTypeReplacement, setSignalTypeReplacement] = useState<SignalType>("custom");
   const [libraryNote, setLibraryNote] = useState("");
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const [savingShared, setSavingShared] = useState(false);
@@ -74,6 +107,18 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
     return [...found].sort((a, b) => a.localeCompare(b));
   }, [result]);
 
+  const unknownSignalTypes = useMemo(() => {
+    if (!result || tab !== "json") return [];
+    const found = new Set<string>();
+    for (const pt of result.templates) {
+      for (const error of pt.validation.errors) {
+        const match = error.match(/unknown signalType "([^"]+)"/i);
+        if (match?.[1]) found.add(match[1]);
+      }
+    }
+    return [...found].sort((a, b) => a.localeCompare(b));
+  }, [result, tab]);
+
   const handleAddUnknownConnectorTypes = () => {
     if (unknownConnectorTypes.length === 0) return;
     const added = addCustomConnectorTypes(unknownConnectorTypes);
@@ -83,6 +128,20 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
         "success",
       );
     }
+  };
+
+  const handleRemapUnknownSignalTypes = () => {
+    if (unknownSignalTypes.length === 0) return;
+    const rewritten = remapUnknownSignalTypes(text, unknownSignalTypes, signalTypeReplacement);
+    if (!rewritten) {
+      addToast("Could not rewrite the JSON with the selected signal type", "error");
+      return;
+    }
+    setText(rewritten);
+    addToast(
+      `Mapped ${unknownSignalTypes.length} unknown signal type${unknownSignalTypes.length === 1 ? "" : "s"} to ${SIGNAL_LABELS[signalTypeReplacement] ?? signalTypeReplacement}`,
+      "success",
+    );
   };
 
   if (!open) return null;
@@ -254,6 +313,34 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
                       className="px-2 py-1 rounded bg-amber-600 text-white text-[11px] hover:bg-amber-500 cursor-pointer"
                     >
                       Add port type(s)
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {unknownSignalTypes.length > 0 && tab === "json" && (
+                <div className="mb-2 px-3 py-2 rounded bg-sky-50 border border-sky-200">
+                  <div className="text-xs font-semibold text-sky-900 mb-1">Unknown signal type(s) found</div>
+                  <div className="text-[11px] text-sky-800">
+                    {unknownSignalTypes.join(", ")}. Pick a known signal type to use for all of them during import.
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <select
+                      value={signalTypeReplacement}
+                      onChange={(e) => setSignalTypeReplacement(e.target.value as SignalType)}
+                      className="px-2 py-1 rounded border border-sky-200 bg-white text-[11px] text-[var(--color-text)] outline-none focus:border-sky-400"
+                    >
+                      {ALL_SIGNAL_TYPES.map((type) => (
+                        <option key={type} value={type}>
+                          {SIGNAL_LABELS[type]}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleRemapUnknownSignalTypes}
+                      className="px-2 py-1 rounded bg-sky-600 text-white text-[11px] hover:bg-sky-500 cursor-pointer"
+                    >
+                      Remap signal types
                     </button>
                   </div>
                 </div>
