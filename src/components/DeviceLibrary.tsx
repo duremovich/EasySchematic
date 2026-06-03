@@ -1138,6 +1138,7 @@ export default function DeviceLibrary() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showImportQuoteDialog, setShowImportQuoteDialog] = useState(false);
   const [managingTemplate, setManagingTemplate] = useState<DeviceTemplate | null>(null);
+  const [creatingTemplate, setCreatingTemplate] = useState<Omit<DeviceTemplate, "id" | "version"> | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [templates, setTemplates] = useState(getBundledTemplates);
   const [selectedSignalTypes, setSelectedSignalTypes] = useState<Set<string>>(new Set());
@@ -1202,6 +1203,18 @@ export default function DeviceLibrary() {
   const handleSharedTemplateDeleted = useCallback(async (templateId: string) => {
     await reloadSharedTemplates();
     setManagingTemplate((current) => (current?.id === templateId ? null : current));
+  }, [reloadSharedTemplates]);
+
+  const handleCreateFromTemplate = useCallback((template: Omit<DeviceTemplate, "id" | "version">) => {
+    setCreatingTemplate(structuredClone(template));
+  }, []);
+
+  const handleCreatedTemplateSaved = useCallback(async (template: DeviceTemplate) => {
+    setCreatingTemplate(null);
+    await reloadSharedTemplates();
+    if (template.id) {
+      setManagingTemplate((current) => (current?.id === template.id ? null : current));
+    }
   }, [reloadSharedTemplates]);
 
   const handleAddToOwned = useCallback((template: DeviceTemplate) => {
@@ -1449,6 +1462,16 @@ export default function DeviceLibrary() {
         onClose={() => setManagingTemplate(null)}
         onSaved={handleSharedTemplateSaved}
         onDeleted={handleSharedTemplateDeleted}
+        onCreateFromTemplate={handleCreateFromTemplate}
+      />
+      <ManageTatesideTemplateDialog
+        open={!!creatingTemplate}
+        template={creatingTemplate ? { ...creatingTemplate, id: undefined, version: undefined } : null}
+        onClose={() => setCreatingTemplate(null)}
+        onSaved={handleCreatedTemplateSaved}
+        saveMode="create"
+        saveSource="manual-clone"
+        title="Create New Device From Template"
       />
 
       {libraryActiveTab === "owned" ? (

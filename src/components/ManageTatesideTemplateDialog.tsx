@@ -20,6 +20,7 @@ interface Props {
   onClose: () => void;
   onSaved: (template: DeviceTemplate) => void;
   onDeleted?: (templateId: string) => void;
+  onCreateFromTemplate?: (template: Omit<DeviceTemplate, "id" | "version">) => void;
   saveMode?: "update" | "create";
   saveSource?: string;
   title?: string;
@@ -310,6 +311,7 @@ export default function ManageTatesideTemplateDialog({
   onClose,
   onSaved,
   onDeleted,
+  onCreateFromTemplate,
   saveMode = "update",
   saveSource,
   title,
@@ -524,6 +526,14 @@ export default function ManageTatesideTemplateDialog({
             {title ?? (saveMode === "create" ? "Draft Device Properties" : "Library Device Properties")}
           </div>
           <div className="flex items-center gap-2">
+            {onCreateFromTemplate && (
+              <button
+                onClick={() => onCreateFromTemplate(structuredClone(draft))}
+                className="text-[11px] px-2 py-1 rounded border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors cursor-pointer"
+              >
+                Use as Template for New Device
+              </button>
+            )}
             <button
               onClick={() => jsonInputRef.current?.click()}
               className="text-[11px] px-2 py-1 rounded border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors cursor-pointer"
