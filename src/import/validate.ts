@@ -3,7 +3,6 @@ import { SIGNAL_LABELS, CONNECTOR_LABELS } from "../types";
 import { DEVICE_TYPE_TO_CATEGORY } from "../deviceTypeCategories";
 
 const VALID_SIGNAL_TYPES = new Set(Object.keys(SIGNAL_LABELS));
-const VALID_CONNECTOR_TYPES = new Set(Object.keys(CONNECTOR_LABELS));
 const VALID_DEVICE_TYPES = new Set(Object.keys(DEVICE_TYPE_TO_CATEGORY));
 const VALID_DIRECTIONS = new Set(["input", "output", "bidirectional"]);
 
@@ -21,6 +20,10 @@ export interface TemplateValidationResult {
 
 function isStr(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
+}
+
+function validConnectorTypes(): Set<string> {
+  return new Set(Object.keys(CONNECTOR_LABELS));
 }
 
 /** Client-side mirror of api/src/validate.ts plus enum membership checks the API doesn't have. */
@@ -87,7 +90,7 @@ export function validateTemplate(t: Partial<DeviceTemplate>): TemplateValidation
       } else if (!VALID_DIRECTIONS.has(port.direction)) {
         errors.push(`${prefix}.direction must be input, output, or bidirectional`);
       }
-      if (port.connectorType != null && !VALID_CONNECTOR_TYPES.has(port.connectorType as string)) {
+      if (port.connectorType != null && !validConnectorTypes().has(port.connectorType as string)) {
         errors.push(`${prefix} unknown connectorType "${port.connectorType}"`);
       }
     });

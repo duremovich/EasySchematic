@@ -1,4 +1,79 @@
+import { CONNECTOR_LABELS } from "./types";
 import type { ConnectorType, ConnectionEdge, DeviceTemplate, Gender, Port, SignalType } from "./types";
+
+const CUSTOM_CONNECTOR_TYPES_KEY = "easyschematic-custom-connector-types";
+
+function humanizeConnectorType(value: string): string {
+  return value
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .map((word) => {
+      const lower = word.toLowerCase();
+      if (["rj45", "usb", "sdi", "hdmi", "dvi", "vga", "led", "dsp", "ip"].includes(lower)) return lower.toUpperCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
+}
+
+function loadCustomConnectorTypes(): string[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_CONNECTOR_TYPES_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return [...new Set(parsed.filter((value): value is string => typeof value === "string" && value.trim().length > 0).map((value) => value.trim()))].sort((a, b) => a.localeCompare(b));
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomConnectorTypes(types: string[]) {
+  try {
+    if (types.length > 0) localStorage.setItem(CUSTOM_CONNECTOR_TYPES_KEY, JSON.stringify(types));
+    else localStorage.removeItem(CUSTOM_CONNECTOR_TYPES_KEY);
+  } catch {
+    // silently ignore localStorage errors
+  }
+}
+
+function applyCustomConnectorType(connectorType: string) {
+  const trimmed = connectorType.trim();
+  if (!trimmed) return false;
+  if (CONNECTOR_LABELS[trimmed as ConnectorType]) return false;
+  (CONNECTOR_LABELS as Record<string, string>)[trimmed] = humanizeConnectorType(trimmed);
+  return true;
+}
+
+const _initialCustomConnectorTypes = loadCustomConnectorTypes();
+for (const connectorType of _initialCustomConnectorTypes) {
+  applyCustomConnectorType(connectorType);
+}
+
+export function getCustomConnectorTypes(): string[] {
+  return [..._initialCustomConnectorTypes];
+}
+
+export function registerCustomConnectorType(connectorType: string): string | null {
+  const trimmed = connectorType.trim();
+  if (!trimmed) return null;
+  if ((CONNECTOR_LABELS as Record<string, string>)[trimmed]) return trimmed;
+  if (applyCustomConnectorType(trimmed)) {
+    const next = [..._initialCustomConnectorTypes, trimmed].filter((value, index, arr) => arr.indexOf(value) === index).sort((a, b) => a.localeCompare(b));
+    _initialCustomConnectorTypes.splice(0, _initialCustomConnectorTypes.length, ...next);
+    saveCustomConnectorTypes(next);
+  }
+  return trimmed;
+}
+
+export function registerCustomConnectorTypes(connectorTypes: string[]): string[] {
+  const added: string[] = [];
+  for (const connectorType of connectorTypes) {
+    const result = registerCustomConnectorType(connectorType);
+    if (result) added.push(result);
+  }
+  return added;
+}
 
 /** Default connector type inferred from signal type — used for migration and new ports */
 export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {

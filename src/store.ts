@@ -45,7 +45,7 @@ import { CURRENT_SCHEMA_VERSION, migrateSchematic } from "./migrations";
 import { reconcileWaypointNodes, syncEdgesFromWaypointNodes, spliceWaypointsForRemovedNodes } from "./waypointSync";
 import { routeAllEdges, orthogonalize, extractSegments, segmentsCross, type RoutedEdge, type CrossingPoint } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath, waypointsToSvgPathWithHops } from "./pathfinding";
-import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, NETWORK_SIGNAL_TYPES, BARE_WIRE_CONNECTORS, areSignalsCompatibleViaConnector, effectiveSignalType } from "./connectorTypes";
+import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, NETWORK_SIGNAL_TYPES, BARE_WIRE_CONNECTORS, areSignalsCompatibleViaConnector, effectiveSignalType, getCustomConnectorTypes, registerCustomConnectorTypes } from "./connectorTypes";
 import { inferRackHeightU, inferRackForm, shelfFootprintMm, shelfInnerWidthMm } from "./rackUtils";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
@@ -387,6 +387,8 @@ interface SchematicState {
   resetCategoryOrder: () => void;
   customCategories: string[];
   addCustomCategory: (category: string) => string | null;
+  customConnectorTypes: string[];
+  addCustomConnectorTypes: (connectorTypes: string[]) => string[];
 
   // Edge data
   patchEdgeData: (edgeId: string, patch: Partial<import("./types").ConnectionData>) => void;
@@ -1231,6 +1233,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   customTemplateGroupAssignments: _initCustomMeta.groupAssignments,
   categoryOrder: loadCategoryOrder(),
   customCategories: loadCustomCategories(),
+  customConnectorTypes: getCustomConnectorTypes(),
   routedEdges: {},
   routingDebugData: null,
   deviceContextMenu: null,
@@ -3383,6 +3386,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({ customCategories: next });
     saveCustomCategories(next);
     return trimmed;
+  },
+
+  addCustomConnectorTypes: (connectorTypes) => {
+    const added = registerCustomConnectorTypes(connectorTypes);
+    if (added.length > 0) {
+      set({ customConnectorTypes: getCustomConnectorTypes() });
+    }
+    return added;
   },
 
   dismissIncompatibleDialog: () => {

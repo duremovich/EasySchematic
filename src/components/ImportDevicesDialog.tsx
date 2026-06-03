@@ -44,6 +44,8 @@ const SAMPLE_CSV = `model_number,manufacturer,label,device_type,height_mm,width_
 export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }: Props) {
   const importCustomTemplates = useSchematicStore((s) => s.importCustomTemplates);
   const addToast = useSchematicStore((s) => s.addToast);
+  const customConnectorTypes = useSchematicStore((s) => s.customConnectorTypes);
+  const addCustomConnectorTypes = useSchematicStore((s) => s.addCustomConnectorTypes);
 
   const [tab, setTab] = useState<Tab>("json");
   const [text, setText] = useState("");
@@ -55,7 +57,7 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
   const result = useMemo(() => {
     if (!text.trim()) return null;
     return tab === "json" ? parseJsonImport(text) : parseCsvImport(text);
-  }, [text, tab]);
+  }, [text, tab, customConnectorTypes]);
 
   if (!open) return null;
 
@@ -85,6 +87,28 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
   const selectedTemplates = (result?.templates ?? []).filter(
     (pt) => !skipped.has(pt.template.id ?? pt.template.label) && pt.validation.ok,
   );
+  const unknownConnectorTypes = useMemo(() => {
+    if (!result) return [];
+    const found = new Set<string>();
+    for (const pt of result.templates) {
+      for (const error of pt.validation.errors) {
+        const match = error.match(/unknown connectorType "([^"]+)"/i);
+        if (match?.[1]) found.add(match[1]);
+      }
+    }
+    return [...found].sort((a, b) => a.localeCompare(b));
+  }, [result]);
+
+  const handleAddUnknownConnectorTypes = () => {
+    if (unknownConnectorTypes.length === 0) return;
+    const added = addCustomConnectorTypes(unknownConnectorTypes);
+    if (added.length > 0) {
+      addToast(
+        `Added ${added.length} custom connector type${added.length === 1 ? "" : "s"} locally`,
+        "success",
+      );
+    }
+  };
 
   const handleAddLocalOnly = () => {
     if (selectedTemplates.length === 0) return;
@@ -215,6 +239,23 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
                   <ul className="text-[11px] text-red-700 list-disc ml-5 space-y-0.5">
                     {result.fatalErrors.map((e, i) => <li key={i}>{e}</li>)}
                   </ul>
+                </div>
+              )}
+
+              {unknownConnectorTypes.length > 0 && (
+                <div className="mb-2 px-3 py-2 rounded bg-amber-50 border border-amber-200">
+                  <div className="text-xs font-semibold text-amber-900 mb-1">New connector type(s) found</div>
+                  <div className="text-[11px] text-amber-800">
+                    {unknownConnectorTypes.join(", ")}. Add them to the app so these devices import with their original port types?
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      onClick={handleAddUnknownConnectorTypes}
+                      className="px-2 py-1 rounded bg-amber-600 text-white text-[11px] hover:bg-amber-500 cursor-pointer"
+                    >
+                      Add port type(s)
+                    </button>
+                  </div>
                 </div>
               )}
 
