@@ -59,31 +59,6 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
     return tab === "json" ? parseJsonImport(text) : parseCsvImport(text);
   }, [text, tab, customConnectorTypes]);
 
-  if (!open) return null;
-
-  const close = () => {
-    setText("");
-    setSkipped(new Set());
-    setLibraryNote("");
-    onClose();
-  };
-
-  const toggleSkip = (id: string) => {
-    const next = new Set(skipped);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    setSkipped(next);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const content = await file.text();
-    setText(content);
-    e.target.value = "";
-  };
-
-  const loadSample = () => setText(tab === "json" ? SAMPLE_JSON : SAMPLE_CSV);
-
   const selectedTemplates = (result?.templates ?? []).filter(
     (pt) => !skipped.has(pt.template.id ?? pt.template.label) && pt.validation.ok,
   );
@@ -109,6 +84,31 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
       );
     }
   };
+
+  if (!open) return null;
+
+  const close = () => {
+    setText("");
+    setSkipped(new Set());
+    setLibraryNote("");
+    onClose();
+  };
+
+  const toggleSkip = (id: string) => {
+    const next = new Set(skipped);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSkipped(next);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const content = await file.text();
+    setText(content);
+    e.target.value = "";
+  };
+
+  const loadSample = () => setText(tab === "json" ? SAMPLE_JSON : SAMPLE_CSV);
 
   const handleAddLocalOnly = () => {
     if (selectedTemplates.length === 0) return;
