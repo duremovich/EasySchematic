@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_CONNECTOR } from "../connectorTypes";
 import { useSchematicStore } from "../store";
 import {
@@ -11,6 +11,7 @@ import {
   type PortDirection,
   type SignalType,
 } from "../types";
+import { normalizeTemplateJson } from "../import/parseJson";
 import { deleteTatesideDeviceTemplate, saveTatesideDeviceTemplates, updateTatesideDeviceTemplate } from "../tatesideApi";
 
 interface Props {
@@ -319,6 +320,7 @@ export default function ManageTatesideTemplateDialog({
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const jsonInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open || !template) return;
@@ -466,6 +468,35 @@ export default function ManageTatesideTemplateDialog({
 
   const searchTermsCount = searchTermsRaw.split(",").map((term) => term.trim()).filter(Boolean).length;
 
+  const handleJsonImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text()) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Expected a device template JSON object");
+      }
+
+      const imported = normalizeTemplateJson(parsed as Record<string, unknown>);
+      setDraft((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          ...imported,
+          ports: imported.ports ?? current.ports,
+        };
+      });
+      if (Array.isArray(imported.searchTerms)) {
+        setSearchTermsRaw(imported.searchTerms.join(", "));
+      }
+      addToast(`Loaded fields from ${file.name}`, "success");
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Could not read JSON file", "error");
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center"
@@ -481,16 +512,31 @@ export default function ManageTatesideTemplateDialog({
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        <input
+          ref={jsonInputRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={handleJsonImport}
+        />
         <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
           <div className="text-lg font-semibold text-[var(--color-text-heading)]">
             {title ?? (saveMode === "create" ? "Draft Device Properties" : "Library Device Properties")}
           </div>
-          <button
-            onClick={onClose}
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-2xl leading-none cursor-pointer"
-          >
-            ×
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => jsonInputRef.current?.click()}
+              className="text-[11px] px-2 py-1 rounded border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:border-[var(--color-text-muted)] transition-colors cursor-pointer"
+            >
+              Update from JSON
+            </button>
+            <button
+              onClick={onClose}
+              className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-2xl leading-none cursor-pointer"
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
