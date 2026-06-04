@@ -157,6 +157,7 @@ export async function bulkEditTatesideDeviceTemplates(
   input: {
     templateIds: string[];
     setManufacturer?: string;
+    setCategory?: string;
     removeLabelPrefix?: string;
     findLabelText?: string;
     replaceLabelText?: string;
@@ -170,6 +171,7 @@ export async function bulkEditTatesideDeviceTemplates(
     body: {
       templateIds: input.templateIds,
       ...(input.setManufacturer !== undefined ? { setManufacturer: input.setManufacturer } : {}),
+      ...(input.setCategory !== undefined ? { setCategory: input.setCategory } : {}),
       ...(input.removeLabelPrefix ? { removeLabelPrefix: input.removeLabelPrefix } : {}),
       ...(input.findLabelText ? { findLabelText: input.findLabelText, replaceLabelText: input.replaceLabelText ?? "" } : {}),
       ...(input.note ? { note: input.note } : {}),

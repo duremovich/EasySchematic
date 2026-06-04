@@ -250,6 +250,7 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
     const body = await readJson(ctx.req) as {
       templateIds?: unknown;
       setManufacturer?: unknown;
+      setCategory?: unknown;
       removeLabelPrefix?: unknown;
       findLabelText?: unknown;
       replaceLabelText?: unknown;
@@ -261,6 +262,7 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
     const result = bulkEditTemplates(db, {
       templateIds: body?.templateIds,
       setManufacturer: body?.setManufacturer,
+      setCategory: body?.setCategory,
       removeLabelPrefix: body?.removeLabelPrefix,
       findLabelText: body?.findLabelText,
       replaceLabelText: body?.replaceLabelText,

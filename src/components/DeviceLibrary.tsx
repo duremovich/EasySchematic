@@ -405,12 +405,15 @@ function BulkEditSharedTemplatesPanel({
   selectionCount,
   filteredCount,
   manufacturer,
+  category,
+  categoryOptions,
   removePrefix,
   findText,
   replaceText,
   preview,
   loading,
   onManufacturerChange,
+  onCategoryChange,
   onRemovePrefixChange,
   onFindTextChange,
   onReplaceTextChange,
@@ -427,12 +430,15 @@ function BulkEditSharedTemplatesPanel({
   selectionCount: number;
   filteredCount: number;
   manufacturer: string;
+  category: string;
+  categoryOptions: string[];
   removePrefix: string;
   findText: string;
   replaceText: string;
   preview: TatesideBulkEditResult | null;
   loading: boolean;
   onManufacturerChange: (value: string) => void;
+  onCategoryChange: (value: string) => void;
   onRemovePrefixChange: (value: string) => void;
   onFindTextChange: (value: string) => void;
   onReplaceTextChange: (value: string) => void;
@@ -451,7 +457,7 @@ function BulkEditSharedTemplatesPanel({
   const updatedCount = preview?.results.filter((item) => item.status === "updated").length ?? 0;
   const unchangedCount = preview?.results.filter((item) => item.status === "unchanged").length ?? 0;
   const issueItems = preview?.results.filter((item) => item.status === "conflict" || item.status === "invalid") ?? [];
-  const hasAction = manufacturer.trim() || removePrefix.trim() || findText;
+  const hasAction = manufacturer.trim() || category.trim() || removePrefix.trim() || findText;
 
   return (
     <div className="rounded border border-blue-200 bg-blue-50/70 px-2 py-2 space-y-2 relative">
@@ -504,6 +510,23 @@ function BulkEditSharedTemplatesPanel({
             placeholder="Bose Professional"
             className="w-full rounded border border-[var(--color-border)] bg-white px-2 py-1 text-xs text-[var(--color-text)] outline-none focus:border-blue-500"
           />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+            Set Category To
+          </span>
+          <input
+            value={category}
+            onChange={(e) => onCategoryChange(e.target.value)}
+            placeholder="Speakers"
+            list="bulk-category-options"
+            className="w-full rounded border border-[var(--color-border)] bg-white px-2 py-1 text-xs text-[var(--color-text)] outline-none focus:border-blue-500"
+          />
+          <datalist id="bulk-category-options">
+            {categoryOptions.map((option) => (
+              <option key={option} value={option} />
+            ))}
+          </datalist>
         </label>
         <label className="block">
           <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
@@ -1449,6 +1472,7 @@ export default function DeviceLibrary() {
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
   const [selectedSharedTemplateIds, setSelectedSharedTemplateIds] = useState<Set<string>>(new Set());
   const [bulkManufacturer, setBulkManufacturer] = useState("");
+  const [bulkCategory, setBulkCategory] = useState("");
   const [bulkRemovePrefix, setBulkRemovePrefix] = useState("");
   const [bulkFindText, setBulkFindText] = useState("");
   const [bulkReplaceText, setBulkReplaceText] = useState("");
@@ -1626,6 +1650,13 @@ export default function DeviceLibrary() {
   const totalLibraryResults = useMemo(() => {
     return brandSections.reduce((sum, brand) => sum + brand.count, 0);
   }, [brandSections]);
+  const sharedCategoryOptions = useMemo(() => {
+    const categories = new Set<string>();
+    for (const template of templates) {
+      if (template.category?.trim()) categories.add(template.category.trim());
+    }
+    return [...categories].sort((a, b) => a.localeCompare(b));
+  }, [templates]);
   const totalResults = rankedResults?.length ?? (filteredCustom.length + totalLibraryResults);
   const ownedResults = useMemo(
     () => ownedGear.filter((item) => matchesOwnedGearQuery(item, query)).length,
@@ -1640,7 +1671,7 @@ export default function DeviceLibrary() {
   useEffect(() => {
     setBulkPreview(null);
     setBulkDeleteConfirming(false);
-  }, [selectedSharedTemplateIds, bulkManufacturer, bulkRemovePrefix, bulkFindText, bulkReplaceText]);
+  }, [selectedSharedTemplateIds, bulkManufacturer, bulkCategory, bulkRemovePrefix, bulkFindText, bulkReplaceText]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1669,7 +1700,7 @@ export default function DeviceLibrary() {
       addToast("Select at least one shared library device", "error");
       return;
     }
-    if (!bulkManufacturer.trim() && !bulkRemovePrefix.trim() && !bulkFindText) {
+    if (!bulkManufacturer.trim() && !bulkCategory.trim() && !bulkRemovePrefix.trim() && !bulkFindText) {
       addToast("Choose at least one bulk edit action", "error");
       return;
     }
@@ -1679,6 +1710,7 @@ export default function DeviceLibrary() {
       const result = await bulkEditTatesideDeviceTemplates({
         templateIds,
         ...(bulkManufacturer.trim() ? { setManufacturer: bulkManufacturer.trim() } : {}),
+        ...(bulkCategory.trim() ? { setCategory: bulkCategory.trim() } : {}),
         ...(bulkRemovePrefix.trim() ? { removeLabelPrefix: bulkRemovePrefix } : {}),
         ...(bulkFindText ? { findLabelText: bulkFindText, replaceLabelText: bulkReplaceText } : {}),
         source: "bulk-library-edit",
@@ -1698,7 +1730,7 @@ export default function DeviceLibrary() {
     } finally {
       setBulkLoading(false);
     }
-  }, [addToast, bulkFindText, bulkManufacturer, bulkRemovePrefix, bulkReplaceText, reloadSharedTemplates, selectedSharedTemplateIds]);
+  }, [addToast, bulkCategory, bulkFindText, bulkManufacturer, bulkRemovePrefix, bulkReplaceText, reloadSharedTemplates, selectedSharedTemplateIds]);
 
   const handleBulkDelete = useCallback(async () => {
     const templateIds = [...selectedSharedTemplateIds];
@@ -1872,12 +1904,15 @@ export default function DeviceLibrary() {
             selectionCount={selectedSharedTemplateIds.size}
             filteredCount={filteredSharedTemplates.length}
             manufacturer={bulkManufacturer}
+            category={bulkCategory}
+            categoryOptions={sharedCategoryOptions}
             removePrefix={bulkRemovePrefix}
             findText={bulkFindText}
             replaceText={bulkReplaceText}
             preview={bulkPreview}
             loading={bulkLoading}
             onManufacturerChange={setBulkManufacturer}
+            onCategoryChange={setBulkCategory}
             onRemovePrefixChange={setBulkRemovePrefix}
             onFindTextChange={setBulkFindText}
             onReplaceTextChange={setBulkReplaceText}

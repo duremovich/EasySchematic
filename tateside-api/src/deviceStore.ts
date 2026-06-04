@@ -20,6 +20,7 @@ export interface UpdateTemplateInput {
 export interface BulkEditTemplatesInput {
   templateIds: unknown;
   setManufacturer?: unknown;
+  setCategory?: unknown;
   removeLabelPrefix?: unknown;
   findLabelText?: unknown;
   replaceLabelText?: unknown;
@@ -244,6 +245,7 @@ function applyBulkEditOperations(
   template: DeviceTemplate,
   options: {
     setManufacturer?: string;
+    setCategory?: string;
     removeLabelPrefix?: string;
     findLabelText?: string;
     replaceLabelText?: string;
@@ -255,6 +257,10 @@ function applyBulkEditOperations(
 
   if (options.setManufacturer !== undefined) {
     editable.manufacturer = options.setManufacturer || undefined;
+  }
+
+  if (options.setCategory !== undefined) {
+    editable.category = options.setCategory || undefined;
   }
 
   let nextLabel = editable.label;
@@ -531,6 +537,9 @@ export function bulkEditTemplates(db: DatabaseSync, input: BulkEditTemplatesInpu
   const setManufacturer = typeof input.setManufacturer === "string"
     ? compactWhitespace(input.setManufacturer)
     : undefined;
+  const setCategory = typeof input.setCategory === "string"
+    ? compactWhitespace(input.setCategory)
+    : undefined;
   const removeLabelPrefix = typeof input.removeLabelPrefix === "string"
     ? input.removeLabelPrefix.trim()
     : undefined;
@@ -541,7 +550,7 @@ export function bulkEditTemplates(db: DatabaseSync, input: BulkEditTemplatesInpu
     ? input.replaceLabelText
     : undefined;
 
-  if (setManufacturer === undefined && !removeLabelPrefix && !findLabelText) {
+  if (setManufacturer === undefined && setCategory === undefined && !removeLabelPrefix && !findLabelText) {
     throw new Error("Choose at least one bulk edit action");
   }
 
@@ -563,6 +572,7 @@ export function bulkEditTemplates(db: DatabaseSync, input: BulkEditTemplatesInpu
     const currentTemplate = asDeviceTemplate(row);
     const edited = applyBulkEditOperations(currentTemplate, {
       setManufacturer,
+      setCategory,
       removeLabelPrefix,
       findLabelText,
       replaceLabelText,
@@ -590,7 +600,8 @@ export function bulkEditTemplates(db: DatabaseSync, input: BulkEditTemplatesInpu
     const normalized = normalizeDeviceTemplate(edited);
     const changed =
       normalized.label !== row.label
-      || (normalized.manufacturer ?? null) !== row.manufacturer;
+      || (normalized.manufacturer ?? null) !== row.manufacturer
+      || (normalized.category ?? null) !== row.category;
 
     return {
       ...base,
