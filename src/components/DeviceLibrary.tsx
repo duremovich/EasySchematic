@@ -1,5 +1,6 @@
 import { type DragEvent, type ChangeEvent, useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { getBundledTemplates, fetchTemplates, refreshTemplates } from "../templateApi";
+import { bulkEditTatesideDeviceTemplates, type TatesideBulkEditResult } from "../tatesideApi";
 import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate, CustomTemplateGroup, OwnedGearFile, OwnedGearItem, SchematicNode, DeviceData } from "../types";
 import { useSchematicStore, CATEGORY_ORDER_DEFAULT } from "../store";
@@ -61,6 +62,8 @@ function TemplateItem({
   ownedQuantity,
   onToggleFavorite,
   onAddToOwned,
+  selected,
+  onToggleSelected,
 }: {
   template: DeviceTemplate;
   query: string;
@@ -71,6 +74,8 @@ function TemplateItem({
   ownedQuantity?: number;
   onToggleFavorite?: () => void;
   onAddToOwned?: () => void;
+  selected?: boolean;
+  onToggleSelected?: () => void;
 }) {
   const signalText = getUniqueSignalTypes(template)
     .map((t) => SIGNAL_LABELS[t as keyof typeof SIGNAL_LABELS])
@@ -82,6 +87,23 @@ function TemplateItem({
       draggable
       onDragStart={(e) => onDragStart(e, template)}
     >
+      {onToggleSelected && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelected();
+          }}
+          className={`shrink-0 mt-0.5 h-4 w-4 rounded border text-[10px] leading-none cursor-pointer transition-colors ${
+            selected
+              ? "border-blue-600 bg-blue-600 text-white"
+              : "border-[var(--color-border)] bg-white text-transparent hover:border-blue-400"
+          }`}
+          title={selected ? "Remove from bulk selection" : "Select for bulk edit"}
+        >
+          ✓
+        </button>
+      )}
       {(onToggleFavorite || onAddToOwned) && (
         <div className="shrink-0 flex flex-col items-center gap-1 self-start min-w-[1.25rem]">
           {onToggleFavorite && (
@@ -179,6 +201,8 @@ function CategorySection({
   onAddToOwned,
   categoryIndex,
   onCategoryReorder,
+  selectedTemplateIds,
+  onToggleTemplateSelected,
 }: {
   label: string;
   templates: DeviceTemplate[];
@@ -193,6 +217,8 @@ function CategorySection({
   onAddToOwned?: (template: DeviceTemplate) => void;
   categoryIndex?: number;
   onCategoryReorder?: (category: string, targetIndex: number) => void;
+  selectedTemplateIds?: Set<string>;
+  onToggleTemplateSelected?: (templateId: string) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const [dropLine, setDropLine] = useState<"above" | "below" | null>(null);
@@ -264,6 +290,8 @@ function CategorySection({
                 ownedQuantity={ownedQuantityMap?.get(key)}
                 onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(key) : undefined}
                 onAddToOwned={onAddToOwned ? () => onAddToOwned(template) : undefined}
+                selected={template.id ? selectedTemplateIds?.has(template.id) : undefined}
+                onToggleSelected={template.id && onToggleTemplateSelected ? () => onToggleTemplateSelected(template.id!) : undefined}
               />
             );
           })}
@@ -281,6 +309,10 @@ function BrandSection({
   isExpanded,
   onToggle,
   onManage,
+  selectedTemplateIds,
+  onToggleTemplateSelected,
+  onSelectBrand,
+  onClearBrandSelection,
 }: {
   brand: string;
   categories: { label: string; templates: DeviceTemplate[] }[];
@@ -288,8 +320,14 @@ function BrandSection({
   isExpanded: boolean;
   onToggle: () => void;
   onManage?: (template: DeviceTemplate) => void;
+  selectedTemplateIds?: Set<string>;
+  onToggleTemplateSelected?: (templateId: string) => void;
+  onSelectBrand?: () => void;
+  onClearBrandSelection?: () => void;
 }) {
   const count = categories.reduce((sum, c) => sum + c.templates.length, 0);
+  const selectableIds = categories.flatMap((category) => category.templates.map((template) => template.id).filter(Boolean) as string[]);
+  const selectedCount = selectableIds.filter((id) => selectedTemplateIds?.has(id)).length;
 
   if (count === 0) return null;
 
@@ -305,8 +343,39 @@ function BrandSection({
         <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] truncate flex-1">
           {brand}
         </span>
+        {selectedCount > 0 && (
+          <span className="text-[9px] rounded bg-blue-100 px-1 py-px text-blue-700">
+            {selectedCount} selected
+          </span>
+        )}
         <span className="text-[10px] text-[var(--color-text-muted)] opacity-60">{count}</span>
       </button>
+      {(onSelectBrand || onClearBrandSelection) && (
+        <div className="flex items-center gap-1 px-2 pb-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectBrand?.();
+            }}
+            className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+          >
+            Select brand
+          </button>
+          {selectedCount > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onClearBrandSelection?.();
+              }}
+              className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
       {(isExpanded || query) && (
         <div className="px-1.5 pb-1.5 space-y-1">
           {categories.map((cat) => (
@@ -322,8 +391,189 @@ function BrandSection({
               ownedQuantityMap={undefined}
               onToggleFavorite={undefined}
               onAddToOwned={undefined}
+              selectedTemplateIds={selectedTemplateIds}
+              onToggleTemplateSelected={onToggleTemplateSelected}
             />
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function BulkEditSharedTemplatesPanel({
+  selectionCount,
+  filteredCount,
+  manufacturer,
+  removePrefix,
+  findText,
+  replaceText,
+  preview,
+  loading,
+  onManufacturerChange,
+  onRemovePrefixChange,
+  onFindTextChange,
+  onReplaceTextChange,
+  onSelectFiltered,
+  onClearSelection,
+  onPreview,
+  onApply,
+}: {
+  selectionCount: number;
+  filteredCount: number;
+  manufacturer: string;
+  removePrefix: string;
+  findText: string;
+  replaceText: string;
+  preview: TatesideBulkEditResult | null;
+  loading: boolean;
+  onManufacturerChange: (value: string) => void;
+  onRemovePrefixChange: (value: string) => void;
+  onFindTextChange: (value: string) => void;
+  onReplaceTextChange: (value: string) => void;
+  onSelectFiltered: () => void;
+  onClearSelection: () => void;
+  onPreview: () => void;
+  onApply: () => void;
+}) {
+  if (selectionCount === 0) return null;
+
+  const updatedCount = preview?.results.filter((item) => item.status === "updated").length ?? 0;
+  const unchangedCount = preview?.results.filter((item) => item.status === "unchanged").length ?? 0;
+  const issueItems = preview?.results.filter((item) => item.status === "conflict" || item.status === "invalid") ?? [];
+  const hasAction = manufacturer.trim() || removePrefix.trim() || findText;
+
+  return (
+    <div className="rounded border border-blue-200 bg-blue-50/70 px-2 py-2 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-700">
+            Bulk Edit Shared Library
+          </div>
+          <div className="text-[11px] text-[var(--color-text)]">
+            {selectionCount} selected
+            {filteredCount > 0 ? ` · ${filteredCount} shared result${filteredCount === 1 ? "" : "s"} in view` : ""}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {filteredCount > 0 && (
+            <button
+              type="button"
+              onClick={onSelectFiltered}
+              className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+            >
+              Select visible
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClearSelection}
+            className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2">
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+            Set Manufacturer To
+          </span>
+          <input
+            value={manufacturer}
+            onChange={(e) => onManufacturerChange(e.target.value)}
+            placeholder="Bose Professional"
+            className="w-full rounded border border-[var(--color-border)] bg-white px-2 py-1 text-xs text-[var(--color-text)] outline-none focus:border-blue-500"
+          />
+        </label>
+        <label className="block">
+          <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+            Remove Prefix From Device Name
+          </span>
+          <input
+            value={removePrefix}
+            onChange={(e) => onRemovePrefixChange(e.target.value)}
+            placeholder="Bose "
+            className="w-full rounded border border-[var(--color-border)] bg-white px-2 py-1 text-xs text-[var(--color-text)] outline-none focus:border-blue-500"
+          />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+              Find In Device Name
+            </span>
+            <input
+              value={findText}
+              onChange={(e) => onFindTextChange(e.target.value)}
+              placeholder="Speaker"
+              className="w-full rounded border border-[var(--color-border)] bg-white px-2 py-1 text-xs text-[var(--color-text)] outline-none focus:border-blue-500"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
+              Replace With
+            </span>
+            <input
+              value={replaceText}
+              onChange={(e) => onReplaceTextChange(e.target.value)}
+              placeholder=""
+              className="w-full rounded border border-[var(--color-border)] bg-white px-2 py-1 text-xs text-[var(--color-text)] outline-none focus:border-blue-500"
+            />
+          </label>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onPreview}
+          disabled={!hasAction || loading}
+          className="rounded bg-blue-600 px-2.5 py-1 text-xs text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-blue-300"
+        >
+          {loading ? "Working..." : "Preview"}
+        </button>
+        <button
+          type="button"
+          onClick={onApply}
+          disabled={!preview || updatedCount === 0 || issueItems.length > 0 || loading}
+          className="rounded bg-emerald-600 px-2.5 py-1 text-xs text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-300"
+        >
+          Apply
+        </button>
+      </div>
+
+      {preview && (
+        <div className="rounded border border-[var(--color-border)] bg-white px-2 py-2 text-[11px] text-[var(--color-text)] space-y-1.5">
+          <div className="flex flex-wrap gap-3 text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+            <span>{updatedCount} changed</span>
+            <span>{unchangedCount} unchanged</span>
+            <span>{issueItems.length} issues</span>
+          </div>
+          {issueItems.length > 0 && (
+            <div className="space-y-1">
+              {issueItems.slice(0, 6).map((item) => (
+                <div key={item.id} className="rounded border border-red-200 bg-red-50 px-2 py-1 text-[11px] text-red-700">
+                  <strong>{item.beforeLabel}</strong>: {item.reason}
+                  {item.conflictWithLabel ? ` (${item.conflictWithLabel})` : ""}
+                </div>
+              ))}
+            </div>
+          )}
+          {updatedCount > 0 && (
+            <div className="space-y-1">
+              {preview.results.filter((item) => item.status === "updated").slice(0, 8).map((item) => (
+                <div key={item.id} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1">
+                  <div><strong>{item.beforeLabel}</strong>{" -> "}<strong>{item.afterLabel}</strong></div>
+                  {(item.beforeManufacturer !== item.afterManufacturer) && (
+                    <div className="text-[10px] text-[var(--color-text-muted)]">
+                      {item.beforeManufacturer ?? "No manufacturer"}{" -> "}{item.afterManufacturer ?? "No manufacturer"}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -1122,6 +1372,7 @@ function OwnedGearTab({ query }: { query: string }) {
 }
 
 export default function DeviceLibrary() {
+  const addToast = useSchematicStore((s) => s.addToast);
   const customTemplates = useSchematicStore((s) => s.customTemplates);
   const ownedGear = useSchematicStore((s) => s.ownedGear);
   const removeCustomTemplate = useSchematicStore((s) => s.removeCustomTemplate);
@@ -1143,6 +1394,13 @@ export default function DeviceLibrary() {
   const [templates, setTemplates] = useState(getBundledTemplates);
   const [selectedSignalTypes, setSelectedSignalTypes] = useState<Set<string>>(new Set());
   const [expandedBrands, setExpandedBrands] = useState<Set<string>>(new Set());
+  const [selectedSharedTemplateIds, setSelectedSharedTemplateIds] = useState<Set<string>>(new Set());
+  const [bulkManufacturer, setBulkManufacturer] = useState("");
+  const [bulkRemovePrefix, setBulkRemovePrefix] = useState("");
+  const [bulkFindText, setBulkFindText] = useState("");
+  const [bulkReplaceText, setBulkReplaceText] = useState("");
+  const [bulkPreview, setBulkPreview] = useState<TatesideBulkEditResult | null>(null);
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const presetIds = useMemo(() => new Set(Object.keys(templatePresets)), [templatePresets]);
   const favoriteSet = useMemo(() => new Set(favoriteTemplates), [favoriteTemplates]);
@@ -1191,6 +1449,14 @@ export default function DeviceLibrary() {
     fetchTemplates().then(setTemplates).catch(() => console.warn("TateSide device library API unavailable"));
   }, []);
 
+  useEffect(() => {
+    const validIds = new Set(templates.map((template) => template.id).filter(Boolean) as string[]);
+    setSelectedSharedTemplateIds((current) => {
+      const next = new Set([...current].filter((id) => validIds.has(id)));
+      return next.size === current.size ? current : next;
+    });
+  }, [templates]);
+
   const reloadSharedTemplates = useCallback(async () => {
     const refreshed = await refreshTemplates();
     setTemplates(refreshed);
@@ -1220,6 +1486,15 @@ export default function DeviceLibrary() {
   const handleAddToOwned = useCallback((template: DeviceTemplate) => {
     addOwnedGear(template, 1);
   }, [addOwnedGear]);
+
+  const toggleSharedTemplateSelected = useCallback((templateId: string) => {
+    setSelectedSharedTemplateIds((current) => {
+      const next = new Set(current);
+      if (next.has(templateId)) next.delete(templateId);
+      else next.add(templateId);
+      return next;
+    });
+  }, []);
 
   const query = search.trim();
 
@@ -1301,6 +1576,59 @@ export default function DeviceLibrary() {
     () => ownedGear.filter((item) => matchesOwnedGearQuery(item, query)).length,
     [ownedGear, query],
   );
+
+  const filteredSharedTemplates = useMemo(() => {
+    if (query && rankedResults) return rankedResults.filter((template) => !!template.id);
+    return brandSections.flatMap((brand) => brand.categories.flatMap((category) => category.templates));
+  }, [brandSections, query, rankedResults]);
+
+  useEffect(() => {
+    setBulkPreview(null);
+  }, [selectedSharedTemplateIds, bulkManufacturer, bulkRemovePrefix, bulkFindText, bulkReplaceText]);
+
+  const handleSelectFilteredShared = useCallback(() => {
+    setSelectedSharedTemplateIds(new Set(filteredSharedTemplates.map((template) => template.id!).filter(Boolean)));
+  }, [filteredSharedTemplates]);
+
+  const handleClearSharedSelection = useCallback(() => {
+    setSelectedSharedTemplateIds(new Set());
+  }, []);
+
+  const runBulkEdit = useCallback(async (previewOnly: boolean) => {
+    const templateIds = [...selectedSharedTemplateIds];
+    if (templateIds.length === 0) {
+      addToast("Select at least one shared library device", "error");
+      return;
+    }
+    if (!bulkManufacturer.trim() && !bulkRemovePrefix.trim() && !bulkFindText) {
+      addToast("Choose at least one bulk edit action", "error");
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const result = await bulkEditTatesideDeviceTemplates({
+        templateIds,
+        ...(bulkManufacturer.trim() ? { setManufacturer: bulkManufacturer.trim() } : {}),
+        ...(bulkRemovePrefix.trim() ? { removeLabelPrefix: bulkRemovePrefix } : {}),
+        ...(bulkFindText ? { findLabelText: bulkFindText, replaceLabelText: bulkReplaceText } : {}),
+        source: "bulk-library-edit",
+        preview: previewOnly,
+      });
+      setBulkPreview(result);
+
+      if (!previewOnly) {
+        const updatedCount = result.results.filter((item) => item.status === "updated").length;
+        addToast(`Updated ${updatedCount} shared library device${updatedCount === 1 ? "" : "s"}`, "success");
+        setSelectedSharedTemplateIds(new Set());
+        await reloadSharedTemplates();
+      }
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Could not bulk edit TateSide library devices", "error");
+    } finally {
+      setBulkLoading(false);
+    }
+  }, [addToast, bulkFindText, bulkManufacturer, bulkRemovePrefix, bulkReplaceText, reloadSharedTemplates, selectedSharedTemplateIds]);
 
   if (collapsed) {
     return (
@@ -1437,6 +1765,29 @@ export default function DeviceLibrary() {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {libraryActiveTab === "devices" && selectedSharedTemplateIds.size > 0 && (
+        <div className="px-2 py-2 border-b border-[var(--color-border)]">
+          <BulkEditSharedTemplatesPanel
+            selectionCount={selectedSharedTemplateIds.size}
+            filteredCount={filteredSharedTemplates.length}
+            manufacturer={bulkManufacturer}
+            removePrefix={bulkRemovePrefix}
+            findText={bulkFindText}
+            replaceText={bulkReplaceText}
+            preview={bulkPreview}
+            loading={bulkLoading}
+            onManufacturerChange={setBulkManufacturer}
+            onRemovePrefixChange={setBulkRemovePrefix}
+            onFindTextChange={setBulkFindText}
+            onReplaceTextChange={setBulkReplaceText}
+            onSelectFiltered={handleSelectFilteredShared}
+            onClearSelection={handleClearSharedSelection}
+            onPreview={() => void runBulkEdit(true)}
+            onApply={() => void runBulkEdit(false)}
+          />
         </div>
       )}
 
@@ -1585,6 +1936,8 @@ export default function DeviceLibrary() {
                       ownedQuantity={ownedQuantityMap.get(key)}
                       onToggleFavorite={() => toggleFavoriteTemplate(key)}
                       onAddToOwned={() => handleAddToOwned(template)}
+                      selected={template.id ? selectedSharedTemplateIds.has(template.id) : undefined}
+                      onToggleSelected={template.id ? () => toggleSharedTemplateSelected(template.id!) : undefined}
                     />
                   );
                 })}
@@ -1611,6 +1964,8 @@ export default function DeviceLibrary() {
                 ownedQuantityMap={ownedQuantityMap}
                 onToggleFavorite={toggleFavoriteTemplate}
                 onAddToOwned={handleAddToOwned}
+                selectedTemplateIds={selectedSharedTemplateIds}
+                onToggleTemplateSelected={toggleSharedTemplateSelected}
               />
             )}
 
@@ -1632,6 +1987,16 @@ export default function DeviceLibrary() {
                   isExpanded={expandedBrands.has(brand.brand)}
                   onToggle={() => toggleBrandExpanded(brand.brand)}
                   onManage={(template) => setManagingTemplate(template)}
+                  selectedTemplateIds={selectedSharedTemplateIds}
+                  onToggleTemplateSelected={toggleSharedTemplateSelected}
+                  onSelectBrand={() => {
+                    const ids = brand.categories.flatMap((category) => category.templates.map((template) => template.id).filter(Boolean) as string[]);
+                    setSelectedSharedTemplateIds((current) => new Set([...current, ...ids]));
+                  }}
+                  onClearBrandSelection={() => {
+                    const ids = new Set(brand.categories.flatMap((category) => category.templates.map((template) => template.id).filter(Boolean) as string[]));
+                    setSelectedSharedTemplateIds((current) => new Set([...current].filter((id) => !ids.has(id))));
+                  }}
                 />
               ))}
             </div>

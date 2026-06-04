@@ -41,6 +41,23 @@ export interface SharePointSavedFile {
   lastModifiedDateTime?: string;
 }
 
+export interface TatesideBulkEditResultItem {
+  id: string;
+  beforeLabel: string;
+  afterLabel: string;
+  beforeManufacturer: string | null;
+  afterManufacturer: string | null;
+  status: "updated" | "unchanged" | "conflict" | "invalid";
+  reason?: string;
+  conflictWithId?: string;
+  conflictWithLabel?: string;
+}
+
+export interface TatesideBulkEditResult {
+  templates: DeviceTemplate[];
+  results: TatesideBulkEditResultItem[];
+}
+
 export class TatesideApiError extends Error {
   status: number;
 
@@ -122,6 +139,32 @@ export async function deleteTatesideDeviceTemplate(
   await requestJson(`/devices/templates/${encodeURIComponent(templateId)}`, {
     method: "DELETE",
     body: options.note ? { note: options.note } : {},
+  });
+}
+
+export async function bulkEditTatesideDeviceTemplates(
+  input: {
+    templateIds: string[];
+    setManufacturer?: string;
+    removeLabelPrefix?: string;
+    findLabelText?: string;
+    replaceLabelText?: string;
+    note?: string;
+    source?: string;
+    preview?: boolean;
+  },
+): Promise<TatesideBulkEditResult> {
+  return requestJson<TatesideBulkEditResult>("/devices/templates/bulk-edit", {
+    method: "POST",
+    body: {
+      templateIds: input.templateIds,
+      ...(input.setManufacturer !== undefined ? { setManufacturer: input.setManufacturer } : {}),
+      ...(input.removeLabelPrefix ? { removeLabelPrefix: input.removeLabelPrefix } : {}),
+      ...(input.findLabelText ? { findLabelText: input.findLabelText, replaceLabelText: input.replaceLabelText ?? "" } : {}),
+      ...(input.note ? { note: input.note } : {}),
+      ...(input.source ? { source: input.source } : {}),
+      ...(input.preview ? { preview: true } : {}),
+    },
   });
 }
 

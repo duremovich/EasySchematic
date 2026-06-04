@@ -17,6 +17,35 @@ export interface UpdateTemplateInput {
   actorEmail?: string | null;
 }
 
+export interface BulkEditTemplatesInput {
+  templateIds: unknown;
+  setManufacturer?: unknown;
+  removeLabelPrefix?: unknown;
+  findLabelText?: unknown;
+  replaceLabelText?: unknown;
+  preview?: boolean;
+  note?: string;
+  source?: string;
+  actorEmail?: string | null;
+}
+
+export interface BulkEditTemplateResultItem {
+  id: string;
+  beforeLabel: string;
+  afterLabel: string;
+  beforeManufacturer: string | null;
+  afterManufacturer: string | null;
+  status: "updated" | "unchanged" | "conflict" | "invalid";
+  reason?: string;
+  conflictWithId?: string;
+  conflictWithLabel?: string;
+}
+
+export interface BulkEditTemplatesResult {
+  templates: DeviceTemplate[];
+  results: BulkEditTemplateResultItem[];
+}
+
 interface DeviceRow {
   id: string;
   unique_key: string;
@@ -27,6 +56,15 @@ interface DeviceRow {
   category: string | null;
   template_json: string;
   version: number;
+}
+
+interface PreparedBulkEditResultItem extends BulkEditTemplateResultItem {
+  nextTemplate: Omit<DeviceTemplate, "id" | "version"> | null;
+  nextUniqueKey: string | null;
+}
+
+function finalizeBulkEditResults(results: PreparedBulkEditResultItem[]): BulkEditTemplateResultItem[] {
+  return results.map(({ nextTemplate, nextUniqueKey, ...item }) => item);
 }
 
 function slug(value: string): string {
@@ -78,6 +116,70 @@ function getActiveDeviceRow(db: DatabaseSync, deviceId: string): DeviceRow | und
       WHERE d.id = ? AND d.deleted_at IS NULL
     `)
     .get(deviceId) as DeviceRow | undefined;
+}
+
+function listActiveDeviceRows(db: DatabaseSync): DeviceRow[] {
+  return db
+    .prepare(`
+      SELECT
+        d.id,
+        d.unique_key,
+        d.label,
+        d.manufacturer,
+        d.model_number,
+        d.device_type,
+        d.category,
+        v.template_json,
+        v.version
+      FROM devices d
+      JOIN device_versions v ON v.id = d.current_version_id
+      WHERE d.deleted_at IS NULL
+    `)
+    .all() as unknown as DeviceRow[];
+}
+
+function compactWhitespace(value: string): string {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function removePrefixCaseInsensitive(value: string, prefix: string): string {
+  if (!prefix) return value;
+  if (value.slice(0, prefix.length).toLowerCase() !== prefix.toLowerCase()) return value;
+  return value.slice(prefix.length).trimStart();
+}
+
+function replaceAllLiteral(value: string, findText: string, replaceText: string): string {
+  if (!findText) return value;
+  return value.split(findText).join(replaceText);
+}
+
+function applyBulkEditOperations(
+  template: DeviceTemplate,
+  options: {
+    setManufacturer?: string;
+    removeLabelPrefix?: string;
+    findLabelText?: string;
+    replaceLabelText?: string;
+  },
+): Omit<DeviceTemplate, "id" | "version"> {
+  const { id, version, ...editable } = structuredClone(template);
+  void id;
+  void version;
+
+  if (options.setManufacturer !== undefined) {
+    editable.manufacturer = options.setManufacturer || undefined;
+  }
+
+  let nextLabel = editable.label;
+  if (options.removeLabelPrefix) {
+    nextLabel = removePrefixCaseInsensitive(nextLabel, options.removeLabelPrefix);
+  }
+  if (options.findLabelText) {
+    nextLabel = replaceAllLiteral(nextLabel, options.findLabelText, options.replaceLabelText ?? "");
+  }
+  editable.label = compactWhitespace(nextLabel);
+
+  return editable;
 }
 
 function saveNormalizedTemplate(
@@ -315,4 +417,159 @@ export function deleteTemplate(
     db.exec("ROLLBACK");
     throw err;
   }
+}
+
+export function bulkEditTemplates(db: DatabaseSync, input: BulkEditTemplatesInput): BulkEditTemplatesResult {
+  if (!Array.isArray(input.templateIds)) {
+    throw new Error("templateIds must be an array");
+  }
+
+  const templateIds = [...new Set(input.templateIds.map((id) => String(id).trim()).filter(Boolean))];
+  if (templateIds.length === 0) {
+    throw new Error("Select at least one library device");
+  }
+  if (templateIds.length > 200) {
+    throw new Error("A maximum of 200 library devices can be edited at once");
+  }
+
+  const setManufacturer = typeof input.setManufacturer === "string"
+    ? compactWhitespace(input.setManufacturer)
+    : undefined;
+  const removeLabelPrefix = typeof input.removeLabelPrefix === "string"
+    ? input.removeLabelPrefix.trim()
+    : undefined;
+  const findLabelText = typeof input.findLabelText === "string"
+    ? input.findLabelText
+    : undefined;
+  const replaceLabelText = typeof input.replaceLabelText === "string"
+    ? input.replaceLabelText
+    : undefined;
+
+  if (setManufacturer === undefined && !removeLabelPrefix && !findLabelText) {
+    throw new Error("Choose at least one bulk edit action");
+  }
+
+  const activeRows = listActiveDeviceRows(db);
+  const selectedIdSet = new Set(templateIds);
+  const rowById = new Map(activeRows.map((row) => [row.id, row]));
+  const existingByUniqueKey = new Map<string, DeviceRow>();
+  for (const row of activeRows) {
+    if (!selectedIdSet.has(row.id)) existingByUniqueKey.set(row.unique_key, row);
+  }
+
+  const selectedRows = templateIds.map((id) => {
+    const row = rowById.get(id);
+    if (!row) throw new Error(`Library device not found: ${id}`);
+    return row;
+  });
+
+  const results: PreparedBulkEditResultItem[] = selectedRows.map((row) => {
+    const currentTemplate = asDeviceTemplate(row);
+    const edited = applyBulkEditOperations(currentTemplate, {
+      setManufacturer,
+      removeLabelPrefix,
+      findLabelText,
+      replaceLabelText,
+    });
+    const validation = validateDeviceTemplate(edited);
+    const base: BulkEditTemplateResultItem = {
+      id: row.id,
+      beforeLabel: row.label,
+      afterLabel: edited.label,
+      beforeManufacturer: row.manufacturer,
+      afterManufacturer: edited.manufacturer ?? null,
+      status: "unchanged",
+    };
+
+    if (!validation.ok) {
+      return {
+        ...base,
+        status: "invalid" as const,
+        reason: validation.errors.join("; "),
+        nextTemplate: null,
+        nextUniqueKey: null,
+      };
+    }
+
+    const normalized = normalizeDeviceTemplate(edited);
+    const changed =
+      normalized.label !== row.label
+      || (normalized.manufacturer ?? null) !== row.manufacturer;
+
+    return {
+      ...base,
+      afterLabel: normalized.label,
+      afterManufacturer: normalized.manufacturer ?? null,
+      status: changed ? "updated" as const : "unchanged" as const,
+      nextTemplate: normalized,
+      nextUniqueKey: templateUniqueKey(normalized),
+    };
+  });
+
+  const idsByNextKey = new Map<string, string[]>();
+  for (const item of results) {
+    if (!item.nextUniqueKey) continue;
+    const ids = idsByNextKey.get(item.nextUniqueKey) ?? [];
+    ids.push(item.id);
+    idsByNextKey.set(item.nextUniqueKey, ids);
+  }
+
+  for (const item of results) {
+    if (!item.nextUniqueKey || item.status === "invalid") continue;
+
+    const duplicateIds = idsByNextKey.get(item.nextUniqueKey) ?? [];
+    if (duplicateIds.length > 1) {
+      const otherId = duplicateIds.find((id) => id !== item.id);
+      const other = otherId ? rowById.get(otherId) : undefined;
+      item.status = "conflict";
+      item.reason = "This edit would create duplicate library devices in the selected set";
+      item.conflictWithId = otherId;
+      item.conflictWithLabel = other?.label;
+      continue;
+    }
+
+    const existingConflict = existingByUniqueKey.get(item.nextUniqueKey);
+    if (existingConflict) {
+      item.status = "conflict";
+      item.reason = "This edit would collide with an existing shared library device";
+      item.conflictWithId = existingConflict.id;
+      item.conflictWithLabel = existingConflict.label;
+    }
+  }
+
+  const blocking = results.filter((item) => item.status === "conflict" || item.status === "invalid");
+  if (blocking.length > 0) {
+    return { templates: [], results: finalizeBulkEditResults(results) };
+  }
+
+  const changedItems = results.filter((item) => item.status === "updated" && item.nextTemplate);
+  if (changedItems.length === 0) {
+    return { templates: [], results: finalizeBulkEditResults(results) };
+  }
+
+  if (input.preview) {
+    return { templates: [], results: finalizeBulkEditResults(results) };
+  }
+
+  const saved: DeviceTemplate[] = [];
+  db.exec("BEGIN");
+  try {
+    for (const item of changedItems) {
+      saved.push(saveNormalizedTemplate(db, item.nextTemplate!, {
+        deviceId: item.id,
+        note: input.note,
+        source: input.source ?? "bulk-edit",
+        actorEmail: input.actorEmail,
+      }));
+    }
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+
+  return {
+    templates: saved,
+    results: finalizeBulkEditResults(results),
+  };
 }
