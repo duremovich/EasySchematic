@@ -14,6 +14,10 @@ const ALL_SIGNAL_TYPES = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
   (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
 );
 
+const ALL_DEVICE_TYPES = Object.keys(DEVICE_TYPE_TO_CATEGORY).sort((a, b) =>
+  (DEVICE_TYPE_LABELS[a] ?? a).localeCompare(DEVICE_TYPE_LABELS[b] ?? b),
+);
+
 function remapUnknownSignalTypes(raw: string, unknownSignalTypes: string[], replacement: SignalType): string | null {
   let parsed: unknown;
   try {
@@ -74,10 +78,6 @@ const SAMPLE_CSV = `model_number,manufacturer,label,device_type,height_mm,width_
 60-1271-01,Extron,Extron DTP2 T 212,hdbaset-extender,25,216,114,0.68,12,https://www.extron.com/product/dtp2t212,DTP2 OUT,output,hdbaset,rj45,Rear
 60-1271-01,Extron,Extron DTP2 T 212,hdbaset-extender,25,216,114,0.68,12,https://www.extron.com/product/dtp2t212,RS-232,bidirectional,serial,phoenix,Rear
 60-1271-01,Extron,Extron DTP2 T 212,hdbaset-extender,25,216,114,0.68,12,https://www.extron.com/product/dtp2t212,12V DC,input,power,barrel,Rear`;
-
-type ImportSuggestion =
-  | { kind: "deviceType"; label: string; patch: Partial<DeviceTemplate> }
-  | { kind: "generic"; label: string; patch: Partial<DeviceTemplate> };
 
 function rowKey(pt: ParsedTemplate): string {
   return pt.template.id ?? pt.template.label;
@@ -166,38 +166,6 @@ function getDeviceTypeSuggestions(template: DeviceTemplate): string[] {
     .map((entry) => entry.candidate);
 }
 
-function getImportSuggestions(template: DeviceTemplate, validationErrors: string[]): ImportSuggestion[] {
-  const suggestions: ImportSuggestion[] = [];
-
-  if (validationErrors.some((error) => error.toLowerCase().includes("unknown devicetype"))) {
-    for (const deviceType of getDeviceTypeSuggestions(template)) {
-      suggestions.push({
-        kind: "deviceType",
-        label: `Use ${DEVICE_TYPE_LABELS[deviceType] ?? deviceType}`,
-        patch: {
-          deviceType,
-          ...(DEVICE_TYPE_TO_CATEGORY[deviceType]
-            ? { category: DEVICE_TYPE_TO_CATEGORY[deviceType] }
-            : {}),
-        },
-      });
-    }
-  }
-
-  if (
-    validationErrors.some((error) => error.toLowerCase().includes("referenceurl is required"))
-    && template.manufacturer?.trim().toLowerCase() !== "generic"
-  ) {
-    suggestions.push({
-      kind: "generic",
-      label: "Make Generic",
-      patch: { manufacturer: "Generic" },
-    });
-  }
-
-  return suggestions;
-}
-
 export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }: Props) {
   const importCustomTemplates = useSchematicStore((s) => s.importCustomTemplates);
   const addToast = useSchematicStore((s) => s.addToast);
@@ -233,6 +201,15 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
   const selectedTemplates = (result?.templates ?? []).filter(
     (pt) => !skipped.has(rowKey(pt)) && pt.validation.ok,
   );
+  const brandCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const pt of result?.templates ?? []) {
+      const manufacturer = (pt.template.manufacturer ?? "").trim().toLowerCase();
+      if (!manufacturer) continue;
+      counts.set(manufacturer, (counts.get(manufacturer) ?? 0) + 1);
+    }
+    return counts;
+  }, [result]);
   const unknownConnectorTypes = useMemo(() => {
     if (!result) return [];
     const found = new Set<string>();
@@ -270,6 +247,10 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
 
   const applyTemplateOverride = (pt: ParsedTemplate, patch: Partial<DeviceTemplate>) => {
     const key = rowKey(pt);
+    applyTemplateOverrideByKey(key, patch);
+  };
+
+  const applyTemplateOverrideByKey = (key: string, patch: Partial<DeviceTemplate>) => {
     setTemplateOverrides((current) => ({
       ...current,
       [key]: {
@@ -282,6 +263,15 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
       next.delete(key);
       return next;
     });
+  };
+
+  const applyReferenceUrlToBrand = (manufacturer: string, referenceUrl: string) => {
+    const brand = manufacturer.trim().toLowerCase();
+    if (!brand || brand === "generic") return;
+    for (const pt of result?.templates ?? []) {
+      if ((pt.template.manufacturer ?? "").trim().toLowerCase() !== brand) continue;
+      applyTemplateOverrideByKey(rowKey(pt), { referenceUrl });
+    }
   };
 
   const handleRemapUnknownSignalTypes = () => {
@@ -525,8 +515,10 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
                         key={rowKey(pt)}
                         pt={pt}
                         skipped={skipped.has(rowKey(pt))}
+                        brandCount={brandCounts.get((pt.template.manufacturer ?? "").trim().toLowerCase()) ?? 0}
                         onToggle={() => toggleSkip(rowKey(pt))}
                         onApplyFix={(patch) => applyTemplateOverride(pt, patch)}
+                        onApplyBrandUrl={applyReferenceUrlToBrand}
                       />
                     ))}
                   </div>
@@ -583,19 +575,31 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
 function PreviewRow({
   pt,
   skipped,
+  brandCount,
   onToggle,
   onApplyFix,
+  onApplyBrandUrl,
 }: {
   pt: ParsedTemplate;
   skipped: boolean;
+  brandCount: number;
   onToggle: () => void;
   onApplyFix: (patch: Partial<DeviceTemplate>) => void;
+  onApplyBrandUrl: (manufacturer: string, referenceUrl: string) => void;
 }) {
   const t = pt.template;
   const errCount = pt.validation.errors.length;
   const warnCount = pt.validation.warnings.length;
   const badRow = errCount > 0;
-  const suggestions = getImportSuggestions(t, pt.validation.errors);
+  const needsDeviceType = pt.validation.errors.some((error) => error.toLowerCase().includes("devicetype is required"))
+    || pt.validation.errors.some((error) => error.toLowerCase().includes("unknown devicetype"));
+  const needsReferenceUrl = !t.referenceUrl || !/^https?:\/\//i.test(t.referenceUrl);
+  const manufacturer = (t.manufacturer ?? "").trim();
+  const deviceTypeSuggestions = getDeviceTypeSuggestions(t);
+  const currentIsKnownType = t.deviceType ? Boolean(DEVICE_TYPE_TO_CATEGORY[t.deviceType]) : false;
+  const deviceTypeOptions = currentIsKnownType
+    ? [t.deviceType, ...ALL_DEVICE_TYPES.filter((type) => type !== t.deviceType)]
+    : ALL_DEVICE_TYPES;
 
   return (
     <div
@@ -635,21 +639,83 @@ function PreviewRow({
             ⚠ {pt.validation.warnings.join("; ")}
           </div>
         )}
-        {suggestions.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mr-1">
-              Alternatives:
-            </span>
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion.label}
-                onClick={() => onApplyFix(suggestion.patch)}
-                className="px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-[10px] text-blue-700 hover:bg-blue-100 cursor-pointer"
-                title={suggestion.kind === "generic" ? "Switch manufacturer to Generic" : "Replace the unknown device type"}
-              >
-                {suggestion.label}
-              </button>
-            ))}
+        {needsDeviceType && (
+          <div className="mt-2 space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                Choose a known type
+              </span>
+              {deviceTypeSuggestions.length > 0 && (
+                <span className="text-[10px] text-[var(--color-text-muted)]">
+                  Suggestions: {deviceTypeSuggestions.slice(0, 3).map((type) => DEVICE_TYPE_LABELS[type] ?? type).join(", ")}
+                </span>
+              )}
+            </div>
+            <select
+              value={t.deviceType && deviceTypeOptions.includes(t.deviceType) ? t.deviceType : ""}
+              onChange={(e) => {
+                const nextType = e.target.value;
+                if (!nextType) return;
+                onApplyFix({
+                  deviceType: nextType,
+                  ...(DEVICE_TYPE_TO_CATEGORY[nextType] ? { category: DEVICE_TYPE_TO_CATEGORY[nextType] } : {}),
+                });
+              }}
+              className="w-full px-2 py-1 rounded border border-sky-200 bg-white text-[11px] text-[var(--color-text)] outline-none focus:border-sky-400"
+            >
+              <option value="">
+                {t.deviceType ? `Current: ${DEVICE_TYPE_LABELS[t.deviceType] ?? t.deviceType} (unknown)` : "Select a known device type..."}
+              </option>
+              {deviceTypeSuggestions.length > 0 && (
+                <optgroup label="Suggested matches">
+                  {deviceTypeSuggestions.map((type) => (
+                    <option key={`suggested-${type}`} value={type}>
+                      {DEVICE_TYPE_LABELS[type] ?? type}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="All device types">
+                {deviceTypeOptions.map((type) => (
+                  <option key={type} value={type}>
+                    {DEVICE_TYPE_LABELS[type] ?? type}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+        )}
+        {needsReferenceUrl && (
+          <div className="mt-2 space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)]">
+                Add a web address
+              </span>
+              {brandCount > 1 && manufacturer && manufacturer.toLowerCase() !== "generic" && (
+                <span className="text-[10px] text-[var(--color-text-muted)]">
+                  Shared brand: {brandCount} items
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="url"
+                value={t.referenceUrl ?? ""}
+                onChange={(e) => onApplyFix({ referenceUrl: e.target.value })}
+                placeholder="https://example.com/product-page"
+                className="flex-1 px-2 py-1 rounded border border-sky-200 bg-white text-[11px] text-[var(--color-text)] outline-none focus:border-sky-400"
+              />
+              {brandCount > 1 && manufacturer && manufacturer.toLowerCase() !== "generic" && (
+                <button
+                  onClick={() => onApplyBrandUrl(manufacturer, t.referenceUrl ?? "")}
+                  disabled={!t.referenceUrl?.trim()}
+                  className="px-2 py-1 rounded border border-sky-200 bg-sky-50 text-[10px] text-sky-700 hover:bg-sky-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  title={`Apply this URL to all ${manufacturer} rows`}
+                >
+                  Apply to brand
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
