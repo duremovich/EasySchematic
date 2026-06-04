@@ -1,9 +1,11 @@
 import { useMemo, useRef, useState } from "react";
 import { useSchematicStore } from "../store";
 import { SIGNAL_LABELS, type DeviceTemplate, type SignalType } from "../types";
+import { DEVICE_TYPE_LABELS, DEVICE_TYPE_TO_CATEGORY } from "../deviceTypeCategories";
 import { parseJsonImport } from "../import/parseJson";
 import { parseCsvImport } from "../import/parseCsv";
 import type { ParsedTemplate } from "../import/types";
+import { validateTemplate } from "../import/validate";
 import { saveTatesideDeviceTemplates } from "../tatesideApi";
 
 type Tab = "json" | "csv";
@@ -73,6 +75,129 @@ const SAMPLE_CSV = `model_number,manufacturer,label,device_type,height_mm,width_
 60-1271-01,Extron,Extron DTP2 T 212,hdbaset-extender,25,216,114,0.68,12,https://www.extron.com/product/dtp2t212,RS-232,bidirectional,serial,phoenix,Rear
 60-1271-01,Extron,Extron DTP2 T 212,hdbaset-extender,25,216,114,0.68,12,https://www.extron.com/product/dtp2t212,12V DC,input,power,barrel,Rear`;
 
+type ImportSuggestion =
+  | { kind: "deviceType"; label: string; patch: Partial<DeviceTemplate> }
+  | { kind: "generic"; label: string; patch: Partial<DeviceTemplate> };
+
+function rowKey(pt: ParsedTemplate): string {
+  return pt.template.id ?? pt.template.label;
+}
+
+function normalizeToken(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function tokenize(value: string): string[] {
+  return value.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+function scoreDeviceTypeCandidate(candidate: string, current: string, label: string, category?: string): number {
+  const candidateNorm = normalizeToken(candidate);
+  const currentNorm = normalizeToken(current);
+  const labelNorm = normalizeToken(label);
+  const categoryNorm = normalizeToken(category ?? "");
+
+  let score = 0;
+  if (candidateNorm === currentNorm) score += 1000;
+  if (candidateNorm.includes(currentNorm) || currentNorm.includes(candidateNorm)) score += 350;
+
+  const searchTokens = new Set([
+    ...tokenize(current),
+    ...tokenize(label),
+    ...tokenize(category ?? ""),
+  ]);
+
+  for (const token of searchTokens) {
+    if (!token) continue;
+    if (candidateNorm.includes(token) || token.includes(candidateNorm)) score += 60;
+  }
+
+  const keywordWeights: Array<[RegExp, string[], number]> = [
+    [/touch|pad|panel|screen/, ["touch-screen", "button-panel", "controller"], 180],
+    [/switch|matrix|router/, ["switcher", "router", "presentation-system"], 180],
+    [/camera|ptz/, ["camera", "ptz-camera", "camera-ccu"], 180],
+    [/speaker|audio|sound/, ["speaker", "amplifier", "audio-dsp"], 170],
+    [/display|monitor|tv|screen/, ["display", "monitor", "tv"], 170],
+    [/codec|conference|bar/, ["codec", "video-bar", "presentation-system"], 160],
+    [/media|player|stream/, ["media-player", "streaming-encoder", "media-server"], 160],
+    [/control|processor|controller/, ["control-processor", "controller", "button-panel"], 150],
+    [/intercom|comms|commentary/, ["intercom", "commentary-box", "phone-hybrid"], 150],
+    [/wireless|mic|rf/, ["wireless-mic-receiver", "wired-mic", "antenna"], 140],
+  ];
+
+  const haystack = `${current} ${label} ${category ?? ""}`.toLowerCase();
+  for (const [pattern, candidates, weight] of keywordWeights) {
+    if (!pattern.test(haystack)) continue;
+    const idx = candidates.indexOf(candidate);
+    if (idx >= 0) score += weight - (idx * 15);
+  }
+
+  if (candidateNorm === "touchscreen" || candidateNorm === "touchscreen") {
+    if (/touch|pad|panel|screen/.test(haystack)) score += 200;
+  }
+
+  // Slight bonus when the human-readable device type label overlaps the text.
+  const candidateLabel = DEVICE_TYPE_LABELS[candidate] ?? candidate;
+  const candidateLabelTokens = new Set(tokenize(candidateLabel));
+  for (const token of searchTokens) {
+    if (candidateLabelTokens.has(token)) score += 20;
+  }
+
+  // Keep obviously unrelated options from floating up due to shared words.
+  if (candidateNorm === currentNorm) score += 500;
+  if (candidateNorm === labelNorm || candidateNorm === categoryNorm) score += 40;
+
+  return score;
+}
+
+function getDeviceTypeSuggestions(template: DeviceTemplate): string[] {
+  const current = template.deviceType || "";
+  const label = template.label || "";
+  const category = template.category || "";
+  const candidates = Object.keys(DEVICE_TYPE_TO_CATEGORY);
+  return candidates
+    .map((candidate) => ({
+      candidate,
+      score: scoreDeviceTypeCandidate(candidate, current, label, category),
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || DEVICE_TYPE_LABELS[a.candidate].localeCompare(DEVICE_TYPE_LABELS[b.candidate]))
+    .slice(0, 4)
+    .map((entry) => entry.candidate);
+}
+
+function getImportSuggestions(template: DeviceTemplate, validationErrors: string[]): ImportSuggestion[] {
+  const suggestions: ImportSuggestion[] = [];
+
+  if (validationErrors.some((error) => error.toLowerCase().includes("unknown devicetype"))) {
+    for (const deviceType of getDeviceTypeSuggestions(template)) {
+      suggestions.push({
+        kind: "deviceType",
+        label: `Use ${DEVICE_TYPE_LABELS[deviceType] ?? deviceType}`,
+        patch: {
+          deviceType,
+          ...(DEVICE_TYPE_TO_CATEGORY[deviceType]
+            ? { category: DEVICE_TYPE_TO_CATEGORY[deviceType] }
+            : {}),
+        },
+      });
+    }
+  }
+
+  if (
+    validationErrors.some((error) => error.toLowerCase().includes("referenceurl is required"))
+    && template.manufacturer?.trim().toLowerCase() !== "generic"
+  ) {
+    suggestions.push({
+      kind: "generic",
+      label: "Make Generic",
+      patch: { manufacturer: "Generic" },
+    });
+  }
+
+  return suggestions;
+}
+
 export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }: Props) {
   const importCustomTemplates = useSchematicStore((s) => s.importCustomTemplates);
   const addToast = useSchematicStore((s) => s.addToast);
@@ -84,16 +209,29 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
   const [signalTypeReplacement, setSignalTypeReplacement] = useState<SignalType>("custom");
   const [libraryNote, setLibraryNote] = useState("");
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
+  const [templateOverrides, setTemplateOverrides] = useState<Record<string, Partial<DeviceTemplate>>>({});
   const [savingShared, setSavingShared] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const result = useMemo(() => {
+  const parsedResult = useMemo(() => {
     if (!text.trim()) return null;
     return tab === "json" ? parseJsonImport(text) : parseCsvImport(text);
   }, [text, tab, customConnectorTypes]);
 
+  const result = useMemo(() => {
+    if (!parsedResult) return null;
+    const templates = parsedResult.templates.map((pt) => {
+      const key = rowKey(pt);
+      const override = templateOverrides[key] ?? {};
+      const template = { ...pt.template, ...override } as DeviceTemplate;
+      const validation = validateTemplate(template);
+      return { ...pt, template, validation };
+    });
+    return { ...parsedResult, templates };
+  }, [parsedResult, templateOverrides]);
+
   const selectedTemplates = (result?.templates ?? []).filter(
-    (pt) => !skipped.has(pt.template.id ?? pt.template.label) && pt.validation.ok,
+    (pt) => !skipped.has(rowKey(pt)) && pt.validation.ok,
   );
   const unknownConnectorTypes = useMemo(() => {
     if (!result) return [];
@@ -130,6 +268,22 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
     }
   };
 
+  const applyTemplateOverride = (pt: ParsedTemplate, patch: Partial<DeviceTemplate>) => {
+    const key = rowKey(pt);
+    setTemplateOverrides((current) => ({
+      ...current,
+      [key]: {
+        ...(current[key] ?? {}),
+        ...patch,
+      },
+    }));
+    setSkipped((current) => {
+      const next = new Set(current);
+      next.delete(key);
+      return next;
+    });
+  };
+
   const handleRemapUnknownSignalTypes = () => {
     if (unknownSignalTypes.length === 0) return;
     const rewritten = remapUnknownSignalTypes(text, unknownSignalTypes, signalTypeReplacement);
@@ -149,6 +303,7 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
   const close = () => {
     setText("");
     setSkipped(new Set());
+    setTemplateOverrides({});
     setLibraryNote("");
     onClose();
   };
@@ -164,10 +319,16 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
     if (!file) return;
     const content = await file.text();
     setText(content);
+    setTemplateOverrides({});
+    setSkipped(new Set());
     e.target.value = "";
   };
 
-  const loadSample = () => setText(tab === "json" ? SAMPLE_JSON : SAMPLE_CSV);
+  const loadSample = () => {
+    setText(tab === "json" ? SAMPLE_JSON : SAMPLE_CSV);
+    setTemplateOverrides({});
+    setSkipped(new Set());
+  };
 
   const handleAddLocalOnly = () => {
     if (selectedTemplates.length === 0) return;
@@ -243,7 +404,7 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
           {(["json", "csv"] as const).map((t) => (
             <button
               key={t}
-              onClick={() => { setTab(t); setText(""); setSkipped(new Set()); }}
+              onClick={() => { setTab(t); setText(""); setSkipped(new Set()); setTemplateOverrides({}); }}
               className={`px-4 py-2 text-xs cursor-pointer ${
                 tab === t
                   ? "border-b-2 border-blue-500 text-[var(--color-text-heading)] font-medium"
@@ -361,10 +522,11 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
                   <div className="max-h-72 overflow-y-auto">
                     {result.templates.map((pt) => (
                       <PreviewRow
-                        key={pt.template.id ?? pt.template.label}
+                        key={rowKey(pt)}
                         pt={pt}
-                        skipped={skipped.has(pt.template.id ?? pt.template.label)}
-                        onToggle={() => toggleSkip(pt.template.id ?? pt.template.label)}
+                        skipped={skipped.has(rowKey(pt))}
+                        onToggle={() => toggleSkip(rowKey(pt))}
+                        onApplyFix={(patch) => applyTemplateOverride(pt, patch)}
                       />
                     ))}
                   </div>
@@ -418,11 +580,22 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
   );
 }
 
-function PreviewRow({ pt, skipped, onToggle }: { pt: ParsedTemplate; skipped: boolean; onToggle: () => void }) {
+function PreviewRow({
+  pt,
+  skipped,
+  onToggle,
+  onApplyFix,
+}: {
+  pt: ParsedTemplate;
+  skipped: boolean;
+  onToggle: () => void;
+  onApplyFix: (patch: Partial<DeviceTemplate>) => void;
+}) {
   const t = pt.template;
   const errCount = pt.validation.errors.length;
   const warnCount = pt.validation.warnings.length;
   const badRow = errCount > 0;
+  const suggestions = getImportSuggestions(t, pt.validation.errors);
 
   return (
     <div
@@ -460,6 +633,23 @@ function PreviewRow({ pt, skipped, onToggle }: { pt: ParsedTemplate; skipped: bo
         {warnCount > 0 && errCount === 0 && (
           <div className="text-[10px] text-amber-700 mt-1">
             ⚠ {pt.validation.warnings.join("; ")}
+          </div>
+        )}
+        {suggestions.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mr-1">
+              Alternatives:
+            </span>
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.label}
+                onClick={() => onApplyFix(suggestion.patch)}
+                className="px-2 py-0.5 rounded border border-blue-200 bg-blue-50 text-[10px] text-blue-700 hover:bg-blue-100 cursor-pointer"
+                title={suggestion.kind === "generic" ? "Switch manufacturer to Generic" : "Replace the unknown device type"}
+              >
+                {suggestion.label}
+              </button>
+            ))}
           </div>
         )}
       </div>

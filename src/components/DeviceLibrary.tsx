@@ -418,6 +418,7 @@ function BulkEditSharedTemplatesPanel({
   onClearSelection,
   onPreview,
   onApply,
+  onClose,
 }: {
   selectionCount: number;
   filteredCount: number;
@@ -435,6 +436,7 @@ function BulkEditSharedTemplatesPanel({
   onClearSelection: () => void;
   onPreview: () => void;
   onApply: () => void;
+  onClose: () => void;
 }) {
   if (selectionCount === 0) return null;
 
@@ -444,7 +446,7 @@ function BulkEditSharedTemplatesPanel({
   const hasAction = manufacturer.trim() || removePrefix.trim() || findText;
 
   return (
-    <div className="rounded border border-blue-200 bg-blue-50/70 px-2 py-2 space-y-2">
+    <div className="rounded border border-blue-200 bg-blue-50/70 px-2 py-2 space-y-2 relative">
       <div className="flex items-center justify-between gap-2">
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-700">
@@ -471,6 +473,14 @@ function BulkEditSharedTemplatesPanel({
             className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
           >
             Clear
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+            title="Close bulk edit"
+          >
+            Close
           </button>
         </div>
       </div>
@@ -1401,6 +1411,7 @@ export default function DeviceLibrary() {
   const [bulkReplaceText, setBulkReplaceText] = useState("");
   const [bulkPreview, setBulkPreview] = useState<TatesideBulkEditResult | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const bulkEditActive = selectedSharedTemplateIds.size > 0;
 
   const presetIds = useMemo(() => new Set(Object.keys(templatePresets)), [templatePresets]);
   const favoriteSet = useMemo(() => new Set(favoriteTemplates), [favoriteTemplates]);
@@ -1585,6 +1596,17 @@ export default function DeviceLibrary() {
   useEffect(() => {
     setBulkPreview(null);
   }, [selectedSharedTemplateIds, bulkManufacturer, bulkRemovePrefix, bulkFindText, bulkReplaceText]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && bulkEditActive) {
+        setSelectedSharedTemplateIds(new Set());
+        setBulkPreview(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [bulkEditActive]);
 
   const handleSelectFilteredShared = useCallback(() => {
     setSelectedSharedTemplateIds(new Set(filteredSharedTemplates.map((template) => template.id!).filter(Boolean)));
@@ -1787,6 +1809,7 @@ export default function DeviceLibrary() {
             onClearSelection={handleClearSharedSelection}
             onPreview={() => void runBulkEdit(true)}
             onApply={() => void runBulkEdit(false)}
+            onClose={handleClearSharedSelection}
           />
         </div>
       )}
