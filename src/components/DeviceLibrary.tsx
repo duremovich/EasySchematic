@@ -419,6 +419,7 @@ function BulkEditSharedTemplatesPanel({
   onReplaceTextChange,
   onSelectFiltered,
   onClearSelection,
+  onResetActions,
   onPreview,
   onApply,
   deleteConfirming,
@@ -444,6 +445,7 @@ function BulkEditSharedTemplatesPanel({
   onReplaceTextChange: (value: string) => void;
   onSelectFiltered: () => void;
   onClearSelection: () => void;
+  onResetActions: () => void;
   onPreview: () => void;
   onApply: () => void;
   deleteConfirming: boolean;
@@ -483,6 +485,13 @@ function BulkEditSharedTemplatesPanel({
           )}
           <button
             type="button"
+            onClick={onResetActions}
+            className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+          >
+            Reset actions
+          </button>
+          <button
+            type="button"
             onClick={onClearSelection}
             className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
           >
@@ -501,9 +510,20 @@ function BulkEditSharedTemplatesPanel({
 
       <div className="grid grid-cols-1 gap-2">
         <label className="block">
-          <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
-            Set Manufacturer To
-          </span>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+              Set Manufacturer To
+            </span>
+            {manufacturer && (
+              <button
+                type="button"
+                onClick={() => onManufacturerChange("")}
+                className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
           <input
             value={manufacturer}
             onChange={(e) => onManufacturerChange(e.target.value)}
@@ -512,9 +532,20 @@ function BulkEditSharedTemplatesPanel({
           />
         </label>
         <label className="block">
-          <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
-            Set Category To
-          </span>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+              Set Category To
+            </span>
+            {category && (
+              <button
+                type="button"
+                onClick={() => onCategoryChange("")}
+                className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
           <input
             value={category}
             onChange={(e) => onCategoryChange(e.target.value)}
@@ -529,9 +560,20 @@ function BulkEditSharedTemplatesPanel({
           </datalist>
         </label>
         <label className="block">
-          <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
-            Remove Prefix From Device Name
-          </span>
+          <div className="mb-1 flex items-center justify-between gap-2">
+            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+              Remove Prefix From Device Name
+            </span>
+            {removePrefix && (
+              <button
+                type="button"
+                onClick={() => onRemovePrefixChange("")}
+                className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+              >
+                Clear
+              </button>
+            )}
+          </div>
           <input
             value={removePrefix}
             onChange={(e) => onRemovePrefixChange(e.target.value)}
@@ -541,9 +583,23 @@ function BulkEditSharedTemplatesPanel({
         </label>
         <div className="grid grid-cols-2 gap-2">
           <label className="block">
-            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
-              Find In Device Name
-            </span>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+                Find In Device Name
+              </span>
+              {findText && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onFindTextChange("");
+                    onReplaceTextChange("");
+                  }}
+                  className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <input
               value={findText}
               onChange={(e) => onFindTextChange(e.target.value)}
@@ -552,9 +608,20 @@ function BulkEditSharedTemplatesPanel({
             />
           </label>
           <label className="block">
-            <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-1">
-              Replace With
-            </span>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+                Replace With
+              </span>
+              {replaceText && !findText && (
+                <button
+                  type="button"
+                  onClick={() => onReplaceTextChange("")}
+                  className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
             <input
               value={replaceText}
               onChange={(e) => onReplaceTextChange(e.target.value)}
@@ -1694,6 +1761,16 @@ export default function DeviceLibrary() {
     setBulkDeleteConfirming(false);
   }, []);
 
+  const handleResetBulkActions = useCallback(() => {
+    setBulkManufacturer("");
+    setBulkCategory("");
+    setBulkRemovePrefix("");
+    setBulkFindText("");
+    setBulkReplaceText("");
+    setBulkPreview(null);
+    setBulkDeleteConfirming(false);
+  }, []);
+
   const runBulkEdit = useCallback(async (previewOnly: boolean) => {
     const templateIds = [...selectedSharedTemplateIds];
     if (templateIds.length === 0) {
@@ -1918,6 +1995,7 @@ export default function DeviceLibrary() {
             onReplaceTextChange={setBulkReplaceText}
             onSelectFiltered={handleSelectFilteredShared}
             onClearSelection={handleClearSharedSelection}
+            onResetActions={handleResetBulkActions}
             onPreview={() => void runBulkEdit(true)}
             onApply={() => void runBulkEdit(false)}
             deleteConfirming={bulkDeleteConfirming}
