@@ -1717,6 +1717,14 @@ export default function DeviceLibrary() {
   const totalLibraryResults = useMemo(() => {
     return brandSections.reduce((sum, brand) => sum + brand.count, 0);
   }, [brandSections]);
+  const selectedSharedBrands = useMemo(() => {
+    const selected = new Set<string>();
+    for (const template of templates) {
+      if (!template.id || !selectedSharedTemplateIds.has(template.id)) continue;
+      selected.add((template.manufacturer ?? "Other").trim() || "Other");
+    }
+    return [...selected].sort((a, b) => a.localeCompare(b));
+  }, [selectedSharedTemplateIds, templates]);
   const sharedCategoryOptions = useMemo(() => {
     const categories = new Set<string>();
     for (const template of templates) {
@@ -1770,6 +1778,38 @@ export default function DeviceLibrary() {
     setBulkPreview(null);
     setBulkDeleteConfirming(false);
   }, []);
+
+  const previousSelectedSharedBrandsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    const previousBrands = previousSelectedSharedBrandsRef.current;
+    const currentBrands = selectedSharedBrands;
+    const actionsArmed = Boolean(
+      bulkManufacturer.trim()
+      || bulkCategory.trim()
+      || bulkRemovePrefix.trim()
+      || bulkFindText
+      || bulkReplaceText,
+    );
+    const hasNoBrandOverlap =
+      previousBrands.length > 0
+      && currentBrands.length > 0
+      && !currentBrands.some((brand) => previousBrands.includes(brand));
+
+    previousSelectedSharedBrandsRef.current = currentBrands;
+
+    if (hasNoBrandOverlap && actionsArmed) {
+      handleResetBulkActions();
+    }
+  }, [
+    bulkCategory,
+    bulkFindText,
+    bulkManufacturer,
+    bulkRemovePrefix,
+    bulkReplaceText,
+    handleResetBulkActions,
+    selectedSharedBrands,
+  ]);
 
   const runBulkEdit = useCallback(async (previewOnly: boolean) => {
     const templateIds = [...selectedSharedTemplateIds];
