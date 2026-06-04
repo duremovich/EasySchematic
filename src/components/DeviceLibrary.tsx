@@ -132,6 +132,7 @@ function TemplateItem({
     .join(" / ");
   const rowRef = useRef<HTMLDivElement>(null);
   const [hoverCardPosition, setHoverCardPosition] = useState<{ top: number; left: number } | null>(null);
+  const hideHoverCard = useCallback(() => setHoverCardPosition(null), []);
 
   const updateHoverCardPosition = useCallback(() => {
     const row = rowRef.current;
@@ -150,14 +151,13 @@ function TemplateItem({
 
   useEffect(() => {
     if (!hoverCardPosition) return;
-    const syncPosition = () => updateHoverCardPosition();
-    window.addEventListener("scroll", syncPosition, true);
-    window.addEventListener("resize", syncPosition);
+    window.addEventListener("scroll", hideHoverCard, true);
+    window.addEventListener("resize", hideHoverCard);
     return () => {
-      window.removeEventListener("scroll", syncPosition, true);
-      window.removeEventListener("resize", syncPosition);
+      window.removeEventListener("scroll", hideHoverCard, true);
+      window.removeEventListener("resize", hideHoverCard);
     };
-  }, [hoverCardPosition, updateHoverCardPosition]);
+  }, [hideHoverCard, hoverCardPosition]);
 
   return (
     <div
@@ -166,7 +166,7 @@ function TemplateItem({
       draggable
       onDragStart={(e) => onDragStart(e, template)}
       onMouseEnter={updateHoverCardPosition}
-      onMouseLeave={() => setHoverCardPosition(null)}
+      onMouseLeave={hideHoverCard}
     >
       <TemplateHoverCard
         template={template}
