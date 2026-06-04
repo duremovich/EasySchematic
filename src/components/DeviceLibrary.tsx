@@ -52,6 +52,49 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   );
 }
 
+function TemplateHoverCard({
+  template,
+  signalText,
+}: {
+  template: DeviceTemplate;
+  signalText: string;
+}) {
+  const details: Array<{ label: string; value: string | null | undefined }> = [
+    { label: "Manufacturer", value: template.manufacturer },
+    { label: "Model", value: template.modelNumber },
+    { label: "Category", value: template.category },
+    { label: "Type", value: template.deviceType },
+    { label: "Ports", value: String(template.ports.length) },
+    { label: "Signals", value: signalText || null },
+    template.slots && template.slots.length > 0
+      ? { label: "Slots", value: String(template.slots.length) }
+      : { label: "Slots", value: null },
+  ];
+
+  return (
+    <div className="pointer-events-none absolute inset-x-1 top-1 z-30 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/98 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.35)] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+      <div className="text-xs font-semibold text-[var(--color-text-heading)] break-words">
+        {template.label}
+      </div>
+      <div className="mt-2 space-y-1">
+        {details.map((detail) => {
+          if (!detail.value) return null;
+          return (
+            <div key={detail.label} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 text-[10px] leading-snug">
+              <span className="uppercase tracking-wide text-[var(--color-text-muted)]/80">
+                {detail.label}
+              </span>
+              <span className="text-[var(--color-text)] break-words">
+                {detail.value}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function TemplateItem({
   template,
   query,
@@ -83,10 +126,11 @@ function TemplateItem({
 
   return (
     <div
-      className="flex items-center gap-1 px-2 py-1.5 rounded cursor-grab hover:bg-[var(--color-surface-hover)] transition-colors group"
+      className="relative flex items-center gap-1 px-2 py-1.5 rounded cursor-grab hover:bg-[var(--color-surface-hover)] transition-colors group"
       draggable
       onDragStart={(e) => onDragStart(e, template)}
     >
+      <TemplateHoverCard template={template} signalText={signalText} />
       {onToggleSelected && (
         <button
           type="button"
