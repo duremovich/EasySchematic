@@ -74,6 +74,7 @@ interface DeviceRow {
   category: string | null;
   template_json: string;
   version: number;
+  deleted_at?: string | null;
 }
 
 interface PreparedBulkEditResultItem extends BulkEditTemplateResultItem {
@@ -116,6 +117,49 @@ function asDeviceTemplate(row: DeviceRow): DeviceTemplate {
   };
 }
 
+function templateIdentityParts(template: Pick<DeviceTemplate, "label" | "manufacturer" | "modelNumber" | "deviceType">): string {
+  return [
+    template.manufacturer?.trim() || "No manufacturer",
+    template.modelNumber?.trim() || template.label.trim(),
+    template.deviceType.trim(),
+  ].join(" / ");
+}
+
+function rowIdentityParts(row: Pick<DeviceRow, "label" | "manufacturer" | "model_number" | "device_type">): string {
+  return [
+    row.manufacturer?.trim() || "No manufacturer",
+    row.model_number?.trim() || row.label.trim(),
+    row.device_type.trim(),
+  ].join(" / ");
+}
+
+function duplicateTemplateError(
+  index: number,
+  template: Omit<DeviceTemplate, "id" | "version">,
+  conflicting: Pick<DeviceRow, "label" | "manufacturer" | "model_number" | "device_type" | "deleted_at">,
+): Error {
+  const label = template.label || "(no label)";
+  const prefix = `Template ${index + 1} "${label}"`;
+  if (conflicting.deleted_at) {
+    return new Error(
+      `${prefix} matches a previously deleted shared library device. Unique fields are manufacturer + model number + device type: ${templateIdentityParts(template)}`,
+    );
+  }
+  return new Error(
+    `${prefix} duplicates existing shared library device "${conflicting.label}". Unique fields are manufacturer + model number + device type: ${rowIdentityParts(conflicting)}`,
+  );
+}
+
+function batchDuplicateTemplateError(
+  firstIndex: number,
+  secondIndex: number,
+  template: Omit<DeviceTemplate, "id" | "version">,
+): Error {
+  return new Error(
+    `Template ${secondIndex + 1} "${template.label}" duplicates template ${firstIndex + 1} in this import. Unique fields are manufacturer + model number + device type: ${templateIdentityParts(template)}`,
+  );
+}
+
 function getActiveDeviceRow(db: DatabaseSync, deviceId: string): DeviceRow | undefined {
   return db
     .prepare(`
@@ -127,6 +171,7 @@ function getActiveDeviceRow(db: DatabaseSync, deviceId: string): DeviceRow | und
         d.model_number,
         d.device_type,
         d.category,
+        d.deleted_at,
         v.template_json,
         v.version
       FROM devices d
@@ -147,6 +192,7 @@ function listActiveDeviceRows(db: DatabaseSync): DeviceRow[] {
         d.model_number,
         d.device_type,
         d.category,
+        d.deleted_at,
         v.template_json,
         v.version
       FROM devices d
@@ -154,6 +200,29 @@ function listActiveDeviceRows(db: DatabaseSync): DeviceRow[] {
       WHERE d.deleted_at IS NULL
     `)
     .all() as unknown as DeviceRow[];
+}
+
+function getDeviceRowByUniqueKey(db: DatabaseSync, uniqueKey: string): DeviceRow | undefined {
+  return db
+    .prepare(`
+      SELECT
+        d.id,
+        d.unique_key,
+        d.label,
+        d.manufacturer,
+        d.model_number,
+        d.device_type,
+        d.category,
+        d.deleted_at,
+        v.template_json,
+        v.version
+      FROM devices d
+      JOIN device_versions v ON v.id = d.current_version_id
+      WHERE d.unique_key = ?
+      ORDER BY d.deleted_at IS NULL DESC, d.updated_at DESC
+      LIMIT 1
+    `)
+    .get(uniqueKey) as DeviceRow | undefined;
 }
 
 function compactWhitespace(value: string): string {
@@ -205,30 +274,26 @@ function saveNormalizedTemplate(
   template: Omit<DeviceTemplate, "id" | "version">,
   options: {
     deviceId?: string;
+    templateIndex?: number;
     note?: string;
     source?: string;
     actorEmail?: string | null;
   },
 ): DeviceTemplate {
   const uniqueKey = templateUniqueKey(template);
-  const existing = options.deviceId
-    ? getActiveDeviceRow(db, options.deviceId)
-    : db
-      .prepare("SELECT id, unique_key, label, manufacturer, model_number, device_type, category, '' AS template_json, 0 AS version FROM devices WHERE unique_key = ? AND deleted_at IS NULL")
-      .get(uniqueKey) as DeviceRow | undefined;
+  const existing = options.deviceId ? getActiveDeviceRow(db, options.deviceId) : undefined;
+  const matchingRow = getDeviceRowByUniqueKey(db, uniqueKey);
 
   if (options.deviceId && !existing) {
     throw new Error("Template not found");
   }
 
-  const conflicting = db
-    .prepare("SELECT id FROM devices WHERE unique_key = ? AND deleted_at IS NULL")
-    .get(uniqueKey) as { id: string } | undefined;
-  if (conflicting && conflicting.id !== (existing?.id ?? options.deviceId)) {
-    throw new Error("Another shared template already uses that manufacturer/model/device type");
+  if (matchingRow && matchingRow.deleted_at == null && matchingRow.id !== (existing?.id ?? options.deviceId)) {
+    throw duplicateTemplateError(options.templateIndex ?? 0, template, matchingRow);
   }
 
-  const deviceId = existing?.id ?? options.deviceId ?? makeDeviceId(template);
+  const recyclableDeletedRow = !options.deviceId && matchingRow?.deleted_at ? matchingRow : undefined;
+  const deviceId = existing?.id ?? recyclableDeletedRow?.id ?? options.deviceId ?? makeDeviceId(template);
   const previousVersion = db
     .prepare("SELECT max(version) AS version FROM device_versions WHERE device_id = ?")
     .get(deviceId) as { version: number | null } | undefined;
@@ -237,7 +302,7 @@ function saveNormalizedTemplate(
   const templateJson = JSON.stringify(template);
   const actor = options.actorEmail ?? null;
 
-  if (!existing) {
+  if (!existing && !recyclableDeletedRow) {
     db.prepare(`
       INSERT INTO devices (
         id, unique_key, label, manufacturer, model_number, device_type, category,
@@ -304,7 +369,7 @@ function saveNormalizedTemplate(
   `).run(
     randomUUID(),
     deviceId,
-    existing ? "update" : "create",
+    existing || recyclableDeletedRow ? "update" : "create",
     actor,
     JSON.stringify({ version: nextVersion, source: options.source ?? null }),
   );
@@ -353,14 +418,25 @@ export function saveTemplates(db: DatabaseSync, input: SaveTemplatesInput): Devi
     if (!validation.ok) {
       throw new Error(`Template ${index + 1} is invalid: ${validation.errors.join("; ")}`);
     }
-    return normalizeDeviceTemplate(raw);
+    return { template: normalizeDeviceTemplate(raw), index };
   });
+
+  const firstSeenByKey = new Map<string, { index: number; template: Omit<DeviceTemplate, "id" | "version"> }>();
+  for (const entry of normalized) {
+    const uniqueKey = templateUniqueKey(entry.template);
+    const firstSeen = firstSeenByKey.get(uniqueKey);
+    if (firstSeen) {
+      throw batchDuplicateTemplateError(firstSeen.index, entry.index, entry.template);
+    }
+    firstSeenByKey.set(uniqueKey, entry);
+  }
 
   const saved: DeviceTemplate[] = [];
   db.exec("BEGIN");
   try {
-    for (const template of normalized) {
+    for (const { template, index } of normalized) {
       saved.push(saveNormalizedTemplate(db, template, {
+        templateIndex: index,
         note: input.note,
         source: input.source,
         actorEmail: input.actorEmail,
@@ -407,17 +483,19 @@ export function deleteTemplate(
   if (!existing) {
     throw new Error("Template not found");
   }
+  const tombstoneKey = `${existing.unique_key}:deleted:${randomUUID().slice(0, 8)}`;
 
   db.exec("BEGIN");
   try {
     db.prepare(`
       UPDATE devices
       SET
+        unique_key = ?,
         deleted_at = datetime('now'),
         updated_at = datetime('now'),
         updated_by_email = ?
       WHERE id = ? AND deleted_at IS NULL
-    `).run(input.actorEmail ?? null, deviceId);
+    `).run(tombstoneKey, input.actorEmail ?? null, deviceId);
 
     db.prepare(`
       INSERT INTO device_audit_log (id, device_id, action, actor_email, details_json)
@@ -621,14 +699,16 @@ export function bulkDeleteTemplates(db: DatabaseSync, input: BulkDeleteTemplates
   db.exec("BEGIN");
   try {
     for (const row of selectedRows) {
+      const tombstoneKey = `${row.unique_key}:deleted:${randomUUID().slice(0, 8)}`;
       db.prepare(`
         UPDATE devices
         SET
+          unique_key = ?,
           deleted_at = datetime('now'),
           updated_at = datetime('now'),
           updated_by_email = ?
         WHERE id = ? AND deleted_at IS NULL
-      `).run(input.actorEmail ?? null, row.id);
+      `).run(tombstoneKey, input.actorEmail ?? null, row.id);
 
       db.prepare(`
         INSERT INTO device_audit_log (id, device_id, action, actor_email, details_json)
