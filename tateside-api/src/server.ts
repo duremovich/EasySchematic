@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { URL } from "node:url";
 import { getConfig } from "./config.js";
 import { openDatabase, runMigrations } from "./db.js";
-import { bulkEditTemplates, deleteTemplate, listCurrentTemplates, saveTemplates, updateTemplate } from "./deviceStore.js";
+import { bulkDeleteTemplates, bulkEditTemplates, deleteTemplate, listCurrentTemplates, saveTemplates, updateTemplate } from "./deviceStore.js";
 import type { ExtractedQuoteDevice, QuoteImportResearchJobResponse, QuoteImportResearchResponse } from "../../src/quoteImportTypes.js";
 import {
   ensureJetbuiltIndexReady,
@@ -270,6 +270,25 @@ async function handleRequest(ctx: RequestContext): Promise<void> {
       actorEmail: email,
     });
     sendJson(ctx.res, body?.preview === true ? 200 : 201, result, corsHeaders);
+    return;
+  }
+
+  if (ctx.req.method === "POST" && path === "/api/tateside/devices/templates/bulk-delete") {
+    const email = requireIdentity(ctx, config.requireAccessIdentity);
+    if (email === undefined) return;
+    const body = await readJson(ctx.req) as {
+      templateIds?: unknown;
+      note?: unknown;
+      source?: unknown;
+    } | null;
+
+    const result = bulkDeleteTemplates(db, {
+      templateIds: body?.templateIds,
+      note: typeof body?.note === "string" ? body.note : undefined,
+      source: typeof body?.source === "string" ? body.source : undefined,
+      actorEmail: email,
+    });
+    sendJson(ctx.res, 201, result, corsHeaders);
     return;
   }
 

@@ -58,6 +58,17 @@ export interface TatesideBulkEditResult {
   results: TatesideBulkEditResultItem[];
 }
 
+export interface TatesideBulkDeleteResultItem {
+  id: string;
+  label: string;
+  manufacturer: string | null;
+  status: "deleted";
+}
+
+export interface TatesideBulkDeleteResult {
+  results: TatesideBulkDeleteResultItem[];
+}
+
 export class TatesideApiError extends Error {
   status: number;
 
@@ -164,6 +175,23 @@ export async function bulkEditTatesideDeviceTemplates(
       ...(input.note ? { note: input.note } : {}),
       ...(input.source ? { source: input.source } : {}),
       ...(input.preview ? { preview: true } : {}),
+    },
+  });
+}
+
+export async function bulkDeleteTatesideDeviceTemplates(
+  input: {
+    templateIds: string[];
+    note?: string;
+    source?: string;
+  },
+): Promise<TatesideBulkDeleteResult> {
+  return requestJson<TatesideBulkDeleteResult>("/devices/templates/bulk-delete", {
+    method: "POST",
+    body: {
+      templateIds: input.templateIds,
+      ...(input.note ? { note: input.note } : {}),
+      ...(input.source ? { source: input.source } : {}),
     },
   });
 }

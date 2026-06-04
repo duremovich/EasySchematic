@@ -29,6 +29,13 @@ export interface BulkEditTemplatesInput {
   actorEmail?: string | null;
 }
 
+export interface BulkDeleteTemplatesInput {
+  templateIds: unknown;
+  note?: string;
+  source?: string;
+  actorEmail?: string | null;
+}
+
 export interface BulkEditTemplateResultItem {
   id: string;
   beforeLabel: string;
@@ -44,6 +51,17 @@ export interface BulkEditTemplateResultItem {
 export interface BulkEditTemplatesResult {
   templates: DeviceTemplate[];
   results: BulkEditTemplateResultItem[];
+}
+
+export interface BulkDeleteTemplateResultItem {
+  id: string;
+  label: string;
+  manufacturer: string | null;
+  status: "deleted";
+}
+
+export interface BulkDeleteTemplatesResult {
+  results: BulkDeleteTemplateResultItem[];
 }
 
 interface DeviceRow {
@@ -572,4 +590,65 @@ export function bulkEditTemplates(db: DatabaseSync, input: BulkEditTemplatesInpu
     templates: saved,
     results: finalizeBulkEditResults(results),
   };
+}
+
+export function bulkDeleteTemplates(db: DatabaseSync, input: BulkDeleteTemplatesInput): BulkDeleteTemplatesResult {
+  if (!Array.isArray(input.templateIds)) {
+    throw new Error("templateIds must be an array");
+  }
+
+  const templateIds = [...new Set(input.templateIds.map((id) => String(id).trim()).filter(Boolean))];
+  if (templateIds.length === 0) {
+    throw new Error("Select at least one library device");
+  }
+  if (templateIds.length > 200) {
+    throw new Error("A maximum of 200 library devices can be deleted at once");
+  }
+
+  const selectedRows = templateIds.map((id) => {
+    const row = getActiveDeviceRow(db, id);
+    if (!row) throw new Error(`Library device not found: ${id}`);
+    return row;
+  });
+
+  const results: BulkDeleteTemplateResultItem[] = selectedRows.map((row) => ({
+    id: row.id,
+    label: row.label,
+    manufacturer: row.manufacturer,
+    status: "deleted",
+  }));
+
+  db.exec("BEGIN");
+  try {
+    for (const row of selectedRows) {
+      db.prepare(`
+        UPDATE devices
+        SET
+          deleted_at = datetime('now'),
+          updated_at = datetime('now'),
+          updated_by_email = ?
+        WHERE id = ? AND deleted_at IS NULL
+      `).run(input.actorEmail ?? null, row.id);
+
+      db.prepare(`
+        INSERT INTO device_audit_log (id, device_id, action, actor_email, details_json)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(
+        randomUUID(),
+        row.id,
+        "delete",
+        input.actorEmail ?? null,
+        JSON.stringify({
+          note: input.note ?? null,
+          source: input.source ?? "bulk-delete",
+        }),
+      );
+    }
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+
+  return { results };
 }

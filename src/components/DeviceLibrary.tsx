@@ -1,6 +1,6 @@
 import { type DragEvent, type ChangeEvent, useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { getBundledTemplates, fetchTemplates, refreshTemplates } from "../templateApi";
-import { bulkEditTatesideDeviceTemplates, type TatesideBulkEditResult } from "../tatesideApi";
+import { bulkDeleteTatesideDeviceTemplates, bulkEditTatesideDeviceTemplates, type TatesideBulkEditResult } from "../tatesideApi";
 import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate, CustomTemplateGroup, OwnedGearFile, OwnedGearItem, SchematicNode, DeviceData } from "../types";
 import { useSchematicStore, CATEGORY_ORDER_DEFAULT } from "../store";
@@ -418,6 +418,10 @@ function BulkEditSharedTemplatesPanel({
   onClearSelection,
   onPreview,
   onApply,
+  deleteConfirming,
+  onDeleteStart,
+  onDeleteCancel,
+  onDeleteConfirm,
   onClose,
 }: {
   selectionCount: number;
@@ -436,6 +440,10 @@ function BulkEditSharedTemplatesPanel({
   onClearSelection: () => void;
   onPreview: () => void;
   onApply: () => void;
+  deleteConfirming: boolean;
+  onDeleteStart: () => void;
+  onDeleteCancel: () => void;
+  onDeleteConfirm: () => void;
   onClose: () => void;
 }) {
   if (selectionCount === 0) return null;
@@ -551,7 +559,42 @@ function BulkEditSharedTemplatesPanel({
         >
           Apply
         </button>
+        {!deleteConfirming ? (
+          <button
+            type="button"
+            onClick={onDeleteStart}
+            disabled={loading}
+            className="rounded bg-red-600 px-2.5 py-1 text-xs text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:bg-red-300"
+          >
+            Delete Selected
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onDeleteConfirm}
+              disabled={loading}
+              className="rounded bg-red-700 px-2.5 py-1 text-xs text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:bg-red-300"
+            >
+              Confirm Delete
+            </button>
+            <button
+              type="button"
+              onClick={onDeleteCancel}
+              disabled={loading}
+              className="rounded border border-[var(--color-border)] bg-white px-2.5 py-1 text-xs text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-hover)] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Cancel Delete
+            </button>
+          </>
+        )}
       </div>
+
+      {deleteConfirming && (
+        <div className="rounded border border-red-200 bg-red-50 px-2 py-2 text-[11px] text-red-700">
+          This will permanently remove {selectionCount} shared library device{selectionCount === 1 ? "" : "s"} from the TateSide library.
+        </div>
+      )}
 
       {preview && (
         <div className="rounded border border-[var(--color-border)] bg-white px-2 py-2 text-[11px] text-[var(--color-text)] space-y-1.5">
@@ -1411,6 +1454,7 @@ export default function DeviceLibrary() {
   const [bulkReplaceText, setBulkReplaceText] = useState("");
   const [bulkPreview, setBulkPreview] = useState<TatesideBulkEditResult | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkDeleteConfirming, setBulkDeleteConfirming] = useState(false);
   const bulkEditActive = selectedSharedTemplateIds.size > 0;
 
   const presetIds = useMemo(() => new Set(Object.keys(templatePresets)), [templatePresets]);
@@ -1595,6 +1639,7 @@ export default function DeviceLibrary() {
 
   useEffect(() => {
     setBulkPreview(null);
+    setBulkDeleteConfirming(false);
   }, [selectedSharedTemplateIds, bulkManufacturer, bulkRemovePrefix, bulkFindText, bulkReplaceText]);
 
   useEffect(() => {
@@ -1602,6 +1647,7 @@ export default function DeviceLibrary() {
       if (event.key === "Escape" && bulkEditActive) {
         setSelectedSharedTemplateIds(new Set());
         setBulkPreview(null);
+        setBulkDeleteConfirming(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -1614,6 +1660,7 @@ export default function DeviceLibrary() {
 
   const handleClearSharedSelection = useCallback(() => {
     setSelectedSharedTemplateIds(new Set());
+    setBulkDeleteConfirming(false);
   }, []);
 
   const runBulkEdit = useCallback(async (previewOnly: boolean) => {
@@ -1643,6 +1690,7 @@ export default function DeviceLibrary() {
         const updatedCount = result.results.filter((item) => item.status === "updated").length;
         addToast(`Updated ${updatedCount} shared library device${updatedCount === 1 ? "" : "s"}`, "success");
         setSelectedSharedTemplateIds(new Set());
+        setBulkDeleteConfirming(false);
         await reloadSharedTemplates();
       }
     } catch (err) {
@@ -1651,6 +1699,34 @@ export default function DeviceLibrary() {
       setBulkLoading(false);
     }
   }, [addToast, bulkFindText, bulkManufacturer, bulkRemovePrefix, bulkReplaceText, reloadSharedTemplates, selectedSharedTemplateIds]);
+
+  const handleBulkDelete = useCallback(async () => {
+    const templateIds = [...selectedSharedTemplateIds];
+    if (templateIds.length === 0) {
+      addToast("Select at least one shared library device", "error");
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const result = await bulkDeleteTatesideDeviceTemplates({
+        templateIds,
+        source: "bulk-library-delete",
+      });
+      addToast(
+        `Deleted ${result.results.length} shared library device${result.results.length === 1 ? "" : "s"}`,
+        "success",
+      );
+      setSelectedSharedTemplateIds(new Set());
+      setBulkPreview(null);
+      setBulkDeleteConfirming(false);
+      await reloadSharedTemplates();
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : "Could not bulk delete TateSide library devices", "error");
+    } finally {
+      setBulkLoading(false);
+    }
+  }, [addToast, reloadSharedTemplates, selectedSharedTemplateIds]);
 
   if (collapsed) {
     return (
@@ -1809,6 +1885,10 @@ export default function DeviceLibrary() {
             onClearSelection={handleClearSharedSelection}
             onPreview={() => void runBulkEdit(true)}
             onApply={() => void runBulkEdit(false)}
+            deleteConfirming={bulkDeleteConfirming}
+            onDeleteStart={() => setBulkDeleteConfirming(true)}
+            onDeleteCancel={() => setBulkDeleteConfirming(false)}
+            onDeleteConfirm={() => void handleBulkDelete()}
             onClose={handleClearSharedSelection}
           />
         </div>
