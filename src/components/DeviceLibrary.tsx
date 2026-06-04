@@ -55,9 +55,11 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
 function TemplateHoverCard({
   template,
   signalText,
+  position,
 }: {
   template: DeviceTemplate;
   signalText: string;
+  position: { top: number; left: number } | null;
 }) {
   const details: Array<{ label: string; value: string | null | undefined }> = [
     { label: "Manufacturer", value: template.manufacturer },
@@ -71,8 +73,13 @@ function TemplateHoverCard({
       : { label: "Slots", value: null },
   ];
 
+  if (!position) return null;
+
   return (
-    <div className="pointer-events-none absolute inset-x-1 top-1 z-30 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/98 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.35)] opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+    <div
+      className="pointer-events-none fixed z-40 w-72 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)]/98 p-2 shadow-[0_10px_30px_rgba(0,0,0,0.35)]"
+      style={{ top: position.top, left: position.left }}
+    >
       <div className="text-xs font-semibold text-[var(--color-text-heading)] break-words">
         {template.label}
       </div>
@@ -123,14 +130,49 @@ function TemplateItem({
   const signalText = getUniqueSignalTypes(template)
     .map((t) => SIGNAL_LABELS[t as keyof typeof SIGNAL_LABELS])
     .join(" / ");
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [hoverCardPosition, setHoverCardPosition] = useState<{ top: number; left: number } | null>(null);
+
+  const updateHoverCardPosition = useCallback(() => {
+    const row = rowRef.current;
+    if (!row) return;
+    const rect = row.getBoundingClientRect();
+    const cardWidth = 288;
+    const gap = 12;
+    const viewportPadding = 8;
+    const maxLeft = window.innerWidth - cardWidth - viewportPadding;
+    const maxTop = window.innerHeight - 220;
+    setHoverCardPosition({
+      left: Math.max(viewportPadding, Math.min(rect.right + gap, maxLeft)),
+      top: Math.max(viewportPadding, Math.min(rect.top, maxTop)),
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!hoverCardPosition) return;
+    const syncPosition = () => updateHoverCardPosition();
+    window.addEventListener("scroll", syncPosition, true);
+    window.addEventListener("resize", syncPosition);
+    return () => {
+      window.removeEventListener("scroll", syncPosition, true);
+      window.removeEventListener("resize", syncPosition);
+    };
+  }, [hoverCardPosition, updateHoverCardPosition]);
 
   return (
     <div
+      ref={rowRef}
       className="relative flex items-center gap-1 px-2 py-1.5 rounded cursor-grab hover:bg-[var(--color-surface-hover)] transition-colors group"
       draggable
       onDragStart={(e) => onDragStart(e, template)}
+      onMouseEnter={updateHoverCardPosition}
+      onMouseLeave={() => setHoverCardPosition(null)}
     >
-      <TemplateHoverCard template={template} signalText={signalText} />
+      <TemplateHoverCard
+        template={template}
+        signalText={signalText}
+        position={hoverCardPosition}
+      />
       {onToggleSelected && (
         <button
           type="button"
