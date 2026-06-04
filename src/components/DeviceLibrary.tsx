@@ -87,11 +87,11 @@ function TemplateHoverCard({
         {details.map((detail) => {
           if (!detail.value) return null;
           return (
-            <div key={detail.label} className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-2 text-[10px] leading-snug">
-              <span className="uppercase tracking-wide text-[var(--color-text-muted)]/80">
+            <div key={detail.label} className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3 text-[10px] leading-snug">
+              <span className="uppercase tracking-wide text-[var(--color-text-muted)]/80 whitespace-nowrap">
                 {detail.label}
               </span>
-              <span className="text-[var(--color-text)] break-words">
+              <span className="text-[var(--color-text)] break-words min-w-0">
                 {detail.value}
               </span>
             </div>
