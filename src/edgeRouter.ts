@@ -25,6 +25,7 @@ import {
   waypointsToSvgPathWithHops,
   beginRoutingBudget,
   routingBudgetExceeded,
+  ROUTING_PARAMS,
   type PenaltyZone,
   type Rect,
 } from "./pathfinding";
@@ -660,11 +661,26 @@ export function routeAllEdges(
     );
   };
 
+  // Stub-label endpoints: the stored l/r handle is only the creation-time guess — dragging
+  // the stub (or its device) to the other side leaves it stale, and the wire then crosses
+  // over the label box or loops around it to reach the far handle. The wire must always
+  // enter the side facing it, so re-pick the handle nearest the adjacent route point.
+  const nearestStubHandle = (
+    node: SchematicNode,
+    towardX: number,
+    fallback: HandlePos,
+  ): HandlePos => {
+    const pos = getAbsPos(node, nodeMap);
+    const centerX = pos.x + (node.measured?.width ?? STUB_W_EST) / 2;
+    const side = towardX < centerX ? "l" : "r";
+    return handleMap.get(`${node.id}:${side}`) ?? fallback;
+  };
+
   // Resolve edge endpoints
   const edgeEndpoints: EdgeEndpoints[] = [];
   for (const edge of edges) {
-    const srcHandle = resolveHandle(edge.source, edge.sourceHandle, "source");
-    const tgtHandle = resolveHandle(edge.target, edge.targetHandle, "target");
+    let srcHandle = resolveHandle(edge.source, edge.sourceHandle, "source");
+    let tgtHandle = resolveHandle(edge.target, edge.targetHandle, "target");
 
     if (!srcHandle || !tgtHandle) continue; // node not measured yet
 
@@ -674,6 +690,13 @@ export function routeAllEdges(
     // Handles on the right half of their device exit rightward, left half exit leftward.
     const srcNode = nodeMap.get(edge.source);
     const tgtNode = nodeMap.get(edge.target);
+    const mw = edge.data?.manualWaypoints;
+    if (srcNode?.type === "stub-label") {
+      srcHandle = nearestStubHandle(srcNode, mw?.length ? mw[0].x : tgtHandle.absX, srcHandle);
+    }
+    if (tgtNode?.type === "stub-label") {
+      tgtHandle = nearestStubHandle(tgtNode, mw?.length ? mw[mw.length - 1].x : srcHandle.absX, tgtHandle);
+    }
     const srcPos = srcNode ? getAbsPos(srcNode, nodeMap) : { x: 0, y: 0 };
     const tgtPos = tgtNode ? getAbsPos(tgtNode, nodeMap) : { x: 0, y: 0 };
     const srcFallbackW = srcNode?.type === "stub-label" ? STUB_W_EST : 180;
@@ -962,12 +985,45 @@ export function routeAllEdges(
 
   const gridRects = pixelRectsToGrid(obs.rects);
 
+  // Stub-label boxes (grid coords, floor-truncated so a box grazing 2px into the next
+  // cell doesn't eat it). Not obstacles for A* — their own wire must reach the handle on
+  // the box edge — but corridor verticals must not be allocated THROUGH the label text.
+  const stubGridRects: { nodeId: string; left: number; right: number; top: number; bottom: number }[] = [];
+  {
+    const cs = cellSize();
+    for (const n of nodes) {
+      if (n.type !== "stub-label") continue;
+      const pos = getAbsPos(n, nodeMap);
+      const w = n.measured?.width ?? STUB_W_EST;
+      const h = n.measured?.height ?? 14;
+      stubGridRects.push({
+        nodeId: n.id,
+        left: Math.floor(pos.x / cs),
+        right: Math.floor((pos.x + w) / cs),
+        top: Math.floor(pos.y / cs),
+        bottom: Math.floor((pos.y + h) / cs),
+      });
+    }
+  }
+
   // Check if a vertical column is clear of device obstacles over a Y range.
-  // excludeNodeIds: skip the edge's own endpoint devices.
+  // excludeNodeIds: the edge's own endpoint devices — only their PAD RIM is fair game
+  // (a trunk may turn one cell before its own device), never the body interior. Treating
+  // the whole rect as clear let allocator overflow place corridors INSIDE the target
+  // device, which the A* retry then honored by routing straight through the body.
+  const pad = ROUTING_PARAMS.PAD;
   const isColumnClear = (gx: number, gyMin: number, gyMax: number, excludeNodeIds?: Set<string>): boolean => {
     for (const r of gridRects) {
-      if (excludeNodeIds && r.nodeId && excludeNodeIds.has(r.nodeId)) continue;
-      if (gx >= r.left && gx <= r.right && gyMax >= r.top && gyMin <= r.bottom) {
+      const ownDevice = excludeNodeIds && r.nodeId && excludeNodeIds.has(r.nodeId);
+      const left = ownDevice ? r.left + pad : r.left;
+      const right = ownDevice ? r.right - pad : r.right;
+      if (gx >= left && gx <= right && gyMax >= r.top && gyMin <= r.bottom) {
+        return false;
+      }
+    }
+    for (const s of stubGridRects) {
+      if (excludeNodeIds && excludeNodeIds.has(s.nodeId)) continue;
+      if (gx >= s.left && gx <= s.right && gyMax >= s.top && gyMin <= s.bottom) {
         return false;
       }
     }
@@ -1198,31 +1254,21 @@ export function routeAllEdges(
         claimColumn(colX, Math.min(ce.srcGY, ce.tgtGY), Math.max(ce.srcGY, ce.tgtGY));
       }
     } else {
-      // Fallback: per-edge scan (non-contiguous but still unique columns)
+      // Fallback: per-edge scan (non-contiguous but still unique columns). No overflow
+      // past searchStart — for a left-entering co-target block, columns right of the band
+      // sit on/behind the target device, forcing a loop around (or through) it. Edges that
+      // don't fit stay unassigned and take the free-A* path, which respects obstacles.
       let nextX = searchStart;
       for (const ce of edges) {
         const yMin = Math.min(ce.srcGY, ce.tgtGY);
         const yMax = Math.max(ce.srcGY, ce.tgtGY);
-        let found = false;
         for (let gx = nextX; gx >= searchEnd; gx--) {
           if (!isColumnAvailable(gx, yMin, yMax)) continue;
           if (isColumnClear(gx, yMin, yMax, excludeNodeIds)) {
             ce.assignedCol = gx;
             claimColumn(gx, yMin, yMax);
             nextX = gx - 1;
-            found = true;
             break;
-          }
-        }
-        if (!found) {
-          for (let gx = searchStart + 1; gx <= searchStart + 20; gx++) {
-            if (!isColumnAvailable(gx, yMin, yMax)) continue;
-            if (isColumnClear(gx, yMin, yMax, excludeNodeIds)) {
-              ce.assignedCol = gx;
-              claimColumn(gx, yMin, yMax);
-              found = true;
-              break;
-            }
           }
         }
       }
@@ -1289,6 +1335,12 @@ export function routeAllEdges(
     upEdges.sort((a, b) => b.srcGY - a.srcGY || b.tgtGY - a.tgtGY);
     allocateBlock(downEdges, searchStart, searchEnd, endpointIds);
     allocateBlock(upEdges, searchStart, searchEnd, endpointIds);
+    if ((globalThis as Record<string, unknown>).__dumpColumnAlloc) {
+      console.log(`[alloc] band ${searchEnd}..${searchStart} down=${downEdges.length} up=${upEdges.length}`);
+      for (const ce of [...downEdges, ...upEdges]) {
+        console.log(`  ${ce.ep.edge.id}: src(${ce.srcGX},${ce.srcGY}) tgt(${ce.tgtGX},${ce.tgtGY}) -> col ${ce.assignedCol}`);
+      }
+    }
   };
 
   // Process clusters largest-first (most edges = most constrained = allocate first).
@@ -1304,14 +1356,70 @@ export function routeAllEdges(
     // fall back to allocating each member fan group on its own band (the per-group shape
     // the router used before co-target clustering), so only genuinely-stacked targets get
     // merged nesting.
-    const bandValid = cl.tgtXMin - 2 > cl.srcXMax + 2;
+    // Band margins are 1 cell: the column right before the targets is the port-stub /
+    // pad-rim cell of the edges' OWN target device (usable now that isColumnClear only
+    // forbids the body), and the column right after the sources is the source port-stub
+    // tip (turning at the tip is the comb minimum the bundle router already uses).
+    const bandValid = cl.tgtXMin - 1 > cl.srcXMax + 1;
     if (bandValid && cl.groups.length > 1) {
-      allocateForEdges(cl.groups.flatMap((g) => g.edges), cl.tgtXMin - 2, cl.srcXMax + 2);
+      allocateForEdges(cl.groups.flatMap((g) => g.edges), cl.tgtXMin - 1, cl.srcXMax + 1);
     } else {
       for (const g of cl.groups) {
-        allocateForEdges(g.edges, g.tgtXMin - 2, g.srcXMax + 2);
+        allocateForEdges(g.edges, g.tgtXMin - 1, g.srcXMax + 1);
       }
     }
+  }
+
+  // Allocator claims as penalty zones for edges that route OUTSIDE the column system
+  // (unassigned overflow + backward edges). Those route by free A* — often BEFORE the
+  // claiming edges (longest-first sort) — and can't see the claims otherwise, so they'd
+  // park a trunk on a claimed column (shared vertical with the comb routed later) or
+  // slice through the comb's not-yet-routed horizontals at the source/target rows. Seed
+  // the whole predicted L-shape: source horizontal, trunk vertical, target horizontal.
+  const corridorClaimZones: PenaltyZone[] = [];
+  for (const ce of columnEdges) {
+    if (ce.assignedCol === null) continue;
+    corridorClaimZones.push(
+      {
+        axis: "v",
+        coordinate: ce.assignedCol,
+        rangeMin: Math.min(ce.srcGY, ce.tgtGY),
+        rangeMax: Math.max(ce.srcGY, ce.tgtGY),
+        signalType: ce.signalType,
+      },
+      {
+        axis: "h",
+        coordinate: ce.srcGY,
+        rangeMin: Math.min(ce.srcGX, ce.assignedCol),
+        rangeMax: Math.max(ce.srcGX, ce.assignedCol),
+        signalType: ce.signalType,
+      },
+      {
+        axis: "h",
+        coordinate: ce.tgtGY,
+        rangeMin: Math.min(ce.assignedCol, ce.tgtGX),
+        rangeMax: Math.max(ce.assignedCol, ce.tgtGX),
+        signalType: ce.signalType,
+      },
+    );
+  }
+
+  // Stub-label boxes as HARD obstacles for the free-A* branch. Stub labels are not global
+  // obstacles (their own wire must reach the handle on the box edge), and soft crossing
+  // penalties proved too cheap — backward edges paid them and ran trunks straight through
+  // a label stack's text. Foreign labels are simply not routable territory; boxes that
+  // contain the leg's endpoints are skipped per-edge so approaches still work.
+  const stubPixelRects: Rect[] = [];
+  for (const n of nodes) {
+    if (n.type !== "stub-label") continue;
+    const pos = getAbsPos(n, nodeMap);
+    stubPixelRects.push({
+      left: pos.x,
+      top: pos.y,
+      right: pos.x + (n.measured?.width ?? STUB_W_EST),
+      bottom: pos.y + (n.measured?.height ?? 14),
+      nodeId: n.id,
+    });
   }
 
   // ---------- PHASE 2: Path Construction ----------
@@ -1320,7 +1428,10 @@ export function routeAllEdges(
   // This ensures the path uses the assigned column even when intermediate
   // devices block a simple L-shape.
 
-  /** Route a single A* leg, retrying with relaxed obstacles on failure. */
+  /** Route a single A* leg, retrying with relaxed obstacles on failure.
+   *  localContext: pass true when the caller augments `penalties` and/or `rects` beyond
+   *  the shared running state — forces building the penalty index from the array and the
+   *  obstacle grid from the supplied rects (instead of the precomputed shared versions). */
   const routeLeg = (
     fromX: number, fromY: number, toX: number, toY: number,
     rects: Rect[], spread: number, penalties: PenaltyZone[] | undefined,
@@ -1329,27 +1440,72 @@ export function routeAllEdges(
     excludeStartDir?: number, excludeEndDir?: number,
     srcNodeId?: string, tgtNodeId?: string,
     srcExitsRight?: boolean, tgtEntersLeft?: boolean,
+    localContext?: boolean,
   ) => {
+    const spatialIdx = localContext ? undefined : penaltySpatialIdx;
+    const sharedGridRects = localContext ? undefined : precomputedGridRects;
+    const pathLen = (wp: Point[]) => {
+      let len = 0;
+      for (let i = 1; i < wp.length; i++) len += Math.abs(wp[i].x - wp[i - 1].x) + Math.abs(wp[i].y - wp[i - 1].y);
+      return len;
+    };
+    const manhattan = Math.abs(toX - fromX) + Math.abs(toY - fromY);
     let result = computeEdgePath(
       fromX, fromY, toX, toY, rects, 0, spread,
       penalties, sigType, noSrcStub, noTgtStub,
       excludeStartDir, excludeEndDir,
       undefined, srcExitsRight, tgtEntersLeft,
-      precomputedGridRects, penaltySpatialIdx,
+      sharedGridRects, spatialIdx,
     );
-    if (!result) {
+    // A "successful" route that detours wildly is usually one whose sane path runs along
+    // the edge's OWN device pad rim (blocked on the shared grid) — e.g. a stub label
+    // tucked against its device. Try the rim-relaxed route and keep the shorter one.
+    const badDetour = result && manhattan > 0 && pathLen(result.waypoints) > 3 * manhattan;
+    if (!result || badDetour) {
       const excludeSet = new Set<string>();
       if (srcNodeId) excludeSet.add(srcNodeId);
       if (tgtNodeId) excludeSet.add(tgtNodeId);
       if (excludeSet.size > 0) {
-        const relaxed = rects.filter((r) => !r.nodeId || !excludeSet.has(r.nodeId));
-        result = computeEdgePath(
+        // Relax the edge's OWN endpoint devices by stripping their pad rim only — the
+        // wire may hug its own device but never cross the body. Removing the rects
+        // entirely let failed corridor legs route straight through the device.
+        const padPx = ROUTING_PARAMS.PAD * cellSize();
+        const shrink = (r: Rect) =>
+          ({ ...r, left: r.left + padPx, top: r.top + padPx, right: r.right - padPx, bottom: r.bottom - padPx });
+        const relaxed = rects.map((r) =>
+          r.nodeId && excludeSet.has(r.nodeId) ? shrink(r) : r,
+        );
+        const rimResult = computeEdgePath(
           fromX, fromY, toX, toY, relaxed, 0, spread,
           penalties, sigType, noSrcStub, noTgtStub,
           excludeStartDir, excludeEndDir,
           undefined, srcExitsRight, tgtEntersLeft,
-          undefined, penaltySpatialIdx,
+          undefined, spatialIdx,
         );
+        if (rimResult && (!result || pathLen(rimResult.waypoints) < pathLen(result.waypoints))) {
+          result = rimResult;
+        }
+        if (!result) {
+          // Still stuck: if an endpoint sits INSIDE an own device's body (e.g. a stub
+          // label tucked under the device), reaching the pin requires entering the body.
+          // Remove exactly those rects — full removal stays reserved for this case.
+          const inside = (r: Rect, x: number, y: number) =>
+            x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+          const unreachable = rects.filter((r) =>
+            r.nodeId && excludeSet.has(r.nodeId) &&
+            (inside(shrink(r), fromX, fromY) || inside(shrink(r), toX, toY)));
+          if (unreachable.length > 0) {
+            const removedIds = new Set(unreachable.map((r) => r.nodeId));
+            const opened = relaxed.filter((r) => !r.nodeId || !removedIds.has(r.nodeId));
+            result = computeEdgePath(
+              fromX, fromY, toX, toY, opened, 0, spread,
+              penalties, sigType, noSrcStub, noTgtStub,
+              excludeStartDir, excludeEndDir,
+              undefined, srcExitsRight, tgtEntersLeft,
+              undefined, spatialIdx,
+            );
+          }
+        }
       }
     }
     return result;
@@ -1507,17 +1663,41 @@ export function routeAllEdges(
     const ep = ce.ep;
     const sigType = ep.edge.data?.signalType;
 
-    // Backward edges or edges without column assignment → unconstrained A* fallback
+    // Backward edges or edges without column assignment → unconstrained A* fallback.
+    // Combined penalties (routed edges + allocator claims) force a local penalty index.
     if (ce.isBackward || ce.assignedCol === null) {
-      const pens = runningPenalties.length > 0 ? runningPenalties : undefined;
-      // If over time budget, skip A* and use fallback directly
-      const result = checkBudget() ? null : routeLeg(
+      const pens = runningPenalties.length > 0 || corridorClaimZones.length > 0
+        ? [...runningPenalties, ...corridorClaimZones]
+        : undefined;
+      // Foreign stub labels are hard obstacles for free routing; skip the edge's own
+      // stubs and any box an endpoint sits in (approaches must stay routable).
+      const contains = (r: Rect, x: number, y: number) =>
+        x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+      const foreignStubRects = stubPixelRects.filter((r) =>
+        r.nodeId !== ep.edge.source && r.nodeId !== ep.edge.target &&
+        !contains(r, ep.sourceX, ep.sourceY) && !contains(r, ep.targetX, ep.targetY));
+      const rectsWithStubs = foreignStubRects.length > 0 ? [...obs.rects, ...foreignStubRects] : obs.rects;
+      // If over time budget, skip A* and use fallback directly. If the label obstacles
+      // leave no route at all, retry without them — a wire over a label beats the
+      // obstacle-blind L-shape fallback.
+      let result = checkBudget() ? null : routeLeg(
         ep.sourceX, ep.sourceY, ep.targetX, ep.targetY,
-        obs.rects, ep.stubSpread, pens,
+        rectsWithStubs, ep.stubSpread, pens,
         sigType, false, false, undefined, undefined,
         ep.edge.source, ep.edge.target,
         ep.sourceExitsRight, ep.targetEntersLeft,
+        true,
       );
+      if (!result && rectsWithStubs !== obs.rects && !checkBudget()) {
+        result = routeLeg(
+          ep.sourceX, ep.sourceY, ep.targetX, ep.targetY,
+          obs.rects, ep.stubSpread, pens,
+          sigType, false, false, undefined, undefined,
+          ep.edge.source, ep.edge.target,
+          ep.sourceExitsRight, ep.targetEntersLeft,
+          true,
+        );
+      }
       if (result) {
         const rs: RouteState = {
           edgeId: ep.edge.id, waypoints: result.waypoints,
