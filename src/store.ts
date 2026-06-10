@@ -35,7 +35,7 @@ import type {
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings, PanMode, StubLabelPageMode } from "./types";
-import { defaultStubPlacement, snapStubHandleY } from "./stubPlacement";
+import { defaultStubPlacement, healStubPortAlignment } from "./stubPlacement";
 import { getPortAbsolutePositions } from "./snapUtils";
 import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_SHOW_ROOM, DEFAULT_STUB_LABEL_PAGE_MODE } from "./types";
 import { pairKey } from "./roomDistance";
@@ -193,14 +193,11 @@ function applyWaypointHeal(nodes: SchematicNode[], edges: ConnectionEdge[]): Con
 
 function snapNodesToGrid(nodes: SchematicNode[]): SchematicNode[] {
   for (const n of nodes) {
-    if (n.type === "stub-label") {
-      // Stub boxes store sub-grid Y by design (handle = box CENTER must sit on a port
-      // row). Snap the handle center to the grid, not the top-left — a grid-aligned top
-      // puts the handle 7px off-grid and kinks the wire at the label. X is left alone
-      // (the wire is horizontal there; off-grid x can't produce a jog).
-      n.position.y = snapStubHandleY(n.position.y, n.measured?.height);
-      continue;
-    }
+    // Stub labels are healed against their REAL partner port at routing time
+    // (healStubPortAlignment in recomputeRoutes) — DOM-measured ports can sit a few px
+    // off the model grid, so snapping the stub to the abstract grid here would BREAK
+    // colinearity with such ports (kink at the label). Leave their stored Y alone.
+    if (n.type === "stub-label") continue;
     n.position.x = Math.round(n.position.x / GRID_SIZE) * GRID_SIZE;
     n.position.y = Math.round(n.position.y / GRID_SIZE) * GRID_SIZE;
   }
@@ -5646,6 +5643,17 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       routingHandlerRegistered = true;
     }
     const handles = buildHandleSnapshot(routingNodes, rfInstance);
+
+    // Stub↔port colinearity heal: a stub handle a few px off its partner port's TRUE
+    // (DOM-measured) row kinks the wire at the label. This is the only place port truth
+    // exists. Corrections change nodeDigest, which re-fires routing with aligned stubs;
+    // idempotent (healed stubs fall inside the dead-band next pass).
+    const healedStubNodes = healStubPortAlignment(state.nodes, state.edges, handles);
+    if (healedStubNodes) {
+      set({ nodes: healedStubNodes });
+      return;
+    }
+
     routeSeq += 1;
     pendingRouteCtx = {
       seq: routeSeq,
