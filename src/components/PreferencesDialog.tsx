@@ -10,6 +10,7 @@ import {
 } from "../navigationPreferences";
 
 const AUTOROUTE_PREF_KEY = "easyschematic-autoroute-pref";
+const PARALLEL_OUTPUT_PREF_KEY = "easyschematic-parallel-output-pref";
 
 const ACTION_LABELS: Record<ScrollAction, string> = {
   "zoom": "Zoom",
@@ -108,6 +109,9 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
   const [autoRoutePref, setAutoRoutePref] = useState(
     () => localStorage.getItem(AUTOROUTE_PREF_KEY) ?? "ask",
   );
+  const [parallelOutputPref, setParallelOutputPref] = useState(
+    () => localStorage.getItem(PARALLEL_OUTPUT_PREF_KEY) ?? "warn",
+  );
   const [navigationInputDevice, setNavigationInputDevice] = useState(getNavigationInputDevice);
   const [activeTab, setActiveTab] = useState<PrefTab>("canvas");
 
@@ -123,6 +127,7 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
     navigationInputDevice === DEFAULT_NAVIGATION_INPUT_DEVICE &&
     edgeHitboxSize === 10 &&
     autoRoutePref === "ask" &&
+    parallelOutputPref === "warn" &&
     labelCase === "as-typed" &&
     currency === "USD" &&
     panMode === "select-first" &&
@@ -304,6 +309,32 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
                 </p>
               </div>
 
+              {/* Connection Warnings */}
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+                  Connection Warnings
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-xs text-[var(--color-text)]">Output to output</span>
+                  <select
+                    className={selectClass}
+                    value={parallelOutputPref}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === "warn") localStorage.removeItem(PARALLEL_OUTPUT_PREF_KEY);
+                      else localStorage.setItem(PARALLEL_OUTPUT_PREF_KEY, v);
+                      setParallelOutputPref(v);
+                    }}
+                  >
+                    <option value="warn">Warn me</option>
+                    <option value="allow">Connect directly</option>
+                  </select>
+                </div>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                  Controls intentional parallel or summed output connections
+                </p>
+              </div>
+
               {/* Auto-Route */}
               <div>
                 <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
@@ -473,7 +504,9 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
                 setNavigationInputDevice(DEFAULT_NAVIGATION_INPUT_DEVICE);
                 setEdgeHitboxSize(10);
                 localStorage.removeItem(AUTOROUTE_PREF_KEY);
+                localStorage.removeItem(PARALLEL_OUTPUT_PREF_KEY);
                 setAutoRoutePref("ask");
+                setParallelOutputPref("warn");
                 setLabelCase("as-typed");
                 setCurrency("USD");
                 setPanMode("select-first");

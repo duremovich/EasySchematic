@@ -95,6 +95,7 @@ function resolveEdgeStroke(data: ConnectionData | undefined): string {
 }
 
 const STORAGE_KEY = "easyschematic-autosave";
+const PARALLEL_OUTPUT_PREF_KEY = "easyschematic-parallel-output-pref";
 const TEMPLATES_KEY = "easyschematic-custom-templates";
 const TEMPLATE_META_KEY = "easyschematic-custom-template-meta";
 const CATEGORY_ORDER_KEY = "easyschematic-category-order";
@@ -564,6 +565,13 @@ interface SchematicState {
   dismissIncompatibleDialog: () => void;
   forceIncompatibleConnection: () => void;
   insertAdapterBetween: (template: DeviceTemplate) => void;
+  pendingParallelOutputConnection: {
+    connection: Connection;
+    sourcePort: Port;
+    targetPort: Port;
+  } | null;
+  dismissParallelOutputDialog: () => void;
+  forceParallelOutputConnection: (remember?: boolean) => void;
 
   // Adapter visibility (#adapter-overhaul)
   hideAdapters: boolean;
@@ -1090,6 +1098,60 @@ function isExternalEndpointNode(nodes: SchematicNode[], nodeId: string | null | 
   return node?.type === "device" && isExternalEndpointData(node.data as DeviceData);
 }
 
+function isOutputHandle(port: Port, handleId: string | null | undefined): boolean {
+  if (port.direction === "output") return true;
+  return port.direction === "bidirectional" && handleId?.endsWith("-out") === true;
+}
+
+function isParallelOutputWarningDisabled(): boolean {
+  try {
+    return localStorage.getItem(PARALLEL_OUTPUT_PREF_KEY) === "allow";
+  } catch {
+    return false;
+  }
+}
+
+function isParallelOutputConnection(
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+  connection: Connection,
+): { sourcePort: Port; targetPort: Port } | null {
+  if (!connection.source || !connection.target || connection.source === connection.target) return null;
+  const sourcePort = getPortFromHandle(nodes, connection.source, connection.sourceHandle);
+  const targetPort = getPortFromHandle(nodes, connection.target, connection.targetHandle);
+  if (!sourcePort || !targetPort) return null;
+  if (!isOutputHandle(sourcePort, connection.sourceHandle) || !isOutputHandle(targetPort, connection.targetHandle)) return null;
+  if (sourcePort.signalType !== targetPort.signalType) {
+    const networkBypass = NETWORK_SIGNAL_TYPES.has(sourcePort.signalType) && NETWORK_SIGNAL_TYPES.has(targetPort.signalType);
+    const bareWireBypass = !!sourcePort.connectorType && !!targetPort.connectorType &&
+      BARE_WIRE_CONNECTORS.has(sourcePort.connectorType) && BARE_WIRE_CONNECTORS.has(targetPort.connectorType);
+    const signalBypass = areSignalsCompatibleViaConnector(
+      sourcePort.signalType,
+      sourcePort.connectorType,
+      targetPort.signalType,
+      targetPort.connectorType,
+    );
+    if (!networkBypass && !bareWireBypass && !signalBypass) return null;
+  }
+  if (!areConnectorsCompatible(sourcePort.connectorType, targetPort.connectorType)) return null;
+  if (needsAdapter(sourcePort.connectorType, targetPort.connectorType)) return null;
+  if ((sourcePort.isMulticable ?? false) !== (targetPort.isMulticable ?? false)) return null;
+
+  const duplicatePair = edges.some(
+    (edge) =>
+      edge.id !== _reconnectingEdgeId &&
+      ((edge.source === connection.source &&
+        edge.sourceHandle === connection.sourceHandle &&
+        edge.target === connection.target &&
+        edge.targetHandle === connection.targetHandle) ||
+        (edge.source === connection.target &&
+          edge.sourceHandle === connection.targetHandle &&
+          edge.target === connection.source &&
+          edge.targetHandle === connection.sourceHandle)),
+  );
+  return duplicatePair ? null : { sourcePort, targetPort };
+}
+
 function removeOrphanedEdges(nodes: SchematicNode[], edges: ConnectionEdge[]): ConnectionEdge[] {
   return edges.filter((e) => {
     const srcNode = nodes.find((n) => n.id === e.source);
@@ -1315,6 +1377,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   fileHandle: null,
   isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
   pendingIncompatibleConnection: null,
+  pendingParallelOutputConnection: null,
   hideAdapters: false,
   hiddenAdapterNodeIds: new Set(),
   hiddenVirtualEdgeIds: new Set(),
@@ -1391,6 +1454,18 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   onConnect: (connection) => {
     const state = get();
     if (!state.isValidConnection(connection)) {
+      const parallelOutput = isParallelOutputConnection(state.nodes, state.edges, connection);
+      if (parallelOutput) {
+        set({
+          pendingParallelOutputConnection: {
+            connection,
+            sourcePort: parallelOutput.sourcePort,
+            targetPort: parallelOutput.targetPort,
+          },
+        });
+        return;
+      }
+
       // Check if the failure is specifically a signal-type mismatch
       const srcPort = getPortFromHandle(state.nodes, connection.source, connection.sourceHandle);
       const tgtPort = getPortFromHandle(state.nodes, connection.target, connection.targetHandle);
@@ -1477,6 +1552,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       sourcePort?.connectorType,
       targetPort?.connectorType,
     );
+    const parallelOutput = isParallelOutputConnection(state.nodes, state.edges, connection);
 
     // Check if either port is direct-attach (adapter plugs directly into device)
     const isDirectAttach = sourcePort?.directAttach || targetPort?.directAttach;
@@ -1484,6 +1560,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const newEdgeData: ConnectionData = {
       signalType: sourcePort?.signalType ?? "custom",
       ...(connectorMismatch ? { connectorMismatch: true } : {}),
+      ...(parallelOutput ? { allowParallelOutput: true } : {}),
       ...(isDirectAttach ? { directAttach: true } : {}),
     };
     const existingEdges = ensureUniqueEdgeIds(state.edges);
@@ -1940,6 +2017,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   isValidConnection: (connection) => {
     const state = get();
+    const parallelOutput = isParallelOutputConnection(state.nodes, state.edges, connection);
+    const allowParallelOutput = !!parallelOutput && isParallelOutputWarningDisabled();
     const sourcePort = getPortFromHandle(
       state.nodes,
       connection.source,
@@ -2041,7 +2120,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!networkBypass && !bareWireBypass) {
       const canSource = sourcePort.direction === "output" || sourcePort.direction === "bidirectional";
       const canTarget = targetPort.direction === "input" || targetPort.direction === "bidirectional";
-      if (!canSource || !canTarget) return false;
+      if ((!canSource || !canTarget) && !allowParallelOutput) return false;
     }
     if (sourcePort.signalType !== targetPort.signalType && !networkBypass && !bareWireBypass && !signalBypass) return false;
 
@@ -2051,7 +2130,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (srcIsMulticable !== tgtIsMulticable) return false;
 
     // Don't allow multiple connections to the same handle, unless the port is multi-connect
-    if (!targetPort.multiConnect) {
+    if (!targetPort.multiConnect && !allowParallelOutput) {
       const duplicateTarget = state.edges.some(
         (e) =>
           e.id !== _reconnectingEdgeId &&
@@ -2061,7 +2140,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       if (duplicateTarget) return false;
     }
 
-    if (!sourcePort.multiConnect) {
+    if (!sourcePort.multiConnect && !allowParallelOutput) {
       const duplicateSource = state.edges.some(
         (e) =>
           e.id !== _reconnectingEdgeId &&
@@ -2072,7 +2151,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     }
 
     // For bidirectional ports, block the opposite side if one side is already connected
-    if (sourcePort.direction === "bidirectional" && connection.sourceHandle) {
+    if (sourcePort.direction === "bidirectional" && connection.sourceHandle && !allowParallelOutput) {
       const baseId = connection.sourceHandle.replace(/-(in|out|rear|front)$/, "");
       const otherHandle = connection.sourceHandle.endsWith("-out")
         ? `${baseId}-in`
@@ -2084,7 +2163,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       );
       if (otherConnected) return false;
     }
-    if (targetPort.direction === "bidirectional" && connection.targetHandle) {
+    if (targetPort.direction === "bidirectional" && connection.targetHandle && !allowParallelOutput) {
       const baseId = connection.targetHandle.replace(/-(in|out|rear|front)$/, "");
       const otherHandle = connection.targetHandle.endsWith("-in")
         ? `${baseId}-out`
@@ -3398,6 +3477,49 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   dismissIncompatibleDialog: () => {
     set({ pendingIncompatibleConnection: null });
+  },
+
+  dismissParallelOutputDialog: () => {
+    set({ pendingParallelOutputConnection: null });
+  },
+
+  forceParallelOutputConnection: (remember = false) => {
+    const state = get();
+    const pending = state.pendingParallelOutputConnection;
+    if (!pending) return;
+    if (remember) {
+      try {
+        localStorage.setItem(PARALLEL_OUTPUT_PREF_KEY, "allow");
+      } catch {
+        // Ignore storage failures; still create the requested connection.
+      }
+    }
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+
+    const parallelData: ConnectionData = {
+      signalType: pending.sourcePort.signalType,
+      allowParallelOutput: true,
+    };
+    const existingEdges = ensureUniqueEdgeIds(state.edges);
+    const newEdge: ConnectionEdge = {
+      id: nextEdgeId(existingEdges),
+      source: pending.connection.source,
+      target: pending.connection.target,
+      sourceHandle: pending.connection.sourceHandle,
+      targetHandle: pending.connection.targetHandle,
+      data: parallelData,
+      style: {
+        stroke: resolveEdgeStroke(parallelData),
+        strokeWidth: 2,
+      },
+    };
+
+    set({
+      nodes: existingEdges === state.edges ? state.nodes : reconcileWaypointNodes(state.nodes, existingEdges),
+      edges: [...existingEdges, newEdge],
+      pendingParallelOutputConnection: null,
+    });
+    get().saveToLocalStorage();
   },
 
   forceIncompatibleConnection: () => {

@@ -472,6 +472,8 @@ export interface ConnectionData {
   stubTargetWaypoints?: { x: number; y: number }[];
   /** Allow connection between incompatible connector types (#6) */
   allowIncompatible?: boolean;
+  /** Allow intentional output-to-output parallel/summed connections. */
+  allowParallelOutput?: boolean;
   /** @deprecated Use hideCableId instead. Migrated in schema v25. */
   hideLabel?: boolean;
   /** Per-edge: hide cable ID label (#61) */
