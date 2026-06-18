@@ -217,6 +217,34 @@ test("#180 installing a card adds ports that survive Apply", async ({ page }) =>
   expect(await portRows.count(), "card ports must persist after Apply (#180)").toBe(afterInstall);
 });
 
+// #211 — an empty expansion slot renders a "(empty)" bay on the device, and the
+// slot's eye toggle in the editor hides that bay from the canvas.
+test("#211 empty-slot bay shows on the device and can be hidden via the slot toggle", async ({ page }) => {
+  await boot(page);
+  await page.locator(".react-flow__node").first().dblclick({ force: true });
+  await expect(page.getByPlaceholder("e.g. Camera 1")).toBeVisible({ timeout: 10_000 });
+
+  await page.getByRole("button", { name: "+ Add Slot" }).click();
+  await page.waitForTimeout(200);
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await page.waitForTimeout(300);
+
+  const withSlot = await page.getByText(/\(empty\)/).count();
+  expect(withSlot, "the empty slot's bay row should render on the device").toBeGreaterThan(0);
+
+  // Reopen and hide the empty slot via its eye toggle.
+  await page.locator(".react-flow__node").first().dblclick({ force: true });
+  await expect(page.getByPlaceholder("e.g. Camera 1")).toBeVisible({ timeout: 10_000 });
+  await page.getByTitle("Hide empty slot on the device").click();
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await page.waitForTimeout(300);
+
+  expect(
+    await page.getByText(/\(empty\)/).count(),
+    "the hidden empty slot should no longer render on the device",
+  ).toBeLessThan(withSlot);
+});
+
 // #210 — the minimap is optional: an ✕ hides it, and View ▸ Minimap restores it
 // (preference persisted to localStorage).
 test("#210 minimap hides via ✕ and restores from the View menu", async ({ page }) => {

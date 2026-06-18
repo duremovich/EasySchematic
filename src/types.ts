@@ -214,6 +214,9 @@ export interface InstalledSlot {
   /** Denormalized from SlotDefinition.hideWhenEmpty so the canvas renderer doesn't have
    *  to walk the template tree on every paint. */
   hideWhenEmpty?: boolean;
+  /** User toggle (per instance) to hide this slot's empty-bay row on the canvas, the way
+   *  a port can be hidden. Distinct from the template-derived hideWhenEmpty. (#211) */
+  hidden?: boolean;
   portIds: string[];            // tracks which ports in device.ports belong to this slot
 }
 

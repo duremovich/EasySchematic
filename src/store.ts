@@ -300,7 +300,7 @@ interface SchematicState {
   /** Add a new empty expansion slot to a device. */
   addSlot: (nodeId: string, slot: { label: string; slotFamily: string }) => void;
   /** Update label / slotFamily on an existing installed slot. */
-  updateSlot: (nodeId: string, slotId: string, patch: { label?: string; slotFamily?: string }) => void;
+  updateSlot: (nodeId: string, slotId: string, patch: { label?: string; slotFamily?: string; hidden?: boolean }) => void;
   /** Remove a slot, its ports, descendant slots, and any edges connected to their ports. */
   removeSlot: (nodeId: string, slotId: string) => void;
   setEditingNodeId: (id: string | null) => void;
@@ -2734,6 +2734,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             ...s,
             ...(patch.label !== undefined ? { label: patch.label } : {}),
             ...(patch.slotFamily !== undefined ? { slotFamily: patch.slotFamily } : {}),
+            ...(patch.hidden !== undefined ? { hidden: patch.hidden } : {}),
           }
         : s,
     );

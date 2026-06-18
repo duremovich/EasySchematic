@@ -2829,6 +2829,29 @@ function SlotEditSection({
                   placeholder="family"
                   className="w-24 bg-[var(--color-surface)] text-[var(--color-text-heading)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-[10px] outline-none focus:border-blue-500"
                 />
+                {/* Hide toggle — only meaningful for an empty slot (its "(empty)" bay row
+                    on the canvas). Populated slots show via their ports instead. (#211) */}
+                {!slot.cardTemplateId && (
+                  <button
+                    type="button"
+                    onClick={() => updateSlot(nodeId, slot.slotId, { hidden: !slot.hidden })}
+                    className="shrink-0 cursor-pointer px-0.5"
+                    title={slot.hidden ? "Show empty slot on the device" : "Hide empty slot on the device"}
+                  >
+                    {slot.hidden ? (
+                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-[var(--color-text-muted)]" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 2l12 12" />
+                        <path d="M6.5 6.5a2 2 0 0 0 2.8 2.8" />
+                        <path d="M4.2 4.2C3 5.1 2 6.4 2 8c1.3 3 3.5 5 6 5 1.2 0 2.3-.4 3.3-1.2M13.4 11.4C14.6 10.4 15.3 9.2 16 8c-1.3-3-3.5-5-6-5-.7 0-1.4.1-2 .4" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-[var(--color-text)]" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 8c1.3-3 3.5-5 6-5s4.7 2 6 5c-1.3 3-3.5 5-6 5S3.3 11 2 8z" />
+                        <circle cx="8" cy="8" r="2" />
+                      </svg>
+                    )}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
