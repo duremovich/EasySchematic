@@ -220,6 +220,13 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     };
   };
 
+  const handleAllowsFanout = (port: Port | undefined, handleId: string | null | undefined): boolean => {
+    if (!port) return false;
+    if (port.multiConnect) return true;
+    if (port.direction === "output") return true;
+    return port.direction === "bidirectional" && handleId?.endsWith("-out") === true;
+  };
+
   const isPatchPanel = data.deviceType === "patch-panel";
 
   const leftItems = useMemo(() => {
@@ -266,7 +273,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             position={Position.Left}
             id={h.handleId}
             data-connected={connectedHandles.has(h.handleId) || undefined}
-            data-multi-connect={port.multiConnect || undefined}
+            data-multi-connect={handleAllowsFanout(port, h.handleId) || undefined}
             className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
             style={{ background: SIGNAL_COLORS[port.signalType], top: "50%" }}
           />
@@ -284,7 +291,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             position={Position.Right}
             id={h.handleId}
             data-connected={connectedHandles.has(h.handleId) || undefined}
-            data-multi-connect={port.multiConnect || undefined}
+            data-multi-connect={handleAllowsFanout(port, h.handleId) || undefined}
             className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
             style={{ background: SIGNAL_COLORS[port.signalType], top: "50%" }}
           />
@@ -319,6 +326,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           position={Position.Left}
           id={rearId}
           data-connected={rearConnected || undefined}
+          data-multi-connect={handleAllowsFanout(port, rearId) || undefined}
           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
           style={{ background: signalColor, top: "50%" }}
         />
@@ -335,6 +343,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           position={Position.Right}
           id={frontId}
           data-connected={frontConnected || undefined}
+          data-multi-connect={handleAllowsFanout(port, frontId) || undefined}
           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
           style={{ background: signalColor, top: "50%" }}
         />
@@ -423,7 +432,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             position={Position.Left}
             id={leftHandleId}
             data-connected={connectedHandles.has(leftHandleId) || undefined}
-            data-multi-connect={port?.multiConnect || undefined}
+            data-multi-connect={handleAllowsFanout(port, leftHandleId) || undefined}
             className="!w-2 !h-2 !border !border-white !-left-1"
             style={{ background: signalColor, top: "50%" }}
           />
@@ -443,7 +452,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             position={Position.Right}
             id={rightHandleId}
             data-connected={connectedHandles.has(rightHandleId) || undefined}
-            data-multi-connect={port?.multiConnect || undefined}
+            data-multi-connect={handleAllowsFanout(port, rightHandleId) || undefined}
             className="!w-2 !h-2 !border !border-white !-right-1"
             style={{ background: signalColor, top: "50%" }}
           />
@@ -642,7 +651,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           position={Position.Left}
                           id={lh.handleId}
                           data-connected={connectedHandles.has(lh.handleId) || undefined}
-                          data-multi-connect={left.multiConnect || undefined}
+                          data-multi-connect={handleAllowsFanout(left, lh.handleId) || undefined}
                           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
                           style={{ background: SIGNAL_COLORS[left.signalType], top: "50%" }}
                         />
@@ -671,7 +680,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           position={Position.Right}
                           id={rh.handleId}
                           data-connected={connectedHandles.has(rh.handleId) || undefined}
-                          data-multi-connect={right.multiConnect || undefined}
+                          data-multi-connect={handleAllowsFanout(right, rh.handleId) || undefined}
                           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
                           style={{ background: SIGNAL_COLORS[right.signalType], top: "50%" }}
                         />
@@ -754,7 +763,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   position={Position.Left}
                   id={inId}
                   data-connected={connectedHandles.has(inId) || undefined}
-                  data-multi-connect={port.multiConnect || undefined}
+                  data-multi-connect={handleAllowsFanout(port, inId) || undefined}
                   className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
                   style={{
                     background: inDisabled ? "#d1d5db" : SIGNAL_COLORS[port.signalType],
@@ -774,7 +783,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   position={Position.Right}
                   id={outId}
                   data-connected={connectedHandles.has(outId) || undefined}
-                  data-multi-connect={port.multiConnect || undefined}
+                  data-multi-connect={handleAllowsFanout(port, outId) || undefined}
                   className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
                   style={{
                     background: outDisabled ? "#d1d5db" : SIGNAL_COLORS[port.signalType],
