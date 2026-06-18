@@ -1236,12 +1236,21 @@ function SchematicCanvas() {
             const targetNodeId = targetNodeEl?.getAttribute("data-id");
             const targetHandleId = handleEl.getAttribute("data-handleid");
             if (targetNodeId && targetHandleId && targetNodeId !== from.nodeId) {
+              const targetHandleType = handleEl.classList.contains("react-flow__handle-source")
+                ? "source"
+                : handleEl.classList.contains("react-flow__handle-target")
+                ? "target"
+                : null;
               const connection = from.fromSource
                 ? { source: from.nodeId, sourceHandle: from.handleId, target: targetNodeId, targetHandle: targetHandleId }
                 : { source: targetNodeId, sourceHandle: targetHandleId, target: from.nodeId, targetHandle: from.handleId };
               const state = useSchematicStore.getState();
-              if (!state.isValidConnection(connection as Connection)) {
-                // Trigger the signal-type mismatch check in onConnect
+              const sameTypeDrop =
+                (from.fromSource && targetHandleType === "source") ||
+                (!from.fromSource && targetHandleType === "target");
+              if (!state.isValidConnection(connection as Connection) || sameTypeDrop) {
+                // Trigger special connection flows that React Flow does not emit itself:
+                // incompatible handles and intentional output-to-output drops.
                 state.onConnect(connection as Connection);
               }
             }
