@@ -1103,6 +1103,10 @@ function isOutputHandle(port: Port, handleId: string | null | undefined): boolea
   return port.direction === "bidirectional" && handleId?.endsWith("-out") === true;
 }
 
+function allowsOutputFanout(port: Port, handleId: string | null | undefined): boolean {
+  return port.multiConnect === true || isOutputHandle(port, handleId);
+}
+
 function isParallelOutputWarningDisabled(): boolean {
   try {
     return localStorage.getItem(PARALLEL_OUTPUT_PREF_KEY) === "allow";
@@ -2129,23 +2133,24 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const tgtIsMulticable = targetPort.isMulticable ?? false;
     if (srcIsMulticable !== tgtIsMulticable) return false;
 
-    // Don't allow multiple connections to the same handle, unless the port is multi-connect
-    if (!targetPort.multiConnect && !allowParallelOutput) {
+    // Outputs can intentionally fan out to multiple cables. Inputs stay one-cable
+    // unless explicitly marked multiConnect.
+    if (!allowsOutputFanout(targetPort, connection.targetHandle) && !allowParallelOutput) {
       const duplicateTarget = state.edges.some(
         (e) =>
           e.id !== _reconnectingEdgeId &&
-          e.target === connection.target &&
-          e.targetHandle === connection.targetHandle,
+          ((e.target === connection.target && e.targetHandle === connection.targetHandle) ||
+            (e.source === connection.target && e.sourceHandle === connection.targetHandle)),
       );
       if (duplicateTarget) return false;
     }
 
-    if (!sourcePort.multiConnect && !allowParallelOutput) {
+    if (!allowsOutputFanout(sourcePort, connection.sourceHandle) && !allowParallelOutput) {
       const duplicateSource = state.edges.some(
         (e) =>
           e.id !== _reconnectingEdgeId &&
-          e.source === connection.source &&
-          e.sourceHandle === connection.sourceHandle,
+          ((e.source === connection.source && e.sourceHandle === connection.sourceHandle) ||
+            (e.target === connection.source && e.targetHandle === connection.sourceHandle)),
       );
       if (duplicateSource) return false;
     }
