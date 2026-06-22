@@ -1,19 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { createExternalEndpointData, EXTERNAL_ENDPOINT_HEIGHT, snapExternalEndpointY } from "../externalEndpoint";
+import {
+  createExternalEndpointData,
+  EXTERNAL_ENDPOINT_HEIGHT,
+  reconcileExternalEndpointConnections,
+  snapExternalEndpointY,
+} from "../externalEndpoint";
 import { computeSnap, getPortAbsolutePositions } from "../snapUtils";
-import type { ConnectionEdge, SchematicNode } from "../types";
+import type { ConnectionEdge, DeviceNode } from "../types";
 
-function externalEndpoint(y: number): SchematicNode {
+function externalEndpoint(y: number): DeviceNode {
   return {
     id: "external-1",
     type: "device",
     position: { x: 100, y },
     measured: { width: 160, height: EXTERNAL_ENDPOINT_HEIGHT },
     data: createExternalEndpointData("Martin Audio CDD6WTX-MAR"),
-  } as SchematicNode;
+  } as DeviceNode;
 }
 
-function amplifier(y: number): SchematicNode {
+function amplifier(y: number): DeviceNode {
   return {
     id: "amp-1",
     type: "device",
@@ -28,7 +33,7 @@ function amplifier(y: number): SchematicNode {
         { id: "speaker-2", label: "Speaker Out 2", signalType: "speaker-level", direction: "output" },
       ],
     },
-  } as SchematicNode;
+  } as DeviceNode;
 }
 
 describe("external endpoint grid alignment", () => {
@@ -59,9 +64,48 @@ describe("external endpoint grid alignment", () => {
     expect(result.y + EXTERNAL_ENDPOINT_HEIGHT / 2).toBe(portY);
   });
 
+  it("repairs a legacy source handle after an endpoint was changed to input", () => {
+    const endpoint = externalEndpoint(200);
+    endpoint.data.ports[0].direction = "input";
+    const edge = {
+      id: "legacy-endpoint-edge",
+      source: "external-1",
+      sourceHandle: "endpoint",
+      target: "amp-1",
+      targetHandle: "speaker-1",
+      data: { signalType: "speaker-level" },
+    } as ConnectionEdge;
+
+    const result = reconcileExternalEndpointConnections([endpoint, amplifier(0)], [edge]);
+    const repairedEndpoint = result.nodes.find((node) => node.id === "external-1") as DeviceNode;
+
+    expect(result.changed).toBe(true);
+    expect(repairedEndpoint.data.ports[0].direction).toBe("output");
+    expect(result.edges[0].sourceHandle).toBe("endpoint");
+  });
+
+  it("upgrades bidirectional endpoint handles without changing edge direction", () => {
+    const endpoint = externalEndpoint(200);
+    const edge = {
+      id: "legacy-bidirectional-edge",
+      source: "external-1",
+      sourceHandle: "endpoint",
+      target: "amp-1",
+      targetHandle: "speaker-1",
+      data: { signalType: "speaker-level" },
+    } as ConnectionEdge;
+
+    const result = reconcileExternalEndpointConnections([endpoint, amplifier(0)], [edge]);
+
+    expect(result.changed).toBe(true);
+    expect(result.edges[0].source).toBe("external-1");
+    expect(result.edges[0].target).toBe("amp-1");
+    expect(result.edges[0].sourceHandle).toBe("endpoint-out");
+  });
+
   it("prefers its connected port over an adjacent closer row at any cable length", () => {
     const amp = amplifier(3);
-    const endpoint = { ...externalEndpoint(73), position: { x: 1200, y: 73 } } as SchematicNode;
+    const endpoint = { ...externalEndpoint(73), position: { x: 1200, y: 73 } } as DeviceNode;
     const edge = {
       id: "speaker-run",
       source: "amp-1",

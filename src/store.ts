@@ -61,6 +61,7 @@ import {
   EXTERNAL_ENDPOINT_HEIGHT,
   estimateExternalEndpointWidth,
   isExternalEndpointData,
+  reconcileExternalEndpointConnections,
   snapExternalEndpointY,
 } from "./externalEndpoint";
 import { allocateEdgeId, maxEdgeCounterFromIds, newLinkedConnectionId, uniquifyEdgeIds } from "./idUtils";
@@ -4773,6 +4774,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           // Only load if still empty (no race with user actions)
           if (get().nodes.length > 0) return;
           const data = migrateSchematic(mod.default) as SchematicFile;
+          const reconciled = reconcileExternalEndpointConnections(data.nodes, data.edges);
+          data.nodes = reconciled.nodes;
+          data.edges = reconciled.edges;
           snapNodesToGrid(data.nodes);
           applyRoomLockState(data.nodes);
           normalizeDrawBoxes(data.nodes);
@@ -4851,6 +4855,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       }
       const parsed = JSON.parse(raw);
       const data = migrateSchematic(parsed) as SchematicFile;
+      const reconciled = reconcileExternalEndpointConnections(data.nodes, data.edges);
+      data.nodes = reconciled.nodes;
+      data.edges = reconciled.edges;
       snapNodesToGrid(data.nodes);
       applyRoomLockState(data.nodes);
       normalizeDrawBoxes(data.nodes);
@@ -5001,8 +5008,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   importFromJSON: (rawData) => {
     rawData = repairMojibake(rawData) as SchematicFile;
     const data = migrateSchematic(rawData) as SchematicFile;
-    const nodes = data.nodes ?? [];
-    let edges = data.edges ?? [];
+    const reconciled = reconcileExternalEndpointConnections(data.nodes ?? [], data.edges ?? []);
+    const nodes = reconciled.nodes;
+    let edges = reconciled.edges;
     // Sanitize note HTML to prevent XSS from malicious schematic files
     for (const node of nodes) {
       if (node.type === "note" && node.data && "html" in node.data) {
