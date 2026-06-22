@@ -1629,10 +1629,21 @@ export default function DeviceLibrary() {
   const [bulkRemovePrefix, setBulkRemovePrefix] = useState("");
   const [bulkFindText, setBulkFindText] = useState("");
   const [bulkReplaceText, setBulkReplaceText] = useState("");
-  const [bulkPreview, setBulkPreview] = useState<TatesideBulkEditResult | null>(null);
+  const [bulkPreviewState, setBulkPreviewState] = useState<{ signature: string; result: TatesideBulkEditResult } | null>(null);
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkDeleteConfirming, setBulkDeleteConfirming] = useState(false);
   const bulkEditActive = selectedSharedTemplateIds.size > 0;
+  const bulkPreviewSignature = useMemo(() => JSON.stringify({
+    selectedTemplateIds: [...selectedSharedTemplateIds].sort(),
+    manufacturer: bulkManufacturer,
+    category: bulkCategory,
+    removePrefix: bulkRemovePrefix,
+    findText: bulkFindText,
+    replaceText: bulkReplaceText,
+  }), [selectedSharedTemplateIds, bulkManufacturer, bulkCategory, bulkRemovePrefix, bulkFindText, bulkReplaceText]);
+  const bulkPreview = bulkPreviewState?.signature === bulkPreviewSignature
+    ? bulkPreviewState.result
+    : null;
 
   const presetIds = useMemo(() => new Set(Object.keys(templatePresets)), [templatePresets]);
   const favoriteSet = useMemo(() => new Set(favoriteTemplates), [favoriteTemplates]);
@@ -1653,7 +1664,7 @@ export default function DeviceLibrary() {
   }, [selectedSignalTypes]);
 
   const signalTypeOptions = useMemo(() => {
-    let source = libraryTemplates;
+    const source = libraryTemplates;
     const types = new Set<string>();
     for (const t of source) for (const p of t.ports) types.add(p.signalType);
     return [...types].sort((a, b) => (SIGNAL_LABELS[a as keyof typeof SIGNAL_LABELS] ?? a).localeCompare(SIGNAL_LABELS[b as keyof typeof SIGNAL_LABELS] ?? b));
@@ -1677,22 +1688,23 @@ export default function DeviceLibrary() {
 
   const hasFilter = selectedSignalTypes.size > 0;
 
-  useEffect(() => {
-    fetchTemplates().then(setTemplates).catch(() => console.warn("TateSide device library API unavailable"));
-  }, []);
-
-  useEffect(() => {
-    const validIds = new Set(templates.map((template) => template.id).filter(Boolean) as string[]);
+  const replaceTemplates = useCallback((nextTemplates: DeviceTemplate[]) => {
+    const validIds = new Set(nextTemplates.map((template) => template.id).filter(Boolean) as string[]);
+    setTemplates(nextTemplates);
     setSelectedSharedTemplateIds((current) => {
       const next = new Set([...current].filter((id) => validIds.has(id)));
       return next.size === current.size ? current : next;
     });
-  }, [templates]);
+  }, []);
+
+  useEffect(() => {
+    fetchTemplates().then(replaceTemplates).catch(() => console.warn("TateSide device library API unavailable"));
+  }, [replaceTemplates]);
 
   const reloadSharedTemplates = useCallback(async () => {
     const refreshed = await refreshTemplates();
-    setTemplates(refreshed);
-  }, []);
+    replaceTemplates(refreshed);
+  }, [replaceTemplates]);
 
   const handleSharedTemplateSaved = useCallback(async (_updated: DeviceTemplate) => {
     await reloadSharedTemplates();
@@ -1830,15 +1842,10 @@ export default function DeviceLibrary() {
   }, [brandSections, query, rankedResults]);
 
   useEffect(() => {
-    setBulkPreview(null);
-    setBulkDeleteConfirming(false);
-  }, [selectedSharedTemplateIds, bulkManufacturer, bulkCategory, bulkRemovePrefix, bulkFindText, bulkReplaceText]);
-
-  useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && bulkEditActive) {
         setSelectedSharedTemplateIds(new Set());
-        setBulkPreview(null);
+        setBulkPreviewState(null);
         setBulkDeleteConfirming(false);
       }
     };
@@ -1861,7 +1868,7 @@ export default function DeviceLibrary() {
     setBulkRemovePrefix("");
     setBulkFindText("");
     setBulkReplaceText("");
-    setBulkPreview(null);
+    setBulkPreviewState(null);
     setBulkDeleteConfirming(false);
   }, []);
 
@@ -1919,7 +1926,17 @@ export default function DeviceLibrary() {
         source: "bulk-library-edit",
         preview: previewOnly,
       });
-      setBulkPreview(result);
+      setBulkPreviewState({
+        signature: JSON.stringify({
+          selectedTemplateIds: [...selectedSharedTemplateIds].sort(),
+          manufacturer: bulkManufacturer,
+          category: bulkCategory,
+          removePrefix: bulkRemovePrefix,
+          findText: bulkFindText,
+          replaceText: bulkReplaceText,
+        }),
+        result,
+      });
 
       if (!previewOnly) {
         const updatedCount = result.results.filter((item) => item.status === "updated").length;
@@ -1953,7 +1970,7 @@ export default function DeviceLibrary() {
         "success",
       );
       setSelectedSharedTemplateIds(new Set());
-      setBulkPreview(null);
+      setBulkPreviewState(null);
       setBulkDeleteConfirming(false);
       await reloadSharedTemplates();
     } catch (err) {

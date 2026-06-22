@@ -571,7 +571,7 @@ function SchematicCanvas() {
   // Quick-add device dialog state
   const [quickAddPos, setQuickAddPos] = useState<{ x: number; y: number } | null>(null);
   const [showDeviceCreator, setShowDeviceCreator] = useState(false);
-  const deviceCreatorPosRef = useRef<{ x: number; y: number } | undefined>(undefined);
+  const [deviceCreatorPosition, setDeviceCreatorPosition] = useState<{ x: number; y: number } | undefined>(undefined);
   const lastPaneClickRef = useRef<{ time: number; x: number; y: number }>({ time: 0, x: 0, y: 0 });
   const dragStartAbsPositionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
   const dragStartManualWaypointsRef = useRef<Map<string, { x: number; y: number }[]>>(new Map());
@@ -2138,10 +2138,10 @@ function SchematicCanvas() {
       <QuickAddDevice
         position={quickAddPos}
         onClose={() => setQuickAddPos(null)}
-        onOpenDeviceCreator={() => { deviceCreatorPosRef.current = quickAddPos ?? undefined; setShowDeviceCreator(true); }}
+        onOpenDeviceCreator={() => { setDeviceCreatorPosition(quickAddPos ?? undefined); setShowDeviceCreator(true); }}
       />
     )}
-    {showDeviceCreator && deviceCreatorPosRef.current && <DeviceCreatorPicker position={deviceCreatorPosRef.current} onClose={() => { setShowDeviceCreator(false); deviceCreatorPosRef.current = undefined; }} />}
+    {showDeviceCreator && deviceCreatorPosition && <DeviceCreatorPicker position={deviceCreatorPosition} onClose={() => { setShowDeviceCreator(false); setDeviceCreatorPosition(undefined); }} />}
     </>
   );
 }

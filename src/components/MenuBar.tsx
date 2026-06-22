@@ -22,6 +22,7 @@ import { useTheme } from "../hooks/useTheme";
 import SharePointProjectDialog from "./SharePointProjectDialog";
 
 const MICROSOFT_LOGOUT_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/logout";
+const MENU_NAMES = ["File", "Edit", "Insert", "View", "Export", "Reports", "Help"] as const;
 
 // ─── Menu data types ─────────────────────────────────────────────
 
@@ -106,6 +107,32 @@ function MenuDropdown({ items, onClose }: { items: MenuEntry[]; onClose: () => v
   );
 }
 
+function SchematicNameEditor({
+  initialName,
+  onCommit,
+  onCancel,
+}: {
+  initialName: string;
+  onCommit: (value: string) => void;
+  onCancel: () => void;
+}) {
+  const [value, setValue] = useState(initialName);
+
+  return (
+    <input
+      className="bg-transparent text-[var(--color-text-heading)] text-sm font-semibold outline-none border-b border-blue-500 max-w-[200px] text-center"
+      value={value}
+      onChange={(event) => setValue(event.target.value)}
+      onBlur={() => onCommit(value)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") onCommit(value);
+        if (event.key === "Escape") onCancel();
+      }}
+      autoFocus
+    />
+  );
+}
+
 // ─── Main MenuBar ────────────────────────────────────────────────
 
 export default function MenuBar() {
@@ -136,7 +163,6 @@ export default function MenuBar() {
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [activeMobilePanel, setActiveMobilePanel] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState(schematicName);
   const [reportsTab, setReportsTab] = useState<ReportsTab | null>(null);
   const [showTitleBlockDialog, setShowTitleBlockDialog] = useState(false);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
@@ -163,7 +189,7 @@ export default function MenuBar() {
 
   // Keep nameValue in sync when schematicName changes externally
   useEffect(() => {
-    if (!editingName) setNameValue(schematicName);
+    void schematicName;
   }, [schematicName, editingName]);
 
   // Close menu on outside click or Escape
@@ -433,10 +459,9 @@ export default function MenuBar() {
 
   // ─── Name editing ──────────────────────────────────────
 
-  const commitName = () => {
-    const trimmed = nameValue.trim();
+  const commitName = (value: string) => {
+    const trimmed = value.trim();
     if (trimmed) setSchematicName(trimmed);
-    else setNameValue(schematicName);
     setEditingName(false);
   };
 
@@ -584,7 +609,7 @@ export default function MenuBar() {
     ],
   };
 
-  const menuNames = Object.keys(menus);
+  const menuNames = MENU_NAMES;
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
@@ -672,25 +697,17 @@ export default function MenuBar() {
         {/* Center: schematic name */}
         <div className="flex-1 flex justify-center">
           {editingName ? (
-            <input
-              className="bg-transparent text-[var(--color-text-heading)] text-sm font-semibold outline-none border-b border-blue-500 max-w-[200px] text-center"
-              value={nameValue}
-              onChange={(e) => setNameValue(e.target.value)}
-              onBlur={commitName}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitName();
-                if (e.key === "Escape") setEditingName(false);
-              }}
-              autoFocus
+            <SchematicNameEditor
+              key={schematicName}
+              initialName={schematicName}
+              onCommit={commitName}
+              onCancel={() => setEditingName(false)}
             />
           ) : (
             <span className="flex items-center gap-1.5">
               <span
                 className="text-sm font-semibold text-[var(--color-text-heading)] cursor-pointer hover:text-blue-600 transition-colors"
-                onDoubleClick={() => {
-                  setNameValue(schematicName);
-                  setEditingName(true);
-                }}
+                onDoubleClick={() => setEditingName(true)}
                 title="Double-click to rename"
               >
                 {schematicName}

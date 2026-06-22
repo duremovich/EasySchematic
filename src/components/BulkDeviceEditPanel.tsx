@@ -72,7 +72,7 @@ function buildSharedPortRows(devices: DeviceNode[]): SharedPortRow[] {
 }
 
 export default function BulkDeviceEditPanel({ onClose }: Props) {
-  const selectionKey = useSchematicStore((s) => {
+  useSchematicStore((s) => {
     let nodeBits = "";
     for (const n of s.nodes) if (n.selected && n.type === "device") nodeBits += `${n.id};`;
     let edgeBits = "";
@@ -80,14 +80,9 @@ export default function BulkDeviceEditPanel({ onClose }: Props) {
     return `${nodeBits}|${edgeBits}`;
   });
 
-  const selectedDevices = useMemo(
-    () => useSchematicStore.getState().nodes.filter((n): n is DeviceNode => !!n.selected && n.type === "device"),
-    [selectionKey],
-  );
-  const selectedEdgeCount = useMemo(
-    () => useSchematicStore.getState().edges.filter((e) => e.selected).length,
-    [selectionKey],
-  );
+  const selectedDevices = useSchematicStore.getState().nodes
+    .filter((node): node is DeviceNode => !!node.selected && node.type === "device");
+  const selectedEdgeCount = useSchematicStore.getState().edges.filter((edge) => edge.selected).length;
 
   const compatible = useMemo(() => {
     if (selectedDevices.length < 2) return false;

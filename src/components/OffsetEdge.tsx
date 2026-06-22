@@ -525,11 +525,6 @@ function OffsetEdgeComponent({
   const cidManualPt = totalLen > 0 ? pointAtNormalizedDistance(activeManualPosition) : { x: lx, y: ly, dx: 1, dy: 0 };
   const customMidPt = totalLen > 0 ? pointAtDistance(totalLen / 2) : { x: lx, y: ly };
 
-  useEffect(() => {
-    setManualDragPosition(null);
-    setIsDraggingCableId(false);
-  }, [edgeCableIdManualPosition, routeWpStr]);
-
   const handleCableIdPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!showCableId || effectiveCableIdMode !== "manual" || totalLen <= 0) return;
 

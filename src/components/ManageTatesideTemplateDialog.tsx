@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { DEFAULT_CONNECTOR } from "../connectorTypes";
 import { ALL_CATEGORIES } from "../deviceTypeCategories";
 import { useSchematicStore } from "../store";
@@ -306,7 +306,16 @@ function PortSection({
   );
 }
 
-export default function ManageTatesideTemplateDialog({
+export default function ManageTatesideTemplateDialog(props: Props) {
+  if (!props.open || !props.template) return null;
+
+  const templateIdentity = props.template.id
+    ?? `${props.template.manufacturer ?? ""}:${props.template.modelNumber ?? props.template.label}`;
+
+  return <ManageTatesideTemplateDialogContent key={`${props.saveMode ?? "update"}:${templateIdentity}`} {...props} />;
+}
+
+function ManageTatesideTemplateDialogContent({
   open,
   template,
   onClose,
@@ -320,24 +329,14 @@ export default function ManageTatesideTemplateDialog({
   const addToast = useSchematicStore((s) => s.addToast);
   const customCategories = useSchematicStore((s) => s.customCategories);
   const addCustomCategory = useSchematicStore((s) => s.addCustomCategory);
-  const [draft, setDraft] = useState<Omit<DeviceTemplate, "id" | "version"> | null>(null);
-  const [searchTermsRaw, setSearchTermsRaw] = useState("");
+  const [draft, setDraft] = useState<Omit<DeviceTemplate, "id" | "version">>(() => cloneEditableTemplate(template!));
+  const [searchTermsRaw, setSearchTermsRaw] = useState(() => (template!.searchTerms ?? []).join(", "));
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
   const [customCategoryDraft, setCustomCategoryDraft] = useState("");
   const jsonInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!open || !template) return;
-    const editable = cloneEditableTemplate(template);
-    setDraft(editable);
-    setSearchTermsRaw((editable.searchTerms ?? []).join(", "));
-    setNote("");
-    setShowCustomCategoryInput(false);
-    setCustomCategoryDraft("");
-  }, [open, template]);
 
   const categoryOptions = useMemo(() => {
     const seen = new Set<string>();

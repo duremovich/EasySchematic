@@ -20,7 +20,6 @@ export default function SignalColorPanel({ mobile, onClose }: { mobile?: boolean
     s.signalColors ? JSON.stringify(s.signalColors) : "",
   );
   const hasInitialized = useRef(false);
-  /* eslint-disable react-hooks/set-state-in-effect -- syncing store state to local state */
   useEffect(() => {
     if (!hasInitialized.current) {
       hasInitialized.current = true;
@@ -29,7 +28,6 @@ export default function SignalColorPanel({ mobile, onClose }: { mobile?: boolean
     const merged = { ...DEFAULT_SIGNAL_COLORS, ...(storeColorsKey ? JSON.parse(storeColorsKey) : {}) };
     setColors(merged);
   }, [storeColorsKey]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const updateColor = useCallback((type: SignalType, color: string) => {
     setColors((prev) => {

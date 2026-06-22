@@ -14,7 +14,11 @@ interface Props {
 }
 
 function safeFileName(name: string): string {
-  const cleaned = name.replace(/[<>:"/\\|?*\x00-\x1f]/g, "").trim();
+  const withoutReservedCharacters = name.replace(/[<>:"/\\|?*]/g, "");
+  const cleaned = Array.from(withoutReservedCharacters)
+    .filter((character) => character.charCodeAt(0) >= 0x20)
+    .join("")
+    .trim();
   return `${cleaned || "Untitled Schematic"}.json`;
 }
 
@@ -54,7 +58,22 @@ export default function SharePointProjectDialog({ onClose }: Props) {
   };
 
   useEffect(() => {
-    void loadFolder();
+    let cancelled = false;
+
+    void listSharePointFolder()
+      .then((nextListing) => {
+        if (!cancelled) setListing(nextListing);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load SharePoint folders");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSave = async () => {

@@ -277,7 +277,7 @@ export default function DeviceEditor() {
     setAdapterVisibility(node.data.adapterVisibility ?? "default");
     setAuxiliaryData(normalizeAuxRows(node.data.auxiliaryData));
     setSearchTermsRaw((node.data.searchTerms ?? []).join(", "));
-  }, [node]);
+  }, [node, customTemplates]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const close = useCallback(() => {

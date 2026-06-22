@@ -111,12 +111,10 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
     fileInputRef.current?.click();
   }, []);
 
-  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const processLogoFile = useCallback(async (file?: File | null) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       alert("Logo image is too large (max 5 MB). Please use a smaller image.");
-      e.target.value = "";
       return;
     }
     const reader = new FileReader();
@@ -126,8 +124,13 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
       setTbDraft((prev) => ({ ...prev, logo: resized }));
     };
     reader.readAsDataURL(file);
-    e.target.value = "";
   }, []);
+
+  const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    await processLogoFile(file);
+    e.target.value = "";
+  }, [processLogoFile]);
 
   const handleRemoveLogo = useCallback(() => {
     setTbDraft((prev) => ({ ...prev, logo: "" }));
@@ -225,8 +228,6 @@ export default function TitleBlockDialog({ onClose }: TitleBlockDialogProps) {
               removeCustomField={removeCustomField}
               handleUpload={handleUpload}
               handleRemoveLogo={handleRemoveLogo}
-              fileInputRef={fileInputRef}
-              handleFileChange={handleFileChange}
               inputClass={inputClass}
             />
           ) : (
@@ -277,8 +278,6 @@ function DataTab({
   removeCustomField,
   handleUpload,
   handleRemoveLogo,
-  fileInputRef: _fileInputRef,
-  handleFileChange: _handleFileChange,
   inputClass,
 }: {
   draft: TitleBlock;
@@ -289,8 +288,6 @@ function DataTab({
   removeCustomField: (id: string) => void;
   handleUpload: () => void;
   handleRemoveLogo: () => void;
-  fileInputRef: React.RefObject<HTMLInputElement | null>;
-  handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   inputClass: string;
 }) {
   return (
@@ -704,13 +701,6 @@ function LayoutTab({
     return ids;
   }, [draft.cells]);
 
-  // Update selection live during drag
-  useEffect(() => {
-    if (!dragSelect) return;
-    const ids = getCellsInRect(dragSelect.startCellId, dragSelect.currentCellId);
-    setSelectedCells(ids);
-  }, [dragSelect, getCellsInRect]);
-
   // --- Cell pointer events (drag-to-select) ---
 
   const handleCellPointerDown = useCallback((cellId: string, e: React.PointerEvent) => {
@@ -732,8 +722,9 @@ function LayoutTab({
 
   const handleCellPointerEnter = useCallback((cellId: string) => {
     if (!dragSelect) return;
-    setDragSelect((prev) => prev ? { ...prev, currentCellId: cellId } : null);
-  }, [dragSelect]);
+    setDragSelect((previous) => previous ? { ...previous, currentCellId: cellId } : null);
+    setSelectedCells(getCellsInRect(dragSelect.startCellId, cellId));
+  }, [dragSelect, getCellsInRect]);
 
   const handleGridPointerUp = useCallback(() => {
     if (dragSelect) {

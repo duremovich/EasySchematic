@@ -8,6 +8,28 @@ import MenuSubmenu from "./MenuSubmenu";
 
 export default function EdgeContextMenu() {
   const menu = useSchematicStore((s) => s.edgeContextMenu);
+  if (!menu) return null;
+
+  return (
+    <EdgeContextMenuContent
+      key={`${menu.edgeId}:${menu.openEditor ?? ""}`}
+      menu={menu}
+    />
+  );
+}
+
+function EdgeContextMenuContent({
+  menu,
+}: {
+  menu: {
+    edgeId: string;
+    screenX: number;
+    screenY: number;
+    flowX: number;
+    flowY: number;
+    openEditor?: "cableId";
+  };
+}) {
   const { setCenter, getZoom, getInternalNode } = useReactFlow();
 
   // Close on click anywhere or Escape
@@ -106,18 +128,14 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
-  const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable" | "source" | "target" | "cableId">(false);
-  const [labelValue, setLabelValue] = useState("");
-
-  useEffect(() => {
-    if (!menu?.openEditor) return;
-    if (menu.openEditor === "cableId") {
-      const store = useSchematicStore.getState();
-      const edge = store.edges.find((e) => e.id === menu.edgeId);
-      setLabelValue((edge?.data?.cableId as string) ?? "");
-      setEditingLabel("cableId");
-    }
-  }, [menu?.edgeId, menu?.openEditor]);
+  const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable" | "source" | "target" | "cableId">(
+    menu.openEditor ?? false,
+  );
+  const [labelValue, setLabelValue] = useState(() => {
+    if (menu.openEditor !== "cableId") return "";
+    const edge = useSchematicStore.getState().edges.find((candidate) => candidate.id === menu.edgeId);
+    return (edge?.data?.cableId as string) ?? "";
+  });
 
   const setEdgeColor = useCallback((hex: string) => {
     if (!menu) return;

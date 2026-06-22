@@ -60,10 +60,8 @@ export default function SelectionFilterBar() {
   const edgeCount = counts.edge ?? 0;
   const presentKinds = KIND_ORDER.filter((k) => (counts[k] ?? 0) > 0);
   const totalSelected = presentKinds.reduce((sum, k) => sum + (counts[k] ?? 0), 0);
-  const selectedDevices = useMemo(
-    () => useSchematicStore.getState().nodes.filter((n): n is DeviceNode => !!n.selected && n.type === "device"),
-    [selectionKey],
-  );
+  const selectedDevices = useSchematicStore.getState().nodes
+    .filter((node): node is DeviceNode => !!node.selected && node.type === "device");
   const multiDeviceSelection = selectedDevices.length >= 2;
   const edgeOnlySelection = edgeCount >= 2 && totalSelected === edgeCount;
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useSchematicStore } from "../store";
 import TitleBlockDialog from "./TitleBlockDialog";
 
@@ -173,7 +173,17 @@ export default function ShowInfoPanel({ mobile, onClose }: { mobile?: boolean; o
   );
 }
 
-function FieldInput({
+function FieldInput(props: {
+  label: string;
+  placeholder: string;
+  value: string;
+  onBlur: (value: string) => void;
+  hideLabel?: boolean;
+}) {
+  return <FieldInputEditor key={props.value} {...props} />;
+}
+
+function FieldInputEditor({
   label,
   placeholder,
   value,
@@ -187,11 +197,6 @@ function FieldInput({
   hideLabel?: boolean;
 }) {
   const [draft, setDraft] = useState(value);
-
-  // Sync draft when store value changes externally (e.g. import)
-  useEffect(() => {
-    setDraft(value);
-  }, [value]);
 
   return (
     <div>

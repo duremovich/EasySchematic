@@ -241,7 +241,6 @@ function applyConnectorTypeRemaps(
 export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }: Props) {
   const importCustomTemplates = useSchematicStore((s) => s.importCustomTemplates);
   const addToast = useSchematicStore((s) => s.addToast);
-  const customConnectorTypes = useSchematicStore((s) => s.customConnectorTypes);
   const addCustomConnectorTypes = useSchematicStore((s) => s.addCustomConnectorTypes);
 
   const [tab, setTab] = useState<Tab>("json");
@@ -258,7 +257,7 @@ export default function ImportDevicesDialog({ open, onClose, onLibraryChanged }:
   const parsedResult = useMemo(() => {
     if (!text.trim()) return null;
     return tab === "json" ? parseJsonImport(text) : parseCsvImport(text);
-  }, [text, tab, customConnectorTypes]);
+  }, [text, tab]);
 
   const result = useMemo(() => {
     if (!parsedResult) return null;

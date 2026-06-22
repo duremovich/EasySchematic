@@ -34,20 +34,24 @@ export default function SchematicBrowser({ onClose }: { onClose: () => void }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const isOnline = useSchematicStore((s) => s.isOnline);
 
-  const load = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const list = await listSchematics();
-      setSchematics(list);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load schematics");
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    let cancelled = false;
 
-  useEffect(() => { load(); }, []);
+    void listSchematics()
+      .then((list) => {
+        if (!cancelled) setSchematics(list);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load schematics");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleOpen = async (s: CachedSchematic) => {
     try {

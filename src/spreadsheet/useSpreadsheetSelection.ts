@@ -52,14 +52,12 @@ export function useSpreadsheetSelection<TRow>(options: Options<TRow>) {
 
   // Clear selection when row count changes (sort/filter)
   const prevRowCount = useRef(rowCount);
-  /* eslint-disable react-hooks/set-state-in-effect -- resetting on row count change */
   useEffect(() => {
     if (prevRowCount.current !== rowCount) {
       prevRowCount.current = rowCount;
       clearSelection();
     }
   }, [rowCount, clearSelection]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const selectRange = useCallback(
     (colId: string, from: number, to: number): Set<string> => {

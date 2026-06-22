@@ -18,55 +18,61 @@ import type { DeviceTemplate, DeviceNode, Port } from "../types";
 export default function DeviceSwapDialog() {
   const target = useSchematicStore((s) => s.deviceSwapTarget);
   const nodes = useSchematicStore((s) => s.nodes);
-  const edges = useSchematicStore((s) => s.edges);
-  const customTemplates = useSchematicStore((s) => s.customTemplates);
-  const swapDevice = useSchematicStore((s) => s.swapDevice);
+  const [libraryTemplates, setLibraryTemplates] = useState<DeviceTemplate[]>(getBundledTemplates);
 
   const oldNode = useMemo(() => {
     if (!target) return null;
-    const n = nodes.find((nn) => nn.id === target.nodeId && nn.type === "device");
-    return (n ?? null) as DeviceNode | null;
+    const node = nodes.find((candidate) => candidate.id === target.nodeId && candidate.type === "device");
+    return (node ?? null) as DeviceNode | null;
   }, [target, nodes]);
 
+  useEffect(() => {
+    fetchTemplates().then(setLibraryTemplates).catch(() => { /* keep bundled fallback */ });
+  }, []);
+
+  if (!target || !oldNode) return null;
+
+  return (
+    <DeviceSwapDialogContent
+      key={target.nodeId}
+      target={target}
+      oldNode={oldNode}
+      libraryTemplates={libraryTemplates}
+    />
+  );
+}
+
+function DeviceSwapDialogContent({
+  target,
+  oldNode,
+  libraryTemplates,
+}: {
+  target: { nodeId: string };
+  oldNode: DeviceNode;
+  libraryTemplates: DeviceTemplate[];
+}) {
+  const edges = useSchematicStore((s) => s.edges);
+  const customTemplates = useSchematicStore((s) => s.customTemplates);
+  const swapDevice = useSchematicStore((s) => s.swapDevice);
   const [pickedTemplate, setPickedTemplate] = useState<DeviceTemplate | null>(null);
   const [plan, setPlan] = useState<SwapPlan | null>(null);
   const [search, setSearch] = useState("");
-  const [libraryTemplates, setLibraryTemplates] = useState<DeviceTemplate[]>(getBundledTemplates);
   const [showFactualChanges, setShowFactualChanges] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetchTemplates().then(setLibraryTemplates).catch(() => { /* keep empty TateSide fallback */ });
-  }, []);
-
-  // Reset internal state when the target opens / closes / changes.
-  useEffect(() => {
-    setPickedTemplate(null);
-    setPlan(null);
-    setSearch("");
-    setShowFactualChanges(false);
-  }, [target?.nodeId]);
-
   // Focus search input on phase 1.
   useEffect(() => {
-    if (target && !pickedTemplate) {
-      const t = setTimeout(() => searchInputRef.current?.focus(), 10);
-      return () => clearTimeout(t);
+    if (!pickedTemplate) {
+      const timer = setTimeout(() => searchInputRef.current?.focus(), 10);
+      return () => clearTimeout(timer);
     }
-  }, [target, pickedTemplate]);
+  }, [pickedTemplate]);
 
-  // Compute plan when a template is picked.
-  useEffect(() => {
-    if (!pickedTemplate || !oldNode) return;
-    const p = planDeviceSwap(
-      oldNode.data,
-      oldNode.id,
-      pickedTemplate,
-      edges,
-      customTemplates,
-    );
-    setPlan(p);
-  }, [pickedTemplate, oldNode, edges, customTemplates]);
+  const pickTemplate = (template: DeviceTemplate) => {
+    setPickedTemplate(template);
+    setPlan(planDeviceSwap(oldNode.data, oldNode.id, template, edges, customTemplates));
+    setShowFactualChanges(false);
+  };
 
   const allTemplates = useMemo(
     () => [...libraryTemplates, ...customTemplates].filter((t) => t.category !== "Expansion Cards"),
@@ -137,7 +143,7 @@ export default function DeviceSwapDialog() {
                   return (
                     <button
                       key={key}
-                      onClick={() => setPickedTemplate(t)}
+                      onClick={() => pickTemplate(t)}
                       className="w-full text-left px-2 py-1.5 rounded hover:bg-[var(--color-surface)] transition-colors flex items-center gap-2"
                     >
                       {t.color && (

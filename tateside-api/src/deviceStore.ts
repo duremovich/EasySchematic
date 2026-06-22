@@ -84,7 +84,7 @@ interface PreparedBulkEditResultItem extends BulkEditTemplateResultItem {
 }
 
 function finalizeBulkEditResults(results: PreparedBulkEditResultItem[]): BulkEditTemplateResultItem[] {
-  return results.map(({ nextTemplate, nextUniqueKey, ...item }) => item);
+  return results.map(({ nextTemplate: _nextTemplate, nextUniqueKey: _nextUniqueKey, ...item }) => item);
 }
 
 function slug(value: string): string {

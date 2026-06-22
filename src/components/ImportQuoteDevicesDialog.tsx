@@ -512,7 +512,19 @@ export default function ImportQuoteDevicesDialog({ open, onClose, onLibraryChang
 
   useEffect(() => {
     if (!open) return;
-    void refreshJetbuiltStatus();
+    let cancelled = false;
+
+    void fetchJetbuiltIndexStatus()
+      .then((status) => {
+        if (!cancelled) setJetbuiltStatus(status);
+      })
+      .catch(() => {
+        if (!cancelled) setJetbuiltStatus(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [open]);
 
   if (!open) return null;
