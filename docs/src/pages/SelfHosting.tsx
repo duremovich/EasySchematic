@@ -228,9 +228,12 @@ make dev`}</code>
 
       <p>
         If you omit <code>.env</code>, the dev server uses the same default as a
-        production build. Cloud login, saves, and templates against the hosted
-        API work from <code>localhost:5173</code> because that origin is already
-        allowed by the API CORS policy.
+        production build. The community device library is public, so the live
+        library loads from <em>any</em> origin — a self-hosted instance shows
+        the full, up-to-date library no matter which port or host you serve it
+        on. Cloud login and saves work from any <code>localhost</code> origin
+        (the API allows loopback on any port); to use them from a non-loopback
+        domain, that origin would need adding to the API CORS allowlist.
       </p>
 
       <p>
