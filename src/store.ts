@@ -300,6 +300,13 @@ interface SchematicState {
   removeSelected: () => void;
   deleteNode: (nodeId: string) => void;
   deleteNodeAndChildren: (nodeId: string) => void;
+  /** Reposition a single node within its current parent (one undo step). Does not
+   *  reparent — used by the MCP bridge's move_device tool. */
+  moveDevice: (nodeId: string, position: { x: number; y: number }) => void;
+  /** Remove a single connection by id via the standard removeSelected path (so bundle
+   *  GC, junction + waypoint reconciliation all run). Used by the bridge's
+   *  delete_connection tool. */
+  deleteConnection: (connectionId: string) => void;
   copySelected: () => void;
   pasteClipboard: () => void;
   alignSelectedNodes: (op: AlignOperation) => void;
@@ -1754,6 +1761,48 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({
       nodes: get().nodes.map((n) => ({ ...n, selected: n.id === nodeId })),
       edges: get().edges.map((e) => ({ ...e, selected: false })),
+    });
+    get().removeSelected();
+  },
+
+  moveDevice: (nodeId, position) => {
+    const state = get();
+    if (!state.nodes.some((n) => n.id === nodeId)) return;
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    // #182: keep stub labels glued to the moved device. Clear `placed` on its connected
+    // (non-user-positioned) stub labels so StubLabelNode.tryPlace re-follows the moved
+    // port instead of leaving them stranded with a dogleg. Mirrors the drag-stop path in
+    // App.tsx so an MCP move_device behaves like a drag.
+    const stubIds = new Set(state.nodes.filter((n) => n.type === "stub-label").map((n) => n.id));
+    const followStubs = new Set<string>();
+    for (const e of state.edges) {
+      const srcStub = stubIds.has(e.source);
+      const tgtStub = stubIds.has(e.target);
+      if (srcStub === tgtStub) continue; // not a stub leg
+      const devEnd = srcStub ? e.target : e.source;
+      if (devEnd === nodeId) followStubs.add(srcStub ? e.source : e.target);
+    }
+    set({
+      nodes: state.nodes.map((n) => {
+        if (n.id === nodeId) return { ...n, position };
+        if (followStubs.has(n.id) && n.type === "stub-label") {
+          const d = n.data as import("./types").StubLabelData;
+          if (!d.userMoved && d.placed === true) return { ...n, data: { ...d, placed: false } };
+        }
+        return n;
+      }),
+    });
+    get().saveToLocalStorage();
+  },
+
+  deleteConnection: (connectionId: string) => {
+    const state = get();
+    if (!state.edges.some((e) => e.id === connectionId)) return;
+    // Select only this edge, deselect everything else, then removeSelected — the same
+    // path the UI uses, so undo, bundle GC, junction + waypoint reconciliation all run.
+    set({
+      nodes: state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
+      edges: state.edges.map((e) => ({ ...e, selected: e.id === connectionId })),
     });
     get().removeSelected();
   },

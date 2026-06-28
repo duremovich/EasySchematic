@@ -1,5 +1,6 @@
 /**
- * MCP tool catalog for Ship 1 ("working core"). Each entry is a plain JSON-Schema
+ * MCP tool catalog: the Ship-1 "working core" tools plus the Ship-2 "editing &
+ * layout" tools (move_device, delete_connection). Each entry is a plain JSON-Schema
  * tool definition; the call is relayed verbatim to the editor over the bridge,
  * which validates and executes it against the live store.
  *
@@ -108,6 +109,34 @@ export const TOOLS: ToolDef[] = [
       type: "object",
       properties: { nodeId: { type: "string", description: "The device id." } },
       required: ["nodeId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "move_device",
+    description:
+      "Reposition a device on the canvas. x and y are in the same coordinate space get_device/get_schematic report for that device — canvas coordinates for a top-level device, or coordinates relative to its room/rack when the device has a parentId. This moves the device within its current container; it does not move a device into or out of a room or rack.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        nodeId: { type: "string", description: "The device id." },
+        x: { type: "number", description: "New X position." },
+        y: { type: "number", description: "New Y position." },
+      },
+      required: ["nodeId", "x", "y"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "delete_connection",
+    description:
+      "Remove a single connection from the canvas by its id (the connection ids are returned by get_schematic and connect_devices). Stubbed connections cannot be removed this way yet.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        connectionId: { type: "string", description: "The connection (edge) id to remove." },
+      },
+      required: ["connectionId"],
       additionalProperties: false,
     },
   },

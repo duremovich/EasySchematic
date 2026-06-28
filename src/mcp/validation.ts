@@ -80,3 +80,56 @@ export function resolveHandleFromCandidates(
   }
   return { ok: false, error: `Invalid face "${face}" for port "${portId}". Valid: ${faces.join(", ")}.` };
 }
+
+export type PositionResult =
+  | { ok: true; position: { x: number; y: number } }
+  | { ok: false; error: string };
+
+/** Validate the x/y of a move command. Input is untrusted (it arrives over the
+ *  bridge), so only finite numbers are accepted — NaN, Infinity and non-numbers
+ *  are rejected rather than written into a node's position. */
+export function validatePosition(x: unknown, y: unknown): PositionResult {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    return { ok: false, error: "x and y must both be finite numbers." };
+  }
+  return { ok: true, position: { x: x as number, y: y as number } };
+}
+
+/** Minimal shape of an edge this planner needs — kept structural so validation.ts
+ *  stays dependency-free (no import from the rest of src/). */
+interface RemovableEdge {
+  id: string;
+  data?: { linkedConnectionId?: string } | null;
+}
+
+export type ConnectionRemovalPlan =
+  | { ok: true; removeId: string }
+  | { ok: false; error: string };
+
+/**
+ * Decide whether a single connection can be removed by id.
+ *   - id not found            -> error
+ *   - stubbed/linked edge      -> rejected (it has a partner leg + stub-label node
+ *     that a plain edge-remove would orphan; cascading that is out of scope for
+ *     this Beta slice, so we fail honestly instead of corrupting the drawing)
+ *   - plain edge               -> ok, remove just that edge
+ */
+export function planConnectionRemoval(
+  edges: RemovableEdge[],
+  connectionId: string,
+): ConnectionRemovalPlan {
+  const edge = edges.find((e) => e.id === connectionId);
+  if (!edge) {
+    return { ok: false, error: `No connection found with id "${connectionId}".` };
+  }
+  if (edge.data?.linkedConnectionId) {
+    return {
+      ok: false,
+      error:
+        `Connection "${connectionId}" is a stubbed (linked) connection; removing it ` +
+        `via the AI bridge isn't supported yet — remove it in the editor, or delete ` +
+        `one of its devices.`,
+    };
+  }
+  return { ok: true, removeId: connectionId };
+}

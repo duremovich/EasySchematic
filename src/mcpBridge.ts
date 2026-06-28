@@ -28,9 +28,16 @@ import {
   type GetDeviceParams,
   type SearchTemplatesParams,
   type DeleteDeviceParams,
+  type MoveDeviceParams,
+  type DeleteConnectionParams,
   type PortFace,
 } from "./mcp/protocol";
-import { classifyDeviceProperties, resolveHandleFromCandidates } from "./mcp/validation";
+import {
+  classifyDeviceProperties,
+  resolveHandleFromCandidates,
+  validatePosition,
+  planConnectionRemoval,
+} from "./mcp/validation";
 import type { DeviceData, DeviceTemplate, Port, SchematicNode } from "./types";
 
 export type BridgeStatus = "off" | "connecting" | "connected" | "error";
@@ -112,6 +119,7 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
         deviceType: d.deviceType,
         manufacturer: d.manufacturer,
         position: n.position,
+        parentId: n.parentId,
         ports: (d.ports ?? []).map(portSummary),
       };
     });
@@ -141,6 +149,7 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
         manufacturer: d.manufacturer,
         modelNumber: d.modelNumber,
         position: n.position,
+        parentId: n.parentId,
       };
     }),
 
@@ -156,6 +165,7 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
       manufacturer: d.manufacturer,
       modelNumber: d.modelNumber,
       position: node.position,
+      parentId: node.parentId,
       ports: (d.ports ?? []).map(portSummary),
     };
   },
@@ -252,6 +262,24 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
     requireDevice(nodeId);
     st().deleteNode(nodeId);
     return { deleted: true, nodeId };
+  },
+
+  move_device: (params) => {
+    const { nodeId, x, y } = params as unknown as MoveDeviceParams;
+    requireDevice(nodeId);
+    const pos = validatePosition(x, y);
+    if (!pos.ok) throw new CommandError(pos.error);
+    st().moveDevice(nodeId, pos.position);
+    return { nodeId, position: pos.position };
+  },
+
+  delete_connection: (params) => {
+    const { connectionId } = params as unknown as DeleteConnectionParams;
+    if (!connectionId) throw new CommandError("connectionId is required.");
+    const plan = planConnectionRemoval(st().edges, connectionId);
+    if (!plan.ok) throw new CommandError(plan.error);
+    st().deleteConnection(plan.removeId);
+    return { deleted: true, connectionId };
   },
 };
 

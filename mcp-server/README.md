@@ -5,8 +5,8 @@ live** in your running EasySchematic editor. It speaks [MCP](https://modelcontex
 to the assistant over stdio, and connects to the editor over a localhost WebSocket.
 
 > Beta — only a core set of actions is supported: read the schematic, search the
-> device library, add a device, set safe device properties, connect devices, and
-> delete a device.
+> device library, add a device, set safe device properties, connect devices,
+> move a device, remove a single connection, and delete a device.
 
 ## How it fits together
 

@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { classifyDeviceProperties, resolveHandleFromCandidates } from "../mcp/validation";
+import {
+  classifyDeviceProperties,
+  resolveHandleFromCandidates,
+  validatePosition,
+  planConnectionRemoval,
+} from "../mcp/validation";
 
 describe("classifyDeviceProperties", () => {
   it("routes label and shortName to their dedicated buckets", () => {
@@ -73,5 +78,47 @@ describe("resolveHandleFromCandidates", () => {
     const r = resolveHandleFromCandidates(["lan-in", "lan-out"], "lan", "rear");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/Invalid face/);
+  });
+});
+
+describe("validatePosition", () => {
+  it("accepts finite integers, floats, zero and negatives", () => {
+    expect(validatePosition(100, 50)).toEqual({ ok: true, position: { x: 100, y: 50 } });
+    expect(validatePosition(0, 0)).toEqual({ ok: true, position: { x: 0, y: 0 } });
+    expect(validatePosition(-12.5, 33.25)).toEqual({ ok: true, position: { x: -12.5, y: 33.25 } });
+  });
+
+  it("rejects missing, NaN, Infinity and non-number values", () => {
+    for (const [x, y] of [
+      [undefined, 0],
+      [0, undefined],
+      [NaN, 0],
+      [0, Infinity],
+      ["100", 0],
+      [0, null],
+      [{}, 0],
+    ] as [unknown, unknown][]) {
+      expect(validatePosition(x, y).ok).toBe(false);
+    }
+  });
+});
+
+describe("planConnectionRemoval", () => {
+  it("removes a plain connection by id", () => {
+    const edges = [{ id: "edge-1" }, { id: "edge-2" }];
+    expect(planConnectionRemoval(edges, "edge-1")).toEqual({ ok: true, removeId: "edge-1" });
+  });
+
+  it("errors when the connection id is not found", () => {
+    const r = planConnectionRemoval([{ id: "edge-1" }], "edge-9");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/No connection found/);
+  });
+
+  it("rejects a stubbed (linked) connection rather than orphaning its partner leg", () => {
+    const edges = [{ id: "edge-1", data: { linkedConnectionId: "cable-7" } }];
+    const r = planConnectionRemoval(edges, "edge-1");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/stubbed/);
   });
 });

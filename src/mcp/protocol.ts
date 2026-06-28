@@ -18,7 +18,8 @@ export const DEFAULT_BRIDGE_PORT = 8765;
  *  refuses to pair instead of misbehaving. */
 export const PROTOCOL_VERSION = 1;
 
-/** The eight tools exposed in Ship 1 ("working core"). */
+/** The bridge tools: the eight Ship-1 "working core" tools plus the two Ship-2
+ *  "editing & layout" tools (move_device, delete_connection). */
 export type CommandType =
   | "get_schematic"
   | "list_devices"
@@ -27,7 +28,9 @@ export type CommandType =
   | "add_device"
   | "set_device_property"
   | "connect_devices"
-  | "delete_device";
+  | "delete_device"
+  | "move_device"
+  | "delete_connection";
 
 /** Which two-sided face of a port to wire. Required only for bidirectional ports
  *  (`in`/`out`) and passthrough ports (`rear`/`front`); ignored for plain ports. */
@@ -124,6 +127,20 @@ export interface SearchTemplatesParams {
 
 export interface DeleteDeviceParams {
   nodeId: string;
+}
+
+export interface MoveDeviceParams {
+  nodeId: string;
+  /** New position in the SAME coordinate space get_device/get_schematic report for
+   *  this device: canvas coordinates for a top-level device, or coordinates relative
+   *  to its room/rack when the device has a parentId. Does not change containment. */
+  x: number;
+  y: number;
+}
+
+export interface DeleteConnectionParams {
+  /** The connection (edge) id from get_schematic / connect_devices. */
+  connectionId: string;
 }
 
 // ---------------------------------------------------------------------------
