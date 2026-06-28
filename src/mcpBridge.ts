@@ -20,11 +20,14 @@ import { getBundledTemplates, getTemplateById, fetchTemplates } from "./template
 import {
   DEFAULT_BRIDGE_PORT,
   PROTOCOL_VERSION,
+  MAX_BATCH_ITEMS,
   type CommandType,
   type BridgeServerMessage,
   type AddDeviceParams,
+  type AddDevicesParams,
   type SetDevicePropertyParams,
   type ConnectDevicesParams,
+  type ConnectDevicesBatchParams,
   type GetDeviceParams,
   type SearchTemplatesParams,
   type DeleteDeviceParams,
@@ -37,6 +40,7 @@ import {
   resolveHandleFromCandidates,
   validatePosition,
   planConnectionRemoval,
+  runBatch,
 } from "./mcp/validation";
 import type { DeviceData, DeviceTemplate, Port, SchematicNode } from "./types";
 
@@ -104,6 +108,61 @@ function resolveHandle(node: SchematicNode, portId: string, face: PortFace | und
   const res = resolveHandleFromCandidates(candidates, portId, face);
   if (!res.ok) throw new CommandError(res.error);
   return res.handleId;
+}
+
+// ---------------------------------------------------------------------------
+// Shared cores — one device / one connection. Used by both the singular tools and
+// the batch tools (add_devices / connect_devices_batch), so the two stay identical.
+// Each throws CommandError on failure.
+// ---------------------------------------------------------------------------
+function addDeviceCore(spec: AddDeviceParams, templates: DeviceTemplate[]) {
+  const { templateId, label, x, y } = spec;
+  if (!templateId) throw new CommandError("templateId is required.");
+  const tpl = resolveTemplate(templateId, templates);
+  if (!tpl) throw new CommandError(`No template found for "${templateId}". Use search_templates first.`);
+  const position = { x: x ?? 0, y: y ?? 0 };
+  const before = new Set(st().nodes.map((n) => n.id));
+  st().addDevice(tpl, position);
+  const added = st().nodes.find((n) => !before.has(n.id));
+  if (!added) throw new CommandError("Device was not added (no new node appeared).");
+  const renamed = Boolean(label && label !== tpl.label);
+  if (renamed) st().updateDeviceLabel(added.id, label!);
+  // Report the final label — `added` was captured before the rename, so read the
+  // applied custom label rather than the stale template label.
+  return { nodeId: added.id, label: renamed ? label! : (added.data as DeviceData).label, position };
+}
+
+function connectDevicesCore(p: ConnectDevicesParams) {
+  const sourceNode = requireDevice(p.sourceNodeId);
+  const targetNode = requireDevice(p.targetNodeId);
+  const sourceHandle = resolveHandle(sourceNode, p.sourcePortId, p.sourceFace);
+  const targetHandle = resolveHandle(targetNode, p.targetPortId, p.targetFace);
+  const connection: Connection = {
+    source: p.sourceNodeId,
+    sourceHandle,
+    target: p.targetNodeId,
+    targetHandle,
+  };
+  if (!st().isValidConnection(connection)) {
+    throw new CommandError(
+      `That connection is not valid (incompatible direction/signal, duplicate, or self-connection).`,
+    );
+  }
+  const before = new Set(st().edges.map((e) => e.id));
+  st().onConnect(connection);
+  const edge = st().edges.find((e) => !before.has(e.id));
+  if (!edge) {
+    // isValidConnection passed, but onConnect can still bail into the
+    // incompatible-connection flow (connector/signal needs an adapter, or there
+    // are zero/multiple adapter matches), leaving a pending UI prompt and no
+    // edge. Clear that pending state and report honestly rather than claiming
+    // a connection that never happened.
+    useSchematicStore.setState({ pendingIncompatibleConnection: null });
+    throw new CommandError(
+      "Connection was not created — these ports are incompatible and need an adapter device between them.",
+    );
+  }
+  return { connected: true, edgeId: edge.id, sourceHandle, targetHandle };
 }
 
 // ---------------------------------------------------------------------------
@@ -192,17 +251,7 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
   },
 
   add_device: async (params) => {
-    const { templateId, label, x, y } = params as unknown as AddDeviceParams;
-    if (!templateId) throw new CommandError("templateId is required.");
-    const tpl = resolveTemplate(templateId, await allTemplates());
-    if (!tpl) throw new CommandError(`No template found for "${templateId}". Use search_templates first.`);
-    const position = { x: x ?? 0, y: y ?? 0 };
-    const before = new Set(st().nodes.map((n) => n.id));
-    st().addDevice(tpl, position);
-    const added = st().nodes.find((n) => !before.has(n.id));
-    if (!added) throw new CommandError("Device was not added (no new node appeared).");
-    if (label && label !== tpl.label) st().updateDeviceLabel(added.id, label);
-    return { nodeId: added.id, label: (added.data as DeviceData).label, position };
+    return addDeviceCore(params as unknown as AddDeviceParams, await allTemplates());
   },
 
   set_device_property: (params) => {
@@ -223,39 +272,7 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
     return { nodeId, applied, rejected };
   },
 
-  connect_devices: (params) => {
-    const p = params as unknown as ConnectDevicesParams;
-    const sourceNode = requireDevice(p.sourceNodeId);
-    const targetNode = requireDevice(p.targetNodeId);
-    const sourceHandle = resolveHandle(sourceNode, p.sourcePortId, p.sourceFace);
-    const targetHandle = resolveHandle(targetNode, p.targetPortId, p.targetFace);
-    const connection: Connection = {
-      source: p.sourceNodeId,
-      sourceHandle,
-      target: p.targetNodeId,
-      targetHandle,
-    };
-    if (!st().isValidConnection(connection)) {
-      throw new CommandError(
-        `That connection is not valid (incompatible direction/signal, duplicate, or self-connection).`,
-      );
-    }
-    const before = new Set(st().edges.map((e) => e.id));
-    st().onConnect(connection);
-    const edge = st().edges.find((e) => !before.has(e.id));
-    if (!edge) {
-      // isValidConnection passed, but onConnect can still bail into the
-      // incompatible-connection flow (connector/signal needs an adapter, or there
-      // are zero/multiple adapter matches), leaving a pending UI prompt and no
-      // edge. Clear that pending state and report honestly rather than claiming
-      // a connection that never happened.
-      useSchematicStore.setState({ pendingIncompatibleConnection: null });
-      throw new CommandError(
-        "Connection was not created — these ports are incompatible and need an adapter device between them.",
-      );
-    }
-    return { connected: true, edgeId: edge.id, sourceHandle, targetHandle };
-  },
+  connect_devices: (params) => connectDevicesCore(params as unknown as ConnectDevicesParams),
 
   delete_device: (params) => {
     const { nodeId } = params as unknown as DeleteDeviceParams;
@@ -280,6 +297,26 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
     if (!plan.ok) throw new CommandError(plan.error);
     st().deleteConnection(plan.removeId);
     return { deleted: true, connectionId };
+  },
+
+  add_devices: async (params) => {
+    const { devices } = (params ?? {}) as unknown as AddDevicesParams;
+    // One template fetch for the whole batch (allTemplates() is cached anyway).
+    const templates = await allTemplates();
+    const outcome = runBatch(devices, MAX_BATCH_ITEMS, (spec: AddDeviceParams) =>
+      addDeviceCore(spec, templates),
+    );
+    if (!outcome.ok) throw new CommandError(outcome.error);
+    return { results: outcome.results, succeeded: outcome.succeeded, failed: outcome.failed };
+  },
+
+  connect_devices_batch: (params) => {
+    const { connections } = (params ?? {}) as unknown as ConnectDevicesBatchParams;
+    const outcome = runBatch(connections, MAX_BATCH_ITEMS, (c: ConnectDevicesParams) =>
+      connectDevicesCore(c),
+    );
+    if (!outcome.ok) throw new CommandError(outcome.error);
+    return { results: outcome.results, succeeded: outcome.succeeded, failed: outcome.failed };
   },
 };
 

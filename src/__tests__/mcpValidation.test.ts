@@ -4,6 +4,7 @@ import {
   resolveHandleFromCandidates,
   validatePosition,
   planConnectionRemoval,
+  runBatch,
 } from "../mcp/validation";
 
 describe("classifyDeviceProperties", () => {
@@ -120,5 +121,43 @@ describe("planConnectionRemoval", () => {
     const r = planConnectionRemoval(edges, "edge-1");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/stubbed/);
+  });
+});
+
+describe("runBatch", () => {
+  const double = (n: number) => n * 2;
+
+  it("rejects a non-array, an empty array, and an over-cap array", () => {
+    expect(runBatch("nope" as unknown, 10, double).ok).toBe(false);
+    expect(runBatch([], 10, double).ok).toBe(false);
+    expect(runBatch([1, 2, 3], 2, double).ok).toBe(false);
+  });
+
+  it("applies fn to every item and reports per-item success with index order", () => {
+    const r = runBatch([1, 2, 3], 10, double);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.succeeded).toBe(3);
+    expect(r.failed).toBe(0);
+    expect(r.results).toEqual([
+      { index: 0, ok: true, result: 2 },
+      { index: 1, ok: true, result: 4 },
+      { index: 2, ok: true, result: 6 },
+    ]);
+  });
+
+  it("is best-effort: a throwing item is captured, the rest still run", () => {
+    const r = runBatch([1, 2, 3], 10, (n: number) => {
+      if (n === 2) throw new Error("boom on 2");
+      return n * 10;
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.succeeded).toBe(2);
+    expect(r.failed).toBe(1);
+    expect(r.results[0]).toEqual({ index: 0, ok: true, result: 10 });
+    expect(r.results[1].ok).toBe(false);
+    expect(r.results[1].error).toMatch(/boom on 2/);
+    expect(r.results[2]).toEqual({ index: 2, ok: true, result: 30 });
   });
 });

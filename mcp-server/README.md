@@ -6,7 +6,8 @@ to the assistant over stdio, and connects to the editor over a localhost WebSock
 
 > Beta — only a core set of actions is supported: read the schematic, search the
 > device library, add a device, set safe device properties, connect devices,
-> move a device, remove a single connection, and delete a device.
+> move a device, remove a single connection, delete a device, and batch versions
+> for adding many devices or making many connections at once.
 
 ## How it fits together
 

@@ -133,3 +133,51 @@ export function planConnectionRemoval(
   }
   return { ok: true, removeId: connectionId };
 }
+
+export interface BatchItemResult<T> {
+  index: number;
+  ok: boolean;
+  result?: T;
+  error?: string;
+}
+
+export type BatchOutcome<T> =
+  | { ok: false; error: string }
+  | { ok: true; results: BatchItemResult<T>[]; succeeded: number; failed: number };
+
+/**
+ * Run a best-effort batch: validate that `items` is a non-empty array within `max`,
+ * then apply `fn` to each item in order, capturing per-item success/failure instead
+ * of aborting the whole batch. `fn` is injected (the store-touching work lives in the
+ * caller), so this stays pure and unit-testable. The caller turns an `ok:false`
+ * outcome into a thrown error — it must not be returned as a successful tool result.
+ */
+export function runBatch<I, T>(
+  items: unknown,
+  max: number,
+  fn: (item: I, index: number) => T,
+): BatchOutcome<T> {
+  if (!Array.isArray(items)) {
+    return { ok: false, error: "Expected an array of items." };
+  }
+  if (items.length === 0) {
+    return { ok: false, error: "The batch is empty — provide at least one item." };
+  }
+  if (items.length > max) {
+    return { ok: false, error: `Too many items (${items.length}); the maximum is ${max} per call.` };
+  }
+  const results: BatchItemResult<T>[] = [];
+  let succeeded = 0;
+  let failed = 0;
+  items.forEach((item, index) => {
+    try {
+      const result = fn(item as I, index);
+      results.push({ index, ok: true, result });
+      succeeded++;
+    } catch (err) {
+      results.push({ index, ok: false, error: err instanceof Error ? err.message : String(err) });
+      failed++;
+    }
+  });
+  return { ok: true, results, succeeded, failed };
+}

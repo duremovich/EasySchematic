@@ -116,6 +116,14 @@ node dist/index.js`}</code>
         <li>
           <strong>Delete a device.</strong>
         </li>
+        <li>
+          <strong>Work in batches</strong> — add many devices, or make many
+          connections, in a single request. Each item is handled on its own:
+          if one fails, the rest still go through, and the assistant gets back a
+          per-item list of what succeeded and what didn't. Undo works just like
+          doing each action one at a time (so a batch takes a few presses of undo
+          to fully reverse, not one).
+        </li>
       </ul>
 
       <div

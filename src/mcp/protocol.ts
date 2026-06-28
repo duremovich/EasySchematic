@@ -18,8 +18,9 @@ export const DEFAULT_BRIDGE_PORT = 8765;
  *  refuses to pair instead of misbehaving. */
 export const PROTOCOL_VERSION = 1;
 
-/** The bridge tools: the eight Ship-1 "working core" tools plus the two Ship-2
- *  "editing & layout" tools (move_device, delete_connection). */
+/** The bridge tools: the eight Ship-1 "working core" tools, the two Ship-2
+ *  "editing & layout" tools (move_device, delete_connection), and the two Ship-3
+ *  "batch" tools (add_devices, connect_devices_batch). */
 export type CommandType =
   | "get_schematic"
   | "list_devices"
@@ -30,7 +31,13 @@ export type CommandType =
   | "connect_devices"
   | "delete_device"
   | "move_device"
-  | "delete_connection";
+  | "delete_connection"
+  | "add_devices"
+  | "connect_devices_batch";
+
+/** Max items accepted by a single batch tool call (input arrives over the bridge,
+ *  so it is capped). The mcp-server tool schemas mirror this as `maxItems`. */
+export const MAX_BATCH_ITEMS = 100;
 
 /** Which two-sided face of a port to wire. Required only for bidirectional ports
  *  (`in`/`out`) and passthrough ports (`rear`/`front`); ignored for plain ports. */
@@ -141,6 +148,17 @@ export interface MoveDeviceParams {
 export interface DeleteConnectionParams {
   /** The connection (edge) id from get_schematic / connect_devices. */
   connectionId: string;
+}
+
+export interface AddDevicesParams {
+  /** Devices to add in one call; each is added independently (best-effort). */
+  devices: AddDeviceParams[];
+}
+
+export interface ConnectDevicesBatchParams {
+  /** Connections to make in one call; each is attempted independently in array
+   *  order (best-effort), so an earlier connection can affect a later one. */
+  connections: ConnectDevicesParams[];
 }
 
 // ---------------------------------------------------------------------------
