@@ -7,6 +7,7 @@ import {
   planConnectionRemoval,
   runBatch,
   noteTextToHtml,
+  validateCardForSlot,
 } from "../mcp/validation";
 
 describe("classifyDeviceProperties", () => {
@@ -182,6 +183,30 @@ describe("noteTextToHtml", () => {
 
   it("returns an empty string for empty input", () => {
     expect(noteTextToHtml("")).toBe("");
+  });
+});
+
+describe("validateCardForSlot", () => {
+  it("accepts a card whose slot family matches the slot", () => {
+    expect(validateCardForSlot("yamaha-my", "yamaha-my")).toEqual({ ok: true });
+  });
+
+  it("rejects a template that is not an expansion card (no slot family)", () => {
+    const r = validateCardForSlot("yamaha-my", undefined);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/not an expansion card/);
+  });
+
+  it("rejects a mismatched slot family", () => {
+    const r = validateCardForSlot("yamaha-my", "disguise-vfc");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/does not fit/);
+  });
+
+  it("rejects when the slot itself has no slot family", () => {
+    const r = validateCardForSlot(undefined, "yamaha-my");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/no slot family/);
   });
 });
 

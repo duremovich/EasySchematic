@@ -2,8 +2,9 @@
  * MCP tool catalog: the Ship-1 "working core" tools, the Ship-2 "editing & layout"
  * tools (move_device, delete_connection), the Ship-3 "batch" tools (add_devices,
  * connect_devices_batch), the Ship-4 "rooms" tools (create_room,
- * place_device_in_room), and the Ship-5 "annotations" tool (add_note). Each entry is
- * a plain JSON-Schema tool definition; the call
+ * place_device_in_room), the Ship-5 "annotations" tool (add_note), and the Ship-6
+ * "slots / modular chassis" tools (list_slot_cards, install_card, remove_card). Each
+ * entry is a plain JSON-Schema tool definition; the call
  * is relayed verbatim to the editor over the bridge, which validates and executes it
  * against the live store.
  *
@@ -248,6 +249,49 @@ export const TOOLS: ToolDef[] = [
         y: { type: "number", description: "Note top-left Y position on the canvas." },
       },
       required: ["text", "x", "y"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_slot_cards",
+    description:
+      "List the expansion cards that fit a given slot on a modular device (chassis). A device's slots come from get_device. Returns the card templateId values to pass to install_card. If the full community library hasn't been loaded yet this session, call search_templates once first so live-library cards are included.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        deviceId: { type: "string", description: "The modular device (chassis) id." },
+        slotId: { type: "string", description: "The slot id from get_device's slots." },
+      },
+      required: ["deviceId", "slotId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "install_card",
+    description:
+      "Install an expansion card into an empty slot on a modular device. Use list_slot_cards to get a compatible card templateId. The card's slot family must match the slot's, or the call is refused. If the slot already holds a card, remove it first with remove_card (installing never silently replaces a card). Returns the installed card and the ids of the ports it added.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        deviceId: { type: "string", description: "The modular device (chassis) id." },
+        slotId: { type: "string", description: "The empty slot's id from get_device's slots." },
+        cardTemplateId: { type: "string", description: "A card templateId from list_slot_cards." },
+      },
+      required: ["deviceId", "slotId", "cardTemplateId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "remove_card",
+    description:
+      "Remove the card from a filled slot on a modular device, emptying the slot. This also removes the card's ports and any connections on them. Fails if the slot is already empty.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        deviceId: { type: "string", description: "The modular device (chassis) id." },
+        slotId: { type: "string", description: "The filled slot's id from get_device's slots." },
+      },
+      required: ["deviceId", "slotId"],
       additionalProperties: false,
     },
   },

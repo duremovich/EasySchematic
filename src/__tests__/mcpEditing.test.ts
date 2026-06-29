@@ -13,7 +13,15 @@
  * mcpValidation.test.ts.
  */
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
-import type { ConnectionEdge, DeviceData, NoteData, SchematicNode, StubLabelData } from "../types";
+import type {
+  ConnectionEdge,
+  DeviceData,
+  DeviceTemplate,
+  InstalledSlot,
+  NoteData,
+  SchematicNode,
+  StubLabelData,
+} from "../types";
 
 class MemStorage {
   private m = new Map<string, string>();
@@ -277,6 +285,222 @@ describe("add_note handler (add_note tool)", () => {
     expect(() => handlers.add_note({ text: "ok", x: NaN, y: 0 })).toThrow();
     expect(() => handlers.add_note({ text: "ok", x: 0 } as Record<string, unknown>)).toThrow();
     expect(useSchematicStore.getState().nodes.some((n) => n.type === "note")).toBe(false);
+  });
+});
+
+describe("slot tools (list_slot_cards / install_card / remove_card)", () => {
+  // A chassis device carrying one empty slot of family "fam-a".
+  function chassis(id: string, slots: InstalledSlot[]): SchematicNode {
+    return {
+      id,
+      type: "device",
+      position: { x: 0, y: 0 },
+      data: { label: id, deviceType: "chassis", ports: [], slots } as DeviceData,
+    } as SchematicNode;
+  }
+  function emptySlot(slotId: string, slotFamily: string): InstalledSlot {
+    return { slotId, label: slotId, slotFamily, portIds: [] };
+  }
+  // A card template (in customTemplates so getTemplateById resolves it without network).
+  function cardTpl(id: string, slotFamily: string, opts: { ports?: number; slots?: DeviceTemplate["slots"] } = {}): DeviceTemplate {
+    return {
+      id,
+      label: id,
+      deviceType: id,
+      slotFamily,
+      ports: Array.from({ length: opts.ports ?? 1 }, (_, i) => ({
+        id: `p${i}`,
+        label: `P${i}`,
+        direction: "input",
+        signalType: "hdmi",
+      })),
+      ...(opts.slots ? { slots: opts.slots } : {}),
+    } as DeviceTemplate;
+  }
+
+  function slotsOf(deviceId: string) {
+    return ((useSchematicStore.getState().nodes.find((n) => n.id === deviceId)!.data as DeviceData).slots ?? []);
+  }
+
+  it("get_device exposes slots and get_schematic exposes slotCount", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      customTemplates: [],
+    });
+    const dev = handlers.get_device({ nodeId: "chassis-1" }) as { slots: { slotId: string; filled: boolean; slotFamily?: string }[] };
+    expect(dev.slots).toHaveLength(1);
+    expect(dev.slots[0]).toMatchObject({ slotId: "slot-1", filled: false, slotFamily: "fam-a" });
+    const schem = handlers.get_schematic({}) as { devices: { nodeId: string; slotCount: number }[] };
+    expect(schem.devices.find((d) => d.nodeId === "chassis-1")!.slotCount).toBe(1);
+  });
+
+  it("list_slot_cards returns only id-backed cards whose family fits the slot", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      customTemplates: [cardTpl("card-a", "fam-a"), cardTpl("card-b", "fam-b"), { ...cardTpl("noid", "fam-a"), id: undefined } as DeviceTemplate],
+    });
+    const res = handlers.list_slot_cards({ deviceId: "chassis-1", slotId: "slot-1" }) as {
+      slotFamily?: string;
+      cards: { templateId: string }[];
+    };
+    expect(res.slotFamily).toBe("fam-a");
+    expect(res.cards.map((c) => c.templateId)).toEqual(["card-a"]); // card-b wrong family, noid filtered out
+  });
+
+  it("install_card fills the slot, adds the card's ports, and is a single undo step", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      customTemplates: [cardTpl("card-a", "fam-a", { ports: 2 })],
+    });
+    const undoBefore = useSchematicStore.getState().undoSize;
+    const res = handlers.install_card({ deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "card-a" }) as {
+      cardTemplateId: string;
+      portIds: string[];
+    };
+    expect(res.cardTemplateId).toBe("card-a");
+    expect(res.portIds).toHaveLength(2);
+    const slot = slotsOf("chassis-1").find((s) => s.slotId === "slot-1")!;
+    expect(slot.cardTemplateId).toBe("card-a");
+    // the card's ports are now on the device
+    expect((useSchematicStore.getState().nodes[0].data as DeviceData).ports).toHaveLength(2);
+    expect(useSchematicStore.getState().undoSize).toBe(undoBefore + 1);
+
+    useSchematicStore.getState().undo();
+    expect(slotsOf("chassis-1").find((s) => s.slotId === "slot-1")!.cardTemplateId).toBeUndefined();
+  });
+
+  it("install_card rejects a card whose family does not fit (no change, no spurious undo)", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      customTemplates: [cardTpl("card-b", "fam-b")],
+    });
+    const undoBefore = useSchematicStore.getState().undoSize;
+    expect(() => handlers.install_card({ deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "card-b" })).toThrow(/does not fit/);
+    expect(slotsOf("chassis-1")[0].cardTemplateId).toBeUndefined();
+    expect(useSchematicStore.getState().undoSize).toBe(undoBefore);
+  });
+
+  it("install_card refuses to overwrite a filled slot", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      customTemplates: [cardTpl("card-a", "fam-a"), cardTpl("card-a2", "fam-a")],
+    });
+    handlers.install_card({ deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "card-a" });
+    expect(() => handlers.install_card({ deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "card-a2" })).toThrow(/already holds a card/);
+  });
+
+  it("install_card rejects a missing slot or unknown card without a spurious undo", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      customTemplates: [cardTpl("card-a", "fam-a")],
+    });
+    const undoBefore = useSchematicStore.getState().undoSize;
+    expect(() => handlers.install_card({ deviceId: "chassis-1", slotId: "nope", cardTemplateId: "card-a" })).toThrow(/No slot found/);
+    expect(() => handlers.install_card({ deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "ghost" })).toThrow(/No card template/);
+    expect(useSchematicStore.getState().undoSize).toBe(undoBefore);
+  });
+
+  it("remove_card empties a filled slot and rejects an already-empty one (no spurious undo)", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      customTemplates: [cardTpl("card-a", "fam-a")],
+    });
+    handlers.install_card({ deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "card-a" });
+    const res = handlers.remove_card({ deviceId: "chassis-1", slotId: "slot-1" }) as { emptied: boolean };
+    expect(res.emptied).toBe(true);
+    expect(slotsOf("chassis-1").find((s) => s.slotId === "slot-1")!.cardTemplateId).toBeUndefined();
+
+    const undoBefore = useSchematicStore.getState().undoSize;
+    expect(() => handlers.remove_card({ deviceId: "chassis-1", slotId: "slot-1" })).toThrow(/already empty/);
+    expect(useSchematicStore.getState().undoSize).toBe(undoBefore);
+  });
+
+  it("supports installing a card into a nested sub-slot (slotFamily denormalized)", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      // card-parent fits slot-1 and itself defines a sub-slot of family fam-b.
+      customTemplates: [
+        cardTpl("card-parent", "fam-a", { slots: [{ id: "sub", label: "Sub", slotFamily: "fam-b" }] }),
+        cardTpl("card-sub", "fam-b"),
+      ],
+    });
+    handlers.install_card({ deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "card-parent" });
+    // installing the parent created a nested empty slot "slot-1/sub"
+    const nested = slotsOf("chassis-1").find((s) => s.parentSlotId === "slot-1");
+    expect(nested).toBeTruthy();
+    expect(nested!.slotFamily).toBe("fam-b");
+    // and a card can be installed into it
+    const res = handlers.install_card({ deviceId: "chassis-1", slotId: nested!.slotId, cardTemplateId: "card-sub" }) as { cardTemplateId: string };
+    expect(res.cardTemplateId).toBe("card-sub");
+    expect(slotsOf("chassis-1").find((s) => s.slotId === nested!.slotId)!.cardTemplateId).toBe("card-sub");
+  });
+
+  it("installing into a slot does not disturb a sibling whose id shares its prefix (segment-safe)", () => {
+    // "p1" and "p10" are distinct top-level slots; p10 holds a card with a nested
+    // sub-slot "p10/sub". A raw startsWith("p1") would wrongly treat p10/sub as a
+    // descendant of p1 and drop its card/ports when p1 is operated on.
+    useSchematicStore.setState({
+      nodes: [
+        {
+          id: "chassis-1",
+          type: "device",
+          position: { x: 0, y: 0 },
+          data: {
+            label: "chassis-1",
+            deviceType: "chassis",
+            ports: [{ id: "port-y", label: "Y", direction: "input", signalType: "hdmi" }],
+            slots: [
+              { slotId: "p1", label: "P1", slotFamily: "fam-a", portIds: [] },
+              { slotId: "p10", label: "P10", slotFamily: "fam-a", cardTemplateId: "card-x", cardLabel: "X", portIds: [] },
+              { slotId: "p10/sub", label: "Sub", slotFamily: "fam-b", parentSlotId: "p10", cardTemplateId: "card-y", cardLabel: "Y", portIds: ["port-y"] },
+            ] as InstalledSlot[],
+          } as DeviceData,
+        } as SchematicNode,
+      ],
+      edges: [],
+      customTemplates: [cardTpl("card-a", "fam-a")],
+    });
+    handlers.install_card({ deviceId: "chassis-1", slotId: "p1", cardTemplateId: "card-a" });
+    // p10's nested card and its port must be untouched.
+    const sub = slotsOf("chassis-1").find((s) => s.slotId === "p10/sub")!;
+    expect(sub.cardTemplateId).toBe("card-y");
+    expect((useSchematicStore.getState().nodes[0].data as DeviceData).ports.some((p) => p.id === "port-y")).toBe(true);
+  });
+
+  it("removeSlot is segment-safe too: removing p1 leaves sibling p10's nested slot intact", () => {
+    useSchematicStore.setState({
+      nodes: [
+        {
+          id: "chassis-1",
+          type: "device",
+          position: { x: 0, y: 0 },
+          data: {
+            label: "chassis-1",
+            deviceType: "chassis",
+            ports: [{ id: "port-y", label: "Y", direction: "input", signalType: "hdmi" }],
+            slots: [
+              { slotId: "p1", label: "P1", slotFamily: "fam-a", portIds: [] },
+              { slotId: "p10", label: "P10", slotFamily: "fam-a", cardTemplateId: "card-x", cardLabel: "X", portIds: [] },
+              { slotId: "p10/sub", label: "Sub", slotFamily: "fam-b", parentSlotId: "p10", cardTemplateId: "card-y", cardLabel: "Y", portIds: ["port-y"] },
+            ] as InstalledSlot[],
+          } as DeviceData,
+        } as SchematicNode,
+      ],
+      edges: [],
+    });
+    useSchematicStore.getState().removeSlot("chassis-1", "p1");
+    const slots = slotsOf("chassis-1");
+    expect(slots.some((s) => s.slotId === "p1")).toBe(false); // p1 gone
+    expect(slots.find((s) => s.slotId === "p10/sub")!.cardTemplateId).toBe("card-y"); // sibling's nested card intact
+    expect((useSchematicStore.getState().nodes[0].data as DeviceData).ports.some((p) => p.id === "port-y")).toBe(true);
   });
 });
 

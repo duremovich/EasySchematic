@@ -16,7 +16,7 @@ import { useEffect } from "react";
 import type { Connection } from "@xyflow/react";
 import { useSchematicStore } from "./store";
 import { getPortAbsolutePositions } from "./snapUtils";
-import { getBundledTemplates, getTemplateById, fetchTemplates } from "./templateApi";
+import { getBundledTemplates, getTemplateById, getCardsByFamily, fetchTemplates } from "./templateApi";
 import {
   DEFAULT_BRIDGE_PORT,
   PROTOCOL_VERSION,
@@ -36,6 +36,9 @@ import {
   type CreateRoomParams,
   type PlaceDeviceInRoomParams,
   type AddNoteParams,
+  type ListSlotCardsParams,
+  type InstallCardParams,
+  type RemoveCardParams,
   type PortFace,
 } from "./mcp/protocol";
 import {
@@ -46,8 +49,9 @@ import {
   planConnectionRemoval,
   runBatch,
   noteTextToHtml,
+  validateCardForSlot,
 } from "./mcp/validation";
-import type { DeviceData, DeviceTemplate, Port, SchematicNode } from "./types";
+import type { DeviceData, DeviceTemplate, InstalledSlot, Port, SchematicNode } from "./types";
 
 export type BridgeStatus = "off" | "connecting" | "connected" | "error";
 
@@ -75,6 +79,31 @@ function requireDevice(nodeId: string): SchematicNode {
 
 function portSummary(p: Port) {
   return { id: p.id, label: p.label, direction: p.direction, signalType: p.signalType };
+}
+
+/** Compact view of a device's modular slot, for get_device. `filled` is the quick
+ *  flag; cardTemplateId/cardLabel describe the installed card (absent when empty). */
+function slotSummary(s: InstalledSlot) {
+  return {
+    slotId: s.slotId,
+    label: s.label,
+    slotFamily: s.slotFamily,
+    parentSlotId: s.parentSlotId,
+    filled: Boolean(s.cardTemplateId),
+    cardTemplateId: s.cardTemplateId,
+    cardLabel: s.cardLabel,
+  };
+}
+
+/** Find an installed slot on a device, or throw a readable CommandError. Used by the
+ *  slot tools so they fully pre-validate before touching the structural swapCard
+ *  action (which pushes an undo entry before its own guards). */
+function requireSlot(device: SchematicNode, slotId: string): InstalledSlot {
+  const slot = ((device.data as DeviceData).slots ?? []).find((s) => s.slotId === slotId);
+  if (!slot) {
+    throw new CommandError(`No slot found with id "${slotId}" on device "${device.id}".`);
+  }
+  return slot;
 }
 
 /** The full discoverable set: the live community library (which already has the
@@ -184,6 +213,7 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
         manufacturer: d.manufacturer,
         position: n.position,
         parentId: n.parentId,
+        slotCount: (d.slots ?? []).length,
         ports: (d.ports ?? []).map(portSummary),
       };
     });
@@ -231,6 +261,7 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
       position: node.position,
       parentId: node.parentId,
       ports: (d.ports ?? []).map(portSummary),
+      slots: (d.slots ?? []).map(slotSummary),
     };
   },
 
@@ -398,6 +429,90 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
     if (!note) throw new CommandError("Note was not created (no new note node appeared).");
     st().updateNoteHtml(note.id, noteTextToHtml(text));
     return { noteId: note.id, text, position: pos.position };
+  },
+
+  list_slot_cards: (params) => {
+    const { deviceId, slotId } = params as unknown as ListSlotCardsParams;
+    const device = requireDevice(deviceId);
+    const slot = requireSlot(device, slotId);
+    if (!slot.slotFamily) return { slotId, slotFamily: undefined, cards: [] };
+    // Reads the current library view (live-library cache if warmed by an earlier
+    // search_templates call, plus the bundled floor) and this schematic's custom
+    // templates — the same view install_card resolves against. Only cards with a real
+    // template id are returned: install_card resolves by id, so an id-less card could
+    // be listed but not installed (kept consistent here).
+    // Known minor limitation: if a custom template reuses a library card's id,
+    // install_card's getTemplateById prefers the library copy, so the listed-vs-
+    // installed card could differ. This can't corrupt state — install_card re-checks
+    // the slot family and re-reads the slot, so a wrong-family resolution just rejects.
+    const cards = getCardsByFamily(slot.slotFamily, st().customTemplates)
+      .filter((t) => Boolean(t.id))
+      .map((t) => ({
+        templateId: t.id!,
+        label: t.label,
+        manufacturer: t.manufacturer,
+        modelNumber: t.modelNumber,
+      }));
+    return { slotId, slotFamily: slot.slotFamily, cards };
+  },
+
+  install_card: (params) => {
+    const { deviceId, slotId, cardTemplateId } = params as unknown as InstallCardParams;
+    const device = requireDevice(deviceId);
+    const slot = requireSlot(device, slotId);
+    // Refuse to overwrite a filled slot: swapCard would replace the card and drop its
+    // ports + connected connections. Make the AI remove_card first so that loss is
+    // explicit, never silent.
+    if (slot.cardTemplateId) {
+      throw new CommandError(
+        `Slot "${slotId}" already holds a card ("${slot.cardLabel ?? slot.cardTemplateId}"). ` +
+          `Remove it first with remove_card, then install.`,
+      );
+    }
+    if (!cardTemplateId) throw new CommandError("cardTemplateId is required.");
+    // Resolve exactly the way swapCard will (getTemplateById over the current library
+    // view + custom templates), so a card we accept is one swapCard can actually find.
+    const card = getTemplateById(cardTemplateId, st().customTemplates);
+    if (!card) {
+      throw new CommandError(
+        `No card template found for "${cardTemplateId}". Call list_slot_cards (or ` +
+          `search_templates to load the full library) first.`,
+      );
+    }
+    const compat = validateCardForSlot(slot.slotFamily, card.slotFamily);
+    if (!compat.ok) throw new CommandError(compat.error);
+    if (!card.id) throw new CommandError(`Card template "${cardTemplateId}" has no id and cannot be installed.`);
+    st().swapCard(deviceId, slotId, card.id);
+    // Confirm by re-reading the slot (swapCard returns void); guards against any
+    // residual resolution mismatch rather than reporting a blind success.
+    const after = requireSlot(requireDevice(deviceId), slotId);
+    if (after.cardTemplateId !== card.id) {
+      throw new CommandError(`Card "${card.id}" could not be installed into slot "${slotId}".`);
+    }
+    return {
+      deviceId,
+      slotId,
+      cardTemplateId: card.id,
+      cardLabel: after.cardLabel,
+      portIds: after.portIds,
+    };
+  },
+
+  remove_card: (params) => {
+    const { deviceId, slotId } = params as unknown as RemoveCardParams;
+    const device = requireDevice(deviceId);
+    const slot = requireSlot(device, slotId);
+    // Empty slot -> nothing to remove. Reject WITHOUT calling swapCard, which would
+    // push an empty undo step and rebuild the (already-empty) slot for no reason.
+    if (!slot.cardTemplateId) {
+      throw new CommandError(`Slot "${slotId}" is already empty.`);
+    }
+    st().swapCard(deviceId, slotId, null);
+    const after = requireSlot(requireDevice(deviceId), slotId);
+    if (after.cardTemplateId) {
+      throw new CommandError(`Card could not be removed from slot "${slotId}".`);
+    }
+    return { deviceId, slotId, emptied: true };
   },
 };
 

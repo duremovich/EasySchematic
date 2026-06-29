@@ -21,8 +21,9 @@ export const PROTOCOL_VERSION = 1;
 /** The bridge tools: the eight Ship-1 "working core" tools, the two Ship-2
  *  "editing & layout" tools (move_device, delete_connection), the two Ship-3
  *  "batch" tools (add_devices, connect_devices_batch), the two Ship-4
- *  "rooms" tools (create_room, place_device_in_room), and the Ship-5
- *  "annotations" tool (add_note). */
+ *  "rooms" tools (create_room, place_device_in_room), the Ship-5
+ *  "annotations" tool (add_note), and the three Ship-6 "slots / modular chassis"
+ *  tools (list_slot_cards, install_card, remove_card). */
 export type CommandType =
   | "get_schematic"
   | "list_devices"
@@ -38,7 +39,10 @@ export type CommandType =
   | "connect_devices_batch"
   | "create_room"
   | "place_device_in_room"
-  | "add_note";
+  | "add_note"
+  | "list_slot_cards"
+  | "install_card"
+  | "remove_card";
 
 /** Max items accepted by a single batch tool call (input arrives over the bridge,
  *  so it is capped). The mcp-server tool schemas mirror this as `maxItems`. */
@@ -196,6 +200,29 @@ export interface AddNoteParams {
   /** Note top-left position in canvas coordinates. */
   x: number;
   y: number;
+}
+
+export interface ListSlotCardsParams {
+  /** The modular device (chassis) whose slot you want cards for. */
+  deviceId: string;
+  /** A slot id from get_device's `slots`. */
+  slotId: string;
+}
+
+export interface InstallCardParams {
+  /** The modular device (chassis) to install the card into. */
+  deviceId: string;
+  /** The (empty) slot's id, from get_device's `slots`. */
+  slotId: string;
+  /** A card templateId from list_slot_cards. Its slot family must match the slot's. */
+  cardTemplateId: string;
+}
+
+export interface RemoveCardParams {
+  /** The modular device (chassis) to remove a card from. */
+  deviceId: string;
+  /** The (filled) slot's id, from get_device's `slots`. */
+  slotId: string;
 }
 
 // ---------------------------------------------------------------------------

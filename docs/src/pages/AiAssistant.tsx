@@ -135,6 +135,14 @@ node dist/index.js`}</code>
           <strong>Delete a device.</strong>
         </li>
         <li>
+          <strong>Fill a modular chassis</strong> — for a device with slots, the
+          assistant can see its slots (via the device details), list the expansion
+          cards that fit a slot, install a card into an empty slot, and remove a card
+          to empty a slot. A card is only installed when its slot family matches the
+          slot's, and installing never silently replaces a card already in a slot.
+          (Defining new slots is still done in the editor.)
+        </li>
+        <li>
           <strong>Work in batches</strong> — add many devices, or make many
           connections, in a single request. Each item is handled on its own:
           if one fails, the rest still go through, and the assistant gets back a

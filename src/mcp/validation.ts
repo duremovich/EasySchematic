@@ -144,6 +144,37 @@ export function noteTextToHtml(text: string): string {
     .replace(/\n/g, "<br>");
 }
 
+export type CardForSlotResult =
+  | { ok: true }
+  | { ok: false; error: string };
+
+/**
+ * Decide whether a card template may be installed into a modular slot. A card "fits"
+ * a slot only when their slot families match exactly. The store's swapCard does NOT
+ * check this (it installs any resolvable card blindly), so the bridge enforces it —
+ * otherwise an AI could install, say, an audio card into a video slot. Both families
+ * come from the live data: the slot's denormalized `slotFamily` (set on nested slots
+ * too) and the card template's `slotFamily` (present only on expansion-card templates).
+ */
+export function validateCardForSlot(
+  slotFamily: string | undefined,
+  cardSlotFamily: string | undefined,
+): CardForSlotResult {
+  if (!cardSlotFamily) {
+    return { ok: false, error: "That template is not an expansion card (it has no slot family)." };
+  }
+  if (!slotFamily) {
+    return { ok: false, error: "That slot has no slot family, so no card can be matched to it." };
+  }
+  if (slotFamily !== cardSlotFamily) {
+    return {
+      ok: false,
+      error: `Card slot family "${cardSlotFamily}" does not fit slot family "${slotFamily}".`,
+    };
+  }
+  return { ok: true };
+}
+
 /** Minimal shape of an edge this planner needs — kept structural so validation.ts
  *  stays dependency-free (no import from the rest of src/). */
 interface RemovableEdge {
