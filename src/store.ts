@@ -700,6 +700,7 @@ interface SchematicState {
     uPosition: number,
     face: "front" | "rear",
     preferredHalfRackSide?: "left" | "right",
+    markShelfCreatedByBridge?: boolean,
   ) => { ok: true; placementId: string; shelfId?: string } | { ok: false; reason: "oversize" | "no-page" | "no-device" };
   removeRackPlacement: (pageId: string, placementId: string) => void;
   updateRackPlacement: (pageId: string, placementId: string, patch: Partial<RackDevicePlacement>) => void;
@@ -4219,7 +4220,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     return id;
   },
 
-  addPlacementSmart: (pageId, rackId, deviceNodeId, uPosition, face, preferredHalfRackSide) => {
+  addPlacementSmart: (pageId, rackId, deviceNodeId, uPosition, face, preferredHalfRackSide, markShelfCreatedByBridge) => {
     const state = get();
     const page = state.pages.find((p) => p.id === pageId && p.type === "rack-elevation") as RackElevationPage | undefined;
     if (!page) return { ok: false, reason: "no-page" };
@@ -4247,6 +4248,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         uPosition,
         heightU: 1,
         face,
+        // Bridge-created shelves are stamped with the placement they were made for, atomically
+        // here (same set/pushUndo) so there is no window where the shelf persists unflagged.
+        // Editor drag-drop passes no flag, so user-created shelves stay unmarked.
+        bridgeCreatedForPlacementId: markShelfCreatedByBridge ? placementId : undefined,
       };
       const newW = device.widthMm ?? innerWMm;
       // Center on the shelf when there's room; otherwise pin to the left rail.
@@ -4318,10 +4323,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   updateRackPlacement: (pageId, placementId, patch) => {
     const state = get();
+    // A user editing/moving a shelf-mounted device adopts/detaches the shelves involved, so
+    // drop bridge auto-cleanup provenance on BOTH: the shelf this placement was the bridge's
+    // original occupant of (source detach), AND any shelf it is being (re)mounted onto via a
+    // cross-shelf drag (destination adoption — the user just put a device on it). Same single
+    // chokepoint + non-undoing caveat as updateRackAccessory.
+    const destShelfId = patch.mountedOnShelfId;
     set({
       pages: mapElevationPage(state.pages, pageId, (p) => ({
         ...p,
         placements: p.placements.map((pl) => pl.id === placementId ? { ...pl, ...patch } : pl),
+        accessories: p.accessories.map((a) =>
+          (a.bridgeCreatedForPlacementId === placementId || (destShelfId != null && a.id === destShelfId))
+            ? { ...a, bridgeCreatedForPlacementId: undefined }
+            : a),
       })),
     });
     get().saveToLocalStorage();
@@ -4355,7 +4370,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({
       pages: mapElevationPage(state.pages, pageId, (p) => ({
         ...p,
-        accessories: p.accessories.map((a) => a.id === accessoryId ? { ...a, ...patch } : a),
+        // Any user edit (rename/resize/depth/move) marks the shelf as adopted, so the MCP
+        // bridge will never auto-remove it. Clearing bridgeCreatedForPlacementId here is the
+        // single chokepoint for that (all editor shelf-edit paths route through this action;
+        // the bridge never calls it). NOTE: like the rest of updateRackAccessory this does not
+        // pushUndo, so the provenance clear is not reverted by undo — acceptable because it
+        // only ever loosens auto-cleanup (an un-adopted shelf can still be removed manually).
+        accessories: p.accessories.map((a) => a.id === accessoryId ? { ...a, ...patch, bridgeCreatedForPlacementId: undefined } : a),
       })),
     });
     get().saveToLocalStorage();
@@ -4431,7 +4452,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       shelfOffsetMm: offset,
     };
     set({
-      pages: mapElevationPage(state.pages, pageId, (p) => ({ ...p, placements: [...p.placements, placement] })),
+      pages: mapElevationPage(state.pages, pageId, (p) => ({
+        ...p,
+        placements: [...p.placements, placement],
+        // A user manually stacking a device onto this shelf adopts it — drop the bridge's
+        // auto-cleanup provenance so the shelf is never auto-removed out from under them.
+        accessories: p.accessories.map((a) => a.id === shelfId ? { ...a, bridgeCreatedForPlacementId: undefined } : a),
+      })),
       undoSize: undoStack.length, redoSize: 0,
     });
     get().saveToLocalStorage();
@@ -4609,6 +4636,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...a,
         id: nid,
         rackId: rackIdMap.get(a.rackId) ?? a.rackId,
+        // The provenance binding points at the source page's placement id, which doesn't exist
+        // on the copy — drop it so a duplicated shelf is a plain (non-bridge) shelf.
+        bridgeCreatedForPlacementId: undefined,
       };
     });
     const newPlacements = src.placements.map((pl) => ({

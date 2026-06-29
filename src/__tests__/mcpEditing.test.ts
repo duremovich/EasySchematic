@@ -699,17 +699,205 @@ describe("rack tools (list_racks / create_rack / place_device_in_rack / remove_d
     expect(() => handlers.remove_device_from_rack({ placementId: "pl-404" })).toThrow(/No rack placement/);
   });
 
-  it("place_device_in_rack rejects shelf-only gear (shelf placement is an editor task) and creates nothing", () => {
-    // ~150mm wide -> shelf-only (too small for a direct rack-mount panel).
+  // ~150mm wide -> shelf-only (too small for a direct rack-mount panel).
+  const SHELF = { widthMm: 150, heightMm: 50 };
+
+  it("place_device_in_rack mounts shelf-only gear on an auto-created, bridge-stamped shelf (one undo step)", () => {
     useSchematicStore.setState({
-      nodes: [rackDevice("device-1", 150, 50)],
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm)],
       edges: [],
       pages: [rackPage("rk-1", [rack("rack-1")])],
     });
-    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 })).toThrow(/needs a shelf|too small/);
-    // The bridge never auto-creates a shelf, so nothing is left behind.
+    const res = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 }) as { placementId: string; shelfId: string; form: string; heightU: number };
+    expect(res.form).toBe("shelf-only");
+    expect(res.heightU).toBe(1);
+    const page = pages()[0];
+    expect(page.accessories).toHaveLength(1);
+    expect(page.accessories[0]).toMatchObject({ id: res.shelfId, type: "shelf", uPosition: 2, bridgeCreatedForPlacementId: res.placementId });
+    expect(page.placements).toHaveLength(1);
+    expect(page.placements[0]).toMatchObject({ id: res.placementId, mountedOnShelfId: res.shelfId });
+    // Shelf + placement are created atomically — one undo removes both.
+    useSchematicStore.getState().undo();
     expect(pages()[0].placements).toHaveLength(0);
     expect(pages()[0].accessories).toHaveLength(0);
+  });
+
+  it("a shelf-only placement is restored as one step by redo (shelf + device come back together)", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const placed = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 }) as { placementId: string; shelfId: string };
+    useSchematicStore.getState().undo();
+    expect(pages()[0].placements).toHaveLength(0);
+    expect(pages()[0].accessories).toHaveLength(0);
+    useSchematicStore.getState().redo();
+    expect(pages()[0].placements).toHaveLength(1);
+    expect(pages()[0].accessories).toHaveLength(1);
+    expect(pages()[0].accessories[0].bridgeCreatedForPlacementId).toBe(placed.placementId);
+  });
+
+  it("reports a narrow-but-tall shelf-only device's physical heightU consistently with list_racks", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", 150, 88.9)], // ~2U tall, narrow -> shelf-only
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const placed = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 }) as { form: string; heightU: number };
+    expect(placed.form).toBe("shelf-only");
+    const listed = handlers.list_racks({}) as { pages: { racks: { placements: { heightU: number | null }[] }[] }[] };
+    expect(placed.heightU).toBe(listed.pages[0].racks[0].placements[0].heightU);
+  });
+
+  it("place_device_in_rack_batch places shelf-only gear too (auto-shelf per item)", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm), rackDevice("device-2", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const res = handlers.place_device_in_rack_batch({ placements: [
+      { deviceId: "device-1", rackId: "rack-1", uPosition: 2 },
+      { deviceId: "device-2", rackId: "rack-1", uPosition: 5 },
+    ] }) as { succeeded: number; failed: number; results: { ok: boolean; result?: { form: string; shelfId?: string } }[] };
+    expect(res.succeeded).toBe(2);
+    expect(res.failed).toBe(0);
+    expect(res.results[0].result?.form).toBe("shelf-only");
+    const shelfId = res.results[0].result?.shelfId;
+    const shelf = pages()[0].accessories.find((a) => a.id === shelfId)!;
+    expect(shelf.bridgeCreatedForPlacementId).toBeDefined();
+  });
+
+  it("place_device_in_rack rejects a shelf-only placement when its 1U is already occupied", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")], [], [
+        { id: "acc-1", rackId: "rack-1", type: "blank-panel", uPosition: 2, heightU: 1, face: "front" },
+      ])],
+    });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 })).toThrow(/occupied|no room/);
+    expect(pages()[0].placements).toHaveLength(0);
+    expect(pages()[0].accessories).toHaveLength(1); // only the pre-existing panel
+  });
+
+  it("remove_device_from_rack cascades the auto-created shelf when unracking its original device", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const placed = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 }) as { placementId: string; shelfId: string };
+    const res = handlers.remove_device_from_rack({ placementId: placed.placementId }) as { removed: boolean; removedShelfId?: string };
+    expect(res.removed).toBe(true);
+    expect(res.removedShelfId).toBe(placed.shelfId);
+    expect(pages()[0].placements).toHaveLength(0);
+    expect(pages()[0].accessories).toHaveLength(0);
+  });
+
+  it("remove_device_from_rack leaves a user-built (non-bridge) shelf in place", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")], [
+        { id: "pl-1", rackId: "rack-1", deviceNodeId: "device-1", uPosition: 2, face: "front", mountedOnShelfId: "acc-1" },
+      ], [
+        { id: "acc-1", rackId: "rack-1", type: "shelf", uPosition: 2, heightU: 1, face: "front" }, // no provenance
+      ])],
+    });
+    handlers.remove_device_from_rack({ placementId: "pl-1" });
+    expect(pages()[0].placements).toHaveLength(0);
+    expect(pages()[0].accessories).toHaveLength(1); // user shelf untouched
+  });
+
+  it("a user edit (move) of a bridge shelf clears provenance, so a later unrack leaves the shelf", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const placed = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 }) as { placementId: string; shelfId: string };
+    // User relocates the shelf — adoption. The shelf "looks pristine" (no label/size change) but
+    // updateRackAccessory clears the bridge provenance regardless.
+    useSchematicStore.getState().updateRackAccessory("rk-1", placed.shelfId, { uPosition: 10 });
+    expect(pages()[0].accessories[0].bridgeCreatedForPlacementId).toBeUndefined();
+    const res = handlers.remove_device_from_rack({ placementId: placed.placementId }) as { removedShelfId?: string };
+    expect(res.removedShelfId).toBeUndefined();
+    expect(pages()[0].placements).toHaveLength(0);
+    expect(pages()[0].accessories).toHaveLength(1); // adopted shelf kept
+  });
+
+  it("reuse timeline: a user-added second device adopts the shelf; neither unrack deletes it", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm), rackDevice("device-2", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const a = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 }) as { placementId: string; shelfId: string };
+    // User drops a 2nd device onto the bridge's shelf — adoption clears provenance.
+    useSchematicStore.getState().addShelfMountedDevice("rk-1", a.shelfId, "device-2");
+    expect(pages()[0].accessories[0].bridgeCreatedForPlacementId).toBeUndefined();
+    // Remove the original device A: shelf + device B stay.
+    handlers.remove_device_from_rack({ placementId: a.placementId });
+    expect(pages()[0].accessories).toHaveLength(1);
+    expect(pages()[0].placements).toHaveLength(1);
+    // Remove device B too: the (now empty) shelf still stays — it's user-adopted.
+    const bPlacement = pages()[0].placements[0];
+    handlers.remove_device_from_rack({ placementId: bPlacement.id });
+    expect(pages()[0].accessories).toHaveLength(1);
+  });
+
+  it("editing the bridge device's placement (e.g. dragging it off the shelf) clears provenance", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const placed = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 }) as { placementId: string; shelfId: string };
+    useSchematicStore.getState().updateRackPlacement("rk-1", placed.placementId, { rotated: true });
+    expect(pages()[0].accessories[0].bridgeCreatedForPlacementId).toBeUndefined();
+    const res = handlers.remove_device_from_rack({ placementId: placed.placementId }) as { removedShelfId?: string };
+    expect(res.removedShelfId).toBeUndefined();
+    expect(pages()[0].accessories).toHaveLength(1); // shelf kept (detached/adopted)
+  });
+
+  it("dragging another device ONTO a bridge shelf adopts it (destination clear), so it survives later cleanup", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm), rackDevice("device-2", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      // device-2 starts on its OWN (user) shelf; we'll drag it onto the bridge's shelf.
+      pages: [rackPage("rk-1", [rack("rack-1")], [
+        { id: "pl-2", rackId: "rack-1", deviceNodeId: "device-2", uPosition: 8, face: "front", mountedOnShelfId: "user-shelf" },
+      ], [
+        { id: "user-shelf", rackId: "rack-1", type: "shelf", uPosition: 8, heightU: 1, face: "front" },
+      ])],
+    });
+    const b = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 }) as { placementId: string; shelfId: string };
+    // Cross-shelf drag: rewire device-2's placement onto the bridge's shelf (destination adoption).
+    useSchematicStore.getState().updateRackPlacement("rk-1", "pl-2", { mountedOnShelfId: b.shelfId, uPosition: 2, face: "front" });
+    const bridgeShelf = pages()[0].accessories.find((a) => a.id === b.shelfId)!;
+    expect(bridgeShelf.bridgeCreatedForPlacementId).toBeUndefined(); // adopted by the user's device
+    // Remove device-2, then the bridge's original device B — the adopted shelf must NOT be deleted.
+    handlers.remove_device_from_rack({ placementId: "pl-2" });
+    const res = handlers.remove_device_from_rack({ placementId: b.placementId }) as { removedShelfId?: string };
+    expect(res.removedShelfId).toBeUndefined();
+    expect(pages()[0].accessories.some((a) => a.id === b.shelfId)).toBe(true);
+  });
+
+  it("duplicating a rack page drops bridge provenance but keeps the shelf-mount link intact", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", SHELF.widthMm, SHELF.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 });
+    const newPageId = useSchematicStore.getState().duplicateRackPage("rk-1");
+    const copy = pages().find((p) => p.id === newPageId)!;
+    expect(copy.accessories).toHaveLength(1);
+    expect(copy.accessories[0].bridgeCreatedForPlacementId).toBeUndefined();
+    // The copied device must point at the COPIED shelf, not the source page's shelf id.
+    expect(copy.placements).toHaveLength(1);
+    expect(copy.placements[0].mountedOnShelfId).toBe(copy.accessories[0].id);
   });
 
   it("list_racks reports rack accessories so a U blocked by a shelf or panel is visible", () => {
@@ -720,9 +908,9 @@ describe("rack tools (list_racks / create_rack / place_device_in_rack / remove_d
         { id: "acc-1", rackId: "rack-1", type: "shelf", uPosition: 4, heightU: 1, face: "front" },
       ])],
     });
-    const listed = handlers.list_racks({}) as { pages: { racks: { accessories: { accessoryId: string; type: string; uPosition: number; heightU: number }[] }[] }[] };
+    const listed = handlers.list_racks({}) as { pages: { racks: { accessories: { accessoryId: string; type: string; uPosition: number; heightU: number; createdByBridge: boolean }[] }[] }[] };
     expect(listed.pages[0].racks[0].accessories).toHaveLength(1);
-    expect(listed.pages[0].racks[0].accessories[0]).toMatchObject({ accessoryId: "acc-1", type: "shelf", uPosition: 4, heightU: 1 });
+    expect(listed.pages[0].racks[0].accessories[0]).toMatchObject({ accessoryId: "acc-1", type: "shelf", uPosition: 4, heightU: 1, createdByBridge: false });
   });
 
   it("create_rack fails on an ambiguous pageId (duplicate page ids) rather than writing to both", () => {

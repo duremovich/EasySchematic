@@ -400,15 +400,29 @@ function placeDeviceInRackCore(p: PlaceDeviceInRackParams) {
   }
   if (form === "shelf-only") {
     // Shelf-only gear (too small for a direct rack-mount panel) needs a shelf to sit on.
-    // The editor creates that shelf and lets the user position the device on it; doing
-    // that from the bridge would mean auto-creating a shelf whose later cleanup can't be
-    // told apart from a user-built shelf (no provenance flag on the data). Rather than
-    // risk dropping a user's shelf or leaving an orphan, shelf placement stays an editor
-    // task for this slice.
-    throw new CommandError(
-      `Device "${deviceId}" is too small for a direct rack-mount (it needs a shelf). ` +
-        `Add a shelf and place it on the shelf in the editor.`,
-    );
+    // addPlacementSmart auto-creates a 1U shelf + the mounted placement atomically; we stamp
+    // that shelf with provenance (markShelfCreatedByBridge) so remove_device_from_rack can
+    // clean it up later WITHOUT risking a user-built or user-adopted shelf. addPlacementSmart
+    // does no occupancy check, so pre-check the 1U the new shelf would claim.
+    if (!st().isRackSlotAvailable(page.id, rackId, u.u, 1, f.face)) {
+      throw new CommandError(`U${u.u} on the ${f.face} of rack "${rackId}" is occupied — no room for a shelf.`);
+    }
+    const res = st().addPlacementSmart(page.id, rackId, deviceId, u.u, f.face, undefined, /* createdByBridge */ true);
+    if (!res.ok) {
+      throw new CommandError(`Could not place device "${deviceId}" in rack "${rackId}" (${res.reason}).`);
+    }
+    return {
+      placementId: res.placementId,
+      shelfId: res.shelfId,
+      rackId,
+      deviceId,
+      uPosition: u.u,
+      face: f.face,
+      form,
+      // The device's physical height in U (consistent with list_racks). The auto-created shelf
+      // itself claims a single U regardless of how tall the device standing on it is.
+      heightU: inferRackHeightU(data),
+    };
   }
   const heightU = inferRackHeightU(data);
 
@@ -757,7 +771,9 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
         // place_device_in_rack would reject it for no visible reason.
         accessories: page.accessories
           .filter((a) => a.rackId === r.id)
-          .map((a) => ({ accessoryId: a.id, type: a.type, label: a.label, uPosition: a.uPosition, heightU: a.heightU })),
+          // createdByBridge: this shelf was auto-created by the bridge and not yet adopted by
+          // the user, so remove_device_from_rack will clean it up with its device.
+          .map((a) => ({ accessoryId: a.id, type: a.type, label: a.label, uPosition: a.uPosition, heightU: a.heightU, createdByBridge: !!a.bridgeCreatedForPlacementId })),
       })),
     }));
     return { pageCount: pages.length, pages };
@@ -829,10 +845,23 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
   remove_device_from_rack: (params) => {
     const { placementId } = params as unknown as RemoveDeviceFromRackParams;
     if (!placementId) throw new CommandError("placementId is required.");
-    const { page } = requirePlacement(placementId);
-    // Remove only the placement (one undo step). The device stays on the schematic. Shelf
-    // accessories are never auto-created by the bridge (shelf-only placement is rejected),
-    // so there is nothing to cascade-clean here — and we never delete a user-built shelf.
+    const { page, placement } = requirePlacement(placementId);
+    // If this device sits on a shelf the bridge auto-created FOR THIS placement, and the user
+    // hasn't adopted that shelf, clean it up along with the device (one undo step). The shelf
+    // is removed ONLY when ALL hold: the placement is shelf-mounted; the shelf still exists;
+    // its provenance is still bound to THIS exact placement (any user edit / second occupant /
+    // page-duplication clears the binding); and this placement is the shelf's sole occupant.
+    // Anything else → remove just the placement, never touching a user/adopted shelf.
+    const shelfId = placement.mountedOnShelfId;
+    if (shelfId) {
+      const shelf = page.accessories.find((a) => a.id === shelfId);
+      const otherOccupants = page.placements.filter((pl) => pl.mountedOnShelfId === shelfId && pl.id !== placementId);
+      if (shelf && shelf.bridgeCreatedForPlacementId === placementId && otherOccupants.length === 0) {
+        st().removeRackAccessoryWithOccupants(page.id, shelfId);
+        return { removed: true, placementId, removedShelfId: shelfId };
+      }
+    }
+    // Remove only the placement (one undo step). The device stays on the schematic.
     st().removeRackPlacement(page.id, placementId);
     return { removed: true, placementId };
   },

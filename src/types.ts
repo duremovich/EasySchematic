@@ -694,6 +694,14 @@ export interface RackAccessory {
   /** Usable depth for shelf-mounted gear in mm (only meaningful when type === "shelf").
    *  Defaults to ~60% of rack.depthMm when unset. */
   shelfDepthMm?: number;
+  /** Set when the MCP bridge auto-created this shelf to hold a shelf-only device; its value
+   *  is the id of that original placement. Its PRESENCE marks the shelf as bridge-created AND
+   *  not-yet-touched-by-the-user — `remove_device_from_rack` will auto-remove the shelf only
+   *  when unracking that exact placement while it is the shelf's sole occupant. Any user edit
+   *  (rename/resize/depth/move via `updateRackAccessory`, adding a second device via
+   *  `addShelfMountedDevice`, or page duplication) clears this field, so an adopted shelf is
+   *  never auto-removed. */
+  bridgeCreatedForPlacementId?: string;
 }
 
 export interface RackElevationPage {

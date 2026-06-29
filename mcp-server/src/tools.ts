@@ -328,7 +328,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "place_device_in_rack",
     description:
-      "Mount a device from the schematic into a rack at a U position. The device's height in U is inferred from its physical dimensions, and half-rack gear is placed on a free side automatically. Fails if the U span is occupied or out of the rack's bounds, if the device is already placed in a rack (remove it first), for a rear placement on a 2-post rack, or if the device is too small to rack-mount directly (it needs a shelf — add that in the editor) or too wide to fit. uPosition is 1-based from the bottom.",
+      "Mount a device from the schematic into a rack at a U position. The device's height in U is inferred from its physical dimensions, and half-rack gear is placed on a free side automatically. Gear too small to rack-mount directly is placed on an auto-created 1U shelf (the response includes that shelfId; remove_device_from_rack cleans the shelf up for you unless you've since edited it in the editor). Fails if the U span is occupied or out of the rack's bounds, if the device is already placed in a rack (remove it first), for a rear placement on a 2-post rack, or if the device is too wide to fit a 19\" rack. uPosition is 1-based from the bottom.",
     inputSchema: {
       type: "object",
       properties: {
@@ -344,7 +344,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "remove_device_from_rack",
     description:
-      "Remove a device's rack placement (from list_racks) so its U position frees up. The device stays on the schematic; only its position in the rack is removed.",
+      "Remove a device's rack placement (from list_racks) so its U position frees up. The device stays on the schematic; only its position in the rack is removed. If the device sat on a 1U shelf that this bridge auto-created for it (and you haven't adopted that shelf by editing it or adding another device), the empty shelf is removed too (its id is returned as removedShelfId).",
     inputSchema: {
       type: "object",
       properties: {
@@ -412,7 +412,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "place_device_in_rack_batch",
     description:
-      "Mount several devices into racks in one call — use this instead of repeated place_device_in_rack calls. Best-effort: each placement is attempted independently and the result lists per-item success or failure. Placements are applied in array order, so an earlier one can affect a later one (it consumes the U span / half-rack side; a device already placed by an earlier item is rejected by a later one). Each item names its own rack; the same occupancy, 2-post-rear, already-placed and oversize/shelf-only rules as place_device_in_rack apply per item.",
+      "Mount several devices into racks in one call — use this instead of repeated place_device_in_rack calls. Best-effort: each placement is attempted independently and the result lists per-item success or failure. Placements are applied in array order, so an earlier one can affect a later one (it consumes the U span / half-rack side; a device already placed by an earlier item is rejected by a later one). Each item names its own rack; the same occupancy, 2-post-rear, already-placed, oversize and shelf-only (auto-shelf) handling as place_device_in_rack applies per item.",
     inputSchema: {
       type: "object",
       properties: {

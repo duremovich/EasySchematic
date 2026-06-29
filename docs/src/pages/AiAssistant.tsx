@@ -152,8 +152,13 @@ node dist/index.js`}</code>
           remove a device from a rack. It won't stack two devices in the same space,
           place a device that's already in another rack, or use the rear of a 2-post
           frame. Full- and half-rack gear is placed automatically from each device's
-          physical size; very small gear that needs a shelf, and rack accessories like
-          shelves and blanking panels, are still added in the editor.
+          physical size; very small gear that needs a shelf is dropped onto a shelf the
+          assistant adds for it, and removing that device later clears the shelf too —
+          unless you've made the shelf your own (renamed, resized, moved it, or put
+          another device on it), in which case the assistant leaves it alone. Removing
+          the device any other way (deleting it, or unracking it in the editor) keeps the
+          empty shelf, just as the editor always has. Other rack accessories like blanking
+          panels are still added in the editor.
         </li>
         <li>
           <strong>Work in batches</strong> — add many devices, make many
