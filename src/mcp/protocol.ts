@@ -25,7 +25,8 @@ export const PROTOCOL_VERSION = 1;
  *  "annotations" tool (add_note), the three Ship-6 "slots / modular chassis"
  *  tools (list_slot_cards, install_card, remove_card), and the four Ship-7
  *  "racks / rack elevation" tools (list_racks, create_rack, place_device_in_rack,
- *  remove_device_from_rack). */
+ *  remove_device_from_rack), and the two Ship-8 "notes" tools (update_note,
+ *  delete_note — get_schematic also now reports rooms + notes). */
 export type CommandType =
   | "get_schematic"
   | "list_devices"
@@ -48,7 +49,9 @@ export type CommandType =
   | "list_racks"
   | "create_rack"
   | "place_device_in_rack"
-  | "remove_device_from_rack";
+  | "remove_device_from_rack"
+  | "update_note"
+  | "delete_note";
 
 /** Max items accepted by a single batch tool call (input arrives over the bridge,
  *  so it is capped). The mcp-server tool schemas mirror this as `maxItems`. */
@@ -270,6 +273,20 @@ export interface RemoveDeviceFromRackParams {
   /** The placement id to remove, from list_racks. The device itself stays on the
    *  schematic — only its rack placement is removed. */
   placementId: string;
+}
+
+export interface UpdateNoteParams {
+  /** The note id, from get_schematic's `notes`. */
+  noteId: string;
+  /** New plain text for the note. HTML-escaped on the way in (the note renders as
+   *  HTML), so it always shows literally; newlines become line breaks. Replaces the
+   *  note's content (a note with rich editor formatting becomes plain text). */
+  text: string;
+}
+
+export interface DeleteNoteParams {
+  /** The note id to delete, from get_schematic's `notes`. */
+  noteId: string;
 }
 
 // ---------------------------------------------------------------------------

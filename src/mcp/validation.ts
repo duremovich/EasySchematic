@@ -144,6 +144,32 @@ export function noteTextToHtml(text: string): string {
     .replace(/\n/g, "<br>");
 }
 
+/**
+ * Best-effort inverse of noteTextToHtml: render a note's stored HTML back to readable
+ * plain text for the MCP read surface (get_schematic). The block-level tags the note
+ * sanitizer keeps (`br`/`div`/`p`/`li`/`ul`/`ol`) become line breaks, so block structure
+ * isn't collapsed (`<div>A</div><div>B</div>` -> "A\nB", never "AB"); the remaining
+ * inline formatting tags (b/i/strong/…) are dropped; HTML entities are unescaped (&amp;
+ * last, so `&amp;lt;` -> `&lt;`). Lossy for rich formatting — which is fine for a read
+ * surface, and update_note replaces a note's content with plain text anyway.
+ */
+export function noteHtmlToText(html: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/?(?:div|p|li|ul|ol|h[1-6])\b[^>]*>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&amp;/gi, "&")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{2,}/g, "\n")
+    .trim();
+}
+
 export type CardForSlotResult =
   | { ok: true }
   | { ok: false; error: string };

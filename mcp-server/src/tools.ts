@@ -5,9 +5,10 @@
  * place_device_in_room), the Ship-5 "annotations" tool (add_note), the Ship-6
  * "slots / modular chassis" tools (list_slot_cards, install_card, remove_card), and the
  * Ship-7 "racks / rack elevation" tools (list_racks, create_rack, place_device_in_rack,
- * remove_device_from_rack). Each entry is a plain JSON-Schema tool definition; the call
- * is relayed verbatim to the editor over the bridge, which validates and executes it
- * against the live store.
+ * remove_device_from_rack), and the Ship-8 "notes" tools (update_note, delete_note;
+ * get_schematic also reports rooms + notes). Each entry is a plain JSON-Schema tool
+ * definition; the call is relayed verbatim to the editor over the bridge, which validates
+ * and executes it against the live store.
  *
  * In AV terms the user sees Device / Connection / Port; these tool names and the
  * docs use the same AV language.
@@ -24,7 +25,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "get_schematic",
     description:
-      "Get a summary of the current schematic: its name, every device (with ports) and every connection. Call this first to see what already exists.",
+      "Get a summary of the current schematic: its name, every device (with ports), every connection, every room (container) and every note (text annotation). Call this first to see what already exists. Note ids and room ids here feed update_note/delete_note and place_device_in_room.",
     inputSchema: noArgs,
   },
   {
@@ -349,6 +350,33 @@ export const TOOLS: ToolDef[] = [
         placementId: { type: "string", description: "The placement id from list_racks." },
       },
       required: ["placementId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "update_note",
+    description:
+      "Replace the text of an existing note (text annotation). Get note ids from get_schematic. The text is shown literally (HTML-escaped) and newlines become line breaks; this replaces the note's whole content, so a note with rich formatting from the editor becomes plain text.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        noteId: { type: "string", description: "The note id from get_schematic's notes." },
+        text: { type: "string", description: "The new note text." },
+      },
+      required: ["noteId", "text"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "delete_note",
+    description:
+      "Delete a note (text annotation) by id. Get note ids from get_schematic. Only the note is removed; devices, rooms and connections are untouched.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        noteId: { type: "string", description: "The note id from get_schematic's notes." },
+      },
+      required: ["noteId"],
       additionalProperties: false,
     },
   },

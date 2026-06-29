@@ -86,8 +86,9 @@ node dist/index.js`}</code>
 
       <ul>
         <li>
-          <strong>Read</strong> — view the schematic, list devices, inspect one
-          device, and search the device library.
+          <strong>Read</strong> — view the schematic (its devices, connections,
+          rooms and notes), list devices, inspect one device, and search the device
+          library.
         </li>
         <li>
           <strong>Add a device</strong> from a library template.
@@ -121,10 +122,12 @@ node dist/index.js`}</code>
           device instead.
         </li>
         <li>
-          <strong>Add a note</strong> — a text note card placed on the canvas to
-          annotate or explain the schematic. The text is shown literally and line
-          breaks are kept. Notes can't yet be listed, edited, or deleted through the
-          assistant — do that in the editor.
+          <strong>Add, edit, and delete notes</strong> — text note cards placed on
+          the canvas to annotate or explain the schematic. The text is shown literally
+          and line breaks are kept. Existing notes show up when the assistant reads the
+          schematic, so it can rewrite a note's text or remove it. Editing replaces the
+          whole note, so a note you formatted in the editor (bold, lists) becomes plain
+          text when the assistant rewrites it.
         </li>
         <li>
           <strong>Remove a single connection.</strong> Stubbed connections can't be

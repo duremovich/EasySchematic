@@ -755,3 +755,71 @@ describe("rack tools (list_racks / create_rack / place_device_in_rack / remove_d
     expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-dup", uPosition: 1 })).toThrow(/ambiguous/);
   });
 });
+
+describe("notes & rooms read + notes CRUD (update_note / delete_note)", () => {
+  function noteNode(id: string, html: string, x = 0, y = 0): SchematicNode {
+    return { id, type: "note", position: { x, y }, data: { html } as NoteData } as SchematicNode;
+  }
+  function noteHtmlOf(id: string) {
+    return (useSchematicStore.getState().nodes.find((n) => n.id === id)!.data as NoteData).html;
+  }
+
+  it("get_schematic reports rooms and notes alongside devices", () => {
+    useSchematicStore.setState({
+      nodes: [device("device-1", 0, 0), roomNode("room-1", 100, 50, 500, 350), noteNode("note-1", "hello<br>world", 10, 20)],
+      edges: [],
+    });
+    const schem = handlers.get_schematic({}) as {
+      roomCount: number;
+      noteCount: number;
+      rooms: { roomId: string; label: string; width: number; height: number; parentId?: string }[];
+      notes: { noteId: string; text: string; position: { x: number; y: number }; parentId?: string }[];
+    };
+    expect(schem.roomCount).toBe(1);
+    expect(schem.noteCount).toBe(1);
+    expect(schem.rooms[0]).toMatchObject({ roomId: "room-1", label: "room-1", width: 500, height: 350 });
+    expect(schem.notes[0]).toMatchObject({ noteId: "note-1", text: "hello\nworld", position: { x: 10, y: 20 } });
+  });
+
+  it("get_schematic reports a room's measured size when it differs from style", () => {
+    // React Flow's live `measured` supersedes `style`; report what the editor uses.
+    const room = { id: "room-1", type: "room", position: { x: 0, y: 0 }, data: { label: "R" }, style: { width: 400, height: 300 }, measured: { width: 640, height: 480 } } as unknown as SchematicNode;
+    useSchematicStore.setState({ nodes: [room], edges: [] });
+    const schem = handlers.get_schematic({}) as { rooms: { width: number; height: number }[] };
+    expect(schem.rooms[0]).toMatchObject({ width: 640, height: 480 });
+  });
+
+  it("update_note replaces the note's content (escaped) and is undoable", () => {
+    useSchematicStore.setState({ nodes: [noteNode("note-1", "old", 0, 0)], edges: [] });
+    const res = handlers.update_note({ noteId: "note-1", text: "new\n<b>" }) as { changed: boolean };
+    expect(res.changed).toBe(true);
+    expect(noteHtmlOf("note-1")).toBe("new<br>&lt;b&gt;");
+    useSchematicStore.getState().undo();
+    expect(noteHtmlOf("note-1")).toBe("old");
+  });
+
+  it("update_note is a no-op (no undo step) when the text is unchanged", () => {
+    useSchematicStore.setState({ nodes: [noteNode("note-1", "same", 0, 0)], edges: [] });
+    const undoBefore = useSchematicStore.getState().undoSize;
+    const res = handlers.update_note({ noteId: "note-1", text: "same" }) as { changed: boolean };
+    expect(res.changed).toBe(false);
+    expect(useSchematicStore.getState().undoSize).toBe(undoBefore); // no empty undo step pushed
+  });
+
+  it("update_note rejects empty text, a missing note, and a non-note target", () => {
+    useSchematicStore.setState({ nodes: [noteNode("note-1", "x", 0, 0), device("device-1", 0, 0)], edges: [] });
+    expect(() => handlers.update_note({ noteId: "note-1", text: "   " })).toThrow(/text is required/);
+    expect(() => handlers.update_note({ noteId: "missing", text: "hi" })).toThrow(/No note found/);
+    expect(() => handlers.update_note({ noteId: "device-1", text: "hi" })).toThrow(/not a note/);
+  });
+
+  it("delete_note removes the note (undoable) and rejects a non-note", () => {
+    useSchematicStore.setState({ nodes: [noteNode("note-1", "bye", 0, 0), device("device-1", 0, 0)], edges: [] });
+    const res = handlers.delete_note({ noteId: "note-1" }) as { deleted: boolean };
+    expect(res.deleted).toBe(true);
+    expect(useSchematicStore.getState().nodes.some((n) => n.id === "note-1")).toBe(false);
+    useSchematicStore.getState().undo();
+    expect(useSchematicStore.getState().nodes.some((n) => n.id === "note-1")).toBe(true);
+    expect(() => handlers.delete_note({ noteId: "device-1" })).toThrow(/not a note/);
+  });
+});

@@ -43,6 +43,8 @@ import {
   type CreateRackParams,
   type PlaceDeviceInRackParams,
   type RemoveDeviceFromRackParams,
+  type UpdateNoteParams,
+  type DeleteNoteParams,
   type PortFace,
 } from "./mcp/protocol";
 import {
@@ -53,6 +55,7 @@ import {
   planConnectionRemoval,
   runBatch,
   noteTextToHtml,
+  noteHtmlToText,
   validateCardForSlot,
   validateUPosition,
   validateRackFace,
@@ -95,6 +98,43 @@ function requireDevice(nodeId: string): SchematicNode {
 
 function portSummary(p: Port) {
   return { id: p.id, label: p.label, direction: p.direction, signalType: p.signalType };
+}
+
+/** Compact view of a room (container) node for get_schematic. `parentId`/`position`
+ *  follow the same frame convention as devices — position is room-relative when the room
+ *  is nested inside another room. Size follows the same `measured ?? width ?? style ??
+ *  default` chain the rest of the app uses (snapUtils.nodeRect), so a room whose live
+ *  measured size differs from its style isn't misreported; defaults mirror addRoom (400x300). */
+function roomSummary(n: SchematicNode) {
+  const style = (n.style ?? {}) as { width?: number; height?: number };
+  return {
+    roomId: n.id,
+    label: (n.data as { label?: string }).label,
+    position: n.position,
+    parentId: n.parentId,
+    width: n.measured?.width ?? (n.width as number | undefined) ?? style.width ?? 400,
+    height: n.measured?.height ?? (n.height as number | undefined) ?? style.height ?? 300,
+  };
+}
+
+/** Compact view of a note (sticky-note) node for get_schematic. `text` is a best-effort
+ *  plain-text rendering of the note's stored HTML (see noteHtmlToText). `parentId` is
+ *  reported because a note can be reparented into a room, making `position` room-relative. */
+function noteSummary(n: SchematicNode) {
+  return {
+    noteId: n.id,
+    text: noteHtmlToText((n.data as { html?: string }).html ?? ""),
+    position: n.position,
+    parentId: n.parentId,
+  };
+}
+
+/** Find a note node by id, or throw a readable CommandError (mirrors requireDevice). */
+function requireNote(noteId: string): SchematicNode {
+  const node = st().nodes.find((n) => n.id === noteId);
+  if (!node) throw new CommandError(`No note found with id "${noteId}".`);
+  if (node.type !== "note") throw new CommandError(`Node "${noteId}" is not a note.`);
+  return node;
 }
 
 /** Compact view of a device's modular slot, for get_device. `filled` is the quick
@@ -293,12 +333,18 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
       target: e.target,
       targetHandle: e.targetHandle,
     }));
+    const rooms = st().nodes.filter((n) => n.type === "room").map(roomSummary);
+    const notes = st().nodes.filter((n) => n.type === "note").map(noteSummary);
     return {
       schematicName: st().schematicName,
       deviceCount: devices.length,
       connectionCount: connections.length,
+      roomCount: rooms.length,
+      noteCount: notes.length,
       devices,
       connections,
+      rooms,
+      notes,
     };
   },
 
@@ -755,6 +801,38 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
     // so there is nothing to cascade-clean here — and we never delete a user-built shelf.
     st().removeRackPlacement(page.id, placementId);
     return { removed: true, placementId };
+  },
+
+  update_note: (params) => {
+    const { noteId, text } = params as unknown as UpdateNoteParams;
+    requireNote(noteId);
+    if (typeof text !== "string" || text.trim() === "") {
+      throw new CommandError("text is required (a non-empty note).");
+    }
+    const html = noteTextToHtml(text);
+    const current = (requireNote(noteId).data as { html?: string }).html ?? "";
+    // No-op when the content is unchanged — updateNoteHtml does not guard identical writes,
+    // and pushSnapshot() would otherwise add an empty undo step (the editor's own commit
+    // path is likewise gated on `html !== data.html`).
+    if (html === current) {
+      return { noteId, text, changed: false };
+    }
+    // pushSnapshot() makes this a single undo step (updateNoteHtml itself does not push undo,
+    // because the editor calls it on every keystroke and snapshots separately). Text is
+    // XSS-safe via the same noteTextToHtml path add_note uses.
+    st().pushSnapshot();
+    st().updateNoteHtml(noteId, html);
+    return { noteId, text, changed: true };
+  },
+
+  delete_note: (params) => {
+    const { noteId } = params as unknown as DeleteNoteParams;
+    requireNote(noteId);
+    // deleteNode selects only this note and routes through removeSelected (undoable, full
+    // cleanup). Notes have no ports/edges/children, so nothing cascades. delete_device uses
+    // the same path.
+    st().deleteNode(noteId);
+    return { deleted: true, noteId };
   },
 };
 

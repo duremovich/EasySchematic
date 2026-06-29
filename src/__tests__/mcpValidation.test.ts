@@ -7,6 +7,7 @@ import {
   planConnectionRemoval,
   runBatch,
   noteTextToHtml,
+  noteHtmlToText,
   validateCardForSlot,
   validateUPosition,
   validateRackFace,
@@ -308,5 +309,36 @@ describe("validateRackSpec", () => {
   it("rejects a supplied but non-numeric heightU or depthMm", () => {
     expect(validateRackSpec("floor-19", NaN, 600).ok).toBe(false);
     expect(validateRackSpec("floor-19", 42, Infinity).ok).toBe(false);
+  });
+});
+
+describe("noteHtmlToText", () => {
+  it("round-trips text put through noteTextToHtml", () => {
+    const text = "Head end\nrack 2 & 3";
+    expect(noteHtmlToText(noteTextToHtml(text))).toBe(text);
+  });
+
+  it("turns <br> into newlines and unescapes entities", () => {
+    expect(noteHtmlToText("a<br>b")).toBe("a\nb");
+    expect(noteHtmlToText("x &amp; y &lt; z")).toBe("x & y < z");
+  });
+
+  it("keeps block structure (div/p/li) as line breaks rather than merging text", () => {
+    expect(noteHtmlToText("<div>A</div><div>B</div>")).toBe("A\nB");
+    expect(noteHtmlToText("first<div>second</div>")).toBe("first\nsecond");
+    expect(noteHtmlToText("<ul><li>one</li><li>two</li></ul>")).toBe("one\ntwo");
+  });
+
+  it("strips inline formatting tags but keeps their text", () => {
+    expect(noteHtmlToText("<b>bold</b> and <i>italic</i>")).toBe("bold and italic");
+  });
+
+  it("does not double-unescape (&amp;lt; stays literal &lt;)", () => {
+    expect(noteHtmlToText("a &amp;lt; b")).toBe("a &lt; b");
+  });
+
+  it("returns empty string for empty/whitespace html", () => {
+    expect(noteHtmlToText("")).toBe("");
+    expect(noteHtmlToText("<div></div>")).toBe("");
   });
 });
