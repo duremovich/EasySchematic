@@ -823,3 +823,99 @@ describe("notes & rooms read + notes CRUD (update_note / delete_note)", () => {
     expect(() => handlers.delete_note({ noteId: "device-1" })).toThrow(/not a note/);
   });
 });
+
+describe("batch structural ops (install_card_batch / place_device_in_rack_batch)", () => {
+  function chassis(id: string, slots: InstalledSlot[]): SchematicNode {
+    return { id, type: "device", position: { x: 0, y: 0 }, data: { label: id, deviceType: "chassis", ports: [], slots } as DeviceData } as SchematicNode;
+  }
+  function emptySlot(slotId: string, slotFamily: string): InstalledSlot {
+    return { slotId, label: slotId, slotFamily, portIds: [] };
+  }
+  function cardTpl(id: string, slotFamily: string): DeviceTemplate {
+    return { id, label: id, deviceType: id, slotFamily, ports: [{ id: "p0", label: "P0", direction: "input", signalType: "hdmi" }] } as DeviceTemplate;
+  }
+  function rackDevice(id: string, widthMm: number, heightMm: number): SchematicNode {
+    return { id, type: "device", position: { x: 0, y: 0 }, data: { label: id, deviceType: "test", ports: [], widthMm, heightMm } as DeviceData } as SchematicNode;
+  }
+  function rack(id: string): RackData {
+    return { id, label: id, rackType: "floor-19", heightU: 42, depthMm: 600, widthClass: "19in", position: { x: 0, y: 0 } };
+  }
+  function rackPage(id: string, racks: RackData[]): RackElevationPage {
+    return { id, label: id, type: "rack-elevation", racks, placements: [], accessories: [] };
+  }
+  function filledSlotIds() {
+    const slots = ((useSchematicStore.getState().nodes.find((n) => n.id === "chassis-1")!.data as DeviceData).slots ?? []);
+    return slots.filter((s) => s.cardTemplateId).map((s) => s.slotId);
+  }
+
+  it("install_card_batch installs every card and reports per-item success", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a"), emptySlot("slot-2", "fam-a")])],
+      edges: [],
+      customTemplates: [cardTpl("card-a", "fam-a")],
+    });
+    const res = handlers.install_card_batch({ installs: [
+      { deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "card-a" },
+      { deviceId: "chassis-1", slotId: "slot-2", cardTemplateId: "card-a" },
+    ] }) as { succeeded: number; failed: number };
+    expect(res).toMatchObject({ succeeded: 2, failed: 0 });
+    expect(filledSlotIds().sort()).toEqual(["slot-1", "slot-2"]);
+  });
+
+  it("install_card_batch is best-effort and a failed item pushes no undo step", () => {
+    useSchematicStore.setState({
+      nodes: [chassis("chassis-1", [emptySlot("slot-1", "fam-a")])],
+      edges: [],
+      customTemplates: [cardTpl("card-a", "fam-a")],
+    });
+    const undoBefore = useSchematicStore.getState().undoSize;
+    const res = handlers.install_card_batch({ installs: [
+      { deviceId: "chassis-1", slotId: "slot-1", cardTemplateId: "card-a" }, // ok
+      { deviceId: "chassis-1", slotId: "missing", cardTemplateId: "card-a" }, // fails pre-validation
+    ] }) as { succeeded: number; failed: number; results: { index: number; ok: boolean; error?: string }[] };
+    expect(res.succeeded).toBe(1);
+    expect(res.failed).toBe(1);
+    expect(res.results[1].ok).toBe(false);
+    // Only the successful install pushed undo (the failed item threw before swapCard).
+    expect(useSchematicStore.getState().undoSize).toBe(undoBefore + 1);
+  });
+
+  it("install_card_batch rejects an empty or non-array batch (shape error, not a fake success)", () => {
+    useSchematicStore.setState({ nodes: [], edges: [], customTemplates: [] });
+    expect(() => handlers.install_card_batch({ installs: [] })).toThrow();
+    expect(() => handlers.install_card_batch({} as Record<string, unknown>)).toThrow();
+  });
+
+  it("place_device_in_rack_batch places every device and reports per-item success", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", 480, 44.45), rackDevice("device-2", 480, 44.45)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const res = handlers.place_device_in_rack_batch({ placements: [
+      { deviceId: "device-1", rackId: "rack-1", uPosition: 1 },
+      { deviceId: "device-2", rackId: "rack-1", uPosition: 2 },
+    ] }) as { succeeded: number; failed: number };
+    expect(res).toMatchObject({ succeeded: 2, failed: 0 });
+    const page = useSchematicStore.getState().pages.find((p): p is RackElevationPage => p.type === "rack-elevation")!;
+    expect(page.placements).toHaveLength(2);
+  });
+
+  it("place_device_in_rack_batch is best-effort (occupied U fails) and a failed item pushes no undo step", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", 480, 44.45), rackDevice("device-2", 480, 44.45)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const undoBefore = useSchematicStore.getState().undoSize;
+    const res = handlers.place_device_in_rack_batch({ placements: [
+      { deviceId: "device-1", rackId: "rack-1", uPosition: 1 }, // ok
+      { deviceId: "device-2", rackId: "rack-1", uPosition: 1 }, // fails — U1 now occupied
+    ] }) as { succeeded: number; failed: number; results: { ok: boolean; error?: string }[] };
+    expect(res.succeeded).toBe(1);
+    expect(res.failed).toBe(1);
+    expect(res.results[1].ok).toBe(false);
+    // Only the successful placement pushed undo (the failed item threw before addPlacementSmart).
+    expect(useSchematicStore.getState().undoSize).toBe(undoBefore + 1);
+  });
+});

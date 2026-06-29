@@ -5,8 +5,9 @@
  * place_device_in_room), the Ship-5 "annotations" tool (add_note), the Ship-6
  * "slots / modular chassis" tools (list_slot_cards, install_card, remove_card), and the
  * Ship-7 "racks / rack elevation" tools (list_racks, create_rack, place_device_in_rack,
- * remove_device_from_rack), and the Ship-8 "notes" tools (update_note, delete_note;
- * get_schematic also reports rooms + notes). Each entry is a plain JSON-Schema tool
+ * remove_device_from_rack), the Ship-8 "notes" tools (update_note, delete_note;
+ * get_schematic also reports rooms + notes), and the Ship-9 "batch structural" tools
+ * (install_card_batch, place_device_in_rack_batch). Each entry is a plain JSON-Schema tool
  * definition; the call is relayed verbatim to the editor over the bridge, which validates
  * and executes it against the live store.
  *
@@ -377,6 +378,63 @@ export const TOOLS: ToolDef[] = [
         noteId: { type: "string", description: "The note id from get_schematic's notes." },
       },
       required: ["noteId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "install_card_batch",
+    description:
+      "Install several expansion cards into modular-chassis slots in one call — use this instead of repeated install_card calls. Best-effort: each install is attempted independently and the result lists per-item success or failure. Items are applied in array order, so an earlier install can affect a later one (two installs into the same slot leave only the first; a card that adds sub-slots can make a later install into one of them valid). Each card's slot family must match its slot, and a filled slot is never silently overwritten.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        installs: {
+          type: "array",
+          minItems: 1,
+          maxItems: 100,
+          description: "The cards to install.",
+          items: {
+            type: "object",
+            properties: {
+              deviceId: { type: "string", description: "The modular device (chassis) id." },
+              slotId: { type: "string", description: "The empty slot's id from get_device's slots." },
+              cardTemplateId: { type: "string", description: "A card templateId from list_slot_cards." },
+            },
+            required: ["deviceId", "slotId", "cardTemplateId"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["installs"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "place_device_in_rack_batch",
+    description:
+      "Mount several devices into racks in one call — use this instead of repeated place_device_in_rack calls. Best-effort: each placement is attempted independently and the result lists per-item success or failure. Placements are applied in array order, so an earlier one can affect a later one (it consumes the U span / half-rack side; a device already placed by an earlier item is rejected by a later one). Each item names its own rack; the same occupancy, 2-post-rear, already-placed and oversize/shelf-only rules as place_device_in_rack apply per item.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        placements: {
+          type: "array",
+          minItems: 1,
+          maxItems: 100,
+          description: "The rack placements to make.",
+          items: {
+            type: "object",
+            properties: {
+              deviceId: { type: "string", description: "The device id from get_schematic / list_devices." },
+              rackId: { type: "string", description: "The target rack id from list_racks." },
+              uPosition: { type: "number", description: "Bottom U position (1-based, from the bottom)." },
+              face: { type: "string", enum: ["front", "rear"], description: "Which face to mount on (default \"front\")." },
+            },
+            required: ["deviceId", "rackId", "uPosition"],
+            additionalProperties: false,
+          },
+        },
+      },
+      required: ["placements"],
       additionalProperties: false,
     },
   },

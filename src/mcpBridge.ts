@@ -45,6 +45,8 @@ import {
   type RemoveDeviceFromRackParams,
   type UpdateNoteParams,
   type DeleteNoteParams,
+  type InstallCardBatchParams,
+  type PlaceDeviceInRackBatchParams,
   type PortFace,
 } from "./mcp/protocol";
 import {
@@ -306,6 +308,147 @@ function connectDevicesCore(p: ConnectDevicesParams) {
     );
   }
   return { connected: true, edgeId: edge.id, sourceHandle, targetHandle };
+}
+
+/** Install one expansion card into an empty slot. Shared by install_card and
+ *  install_card_batch so the two behave identically. Fully pre-validates (device/slot
+ *  exist, slot empty, card resolves the way swapCard will, family matches) before the
+ *  structural swapCard, then re-reads to confirm. Throws CommandError on any failure. */
+function installCardCore(p: InstallCardParams) {
+  const { deviceId, slotId, cardTemplateId } = p;
+  const device = requireDevice(deviceId);
+  const slot = requireSlot(device, slotId);
+  // Refuse to overwrite a filled slot: swapCard would replace the card and drop its
+  // ports + connected connections. Make the AI remove_card first so that loss is
+  // explicit, never silent.
+  if (slot.cardTemplateId) {
+    throw new CommandError(
+      `Slot "${slotId}" already holds a card ("${slot.cardLabel ?? slot.cardTemplateId}"). ` +
+        `Remove it first with remove_card, then install.`,
+    );
+  }
+  if (!cardTemplateId) throw new CommandError("cardTemplateId is required.");
+  // Resolve exactly the way swapCard will (getTemplateById over the current library
+  // view + custom templates), so a card we accept is one swapCard can actually find.
+  const card = getTemplateById(cardTemplateId, st().customTemplates);
+  if (!card) {
+    throw new CommandError(
+      `No card template found for "${cardTemplateId}". Call list_slot_cards (or ` +
+        `search_templates to load the full library) first.`,
+    );
+  }
+  const compat = validateCardForSlot(slot.slotFamily, card.slotFamily);
+  if (!compat.ok) throw new CommandError(compat.error);
+  if (!card.id) throw new CommandError(`Card template "${cardTemplateId}" has no id and cannot be installed.`);
+  st().swapCard(deviceId, slotId, card.id);
+  // Confirm by re-reading the slot (swapCard returns void); guards against any
+  // residual resolution mismatch rather than reporting a blind success. NOTE: this is
+  // the one throw that fires AFTER swapCard (which pushes undo before mutating), so it is
+  // the single exception to install_card_batch's "a failed item changes nothing" contract
+  // — but it is a defensive guard against a swapCard regression, not a reachable path
+  // given the pre-validation above (slot empty, card resolves, family matches). All the
+  // ordinary install_card failures throw before swapCard, so a failed batch item normally
+  // leaves no mutation and no undo step.
+  const after = requireSlot(requireDevice(deviceId), slotId);
+  if (after.cardTemplateId !== card.id) {
+    throw new CommandError(`Card "${card.id}" could not be installed into slot "${slotId}".`);
+  }
+  return {
+    deviceId,
+    slotId,
+    cardTemplateId: card.id,
+    cardLabel: after.cardLabel,
+    portIds: after.portIds,
+  };
+}
+
+/** Mount one device into a rack at a U position. Shared by place_device_in_rack and
+ *  place_device_in_rack_batch. Pre-checks isRackSlotAvailable (the store action does NOT)
+ *  and the editor's one-rack / 2-post-rear / oversize / shelf-only rules before the
+ *  structural addPlacementSmart. Throws CommandError on any failure. */
+function placeDeviceInRackCore(p: PlaceDeviceInRackParams) {
+  const { deviceId, rackId, uPosition, face } = p;
+  const node = requireDevice(deviceId);
+  const data = node.data as DeviceData;
+  const { page, rack } = requireRack(rackId);
+  const f = validateRackFace(face);
+  if (!f.ok) throw new CommandError(f.error);
+  const u = validateUPosition(uPosition);
+  if (!u.ok) throw new CommandError(u.error);
+
+  // 2-post frames have no rear face (mirrors the editor's isRackRearBlocked).
+  if (f.face === "rear" && rack.rackType === "open-2post") {
+    throw new CommandError(`Rack "${rackId}" is a 2-post frame, which has no rear face — use face "front".`);
+  }
+
+  // A device is placed in at most one rack at a time: the editor hides "Place in Rack"
+  // once a device is placed and excludes already-placed devices from auto-fill, but the
+  // store does not enforce singularity. Reject a duplicate placement explicitly.
+  for (const rp of rackPages()) {
+    const existing = rp.placements.find((pl) => pl.deviceNodeId === deviceId);
+    if (existing) {
+      throw new CommandError(
+        `Device "${deviceId}" is already placed in a rack (placement "${existing.id}"). ` +
+          `Remove it first with remove_device_from_rack.`,
+      );
+    }
+  }
+
+  const form = inferRackForm(data);
+  if (form === "oversize") {
+    throw new CommandError(`Device "${deviceId}" is too wide to mount in a 19" rack (oversize).`);
+  }
+  if (form === "shelf-only") {
+    // Shelf-only gear (too small for a direct rack-mount panel) needs a shelf to sit on.
+    // The editor creates that shelf and lets the user position the device on it; doing
+    // that from the bridge would mean auto-creating a shelf whose later cleanup can't be
+    // told apart from a user-built shelf (no provenance flag on the data). Rather than
+    // risk dropping a user's shelf or leaving an orphan, shelf placement stays an editor
+    // task for this slice.
+    throw new CommandError(
+      `Device "${deviceId}" is too small for a direct rack-mount (it needs a shelf). ` +
+        `Add a shelf and place it on the shelf in the editor.`,
+    );
+  }
+  const heightU = inferRackHeightU(data);
+
+  // addPlacementSmart does NOT check occupancy — it appends the placement unconditionally
+  // (only its oversize/no-page/no-device early returns bail). So the bridge MUST pre-check
+  // isRackSlotAvailable here, or two devices could be stacked into the same U range.
+  let preferredHalfRackSide: "left" | "right" | undefined;
+  if (form === "half") {
+    // Pick the exact side that is free per the authoritative occupancy check, then pass
+    // it to addPlacementSmart — its internal side heuristic is weaker (ignores multi-U
+    // overlap, full-width blockers and accessories), so "either side free" alone is not
+    // safe. isRackSlotAvailable(side)=true guarantees its sideTaken(side)=false, so the
+    // side we pass is honored.
+    const leftFree = st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face, "left");
+    const rightFree = st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face, "right");
+    preferredHalfRackSide = leftFree ? "left" : rightFree ? "right" : undefined;
+    if (!preferredHalfRackSide) {
+      throw new CommandError(`No free half-rack space at U${u.u} on the ${f.face} of rack "${rackId}".`);
+    }
+  } else {
+    // full / unknown — full-width direct placement spanning heightU.
+    if (!st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face)) {
+      throw new CommandError(`U${u.u}–${u.u + heightU - 1} on the ${f.face} of rack "${rackId}" is occupied or out of bounds.`);
+    }
+  }
+
+  const res = st().addPlacementSmart(page.id, rackId, deviceId, u.u, f.face, preferredHalfRackSide);
+  if (!res.ok) {
+    throw new CommandError(`Could not place device "${deviceId}" in rack "${rackId}" (${res.reason}).`);
+  }
+  return {
+    placementId: res.placementId,
+    rackId,
+    deviceId,
+    uPosition: u.u,
+    face: f.face,
+    form,
+    heightU,
+    halfRackSide: preferredHalfRackSide,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -571,46 +714,13 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
     return { slotId, slotFamily: slot.slotFamily, cards };
   },
 
-  install_card: (params) => {
-    const { deviceId, slotId, cardTemplateId } = params as unknown as InstallCardParams;
-    const device = requireDevice(deviceId);
-    const slot = requireSlot(device, slotId);
-    // Refuse to overwrite a filled slot: swapCard would replace the card and drop its
-    // ports + connected connections. Make the AI remove_card first so that loss is
-    // explicit, never silent.
-    if (slot.cardTemplateId) {
-      throw new CommandError(
-        `Slot "${slotId}" already holds a card ("${slot.cardLabel ?? slot.cardTemplateId}"). ` +
-          `Remove it first with remove_card, then install.`,
-      );
-    }
-    if (!cardTemplateId) throw new CommandError("cardTemplateId is required.");
-    // Resolve exactly the way swapCard will (getTemplateById over the current library
-    // view + custom templates), so a card we accept is one swapCard can actually find.
-    const card = getTemplateById(cardTemplateId, st().customTemplates);
-    if (!card) {
-      throw new CommandError(
-        `No card template found for "${cardTemplateId}". Call list_slot_cards (or ` +
-          `search_templates to load the full library) first.`,
-      );
-    }
-    const compat = validateCardForSlot(slot.slotFamily, card.slotFamily);
-    if (!compat.ok) throw new CommandError(compat.error);
-    if (!card.id) throw new CommandError(`Card template "${cardTemplateId}" has no id and cannot be installed.`);
-    st().swapCard(deviceId, slotId, card.id);
-    // Confirm by re-reading the slot (swapCard returns void); guards against any
-    // residual resolution mismatch rather than reporting a blind success.
-    const after = requireSlot(requireDevice(deviceId), slotId);
-    if (after.cardTemplateId !== card.id) {
-      throw new CommandError(`Card "${card.id}" could not be installed into slot "${slotId}".`);
-    }
-    return {
-      deviceId,
-      slotId,
-      cardTemplateId: card.id,
-      cardLabel: after.cardLabel,
-      portIds: after.portIds,
-    };
+  install_card: (params) => installCardCore((params ?? {}) as unknown as InstallCardParams),
+
+  install_card_batch: (params) => {
+    const { installs } = (params ?? {}) as unknown as InstallCardBatchParams;
+    const outcome = runBatch(installs, MAX_BATCH_ITEMS, (p: InstallCardParams) => installCardCore(p));
+    if (!outcome.ok) throw new CommandError(outcome.error);
+    return { results: outcome.results, succeeded: outcome.succeeded, failed: outcome.failed };
   },
 
   remove_card: (params) => {
@@ -707,89 +817,13 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
     };
   },
 
-  place_device_in_rack: (params) => {
-    const { deviceId, rackId, uPosition, face } = params as unknown as PlaceDeviceInRackParams;
-    const node = requireDevice(deviceId);
-    const data = node.data as DeviceData;
-    const { page, rack } = requireRack(rackId);
-    const f = validateRackFace(face);
-    if (!f.ok) throw new CommandError(f.error);
-    const u = validateUPosition(uPosition);
-    if (!u.ok) throw new CommandError(u.error);
+  place_device_in_rack: (params) => placeDeviceInRackCore((params ?? {}) as unknown as PlaceDeviceInRackParams),
 
-    // 2-post frames have no rear face (mirrors the editor's isRackRearBlocked).
-    if (f.face === "rear" && rack.rackType === "open-2post") {
-      throw new CommandError(`Rack "${rackId}" is a 2-post frame, which has no rear face — use face "front".`);
-    }
-
-    // A device is placed in at most one rack at a time: the editor hides "Place in Rack"
-    // once a device is placed and excludes already-placed devices from auto-fill, but the
-    // store does not enforce singularity. Reject a duplicate placement explicitly.
-    for (const p of rackPages()) {
-      const existing = p.placements.find((pl) => pl.deviceNodeId === deviceId);
-      if (existing) {
-        throw new CommandError(
-          `Device "${deviceId}" is already placed in a rack (placement "${existing.id}"). ` +
-            `Remove it first with remove_device_from_rack.`,
-        );
-      }
-    }
-
-    const form = inferRackForm(data);
-    if (form === "oversize") {
-      throw new CommandError(`Device "${deviceId}" is too wide to mount in a 19" rack (oversize).`);
-    }
-    if (form === "shelf-only") {
-      // Shelf-only gear (too small for a direct rack-mount panel) needs a shelf to sit on.
-      // The editor creates that shelf and lets the user position the device on it; doing
-      // that from the bridge would mean auto-creating a shelf whose later cleanup can't be
-      // told apart from a user-built shelf (no provenance flag on the data). Rather than
-      // risk dropping a user's shelf or leaving an orphan, shelf placement stays an editor
-      // task for this slice.
-      throw new CommandError(
-        `Device "${deviceId}" is too small for a direct rack-mount (it needs a shelf). ` +
-          `Add a shelf and place it on the shelf in the editor.`,
-      );
-    }
-    const heightU = inferRackHeightU(data);
-
-    // addPlacementSmart does NOT check occupancy — it appends the placement unconditionally
-    // (only its oversize/no-page/no-device early returns bail). So the bridge MUST pre-check
-    // isRackSlotAvailable here, or two devices could be stacked into the same U range.
-    let preferredHalfRackSide: "left" | "right" | undefined;
-    if (form === "half") {
-      // Pick the exact side that is free per the authoritative occupancy check, then pass
-      // it to addPlacementSmart — its internal side heuristic is weaker (ignores multi-U
-      // overlap, full-width blockers and accessories), so "either side free" alone is not
-      // safe. isRackSlotAvailable(side)=true guarantees its sideTaken(side)=false, so the
-      // side we pass is honored.
-      const leftFree = st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face, "left");
-      const rightFree = st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face, "right");
-      preferredHalfRackSide = leftFree ? "left" : rightFree ? "right" : undefined;
-      if (!preferredHalfRackSide) {
-        throw new CommandError(`No free half-rack space at U${u.u} on the ${f.face} of rack "${rackId}".`);
-      }
-    } else {
-      // full / unknown — full-width direct placement spanning heightU.
-      if (!st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face)) {
-        throw new CommandError(`U${u.u}–${u.u + heightU - 1} on the ${f.face} of rack "${rackId}" is occupied or out of bounds.`);
-      }
-    }
-
-    const res = st().addPlacementSmart(page.id, rackId, deviceId, u.u, f.face, preferredHalfRackSide);
-    if (!res.ok) {
-      throw new CommandError(`Could not place device "${deviceId}" in rack "${rackId}" (${res.reason}).`);
-    }
-    return {
-      placementId: res.placementId,
-      rackId,
-      deviceId,
-      uPosition: u.u,
-      face: f.face,
-      form,
-      heightU,
-      halfRackSide: preferredHalfRackSide,
-    };
+  place_device_in_rack_batch: (params) => {
+    const { placements } = (params ?? {}) as unknown as PlaceDeviceInRackBatchParams;
+    const outcome = runBatch(placements, MAX_BATCH_ITEMS, (p: PlaceDeviceInRackParams) => placeDeviceInRackCore(p));
+    if (!outcome.ok) throw new CommandError(outcome.error);
+    return { results: outcome.results, succeeded: outcome.succeeded, failed: outcome.failed };
   },
 
   remove_device_from_rack: (params) => {
