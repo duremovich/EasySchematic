@@ -2,9 +2,10 @@
  * MCP tool catalog: the Ship-1 "working core" tools, the Ship-2 "editing & layout"
  * tools (move_device, delete_connection), the Ship-3 "batch" tools (add_devices,
  * connect_devices_batch), the Ship-4 "rooms" tools (create_room,
- * place_device_in_room), the Ship-5 "annotations" tool (add_note), and the Ship-6
- * "slots / modular chassis" tools (list_slot_cards, install_card, remove_card). Each
- * entry is a plain JSON-Schema tool definition; the call
+ * place_device_in_room), the Ship-5 "annotations" tool (add_note), the Ship-6
+ * "slots / modular chassis" tools (list_slot_cards, install_card, remove_card), and the
+ * Ship-7 "racks / rack elevation" tools (list_racks, create_rack, place_device_in_rack,
+ * remove_device_from_rack). Each entry is a plain JSON-Schema tool definition; the call
  * is relayed verbatim to the editor over the bridge, which validates and executes it
  * against the live store.
  *
@@ -292,6 +293,62 @@ export const TOOLS: ToolDef[] = [
         slotId: { type: "string", description: "The filled slot's id from get_device's slots." },
       },
       required: ["deviceId", "slotId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "list_racks",
+    description:
+      "List the rack elevations: every rack-elevation page, each rack on it (id, label, type, height in U, depth) and the devices currently placed in each rack (placementId, device, U position, face). Rack elevations are a separate view from the schematic canvas. Call this first to get the pageId/rackId/placementId values the other rack tools need.",
+    inputSchema: noArgs,
+  },
+  {
+    name: "create_rack",
+    description:
+      "Create an equipment rack. If pageId is omitted a new rack-elevation page is created to hold it; pass a pageId from list_racks to add the rack to an existing page. Returns the new pageId and rackId. Height (U) and depth (mm) are clamped to the editor's ranges (2–60U, 100–2000mm).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        label: { type: "string", description: "Rack name (default \"Rack\")." },
+        heightU: { type: "number", description: "Rack height in rack units (2–60, default 42)." },
+        rackType: {
+          type: "string",
+          enum: ["floor-19", "wall-mount", "desktop", "open-2post", "open-4post"],
+          description: "Rack enclosure type (default \"floor-19\").",
+        },
+        depthMm: { type: "number", description: "Rack depth in mm (100–2000, default 600)." },
+        pageId: { type: "string", description: "Existing rack-elevation page id from list_racks. Omit to create a new page." },
+        pageLabel: { type: "string", description: "Name for the new rack page (used only when pageId is omitted; default \"Rack Elevation\")." },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "place_device_in_rack",
+    description:
+      "Mount a device from the schematic into a rack at a U position. The device's height in U is inferred from its physical dimensions, and half-rack gear is placed on a free side automatically. Fails if the U span is occupied or out of the rack's bounds, if the device is already placed in a rack (remove it first), for a rear placement on a 2-post rack, or if the device is too small to rack-mount directly (it needs a shelf — add that in the editor) or too wide to fit. uPosition is 1-based from the bottom.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        deviceId: { type: "string", description: "The device id from get_schematic / list_devices." },
+        rackId: { type: "string", description: "The target rack id from list_racks." },
+        uPosition: { type: "number", description: "Bottom U position (1-based, from the bottom)." },
+        face: { type: "string", enum: ["front", "rear"], description: "Which face to mount on (default \"front\")." },
+      },
+      required: ["deviceId", "rackId", "uPosition"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "remove_device_from_rack",
+    description:
+      "Remove a device's rack placement (from list_racks) so its U position frees up. The device stays on the schematic; only its position in the rack is removed.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        placementId: { type: "string", description: "The placement id from list_racks." },
+      },
+      required: ["placementId"],
       additionalProperties: false,
     },
   },

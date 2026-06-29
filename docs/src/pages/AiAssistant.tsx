@@ -143,6 +143,16 @@ node dist/index.js`}</code>
           (Defining new slots is still done in the editor.)
         </li>
         <li>
+          <strong>Build a rack elevation</strong> — the assistant can see your rack
+          elevations, create a rack (it makes a rack-elevation page if you don't have
+          one), mount a device into a rack at a given U position (front or rear), and
+          remove a device from a rack. It won't stack two devices in the same space,
+          place a device that's already in another rack, or use the rear of a 2-post
+          frame. Full- and half-rack gear is placed automatically from each device's
+          physical size; very small gear that needs a shelf, and rack accessories like
+          shelves and blanking panels, are still added in the editor.
+        </li>
+        <li>
           <strong>Work in batches</strong> — add many devices, or make many
           connections, in a single request. Each item is handled on its own:
           if one fails, the rest still go through, and the assistant gets back a

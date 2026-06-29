@@ -19,6 +19,10 @@ import type {
   DeviceTemplate,
   InstalledSlot,
   NoteData,
+  RackAccessory,
+  RackData,
+  RackDevicePlacement,
+  RackElevationPage,
   SchematicNode,
   StubLabelData,
 } from "../types";
@@ -520,5 +524,234 @@ describe("connection removal (delete_connection path)", () => {
     expect(useSchematicStore.getState().edges).toEqual([]);
     useSchematicStore.getState().undo();
     expect(useSchematicStore.getState().edges.map((e) => e.id)).toEqual(["edge-1"]);
+  });
+});
+
+describe("rack tools (list_racks / create_rack / place_device_in_rack / remove_device_from_rack)", () => {
+  // A rack-mountable device. Width/height drive inferRackForm: ~480mm wide + whole-U
+  // height -> "full"; ~220mm -> "half"; <200mm -> "shelf-only"; >~452mm -> "oversize".
+  function rackDevice(id: string, widthMm: number, heightMm: number): SchematicNode {
+    return {
+      id,
+      type: "device",
+      position: { x: 0, y: 0 },
+      data: { label: id, deviceType: "test", ports: [], widthMm, heightMm } as DeviceData,
+    } as SchematicNode;
+  }
+  function rack(id: string, opts: Partial<RackData> = {}): RackData {
+    return { id, label: id, rackType: "floor-19", heightU: 42, depthMm: 600, widthClass: "19in", position: { x: 0, y: 0 }, ...opts };
+  }
+  function rackPage(id: string, racks: RackData[] = [], placements: RackDevicePlacement[] = [], accessories: RackAccessory[] = []): RackElevationPage {
+    return { id, label: id, type: "rack-elevation", racks, placements, accessories };
+  }
+  function pages(): RackElevationPage[] {
+    return useSchematicStore.getState().pages.filter((p): p is RackElevationPage => p.type === "rack-elevation");
+  }
+  const FULL_1U = { widthMm: 480, heightMm: 44.45 };
+  const HALF_1U = { widthMm: 220, heightMm: 44.45 };
+
+  it("list_racks reports pages, racks and placements with resolved device labels", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")], [
+        { id: "pl-1", rackId: "rack-1", deviceNodeId: "device-1", uPosition: 3, face: "front" },
+      ])],
+    });
+    const res = handlers.list_racks({}) as {
+      pageCount: number;
+      pages: { pageId: string; racks: { rackId: string; heightU: number; placements: { placementId: string; deviceLabel: string | null; uPosition: number; heightU: number | null }[] }[] }[];
+    };
+    expect(res.pageCount).toBe(1);
+    expect(res.pages[0].pageId).toBe("rk-1");
+    expect(res.pages[0].racks[0].rackId).toBe("rack-1");
+    const pl = res.pages[0].racks[0].placements[0];
+    expect(pl).toMatchObject({ placementId: "pl-1", deviceLabel: "device-1", uPosition: 3, heightU: 1 });
+  });
+
+  it("create_rack with no pageId creates a rack page and a rack with defaults", () => {
+    useSchematicStore.setState({ nodes: [], edges: [], pages: [] });
+    const res = handlers.create_rack({ label: "Head End" }) as { pageId: string; rackId: string; rackType: string; heightU: number; depthMm: number; createdPage: boolean };
+    expect(res.createdPage).toBe(true);
+    expect(res).toMatchObject({ rackType: "floor-19", heightU: 42, depthMm: 600 });
+    const ps = pages();
+    expect(ps).toHaveLength(1);
+    expect(ps[0].id).toBe(res.pageId);
+    expect(ps[0].racks[0].id).toBe(res.rackId);
+    expect(ps[0].racks[0].label).toBe("Head End");
+  });
+
+  it("create_rack with an existing pageId adds the rack at a page-local x offset", () => {
+    useSchematicStore.setState({ nodes: [], edges: [], pages: [rackPage("rk-1", [rack("rack-1", { position: { x: 0, y: 0 } })])] });
+    const res = handlers.create_rack({ pageId: "rk-1", label: "Second" }) as { pageId: string; rackId: string; createdPage: boolean };
+    expect(res.createdPage).toBe(false);
+    expect(res.pageId).toBe("rk-1");
+    const page = pages()[0];
+    expect(page.racks).toHaveLength(2);
+    expect(page.racks[1].position.x).toBe(400); // second rack on the page
+  });
+
+  it("create_rack rejects an unknown pageId and an invalid rackType", () => {
+    useSchematicStore.setState({ nodes: [], edges: [], pages: [] });
+    expect(() => handlers.create_rack({ pageId: "nope" })).toThrow(/No rack-elevation page/);
+    expect(() => handlers.create_rack({ rackType: "server-rack" })).toThrow(/rackType must be one of/);
+  });
+
+  it("place_device_in_rack mounts a full-width device and records the placement", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const res = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 5 }) as { placementId: string; form: string; heightU: number; face: string };
+    expect(res).toMatchObject({ form: "full", heightU: 1, face: "front" });
+    const page = pages()[0];
+    expect(page.placements).toHaveLength(1);
+    expect(page.placements[0]).toMatchObject({ deviceNodeId: "device-1", uPosition: 5, face: "front" });
+  });
+
+  it("place_device_in_rack rejects an occupied U range (addPlacementSmart does not check)", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm), rackDevice("device-2", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 1 });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-2", rackId: "rack-1", uPosition: 1 })).toThrow(/occupied|out of bounds/);
+    expect(pages()[0].placements).toHaveLength(1); // the overlapping placement was not created
+  });
+
+  it("place_device_in_rack rejects a U position past the rack's height", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1", { heightU: 4 })])],
+    });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 5 })).toThrow(/occupied|out of bounds/);
+  });
+
+  it("place_device_in_rack refuses to place a device that is already in a rack", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 1 });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 10 })).toThrow(/already placed/);
+  });
+
+  it("place_device_in_rack rejects an oversize device", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", 800, 44.45)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 1 })).toThrow(/oversize/);
+  });
+
+  it("place_device_in_rack rejects a rear placement on a 2-post rack", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1", { rackType: "open-2post" })])],
+    });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 1, face: "rear" })).toThrow(/2-post|rear/);
+  });
+
+  it("place_device_in_rack fits two half-rack devices side by side at the same U", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", HALF_1U.widthMm, HALF_1U.heightMm), rackDevice("device-2", HALF_1U.widthMm, HALF_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    const a = handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 1 }) as { form: string; halfRackSide?: string };
+    const b = handlers.place_device_in_rack({ deviceId: "device-2", rackId: "rack-1", uPosition: 1 }) as { form: string; halfRackSide?: string };
+    expect(a.form).toBe("half");
+    expect(b.form).toBe("half");
+    // The two land on opposite sides (the exact validated side is passed to the store).
+    expect(a.halfRackSide).not.toBe(b.halfRackSide);
+    expect(pages()[0].placements).toHaveLength(2);
+  });
+
+  it("place_device_in_rack is undoable", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 1 });
+    expect(pages()[0].placements).toHaveLength(1);
+    useSchematicStore.getState().undo();
+    expect(pages()[0].placements).toHaveLength(0);
+  });
+
+  it("remove_device_from_rack removes a placement and rejects an unknown id", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")], [
+        { id: "pl-1", rackId: "rack-1", deviceNodeId: "device-1", uPosition: 1, face: "front" },
+      ])],
+    });
+    const res = handlers.remove_device_from_rack({ placementId: "pl-1" }) as { removed: boolean };
+    expect(res.removed).toBe(true);
+    expect(pages()[0].placements).toHaveLength(0);
+    expect(() => handlers.remove_device_from_rack({ placementId: "pl-404" })).toThrow(/No rack placement/);
+  });
+
+  it("place_device_in_rack rejects shelf-only gear (shelf placement is an editor task) and creates nothing", () => {
+    // ~150mm wide -> shelf-only (too small for a direct rack-mount panel).
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", 150, 50)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")])],
+    });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 2 })).toThrow(/needs a shelf|too small/);
+    // The bridge never auto-creates a shelf, so nothing is left behind.
+    expect(pages()[0].placements).toHaveLength(0);
+    expect(pages()[0].accessories).toHaveLength(0);
+  });
+
+  it("list_racks reports rack accessories so a U blocked by a shelf or panel is visible", () => {
+    useSchematicStore.setState({
+      nodes: [],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")], [], [
+        { id: "acc-1", rackId: "rack-1", type: "shelf", uPosition: 4, heightU: 1, face: "front" },
+      ])],
+    });
+    const listed = handlers.list_racks({}) as { pages: { racks: { accessories: { accessoryId: string; type: string; uPosition: number; heightU: number }[] }[] }[] };
+    expect(listed.pages[0].racks[0].accessories).toHaveLength(1);
+    expect(listed.pages[0].racks[0].accessories[0]).toMatchObject({ accessoryId: "acc-1", type: "shelf", uPosition: 4, heightU: 1 });
+  });
+
+  it("create_rack fails on an ambiguous pageId (duplicate page ids) rather than writing to both", () => {
+    useSchematicStore.setState({
+      nodes: [],
+      edges: [],
+      pages: [rackPage("dup", [rack("rack-1")]), rackPage("dup", [rack("rack-2")])],
+    });
+    expect(() => handlers.create_rack({ pageId: "dup", label: "X" })).toThrow(/ambiguous/);
+  });
+
+  it("place_device_in_rack rejects a U blocked by an accessory (not just by another device)", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-1")], [], [
+        { id: "acc-1", rackId: "rack-1", type: "shelf", uPosition: 1, heightU: 1, face: "front" },
+      ])],
+    });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-1", uPosition: 1 })).toThrow(/occupied|out of bounds/);
+    expect(pages()[0].placements).toHaveLength(0);
+  });
+
+  it("place_device_in_rack rejects an ambiguous rackId (duplicate rack ids across pages)", () => {
+    useSchematicStore.setState({
+      nodes: [rackDevice("device-1", FULL_1U.widthMm, FULL_1U.heightMm)],
+      edges: [],
+      pages: [rackPage("rk-1", [rack("rack-dup")]), rackPage("rk-2", [rack("rack-dup")])],
+    });
+    expect(() => handlers.place_device_in_rack({ deviceId: "device-1", rackId: "rack-dup", uPosition: 1 })).toThrow(/ambiguous/);
   });
 });

@@ -3,7 +3,7 @@
  * unit-testable in isolation. The bridge (`src/mcpBridge.ts`) wraps these and
  * applies their results through the store actions.
  */
-import { SAFE_DEVICE_FIELDS, type PortFace } from "./protocol";
+import { SAFE_DEVICE_FIELDS, RACK_TYPES, type PortFace } from "./protocol";
 
 export interface ClassifiedProperties {
   /** New device label, if `label` was supplied (apply via updateDeviceLabel). */
@@ -260,4 +260,75 @@ export function runBatch<I, T>(
     }
   });
   return { ok: true, results, succeeded, failed };
+}
+
+// ── Rack helpers (Ship 7) ──────────────────────────────────────────
+// Pure validators for the rack tools. The store-state-dependent checks (slot
+// availability, which page holds a rack) stay in the bridge handler; these cover only
+// the untrusted scalar inputs that arrive over the bridge.
+
+export type UPositionResult =
+  | { ok: true; u: number }
+  | { ok: false; error: string };
+
+/** Validate a rack U position. Must be a whole number >= 1 (1-based, bottom-up). The
+ *  upper bound is rack-specific and is enforced by the store's isRackSlotAvailable, not
+ *  here. */
+export function validateUPosition(u: unknown): UPositionResult {
+  if (typeof u !== "number" || !Number.isInteger(u) || u < 1) {
+    return { ok: false, error: "uPosition must be a whole number of 1 or more (1-based, from the bottom)." };
+  }
+  return { ok: true, u };
+}
+
+export type RackFaceResult =
+  | { ok: true; face: "front" | "rear" }
+  | { ok: false; error: string };
+
+/** Validate the optional rack face. Omitted -> "front". Only "front"/"rear" are valid
+ *  (the 2-post-rear restriction is rack-specific and checked in the handler). */
+export function validateRackFace(face: unknown): RackFaceResult {
+  if (face === undefined) return { ok: true, face: "front" };
+  if (face === "front" || face === "rear") return { ok: true, face };
+  return { ok: false, error: `face must be "front" or "rear".` };
+}
+
+/** Editor clamps for a rack, mirroring RackSidebar.tsx so the bridge can't create a rack
+ *  outside the range a user could build by hand. */
+export const RACK_MIN_HEIGHT_U = 2;
+export const RACK_MAX_HEIGHT_U = 60;
+export const RACK_MIN_DEPTH_MM = 100;
+export const RACK_MAX_DEPTH_MM = 2000;
+export const DEFAULT_RACK_HEIGHT_U = 42;
+export const DEFAULT_RACK_DEPTH_MM = 600;
+
+export type RackSpecResult =
+  | { ok: true; rackType: (typeof RACK_TYPES)[number]; heightU: number; depthMm: number }
+  | { ok: false; error: string };
+
+/** Validate + normalize a create_rack spec. rackType defaults to "floor-19" and must be
+ *  one of RACK_TYPES. heightU/depthMm default to 42U / 600mm and are rounded then clamped
+ *  to the editor's ranges; a non-numeric (but supplied) value is rejected rather than
+ *  silently defaulted. */
+export function validateRackSpec(
+  rackType: unknown,
+  heightU: unknown,
+  depthMm: unknown,
+): RackSpecResult {
+  const rt = rackType === undefined ? "floor-19" : rackType;
+  if (typeof rt !== "string" || !(RACK_TYPES as readonly string[]).includes(rt)) {
+    return { ok: false, error: `rackType must be one of: ${RACK_TYPES.join(", ")}.` };
+  }
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(v)));
+  let h = DEFAULT_RACK_HEIGHT_U;
+  if (heightU !== undefined) {
+    if (!Number.isFinite(heightU)) return { ok: false, error: "heightU must be a finite number." };
+    h = clamp(heightU as number, RACK_MIN_HEIGHT_U, RACK_MAX_HEIGHT_U);
+  }
+  let d = DEFAULT_RACK_DEPTH_MM;
+  if (depthMm !== undefined) {
+    if (!Number.isFinite(depthMm)) return { ok: false, error: "depthMm must be a finite number." };
+    d = clamp(depthMm as number, RACK_MIN_DEPTH_MM, RACK_MAX_DEPTH_MM);
+  }
+  return { ok: true, rackType: rt as (typeof RACK_TYPES)[number], heightU: h, depthMm: d };
 }

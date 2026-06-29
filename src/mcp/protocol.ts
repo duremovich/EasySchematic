@@ -22,8 +22,10 @@ export const PROTOCOL_VERSION = 1;
  *  "editing & layout" tools (move_device, delete_connection), the two Ship-3
  *  "batch" tools (add_devices, connect_devices_batch), the two Ship-4
  *  "rooms" tools (create_room, place_device_in_room), the Ship-5
- *  "annotations" tool (add_note), and the three Ship-6 "slots / modular chassis"
- *  tools (list_slot_cards, install_card, remove_card). */
+ *  "annotations" tool (add_note), the three Ship-6 "slots / modular chassis"
+ *  tools (list_slot_cards, install_card, remove_card), and the four Ship-7
+ *  "racks / rack elevation" tools (list_racks, create_rack, place_device_in_rack,
+ *  remove_device_from_rack). */
 export type CommandType =
   | "get_schematic"
   | "list_devices"
@@ -42,7 +44,11 @@ export type CommandType =
   | "add_note"
   | "list_slot_cards"
   | "install_card"
-  | "remove_card";
+  | "remove_card"
+  | "list_racks"
+  | "create_rack"
+  | "place_device_in_rack"
+  | "remove_device_from_rack";
 
 /** Max items accepted by a single batch tool call (input arrives over the bridge,
  *  so it is capped). The mcp-server tool schemas mirror this as `maxItems`. */
@@ -51,6 +57,11 @@ export const MAX_BATCH_ITEMS = 100;
 /** Which two-sided face of a port to wire. Required only for bidirectional ports
  *  (`in`/`out`) and passthrough ports (`rear`/`front`); ignored for plain ports. */
 export type PortFace = "in" | "out" | "rear" | "front";
+
+/** The rack enclosure types, mirroring `RackType` in `src/types.ts`. Kept here as the
+ *  single source the bridge validates against (create_rack); the server tool schema
+ *  mirrors the same five values. */
+export const RACK_TYPES = ["floor-19", "wall-mount", "desktop", "open-2post", "open-4post"] as const;
 
 // ---------------------------------------------------------------------------
 // App -> server: handshake. The app proves it is the real editor (token) and the
@@ -223,6 +234,42 @@ export interface RemoveCardParams {
   deviceId: string;
   /** The (filled) slot's id, from get_device's `slots`. */
   slotId: string;
+}
+
+export interface CreateRackParams {
+  /** Display name for the rack. Defaults to "Rack". */
+  label?: string;
+  /** Rack height in rack units. Clamped to the editor's range [2, 60]. Default 42. */
+  heightU?: number;
+  /** One of RACK_TYPES. Default "floor-19". */
+  rackType?: string;
+  /** Rack depth in mm. Clamped to the editor's range [100, 2000]. Default 600. */
+  depthMm?: number;
+  /** Target rack-elevation page id (from list_racks). When omitted, a new rack page
+   *  is created and the rack is added to it. */
+  pageId?: string;
+  /** Name for the new rack page, used only when `pageId` is omitted. Default
+   *  "Rack Elevation". */
+  pageLabel?: string;
+}
+
+export interface PlaceDeviceInRackParams {
+  /** The device (from get_schematic) to mount in the rack. */
+  deviceId: string;
+  /** The target rack's id, from list_racks. Its page is derived from this id. */
+  rackId: string;
+  /** Bottom U position (1-based, counted from the bottom). The device's height in U
+   *  is inferred from its dimensions; the call fails if the span is occupied or out of
+   *  the rack's bounds. */
+  uPosition: number;
+  /** Which face to mount on; defaults to "front". "rear" is rejected on 2-post racks. */
+  face?: "front" | "rear";
+}
+
+export interface RemoveDeviceFromRackParams {
+  /** The placement id to remove, from list_racks. The device itself stays on the
+   *  schematic — only its rack placement is removed. */
+  placementId: string;
 }
 
 // ---------------------------------------------------------------------------

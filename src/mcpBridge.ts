@@ -17,6 +17,7 @@ import type { Connection } from "@xyflow/react";
 import { useSchematicStore } from "./store";
 import { getPortAbsolutePositions } from "./snapUtils";
 import { getBundledTemplates, getTemplateById, getCardsByFamily, fetchTemplates } from "./templateApi";
+import { inferRackForm, inferRackHeightU } from "./rackUtils";
 import {
   DEFAULT_BRIDGE_PORT,
   PROTOCOL_VERSION,
@@ -39,6 +40,9 @@ import {
   type ListSlotCardsParams,
   type InstallCardParams,
   type RemoveCardParams,
+  type CreateRackParams,
+  type PlaceDeviceInRackParams,
+  type RemoveDeviceFromRackParams,
   type PortFace,
 } from "./mcp/protocol";
 import {
@@ -50,8 +54,20 @@ import {
   runBatch,
   noteTextToHtml,
   validateCardForSlot,
+  validateUPosition,
+  validateRackFace,
+  validateRackSpec,
 } from "./mcp/validation";
-import type { DeviceData, DeviceTemplate, InstalledSlot, Port, SchematicNode } from "./types";
+import type {
+  DeviceData,
+  DeviceTemplate,
+  InstalledSlot,
+  Port,
+  RackData,
+  RackDevicePlacement,
+  RackElevationPage,
+  SchematicNode,
+} from "./types";
 
 export type BridgeStatus = "off" | "connecting" | "connected" | "error";
 
@@ -104,6 +120,59 @@ function requireSlot(device: SchematicNode, slotId: string): InstalledSlot {
     throw new CommandError(`No slot found with id "${slotId}" on device "${device.id}".`);
   }
   return slot;
+}
+
+/** All rack-elevation pages in the schematic (racks live on their own page type,
+ *  separate from the main device graph). */
+function rackPages(): RackElevationPage[] {
+  return st().pages.filter((p): p is RackElevationPage => p.type === "rack-elevation");
+}
+
+/** Compact view of a rack device placement, resolving the device's current label and
+ *  inferred U height from its node. deviceLabel/heightU are null when the placement
+ *  points at a node that no longer exists. */
+function rackPlacementSummary(pl: RackDevicePlacement) {
+  const data = st().nodes.find((n) => n.id === pl.deviceNodeId)?.data as DeviceData | undefined;
+  return {
+    placementId: pl.id,
+    deviceNodeId: pl.deviceNodeId,
+    deviceLabel: data?.label ?? null,
+    uPosition: pl.uPosition,
+    face: pl.face,
+    halfRackSide: pl.halfRackSide,
+    mountedOnShelfId: pl.mountedOnShelfId,
+    heightU: data ? inferRackHeightU(data) : null,
+  };
+}
+
+/** Resolve the rack-elevation page + rack for a rackId, failing on zero or multiple
+ *  matches rather than guessing. Rack ids are intended to be unique; a duplicate means
+ *  the file is already inconsistent, and silently mutating the first match would risk
+ *  touching the wrong rack. */
+function requireRack(rackId: string): { page: RackElevationPage; rack: RackData } {
+  const matches: { page: RackElevationPage; rack: RackData }[] = [];
+  for (const page of rackPages()) {
+    for (const rack of page.racks) {
+      if (rack.id === rackId) matches.push({ page, rack });
+    }
+  }
+  if (matches.length === 0) throw new CommandError(`No rack found with id "${rackId}". Call list_racks first.`);
+  if (matches.length > 1) throw new CommandError(`Rack id "${rackId}" is ambiguous (matches ${matches.length} racks).`);
+  return matches[0];
+}
+
+/** Resolve the rack-elevation page + placement for a placementId, failing on zero or
+ *  multiple matches (same reasoning as requireRack). */
+function requirePlacement(placementId: string): { page: RackElevationPage; placement: RackDevicePlacement } {
+  const matches: { page: RackElevationPage; placement: RackDevicePlacement }[] = [];
+  for (const page of rackPages()) {
+    for (const placement of page.placements) {
+      if (placement.id === placementId) matches.push({ page, placement });
+    }
+  }
+  if (matches.length === 0) throw new CommandError(`No rack placement found with id "${placementId}". Call list_racks first.`);
+  if (matches.length > 1) throw new CommandError(`Placement id "${placementId}" is ambiguous (matches ${matches.length}).`);
+  return matches[0];
 }
 
 /** The full discoverable set: the live community library (which already has the
@@ -513,6 +582,179 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
       throw new CommandError(`Card could not be removed from slot "${slotId}".`);
     }
     return { deviceId, slotId, emptied: true };
+  },
+
+  list_racks: () => {
+    const pages = rackPages().map((page) => ({
+      pageId: page.id,
+      label: page.label,
+      racks: page.racks.map((r) => ({
+        rackId: r.id,
+        label: r.label,
+        rackType: r.rackType,
+        heightU: r.heightU,
+        depthMm: r.depthMm,
+        widthClass: r.widthClass,
+        placements: page.placements.filter((pl) => pl.rackId === r.id).map(rackPlacementSummary),
+        // Accessories (shelves, blank/vent panels, etc.) also occupy U positions, so list
+        // them too — otherwise a U that's blocked by, say, a shelf would look free here and
+        // place_device_in_rack would reject it for no visible reason.
+        accessories: page.accessories
+          .filter((a) => a.rackId === r.id)
+          .map((a) => ({ accessoryId: a.id, type: a.type, label: a.label, uPosition: a.uPosition, heightU: a.heightU })),
+      })),
+    }));
+    return { pageCount: pages.length, pages };
+  },
+
+  create_rack: (params) => {
+    const { label, heightU, rackType, depthMm, pageId, pageLabel } = params as unknown as CreateRackParams;
+    const spec = validateRackSpec(rackType, heightU, depthMm);
+    if (!spec.ok) throw new CommandError(spec.error);
+    const rackLabel = typeof label === "string" && label.trim() !== "" ? label.trim() : "Rack";
+
+    // Resolve the target page. An explicit pageId must already exist; otherwise create a
+    // fresh rack page. (Creating a page here is a second undo step — addRackPage and
+    // addRack each push undo — but that only happens on the first rack; coalescing would
+    // need a store change, out of scope.)
+    let targetPageId: string;
+    let createdPage = false;
+    if (pageId !== undefined) {
+      // Fail on zero or multiple matches rather than guessing — addRack applies through
+      // mapElevationPage, which would write to EVERY page sharing this id (same fail-on-
+      // ambiguity rule as requireRack / requirePlacement).
+      const matches = rackPages().filter((p) => p.id === pageId);
+      if (matches.length === 0) {
+        throw new CommandError(`No rack-elevation page found with id "${pageId}". Call list_racks, or omit pageId to create one.`);
+      }
+      if (matches.length > 1) {
+        throw new CommandError(`Page id "${pageId}" is ambiguous (matches ${matches.length} pages).`);
+      }
+      targetPageId = pageId;
+    } else {
+      const newLabel = typeof pageLabel === "string" && pageLabel.trim() !== "" ? pageLabel.trim() : "Rack Elevation";
+      targetPageId = st().addRackPage(newLabel);
+      createdPage = true;
+    }
+
+    // New rack x-position follows the editor: PAGE-LOCAL rack count * 400 (a new page
+    // starts at 0).
+    const page = rackPages().find((p) => p.id === targetPageId)!;
+    const position = { x: page.racks.length * 400, y: 0 };
+
+    const rackId = st().addRack(targetPageId, {
+      label: rackLabel,
+      rackType: spec.rackType,
+      heightU: spec.heightU,
+      depthMm: spec.depthMm,
+      widthClass: "19in",
+      position,
+    });
+    return {
+      pageId: targetPageId,
+      rackId,
+      label: rackLabel,
+      rackType: spec.rackType,
+      heightU: spec.heightU,
+      depthMm: spec.depthMm,
+      createdPage,
+    };
+  },
+
+  place_device_in_rack: (params) => {
+    const { deviceId, rackId, uPosition, face } = params as unknown as PlaceDeviceInRackParams;
+    const node = requireDevice(deviceId);
+    const data = node.data as DeviceData;
+    const { page, rack } = requireRack(rackId);
+    const f = validateRackFace(face);
+    if (!f.ok) throw new CommandError(f.error);
+    const u = validateUPosition(uPosition);
+    if (!u.ok) throw new CommandError(u.error);
+
+    // 2-post frames have no rear face (mirrors the editor's isRackRearBlocked).
+    if (f.face === "rear" && rack.rackType === "open-2post") {
+      throw new CommandError(`Rack "${rackId}" is a 2-post frame, which has no rear face — use face "front".`);
+    }
+
+    // A device is placed in at most one rack at a time: the editor hides "Place in Rack"
+    // once a device is placed and excludes already-placed devices from auto-fill, but the
+    // store does not enforce singularity. Reject a duplicate placement explicitly.
+    for (const p of rackPages()) {
+      const existing = p.placements.find((pl) => pl.deviceNodeId === deviceId);
+      if (existing) {
+        throw new CommandError(
+          `Device "${deviceId}" is already placed in a rack (placement "${existing.id}"). ` +
+            `Remove it first with remove_device_from_rack.`,
+        );
+      }
+    }
+
+    const form = inferRackForm(data);
+    if (form === "oversize") {
+      throw new CommandError(`Device "${deviceId}" is too wide to mount in a 19" rack (oversize).`);
+    }
+    if (form === "shelf-only") {
+      // Shelf-only gear (too small for a direct rack-mount panel) needs a shelf to sit on.
+      // The editor creates that shelf and lets the user position the device on it; doing
+      // that from the bridge would mean auto-creating a shelf whose later cleanup can't be
+      // told apart from a user-built shelf (no provenance flag on the data). Rather than
+      // risk dropping a user's shelf or leaving an orphan, shelf placement stays an editor
+      // task for this slice.
+      throw new CommandError(
+        `Device "${deviceId}" is too small for a direct rack-mount (it needs a shelf). ` +
+          `Add a shelf and place it on the shelf in the editor.`,
+      );
+    }
+    const heightU = inferRackHeightU(data);
+
+    // addPlacementSmart does NOT check occupancy — it appends the placement unconditionally
+    // (only its oversize/no-page/no-device early returns bail). So the bridge MUST pre-check
+    // isRackSlotAvailable here, or two devices could be stacked into the same U range.
+    let preferredHalfRackSide: "left" | "right" | undefined;
+    if (form === "half") {
+      // Pick the exact side that is free per the authoritative occupancy check, then pass
+      // it to addPlacementSmart — its internal side heuristic is weaker (ignores multi-U
+      // overlap, full-width blockers and accessories), so "either side free" alone is not
+      // safe. isRackSlotAvailable(side)=true guarantees its sideTaken(side)=false, so the
+      // side we pass is honored.
+      const leftFree = st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face, "left");
+      const rightFree = st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face, "right");
+      preferredHalfRackSide = leftFree ? "left" : rightFree ? "right" : undefined;
+      if (!preferredHalfRackSide) {
+        throw new CommandError(`No free half-rack space at U${u.u} on the ${f.face} of rack "${rackId}".`);
+      }
+    } else {
+      // full / unknown — full-width direct placement spanning heightU.
+      if (!st().isRackSlotAvailable(page.id, rackId, u.u, heightU, f.face)) {
+        throw new CommandError(`U${u.u}–${u.u + heightU - 1} on the ${f.face} of rack "${rackId}" is occupied or out of bounds.`);
+      }
+    }
+
+    const res = st().addPlacementSmart(page.id, rackId, deviceId, u.u, f.face, preferredHalfRackSide);
+    if (!res.ok) {
+      throw new CommandError(`Could not place device "${deviceId}" in rack "${rackId}" (${res.reason}).`);
+    }
+    return {
+      placementId: res.placementId,
+      rackId,
+      deviceId,
+      uPosition: u.u,
+      face: f.face,
+      form,
+      heightU,
+      halfRackSide: preferredHalfRackSide,
+    };
+  },
+
+  remove_device_from_rack: (params) => {
+    const { placementId } = params as unknown as RemoveDeviceFromRackParams;
+    if (!placementId) throw new CommandError("placementId is required.");
+    const { page } = requirePlacement(placementId);
+    // Remove only the placement (one undo step). The device stays on the schematic. Shelf
+    // accessories are never auto-created by the bridge (shelf-only placement is rejected),
+    // so there is nothing to cascade-clean here — and we never delete a user-built shelf.
+    st().removeRackPlacement(page.id, placementId);
+    return { removed: true, placementId };
   },
 };
 

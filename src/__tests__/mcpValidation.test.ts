@@ -8,6 +8,9 @@ import {
   runBatch,
   noteTextToHtml,
   validateCardForSlot,
+  validateUPosition,
+  validateRackFace,
+  validateRackSpec,
 } from "../mcp/validation";
 
 describe("classifyDeviceProperties", () => {
@@ -245,5 +248,65 @@ describe("runBatch", () => {
     expect(r.results[1].ok).toBe(false);
     expect(r.results[1].error).toMatch(/boom on 2/);
     expect(r.results[2]).toEqual({ index: 2, ok: true, result: 30 });
+  });
+});
+
+describe("validateUPosition", () => {
+  it("accepts a whole number >= 1", () => {
+    expect(validateUPosition(1)).toEqual({ ok: true, u: 1 });
+    expect(validateUPosition(42)).toEqual({ ok: true, u: 42 });
+  });
+
+  it("rejects zero, negatives, fractions and non-numbers", () => {
+    for (const bad of [0, -1, 1.5, "3", NaN, undefined]) {
+      expect(validateUPosition(bad as unknown).ok).toBe(false);
+    }
+  });
+});
+
+describe("validateRackFace", () => {
+  it("defaults to front when omitted", () => {
+    expect(validateRackFace(undefined)).toEqual({ ok: true, face: "front" });
+  });
+
+  it("accepts front and rear", () => {
+    expect(validateRackFace("front")).toEqual({ ok: true, face: "front" });
+    expect(validateRackFace("rear")).toEqual({ ok: true, face: "rear" });
+  });
+
+  it("rejects any other value", () => {
+    expect(validateRackFace("side").ok).toBe(false);
+    expect(validateRackFace("top").ok).toBe(false);
+  });
+});
+
+describe("validateRackSpec", () => {
+  it("applies defaults when all fields are omitted", () => {
+    expect(validateRackSpec(undefined, undefined, undefined)).toEqual({
+      ok: true,
+      rackType: "floor-19",
+      heightU: 42,
+      depthMm: 600,
+    });
+  });
+
+  it("clamps heightU and depthMm to the editor's ranges and rounds", () => {
+    const tall = validateRackSpec("floor-19", 100, 5000);
+    expect(tall).toEqual({ ok: true, rackType: "floor-19", heightU: 60, depthMm: 2000 });
+    const tiny = validateRackSpec("wall-mount", 1, 50);
+    expect(tiny).toEqual({ ok: true, rackType: "wall-mount", heightU: 2, depthMm: 100 });
+    const rounded = validateRackSpec("desktop", 8.4, 612.7);
+    expect(rounded).toEqual({ ok: true, rackType: "desktop", heightU: 8, depthMm: 613 });
+  });
+
+  it("rejects an unknown rackType", () => {
+    const r = validateRackSpec("server-rack", 42, 600);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/rackType must be one of/);
+  });
+
+  it("rejects a supplied but non-numeric heightU or depthMm", () => {
+    expect(validateRackSpec("floor-19", NaN, 600).ok).toBe(false);
+    expect(validateRackSpec("floor-19", 42, Infinity).ok).toBe(false);
   });
 });
