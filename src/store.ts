@@ -343,7 +343,7 @@ interface SchematicState {
   setEditingNodeId: (id: string | null) => void;
   setCreatingNodeId: (id: string | null) => void;
   createAndEditDevice: (template: DeviceTemplate, position: { x: number; y: number }) => void;
-  addRoom: (label: string, position: { x: number; y: number }) => void;
+  addRoom: (label: string, position: { x: number; y: number }, size?: { width: number; height: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
   updateAnnotation: (nodeId: string, data: Partial<import("./types").AnnotationData>) => void;
@@ -352,6 +352,15 @@ interface SchematicState {
   addNote: (position: { x: number; y: number }) => void;
   updateNoteHtml: (nodeId: string, html: string) => void;
   reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }, options?: { skipUndo?: boolean }) => void;
+  /** Place a device inside a specific room (set parentId) by routing through
+   *  reparentNode, so parentId stays consistent with geometry. Atomic: if the
+   *  device's center would not land inside `roomId` (outside its bounds, or inside a
+   *  nested room), nothing changes. `relativePosition` is relative to the room's
+   *  top-left and defaults to (16,16). Returns true only if the device was actually
+   *  placed (committed), false on any no-op/reject — so a caller can't mistake an
+   *  unchanged "already in this room" device for a successful placement. Used by the
+   *  bridge's place_device_in_room tool. */
+  placeDeviceInRoom: (nodeId: string, roomId: string, relativePosition?: { x: number; y: number }) => boolean;
   /** Re-evaluate room membership for every non-room node. Used after a room is
    *  created, resized, or moved so devices get parented/unparented to match
    *  the new layout. */
@@ -1160,6 +1169,50 @@ function findBestEnclosingRoom(
   return best;
 }
 
+/** The geometric center of a node placed at `absolutePosition`, using the same
+ *  measured-size fallbacks reparentNode and reparentAllDevices rely on (room
+ *  400x300, device 144x48). Shared so any room-membership pre-check stays in
+ *  lockstep with the reparent that follows it. */
+function nodeCenterFromAbsolute(
+  node: SchematicNode,
+  absolutePosition: { x: number; y: number },
+): { x: number; y: number } {
+  const isRoom = node.type === "room";
+  const w = node.measured?.width ?? (isRoom ? 400 : 144);
+  const h = node.measured?.height ?? (isRoom ? 300 : 48);
+  return { x: absolutePosition.x + w / 2, y: absolutePosition.y + h / 2 };
+}
+
+/** #182: when a device moves, clear `placed` on its connected auto-placed stub
+ *  labels so they re-follow the device's port instead of stranding with a dogleg.
+ *  A stub leg is an edge with exactly one stub-label end; the other end is the
+ *  device. User-positioned stub labels are left alone. Returns a new nodes array
+ *  (or the same array when nothing needs clearing). Shared by moveDevice and
+ *  placeDeviceInRoom so the "which stubs follow" logic lives in one place. */
+function reanchorConnectedStubLabels(
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+  deviceId: string,
+): SchematicNode[] {
+  const stubIds = new Set(nodes.filter((n) => n.type === "stub-label").map((n) => n.id));
+  const followStubs = new Set<string>();
+  for (const e of edges) {
+    const srcStub = stubIds.has(e.source);
+    const tgtStub = stubIds.has(e.target);
+    if (srcStub === tgtStub) continue; // not a stub leg
+    const devEnd = srcStub ? e.target : e.source;
+    if (devEnd === deviceId) followStubs.add(srcStub ? e.source : e.target);
+  }
+  if (followStubs.size === 0) return nodes;
+  return nodes.map((n) => {
+    if (followStubs.has(n.id) && n.type === "stub-label") {
+      const d = n.data as import("./types").StubLabelData;
+      if (!d.userMoved && d.placed === true) return { ...n, data: { ...d, placed: false } };
+    }
+    return n;
+  });
+}
+
 function getPortFromHandle(
   nodes: SchematicNode[],
   nodeId: string,
@@ -1769,28 +1822,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const state = get();
     if (!state.nodes.some((n) => n.id === nodeId)) return;
     pushUndo({ nodes: state.nodes, edges: state.edges });
-    // #182: keep stub labels glued to the moved device. Clear `placed` on its connected
-    // (non-user-positioned) stub labels so StubLabelNode.tryPlace re-follows the moved
-    // port instead of leaving them stranded with a dogleg. Mirrors the drag-stop path in
-    // App.tsx so an MCP move_device behaves like a drag.
-    const stubIds = new Set(state.nodes.filter((n) => n.type === "stub-label").map((n) => n.id));
-    const followStubs = new Set<string>();
-    for (const e of state.edges) {
-      const srcStub = stubIds.has(e.source);
-      const tgtStub = stubIds.has(e.target);
-      if (srcStub === tgtStub) continue; // not a stub leg
-      const devEnd = srcStub ? e.target : e.source;
-      if (devEnd === nodeId) followStubs.add(srcStub ? e.source : e.target);
-    }
+    // #182: keep stub labels glued to the moved device (mirrors the drag-stop path in
+    // App.tsx so an MCP move_device behaves like a drag).
+    const reanchored = reanchorConnectedStubLabels(state.nodes, state.edges, nodeId);
     set({
-      nodes: state.nodes.map((n) => {
-        if (n.id === nodeId) return { ...n, position };
-        if (followStubs.has(n.id) && n.type === "stub-label") {
-          const d = n.data as import("./types").StubLabelData;
-          if (!d.userMoved && d.placed === true) return { ...n, data: { ...d, placed: false } };
-        }
-        return n;
-      }),
+      nodes: reanchored.map((n) => (n.id === nodeId ? { ...n, position } : n)),
     });
     get().saveToLocalStorage();
   },
@@ -2944,7 +2980,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({ editingNodeId: newNodeId, creatingNodeId: newNodeId });
   },
 
-  addRoom: (label, position) => {
+  addRoom: (label, position, size) => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
     const newRoom: SchematicNode = {
@@ -2952,7 +2988,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       type: "room",
       position,
       data: { label },
-      style: { width: 400, height: 300 },
+      style: { width: size?.width ?? 400, height: size?.height ?? 300 },
       selected: true,
       zIndex: -1,
     };
@@ -3108,12 +3144,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
     const isRoom = node.type === "room";
-    const nodeW = node.measured?.width ?? (isRoom ? 400 : 144);
-    const nodeH = node.measured?.height ?? (isRoom ? 300 : 48);
-    const centerX = absolutePosition.x + nodeW / 2;
-    const centerY = absolutePosition.y + nodeH / 2;
+    const center = nodeCenterFromAbsolute(node, absolutePosition);
 
-    const targetRoom = findBestEnclosingRoom(nodeId, isRoom, centerX, centerY, state.nodes, nodeMap);
+    const targetRoom = findBestEnclosingRoom(nodeId, isRoom, center.x, center.y, state.nodes, nodeMap);
 
     const currentParent = node.parentId;
     const newParent = targetRoom?.id;
@@ -3149,6 +3182,52 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     set({ nodes: updated });
     get().saveToLocalStorage();
+  },
+
+  placeDeviceInRoom: (nodeId, roomId, relativePosition) => {
+    const state = get();
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
+    const room = nodeMap.get(roomId);
+    const device = nodeMap.get(nodeId);
+    // Unknown room/device, or the target isn't a room -> no-op. Return false so the
+    // caller never mistakes a non-placement for success (the read-back alone can't tell
+    // a rejected placement of an already-in-this-room device from a real one).
+    if (!room || room.type !== "room" || !device) return false;
+
+    const roomAbs = getAbsolutePosition(roomId, nodeMap);
+    const rel = relativePosition ?? { x: 16, y: 16 };
+    const absPos = { x: roomAbs.x + rel.x, y: roomAbs.y + rel.y };
+
+    // PRE-CHECK (atomicity): will the device's center land in THIS room? Use the same
+    // center math + enclosing-room logic reparentNode will use, so a success here
+    // guarantees the commit below reparents into roomId. If the target room would not
+    // win (the point is outside it, or inside a smaller nested room), change NOTHING —
+    // no undo snapshot, no set, no save — and return false so a rejected placement has
+    // no side effects and is never reported as success.
+    const center = nodeCenterFromAbsolute(device, absPos);
+    const winner = findBestEnclosingRoom(nodeId, false, center.x, center.y, state.nodes, nodeMap);
+    if (winner?.id !== roomId) return false;
+
+    // Idempotent: already in this room at exactly this position -> the desired end state
+    // already holds, so report success without mutating or pushing an empty undo step.
+    if (device.parentId === roomId && device.position.x === rel.x && device.position.y === rel.y) {
+      return true;
+    }
+
+    // COMMIT: re-anchor connected stub labels (as a drag/move would), move the device
+    // to the absolute target as a temporarily top-level node, then let reparentNode do
+    // the geometric reparent + relative-coord conversion + parent-first sort. Clearing
+    // parentId first avoids reparentNode's "parent unchanged" early-return.
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const reanchored = reanchorConnectedStubLabels(state.nodes, state.edges, nodeId);
+    set({
+      nodes: reanchored.map((n) =>
+        n.id === nodeId ? { ...n, parentId: undefined, position: absPos } : n,
+      ),
+    });
+    get().reparentNode(nodeId, absPos, { skipUndo: true });
+    get().saveToLocalStorage();
+    return true;
   },
 
   reparentAllDevices: (options) => {

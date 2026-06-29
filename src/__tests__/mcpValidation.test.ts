@@ -3,6 +3,7 @@ import {
   classifyDeviceProperties,
   resolveHandleFromCandidates,
   validatePosition,
+  validateRoomSize,
   planConnectionRemoval,
   runBatch,
 } from "../mcp/validation";
@@ -101,6 +102,36 @@ describe("validatePosition", () => {
     ] as [unknown, unknown][]) {
       expect(validatePosition(x, y).ok).toBe(false);
     }
+  });
+});
+
+describe("validateRoomSize", () => {
+  it("accepts omitting both (caller uses the default)", () => {
+    expect(validateRoomSize(undefined, undefined)).toEqual({ ok: true, size: undefined });
+  });
+
+  it("accepts a size at or above the editor minimums", () => {
+    expect(validateRoomSize(200, 150)).toEqual({ ok: true, size: { width: 200, height: 150 } });
+    expect(validateRoomSize(800, 600)).toEqual({ ok: true, size: { width: 800, height: 600 } });
+  });
+
+  it("rejects a width below the minimum", () => {
+    expect(validateRoomSize(199, 300).ok).toBe(false);
+  });
+
+  it("rejects a height below the minimum", () => {
+    expect(validateRoomSize(400, 149).ok).toBe(false);
+  });
+
+  it("rejects a partial size (only one dimension given)", () => {
+    expect(validateRoomSize(400, undefined).ok).toBe(false);
+    expect(validateRoomSize(undefined, 300).ok).toBe(false);
+  });
+
+  it("rejects non-finite values", () => {
+    expect(validateRoomSize(NaN, 300).ok).toBe(false);
+    expect(validateRoomSize(400, Infinity).ok).toBe(false);
+    expect(validateRoomSize("400", "300").ok).toBe(false);
   });
 });
 

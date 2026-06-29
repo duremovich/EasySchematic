@@ -111,6 +111,115 @@ describe("moveDevice", () => {
   });
 });
 
+function roomNode(id: string, x: number, y: number, w = 400, h = 300): SchematicNode {
+  return {
+    id,
+    type: "room",
+    position: { x, y },
+    data: { label: id },
+    style: { width: w, height: h },
+  } as SchematicNode;
+}
+
+describe("addRoom (create_room path)", () => {
+  it("creates a room with a custom size", () => {
+    useSchematicStore.setState({ nodes: [], edges: [] });
+    useSchematicStore.getState().addRoom("Conference Room", { x: 500, y: 0 }, { width: 600, height: 400 });
+    const room = useSchematicStore.getState().nodes.find((n) => n.type === "room")!;
+    expect(room).toBeTruthy();
+    expect((room.data as { label: string }).label).toBe("Conference Room");
+    expect(room.style).toMatchObject({ width: 600, height: 400 });
+  });
+
+  it("defaults to 400x300 when no size is given", () => {
+    useSchematicStore.setState({ nodes: [], edges: [] });
+    useSchematicStore.getState().addRoom("R", { x: 500, y: 0 });
+    const room = useSchematicStore.getState().nodes.find((n) => n.type === "room")!;
+    expect(room.style).toMatchObject({ width: 400, height: 300 });
+  });
+
+  it("absorbs a device inside its bounds and the creation is undoable", () => {
+    useSchematicStore.setState({ nodes: [device("device-1", 0, 0)], edges: [] });
+    useSchematicStore.getState().addRoom("R", { x: -10, y: -10 }, { width: 400, height: 300 });
+    const room = useSchematicStore.getState().nodes.find((n) => n.type === "room")!;
+    expect(useSchematicStore.getState().nodes.find((n) => n.id === "device-1")!.parentId).toBe(room.id);
+
+    useSchematicStore.getState().undo();
+    const after = useSchematicStore.getState().nodes;
+    expect(after.some((n) => n.type === "room")).toBe(false);
+    expect(after.find((n) => n.id === "device-1")!.parentId).toBeUndefined();
+  });
+});
+
+describe("placeDeviceInRoom (place_device_in_room path)", () => {
+  it("places a device in the room with a room-relative position (undoable)", () => {
+    useSchematicStore.setState({ nodes: [roomNode("room-1", 100, 100), device("device-1", 0, 0)], edges: [] });
+    const placed = useSchematicStore.getState().placeDeviceInRoom("device-1", "room-1", { x: 20, y: 30 });
+    expect(placed).toBe(true);
+    const dev = useSchematicStore.getState().nodes.find((n) => n.id === "device-1")!;
+    expect(dev.parentId).toBe("room-1");
+    expect(dev.position).toEqual({ x: 20, y: 30 }); // relative to the room's top-left
+
+    useSchematicStore.getState().undo();
+    const back = useSchematicStore.getState().nodes.find((n) => n.id === "device-1")!;
+    expect(back.parentId).toBeUndefined();
+    expect(back.position).toEqual({ x: 0, y: 0 });
+  });
+
+  it("changes nothing and returns false when the position would fall outside the room", () => {
+    useSchematicStore.setState({ nodes: [roomNode("room-1", 100, 100, 400, 300), device("device-1", 0, 0)], edges: [] });
+    const snapshot = JSON.stringify(useSchematicStore.getState().nodes);
+    const placed = useSchematicStore.getState().placeDeviceInRoom("device-1", "room-1", { x: 9999, y: 9999 });
+    expect(placed).toBe(false);
+    // Nothing mutated at all — device stays top-level at its original position.
+    expect(JSON.stringify(useSchematicStore.getState().nodes)).toBe(snapshot);
+  });
+
+  it("returns false (no false success) when the device is ALREADY in the room but the new position is invalid", () => {
+    // device-1 is already a child of room-1; a reject must not look like a success just
+    // because parentId is still room-1.
+    useSchematicStore.setState({
+      nodes: [roomNode("room-1", 100, 100, 400, 300), { ...device("device-1", 10, 10), parentId: "room-1" } as SchematicNode],
+      edges: [],
+    });
+    const snapshot = JSON.stringify(useSchematicStore.getState().nodes);
+    const placed = useSchematicStore.getState().placeDeviceInRoom("device-1", "room-1", { x: 9999, y: 9999 });
+    expect(placed).toBe(false);
+    expect(JSON.stringify(useSchematicStore.getState().nodes)).toBe(snapshot);
+  });
+
+  it("returns true with no mutation and no empty undo step when already at that exact spot", () => {
+    useSchematicStore.setState({
+      nodes: [roomNode("room-1", 100, 100, 400, 300), { ...device("device-1", 20, 30), parentId: "room-1" } as SchematicNode],
+      edges: [],
+    });
+    const undoBefore = useSchematicStore.getState().undoSize;
+    const snapshot = JSON.stringify(useSchematicStore.getState().nodes);
+    const placed = useSchematicStore.getState().placeDeviceInRoom("device-1", "room-1", { x: 20, y: 30 });
+    expect(placed).toBe(true);
+    expect(JSON.stringify(useSchematicStore.getState().nodes)).toBe(snapshot); // unchanged
+    expect(useSchematicStore.getState().undoSize).toBe(undoBefore); // no empty undo step pushed
+  });
+
+  it("returns false and is a no-op when the target id is not a room", () => {
+    useSchematicStore.setState({ nodes: [device("device-1", 0, 0), device("device-2", 300, 0)], edges: [] });
+    const snapshot = JSON.stringify(useSchematicStore.getState().nodes);
+    const placed = useSchematicStore.getState().placeDeviceInRoom("device-1", "device-2", { x: 10, y: 10 });
+    expect(placed).toBe(false);
+    expect(JSON.stringify(useSchematicStore.getState().nodes)).toBe(snapshot);
+  });
+
+  it("re-anchors connected auto-placed stub labels when placing", () => {
+    useSchematicStore.setState({
+      nodes: [roomNode("room-1", 100, 100), device("device-1", 0, 0), stubLabel("stub-follow", true)],
+      edges: [stubLeg("leg-1", "stub-follow", "device-1")],
+    });
+    useSchematicStore.getState().placeDeviceInRoom("device-1", "room-1", { x: 20, y: 30 });
+    const follow = useSchematicStore.getState().nodes.find((n) => n.id === "stub-follow")!.data as StubLabelData;
+    expect(follow.placed).toBe(false);
+  });
+});
+
 describe("connection removal (delete_connection path)", () => {
   it("removes a single connection by id (routes through removeSelected)", () => {
     useSchematicStore.getState().deleteConnection("edge-1");

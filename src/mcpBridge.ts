@@ -33,12 +33,15 @@ import {
   type DeleteDeviceParams,
   type MoveDeviceParams,
   type DeleteConnectionParams,
+  type CreateRoomParams,
+  type PlaceDeviceInRoomParams,
   type PortFace,
 } from "./mcp/protocol";
 import {
   classifyDeviceProperties,
   resolveHandleFromCandidates,
   validatePosition,
+  validateRoomSize,
   planConnectionRemoval,
   runBatch,
 } from "./mcp/validation";
@@ -317,6 +320,64 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
     );
     if (!outcome.ok) throw new CommandError(outcome.error);
     return { results: outcome.results, succeeded: outcome.succeeded, failed: outcome.failed };
+  },
+
+  create_room: (params) => {
+    const { label, x, y, width, height } = params as unknown as CreateRoomParams;
+    if (typeof label !== "string" || label.trim() === "") {
+      throw new CommandError("label is required (a non-empty room name).");
+    }
+    const pos = validatePosition(x, y);
+    if (!pos.ok) throw new CommandError(pos.error);
+    const size = validateRoomSize(width, height);
+    if (!size.ok) throw new CommandError(size.error);
+    const beforeRooms = new Set(st().nodes.filter((n) => n.type === "room").map((n) => n.id));
+    const beforeParents = new Map(deviceNodes().map((n) => [n.id, n.parentId] as const));
+    st().addRoom(label, pos.position, size.size);
+    const room = st().nodes.find((n) => n.type === "room" && !beforeRooms.has(n.id));
+    if (!room) throw new CommandError("Room was not created (no new room node appeared).");
+    // addRoom runs reparentAllDevices, which pulls any existing devices that now fall
+    // inside the new room into it (and rewrites their coords to room-relative). Report
+    // those so the caller knows those devices' positions changed (re-read via get_device
+    // / get_schematic before using their old coordinates).
+    const absorbedDeviceIds = deviceNodes()
+      .filter((n) => n.parentId === room.id && beforeParents.get(n.id) !== room.id)
+      .map((n) => n.id);
+    return {
+      roomId: room.id,
+      label: (room.data as { label?: string }).label ?? label,
+      position: pos.position,
+      size: { width: size.size?.width ?? 400, height: size.size?.height ?? 300 },
+      absorbedDeviceIds,
+    };
+  },
+
+  place_device_in_room: (params) => {
+    const { deviceId, roomId, x, y } = params as unknown as PlaceDeviceInRoomParams;
+    requireDevice(deviceId);
+    const room = st().nodes.find((n) => n.id === roomId);
+    if (!room) throw new CommandError(`No room found with id "${roomId}".`);
+    if (room.type !== "room") throw new CommandError(`Node "${roomId}" is not a room.`);
+    let rel = { x: 16, y: 16 };
+    if (x !== undefined || y !== undefined) {
+      const pos = validatePosition(x, y);
+      if (!pos.ok) throw new CommandError(pos.error);
+      rel = pos.position;
+    }
+    // The store action is atomic and returns whether it actually committed: it mutates
+    // only if the device's center lands inside the requested room, otherwise it changes
+    // nothing. Gate on that boolean (NOT a parentId read-back, which can't tell a
+    // rejected placement of an already-in-this-room device from a real one).
+    const placed = st().placeDeviceInRoom(deviceId, roomId, rel);
+    if (!placed) {
+      const after = st().nodes.find((n) => n.id === deviceId);
+      throw new CommandError(
+        `Device "${deviceId}" could not be placed in room "${roomId}": at the given position ` +
+          `(${rel.x}, ${rel.y} relative to the room) its center falls outside the room or inside a ` +
+          `nested room (current parent: ${after?.parentId ?? "none"}). Adjust x/y or enlarge the room.`,
+      );
+    }
+    return { nodeId: deviceId, roomId, position: rel };
   },
 };
 

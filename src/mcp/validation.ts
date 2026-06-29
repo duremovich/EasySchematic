@@ -95,6 +95,35 @@ export function validatePosition(x: unknown, y: unknown): PositionResult {
   return { ok: true, position: { x: x as number, y: y as number } };
 }
 
+/** Minimum room dimensions, matching the editor's room NodeResizer (RoomNode.tsx),
+ *  so the bridge can't create a room smaller than one a user could draw by hand. */
+export const MIN_ROOM_WIDTH = 200;
+export const MIN_ROOM_HEIGHT = 150;
+
+export type RoomSizeResult =
+  | { ok: true; size: { width: number; height: number } | undefined }
+  | { ok: false; error: string };
+
+/** Validate the optional width/height of a create_room command. Input is untrusted
+ *  (it arrives over the bridge). Both omitted -> ok with size undefined (the caller
+ *  uses the 400x300 default). If either is given, BOTH must be finite numbers at or
+ *  above the editor minimums; partial or sub-minimum sizes are rejected rather than
+ *  written into a room that couldn't be created in the editor. */
+export function validateRoomSize(width: unknown, height: unknown): RoomSizeResult {
+  if (width === undefined && height === undefined) {
+    return { ok: true, size: undefined };
+  }
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    return { ok: false, error: "width and height must both be finite numbers, or both omitted." };
+  }
+  const w = width as number;
+  const h = height as number;
+  if (w < MIN_ROOM_WIDTH || h < MIN_ROOM_HEIGHT) {
+    return { ok: false, error: `Room is too small; the minimum size is ${MIN_ROOM_WIDTH}x${MIN_ROOM_HEIGHT}.` };
+  }
+  return { ok: true, size: { width: w, height: h } };
+}
+
 /** Minimal shape of an edge this planner needs — kept structural so validation.ts
  *  stays dependency-free (no import from the rest of src/). */
 interface RemovableEdge {

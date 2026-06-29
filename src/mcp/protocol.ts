@@ -19,8 +19,9 @@ export const DEFAULT_BRIDGE_PORT = 8765;
 export const PROTOCOL_VERSION = 1;
 
 /** The bridge tools: the eight Ship-1 "working core" tools, the two Ship-2
- *  "editing & layout" tools (move_device, delete_connection), and the two Ship-3
- *  "batch" tools (add_devices, connect_devices_batch). */
+ *  "editing & layout" tools (move_device, delete_connection), the two Ship-3
+ *  "batch" tools (add_devices, connect_devices_batch), and the two Ship-4
+ *  "rooms" tools (create_room, place_device_in_room). */
 export type CommandType =
   | "get_schematic"
   | "list_devices"
@@ -33,7 +34,9 @@ export type CommandType =
   | "move_device"
   | "delete_connection"
   | "add_devices"
-  | "connect_devices_batch";
+  | "connect_devices_batch"
+  | "create_room"
+  | "place_device_in_room";
 
 /** Max items accepted by a single batch tool call (input arrives over the bridge,
  *  so it is capped). The mcp-server tool schemas mirror this as `maxItems`. */
@@ -159,6 +162,29 @@ export interface ConnectDevicesBatchParams {
   /** Connections to make in one call; each is attempted independently in array
    *  order (best-effort), so an earlier connection can affect a later one. */
   connections: ConnectDevicesParams[];
+}
+
+export interface CreateRoomParams {
+  /** The room's name, shown on the canvas. */
+  label: string;
+  /** Room top-left position in canvas coordinates. */
+  x: number;
+  y: number;
+  /** Optional room size; both are required together when given. Defaults to
+   *  400x300. Minimums mirror the editor: width >= 200, height >= 150. */
+  width?: number;
+  height?: number;
+}
+
+export interface PlaceDeviceInRoomParams {
+  /** The device to place inside the room. */
+  deviceId: string;
+  /** The target room (container) id from get_schematic / create_room. */
+  roomId: string;
+  /** Position relative to the room's top-left corner; defaults to (16,16). The
+   *  device's center must land inside the room or the call fails (nothing changes). */
+  x?: number;
+  y?: number;
 }
 
 // ---------------------------------------------------------------------------

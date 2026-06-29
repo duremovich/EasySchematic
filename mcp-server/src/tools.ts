@@ -1,7 +1,8 @@
 /**
  * MCP tool catalog: the Ship-1 "working core" tools, the Ship-2 "editing & layout"
- * tools (move_device, delete_connection), and the Ship-3 "batch" tools (add_devices,
- * connect_devices_batch). Each entry is a plain JSON-Schema tool definition; the call
+ * tools (move_device, delete_connection), the Ship-3 "batch" tools (add_devices,
+ * connect_devices_batch), and the Ship-4 "rooms" tools (create_room,
+ * place_device_in_room). Each entry is a plain JSON-Schema tool definition; the call
  * is relayed verbatim to the editor over the bridge, which validates and executes it
  * against the live store.
  *
@@ -198,6 +199,39 @@ export const TOOLS: ToolDef[] = [
         },
       },
       required: ["connections"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "create_room",
+    description:
+      "Create a room — a labelled container on the canvas that devices can be placed inside (use place_device_in_room). Returns the new room's id. width/height are optional (default 400x300; minimums 200x150). Any existing devices already inside the new room's bounds are absorbed into it and listed in absorbedDeviceIds (their coordinates become relative to the room, so re-read them before reusing old positions).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        label: { type: "string", description: "The room's name, shown on the canvas." },
+        x: { type: "number", description: "Room top-left X position on the canvas." },
+        y: { type: "number", description: "Room top-left Y position on the canvas." },
+        width: { type: "number", description: "Optional room width (minimum 200; default 400)." },
+        height: { type: "number", description: "Optional room height (minimum 150; default 300)." },
+      },
+      required: ["label", "x", "y"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "place_device_in_room",
+    description:
+      "Place a device inside a room. x and y are the device's position relative to the room's top-left corner (default 16,16). The device's center must land inside the room or the call fails without changing anything, so a device is never reported as placed when it isn't. To reposition a device that is already in a room, use move_device instead.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        deviceId: { type: "string", description: "The device id." },
+        roomId: { type: "string", description: "The room id (from get_schematic or create_room)." },
+        x: { type: "number", description: "Optional X relative to the room's top-left corner (default 16)." },
+        y: { type: "number", description: "Optional Y relative to the room's top-left corner (default 16)." },
+      },
+      required: ["deviceId", "roomId"],
       additionalProperties: false,
     },
   },

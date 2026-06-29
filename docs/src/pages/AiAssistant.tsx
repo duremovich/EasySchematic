@@ -109,6 +109,18 @@ node dist/index.js`}</code>
           current room or rack — this does not move it into or out of one.
         </li>
         <li>
+          <strong>Create a room</strong> — a labelled container devices can sit
+          inside. Size is optional (defaults to 400×300). Any devices already inside
+          the new room's outline are pulled into it.
+        </li>
+        <li>
+          <strong>Place a device in a room.</strong> The position is given relative
+          to the room's top-left corner. If the spot is outside the room the request
+          is refused and nothing changes, so a device is never reported as placed
+          when it isn't. To nudge a device that is already in a room, use move a
+          device instead.
+        </li>
+        <li>
           <strong>Remove a single connection.</strong> Stubbed connections can't be
           removed this way yet — delete one of their devices, or remove them in the
           editor.
