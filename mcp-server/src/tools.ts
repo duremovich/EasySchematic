@@ -1,8 +1,9 @@
 /**
  * MCP tool catalog: the Ship-1 "working core" tools, the Ship-2 "editing & layout"
  * tools (move_device, delete_connection), the Ship-3 "batch" tools (add_devices,
- * connect_devices_batch), and the Ship-4 "rooms" tools (create_room,
- * place_device_in_room). Each entry is a plain JSON-Schema tool definition; the call
+ * connect_devices_batch), the Ship-4 "rooms" tools (create_room,
+ * place_device_in_room), and the Ship-5 "annotations" tool (add_note). Each entry is
+ * a plain JSON-Schema tool definition; the call
  * is relayed verbatim to the editor over the bridge, which validates and executes it
  * against the live store.
  *
@@ -232,6 +233,21 @@ export const TOOLS: ToolDef[] = [
         y: { type: "number", description: "Optional Y relative to the room's top-left corner (default 16)." },
       },
       required: ["deviceId", "roomId"],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "add_note",
+    description:
+      "Add a text note (a sticky-note card) to the canvas to annotate or explain the schematic. The text is shown literally (it is escaped, and line breaks are kept). Returns the new note's id. Notes can't yet be listed, edited, or deleted through the assistant — do that in the editor.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: { type: "string", description: "The note's text. Shown literally; newlines become line breaks." },
+        x: { type: "number", description: "Note top-left X position on the canvas." },
+        y: { type: "number", description: "Note top-left Y position on the canvas." },
+      },
+      required: ["text", "x", "y"],
       additionalProperties: false,
     },
   },

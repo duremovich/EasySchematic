@@ -20,8 +20,9 @@ export const PROTOCOL_VERSION = 1;
 
 /** The bridge tools: the eight Ship-1 "working core" tools, the two Ship-2
  *  "editing & layout" tools (move_device, delete_connection), the two Ship-3
- *  "batch" tools (add_devices, connect_devices_batch), and the two Ship-4
- *  "rooms" tools (create_room, place_device_in_room). */
+ *  "batch" tools (add_devices, connect_devices_batch), the two Ship-4
+ *  "rooms" tools (create_room, place_device_in_room), and the Ship-5
+ *  "annotations" tool (add_note). */
 export type CommandType =
   | "get_schematic"
   | "list_devices"
@@ -36,7 +37,8 @@ export type CommandType =
   | "add_devices"
   | "connect_devices_batch"
   | "create_room"
-  | "place_device_in_room";
+  | "place_device_in_room"
+  | "add_note";
 
 /** Max items accepted by a single batch tool call (input arrives over the bridge,
  *  so it is capped). The mcp-server tool schemas mirror this as `maxItems`. */
@@ -185,6 +187,15 @@ export interface PlaceDeviceInRoomParams {
    *  device's center must land inside the room or the call fails (nothing changes). */
   x?: number;
   y?: number;
+}
+
+export interface AddNoteParams {
+  /** Plain text for the note card. It is HTML-escaped on the way in (the note
+   *  renders as HTML), so it always shows literally; newlines become line breaks. */
+  text: string;
+  /** Note top-left position in canvas coordinates. */
+  x: number;
+  y: number;
 }
 
 // ---------------------------------------------------------------------------

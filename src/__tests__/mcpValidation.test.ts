@@ -6,6 +6,7 @@ import {
   validateRoomSize,
   planConnectionRemoval,
   runBatch,
+  noteTextToHtml,
 } from "../mcp/validation";
 
 describe("classifyDeviceProperties", () => {
@@ -152,6 +153,35 @@ describe("planConnectionRemoval", () => {
     const r = planConnectionRemoval(edges, "edge-1");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/stubbed/);
+  });
+});
+
+describe("noteTextToHtml", () => {
+  it("leaves plain text unchanged", () => {
+    expect(noteTextToHtml("Main rack")).toBe("Main rack");
+  });
+
+  it("entity-escapes &, < and > so text can never become markup", () => {
+    expect(noteTextToHtml("a < b && c > d")).toBe("a &lt; b &amp;&amp; c &gt; d");
+    expect(noteTextToHtml('<script>alert(1)</script>')).toBe(
+      "&lt;script&gt;alert(1)&lt;/script&gt;",
+    );
+  });
+
+  it("escapes the ampersand before the angle brackets (no double-encoding)", () => {
+    // If & were escaped after <, the "&lt;" it produces would be re-escaped to
+    // "&amp;lt;". Order matters; this guards it.
+    expect(noteTextToHtml("<")).toBe("&lt;");
+  });
+
+  it("converts newlines to <br>, normalizing CRLF and lone CR first", () => {
+    expect(noteTextToHtml("line1\nline2")).toBe("line1<br>line2");
+    expect(noteTextToHtml("line1\r\nline2")).toBe("line1<br>line2");
+    expect(noteTextToHtml("line1\rline2")).toBe("line1<br>line2");
+  });
+
+  it("returns an empty string for empty input", () => {
+    expect(noteTextToHtml("")).toBe("");
   });
 });
 

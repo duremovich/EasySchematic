@@ -121,6 +121,12 @@ node dist/index.js`}</code>
           device instead.
         </li>
         <li>
+          <strong>Add a note</strong> — a text note card placed on the canvas to
+          annotate or explain the schematic. The text is shown literally and line
+          breaks are kept. Notes can't yet be listed, edited, or deleted through the
+          assistant — do that in the editor.
+        </li>
+        <li>
           <strong>Remove a single connection.</strong> Stubbed connections can't be
           removed this way yet — delete one of their devices, or remove them in the
           editor.

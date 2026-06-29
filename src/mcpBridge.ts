@@ -35,6 +35,7 @@ import {
   type DeleteConnectionParams,
   type CreateRoomParams,
   type PlaceDeviceInRoomParams,
+  type AddNoteParams,
   type PortFace,
 } from "./mcp/protocol";
 import {
@@ -44,6 +45,7 @@ import {
   validateRoomSize,
   planConnectionRemoval,
   runBatch,
+  noteTextToHtml,
 } from "./mcp/validation";
 import type { DeviceData, DeviceTemplate, Port, SchematicNode } from "./types";
 
@@ -171,7 +173,7 @@ function connectDevicesCore(p: ConnectDevicesParams) {
 // ---------------------------------------------------------------------------
 // Command handlers — each returns a JSON-serializable result or throws CommandError.
 // ---------------------------------------------------------------------------
-const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown | Promise<unknown>> = {
+export const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown | Promise<unknown>> = {
   get_schematic: () => {
     const devices = deviceNodes().map((n) => {
       const d = n.data as DeviceData;
@@ -378,6 +380,24 @@ const handlers: Record<CommandType, (params: Record<string, unknown>) => unknown
       );
     }
     return { nodeId: deviceId, roomId, position: rel };
+  },
+
+  add_note: (params) => {
+    const { text, x, y } = params as unknown as AddNoteParams;
+    if (typeof text !== "string" || text.trim() === "") {
+      throw new CommandError("text is required (a non-empty note).");
+    }
+    const pos = validatePosition(x, y);
+    if (!pos.ok) throw new CommandError(pos.error);
+    // No store action returns the new note's id, and addNote/updateNoteHtml are two
+    // calls — but only addNote pushes undo, so the pair is a single undo step. Snapshot
+    // ids, create the (empty) note, then set its escaped HTML on the new node.
+    const before = new Set(st().nodes.map((n) => n.id));
+    st().addNote(pos.position);
+    const note = st().nodes.find((n) => n.type === "note" && !before.has(n.id));
+    if (!note) throw new CommandError("Note was not created (no new note node appeared).");
+    st().updateNoteHtml(note.id, noteTextToHtml(text));
+    return { noteId: note.id, text, position: pos.position };
   },
 };
 

@@ -124,6 +124,26 @@ export function validateRoomSize(width: unknown, height: unknown): RoomSizeResul
   return { ok: true, size: { width: w, height: h } };
 }
 
+/**
+ * Convert untrusted plain text into safe note HTML. Note nodes store HTML and are
+ * rendered via innerHTML (then re-sanitized by sanitizeNoteHtml on display/import),
+ * so raw bridge text must be entity-escaped — otherwise `<`/`&` would corrupt the
+ * markup or open an XSS hole. The output contains only escaped text plus `<br>`, so
+ * it shows the text literally and is a no-op under sanitizeNoteHtml.
+ *
+ * CRLF / lone CR are normalized to LF first so every newline style becomes a single
+ * `<br>`. (HTML still collapses runs of spaces — that is inherent to HTML rendering,
+ * not something escaping can preserve.)
+ */
+export function noteTextToHtml(text: string): string {
+  return text
+    .replace(/\r\n?/g, "\n")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
+}
+
 /** Minimal shape of an edge this planner needs — kept structural so validation.ts
  *  stays dependency-free (no import from the rest of src/). */
 interface RemovableEdge {

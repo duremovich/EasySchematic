@@ -1,15 +1,19 @@
 /**
- * Store-level tests for the Ship-2 "editing & layout" MCP tools' mutation paths:
- *   - moveDevice (the move_device tool) — repositions a node in one undo step.
- *   - onEdgesChange remove (the delete_connection tool) — removes a single edge.
+ * Store-level tests for the Ship-2/3/4 "editing & layout / rooms" MCP tools' mutation
+ * paths (moveDevice, addRoom, placeDeviceInRoom, connection removal) plus a
+ * handler-level test for the Ship-5 add_note tool — which has NO new store action, so
+ * its logic (trim validation, position validation, the id-snapshot, and the two-step
+ * addNote + updateNoteHtml flow) lives entirely in the bridge handler and is exercised
+ * here directly via the exported `handlers` map.
  *
  * The store reads editor preferences from localStorage at import time, so we install
- * a minimal in-memory localStorage and import the store dynamically afterwards. Pure
- * decision logic (validatePosition / planConnectionRemoval) is covered separately in
+ * a minimal in-memory localStorage and import the store (and the bridge handlers,
+ * which read the same store singleton) dynamically afterwards. Pure decision logic
+ * (validatePosition / planConnectionRemoval / noteTextToHtml) is covered separately in
  * mcpValidation.test.ts.
  */
 import { describe, it, expect, beforeAll, beforeEach } from "vitest";
-import type { ConnectionEdge, DeviceData, SchematicNode, StubLabelData } from "../types";
+import type { ConnectionEdge, DeviceData, NoteData, SchematicNode, StubLabelData } from "../types";
 
 class MemStorage {
   private m = new Map<string, string>();
@@ -22,10 +26,12 @@ class MemStorage {
 }
 
 let useSchematicStore: typeof import("../store")["useSchematicStore"];
+let handlers: typeof import("../mcpBridge")["handlers"];
 
 beforeAll(async () => {
   (globalThis as { localStorage?: unknown }).localStorage = new MemStorage();
   ({ useSchematicStore } = await import("../store"));
+  ({ handlers } = await import("../mcpBridge"));
 });
 
 function device(id: string, x: number, y: number): SchematicNode {
@@ -217,6 +223,60 @@ describe("placeDeviceInRoom (place_device_in_room path)", () => {
     useSchematicStore.getState().placeDeviceInRoom("device-1", "room-1", { x: 20, y: 30 });
     const follow = useSchematicStore.getState().nodes.find((n) => n.id === "stub-follow")!.data as StubLabelData;
     expect(follow.placed).toBe(false);
+  });
+});
+
+describe("add_note handler (add_note tool)", () => {
+  function noteHtml(noteId: string) {
+    const n = useSchematicStore.getState().nodes.find((x) => x.id === noteId)!;
+    return (n.data as NoteData).html;
+  }
+
+  it("creates a note with escaped HTML at the given position and returns its id", () => {
+    useSchematicStore.setState({ nodes: [], edges: [] });
+    const res = handlers.add_note({ text: "Head end\n<rack>", x: 40, y: 60 }) as {
+      noteId: string;
+      text: string;
+      position: { x: number; y: number };
+    };
+    expect(res.position).toEqual({ x: 40, y: 60 });
+    const note = useSchematicStore.getState().nodes.find((n) => n.type === "note")!;
+    expect(note.id).toBe(res.noteId);
+    expect(note.position).toEqual({ x: 40, y: 60 });
+    // Text is escaped (never raw markup) and newlines become <br>.
+    expect(noteHtml(res.noteId)).toBe("Head end<br>&lt;rack&gt;");
+  });
+
+  it("captures the new note's id even when notes already exist (snapshot is correct)", () => {
+    useSchematicStore.setState({ nodes: [], edges: [] });
+    const first = handlers.add_note({ text: "first", x: 0, y: 0 }) as { noteId: string };
+    const second = handlers.add_note({ text: "second", x: 10, y: 10 }) as { noteId: string };
+    expect(second.noteId).not.toBe(first.noteId);
+    expect(noteHtml(second.noteId)).toBe("second");
+    expect(noteHtml(first.noteId)).toBe("first");
+  });
+
+  it("is a single undo step (addNote pushes undo; updateNoteHtml does not)", () => {
+    useSchematicStore.setState({ nodes: [], edges: [] });
+    handlers.add_note({ text: "annotation", x: 5, y: 5 });
+    expect(useSchematicStore.getState().nodes.some((n) => n.type === "note")).toBe(true);
+    useSchematicStore.getState().undo();
+    expect(useSchematicStore.getState().nodes.some((n) => n.type === "note")).toBe(false);
+  });
+
+  it("rejects empty or whitespace-only text without creating a note", () => {
+    useSchematicStore.setState({ nodes: [], edges: [] });
+    expect(() => handlers.add_note({ text: "   ", x: 0, y: 0 })).toThrow(/text is required/);
+    expect(() => handlers.add_note({ text: "", x: 0, y: 0 })).toThrow(/text is required/);
+    expect(() => handlers.add_note({ x: 0, y: 0 } as Record<string, unknown>)).toThrow(/text is required/);
+    expect(useSchematicStore.getState().nodes.some((n) => n.type === "note")).toBe(false);
+  });
+
+  it("rejects a non-finite position without creating a note", () => {
+    useSchematicStore.setState({ nodes: [], edges: [] });
+    expect(() => handlers.add_note({ text: "ok", x: NaN, y: 0 })).toThrow();
+    expect(() => handlers.add_note({ text: "ok", x: 0 } as Record<string, unknown>)).toThrow();
+    expect(useSchematicStore.getState().nodes.some((n) => n.type === "note")).toBe(false);
   });
 });
 
