@@ -4404,15 +4404,24 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       const { linkedRoomId: _dropped, ...rest } = r;
       return { ...rest, id: nid };
     });
+    // Remap accessory IDs first so shelf-mounted placements can re-point at the copied shelf.
+    const accessoryIdMap = new Map<string, string>();
+    const newAccessories = src.accessories.map((a) => {
+      const nid = nextAccessoryId();
+      accessoryIdMap.set(a.id, nid);
+      return {
+        ...a,
+        id: nid,
+        rackId: rackIdMap.get(a.rackId) ?? a.rackId,
+      };
+    });
     const newPlacements = src.placements.map((pl) => ({
       ...pl,
       id: nextPlacementId(),
       rackId: rackIdMap.get(pl.rackId) ?? pl.rackId,
-    }));
-    const newAccessories = src.accessories.map((a) => ({
-      ...a,
-      id: nextAccessoryId(),
-      rackId: rackIdMap.get(a.rackId) ?? a.rackId,
+      // Re-point shelf-mounted devices at the COPIED shelf; otherwise they'd reference the
+      // source page's shelf id and the renderers would drop them from the duplicated rack.
+      mountedOnShelfId: pl.mountedOnShelfId ? accessoryIdMap.get(pl.mountedOnShelfId) ?? pl.mountedOnShelfId : pl.mountedOnShelfId,
     }));
     const newPage: RackElevationPage = {
       id: newPageId,
