@@ -2610,8 +2610,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     const oldSlot = slots[slotIdx];
 
-    // Collect ALL port IDs from this slot and any descendant slots
-    const descendantSlots = slots.filter((s) => s.parentSlotId && s.parentSlotId.startsWith(slotId));
+    // Collect ALL port IDs from this slot and any descendant slots. Match on whole
+    // path segments (slotId itself, or slotId + "/..."), not a raw prefix — otherwise
+    // a sibling whose id merely starts with this one (e.g. "slot1" vs "slot10", or
+    // nested "slot-1/sub" vs "slot-1/sub2") would be wrongly swept in and its card/
+    // ports/edges dropped.
+    const descendantSlots = slots.filter(
+      (s) => s.parentSlotId && (s.parentSlotId === slotId || s.parentSlotId.startsWith(`${slotId}/`)),
+    );
     const allOldPortIds = new Set([
       ...oldSlot.portIds,
       ...descendantSlots.flatMap((s) => s.portIds),
@@ -2793,8 +2799,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const target = slots.find((s) => s.slotId === slotId);
     if (!target) return;
 
-    // Slot and all descendants (nested cards)
-    const descendants = slots.filter((s) => s.parentSlotId && s.parentSlotId.startsWith(slotId));
+    // Slot and all descendants (nested cards). Match whole path segments, not a raw
+    // prefix, so a sibling whose id merely starts with this one (e.g. "slot1" vs
+    // "slot10") isn't swept in. (Mirrors the descendant match in swapCard.)
+    const descendants = slots.filter(
+      (s) => s.parentSlotId && (s.parentSlotId === slotId || s.parentSlotId.startsWith(`${slotId}/`)),
+    );
     const removedSlotIds = new Set<string>([slotId, ...descendants.map((s) => s.slotId)]);
     const removedPortIds = new Set<string>([
       ...target.portIds,

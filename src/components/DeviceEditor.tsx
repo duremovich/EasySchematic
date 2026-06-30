@@ -3026,9 +3026,12 @@ function SlotEditSection({
         const familyCards = family ? getCardsByFamily(family, customTemplates) : [];
         const isNested = !!slot.parentSlotId;
 
-        // Count connections to this slot's ports (including descendant ports for parent slots)
+        // Count connections to this slot's ports (including descendant ports for parent slots).
+        // Match descendants on whole path segments, not a raw prefix, so a sibling whose id
+        // merely starts with this one (e.g. "p1" vs "p10/...") isn't counted here. (Mirrors the
+        // descendant match in swapCard / removeSlot.)
         const descendantPortIds = isNested ? [] : installedSlots
-          .filter((s) => s.parentSlotId?.startsWith(slot.slotId))
+          .filter((s) => !!s.parentSlotId && (s.parentSlotId === slot.slotId || s.parentSlotId.startsWith(`${slot.slotId}/`)))
           .flatMap((s) => s.portIds);
         const allPortIds = new Set([...slot.portIds, ...descendantPortIds]);
         const connCount = edges.filter((e) => {
