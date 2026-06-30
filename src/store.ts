@@ -56,6 +56,7 @@ import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
 import { sanitizeNoteHtml } from "./sanitizeHtml";
 import { getTemplateById } from "./templateApi";
+import { DEFAULT_BRIDGE_PORT } from "./mcp/protocol";
 import { syncDeviceWithTemplate, type SyncResult } from "./templateSync";
 import { chooseNewHandleSuffix, type SwapPlan, type NewPortRef } from "./deviceSwap";
 import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
@@ -96,6 +97,9 @@ const TEMPLATES_KEY = "easyschematic-custom-templates";
 const TEMPLATE_META_KEY = "easyschematic-custom-template-meta";
 const CATEGORY_ORDER_KEY = "easyschematic-category-order";
 const MINIMAP_PREF_KEY = "easyschematic-show-minimap";
+const MCP_ENABLED_KEY = "easyschematic-mcp-enabled";
+const MCP_TOKEN_KEY = "easyschematic-mcp-token";
+const MCP_PORT_KEY = "easyschematic-mcp-port";
 
 /** Minimap visibility is an editor preference (not document data), persisted to
  *  localStorage and shared across schematics/sessions. Default visible. (#210) */
@@ -104,6 +108,31 @@ function loadShowMinimap(): boolean {
     return localStorage.getItem(MINIMAP_PREF_KEY) !== "0";
   } catch {
     return true;
+  }
+}
+
+/** MCP bridge (Beta) editor preferences — persisted to localStorage, not the
+ *  schematic file. Off by default; the bridge only connects once enabled. */
+function loadMcpEnabled(): boolean {
+  try {
+    return localStorage.getItem(MCP_ENABLED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function loadMcpToken(): string {
+  try {
+    return localStorage.getItem(MCP_TOKEN_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+function loadMcpPort(): number {
+  try {
+    const raw = Number(localStorage.getItem(MCP_PORT_KEY));
+    return Number.isInteger(raw) && raw > 0 ? raw : DEFAULT_BRIDGE_PORT;
+  } catch {
+    return DEFAULT_BRIDGE_PORT;
   }
 }
 
@@ -578,6 +607,17 @@ interface SchematicState {
   /** Canvas minimap visibility — editor preference, persisted to localStorage. (#210) */
   showMinimap: boolean;
   setShowMinimap: (show: boolean) => void;
+
+  /** MCP bridge (Beta): lets Claude read/edit the schematic live via the local
+   *  MCP server. Persisted editor prefs; status is ephemeral, set by the bridge. */
+  mcpBridgeEnabled: boolean;
+  mcpBridgeToken: string;
+  mcpBridgePort: number;
+  mcpBridgeStatus: "off" | "connecting" | "connected" | "error";
+  mcpBridgeStatusDetail?: string;
+  setMcpBridgeEnabled: (enabled: boolean) => void;
+  setMcpBridgeToken: (token: string) => void;
+  setMcpBridgePort: (port: number) => void;
 
   /** Rack: show connector-level face-plate detail (default off; advanced) */
   showFacePlateDetail: boolean;
@@ -1288,6 +1328,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   status: undefined,
   showLineJumps: true,
   showMinimap: loadShowMinimap(),
+  mcpBridgeEnabled: loadMcpEnabled(),
+  mcpBridgeToken: loadMcpToken(),
+  mcpBridgePort: loadMcpPort(),
+  mcpBridgeStatus: "off",
+  mcpBridgeStatusDetail: undefined,
   showFacePlateDetail: false,
   showConnectionLabels: true,
   showCableIdLabels: true,
@@ -3781,6 +3826,19 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     // Persisted to localStorage (editor preference), not the schematic file. (#210)
     try { localStorage.setItem(MINIMAP_PREF_KEY, show ? "1" : "0"); } catch { /* ignore */ }
     set({ showMinimap: show });
+  },
+
+  setMcpBridgeEnabled: (enabled) => {
+    try { localStorage.setItem(MCP_ENABLED_KEY, enabled ? "1" : "0"); } catch { /* ignore */ }
+    set({ mcpBridgeEnabled: enabled });
+  },
+  setMcpBridgeToken: (token) => {
+    try { localStorage.setItem(MCP_TOKEN_KEY, token); } catch { /* ignore */ }
+    set({ mcpBridgeToken: token });
+  },
+  setMcpBridgePort: (port) => {
+    try { localStorage.setItem(MCP_PORT_KEY, String(port)); } catch { /* ignore */ }
+    set({ mcpBridgePort: port });
   },
 
   setShowFacePlateDetail: (show) => {

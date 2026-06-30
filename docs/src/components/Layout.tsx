@@ -22,6 +22,7 @@ const navItems = [
   { hash: "import-devices", label: "Import Devices" },
   { hash: "device-template-schema", label: "Device Template Schema" },
   { hash: "self-hosting", label: "Self-Hosting" },
+  { hash: "ai-assistant", label: "AI Assistant (MCP)" },
   { hash: "api", label: "Public API" },
 ];
 

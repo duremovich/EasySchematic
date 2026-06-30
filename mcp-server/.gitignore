@@ -1,0 +1,4 @@
+dist/
+node_modules/
+# Single-source: generated from ../src/mcp/protocol.ts by scripts/sync-protocol.mjs
+src/protocol.generated.ts

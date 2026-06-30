@@ -1,0 +1,27 @@
+{
+  "name": "easyschematic-mcp-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local MCP server that bridges Claude to a running EasySchematic editor (Beta).",
+  "bin": {
+    "easyschematic-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "sync": "node scripts/sync-protocol.mjs",
+    "prebuild": "node scripts/sync-protocol.mjs",
+    "build": "tsc",
+    "typecheck": "node scripts/sync-protocol.mjs && tsc --noEmit",
+    "pretest": "npm run build",
+    "test": "node --test dist/*.test.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.10.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.5.0"
+  }
+}

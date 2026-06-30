@@ -16,6 +16,7 @@ import PrintingPage from "./pages/Printing";
 import PackListPage from "./pages/PackList";
 import ApiPage from "./pages/Api";
 import SelfHostingPage from "./pages/SelfHosting";
+import AiAssistantPage from "./pages/AiAssistant";
 import RacksPage from "./pages/Racks";
 import PrintSheetsPage from "./pages/PrintSheets";
 
@@ -37,6 +38,7 @@ const routes: Record<string, { title: string; component: React.FC }> = {
   "import-devices": { title: "Import Devices", component: ImportDevicesPage },
   "device-template-schema": { title: "Device Template Schema", component: DeviceTemplateSchemaPage },
   "self-hosting": { title: "Self-Hosting", component: SelfHostingPage },
+  "ai-assistant": { title: "AI Assistant (MCP)", component: AiAssistantPage },
   api: { title: "Public API", component: ApiPage },
 };
 

@@ -71,11 +71,19 @@ function SensitivityRow({
   );
 }
 
-type PrefTab = "canvas" | "display";
+type PrefTab = "canvas" | "display" | "ai";
 
 const TAB_LABELS: Record<PrefTab, string> = {
   canvas: "Canvas",
   display: "Display",
+  ai: "AI (Beta)",
+};
+
+const MCP_STATUS_LABELS: Record<string, string> = {
+  off: "Off",
+  connecting: "Connecting…",
+  connected: "Connected",
+  error: "Not connected",
 };
 
 export default function PreferencesDialog({ onClose }: { onClose: () => void }) {
@@ -101,6 +109,14 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
   const setUseShortNames = useSchematicStore((s) => s.setUseShortNames);
   const wrapDeviceLabels = useSchematicStore((s) => s.wrapDeviceLabels);
   const setWrapDeviceLabels = useSchematicStore((s) => s.setWrapDeviceLabels);
+  const mcpEnabled = useSchematicStore((s) => s.mcpBridgeEnabled);
+  const setMcpEnabled = useSchematicStore((s) => s.setMcpBridgeEnabled);
+  const mcpToken = useSchematicStore((s) => s.mcpBridgeToken);
+  const setMcpToken = useSchematicStore((s) => s.setMcpBridgeToken);
+  const mcpPort = useSchematicStore((s) => s.mcpBridgePort);
+  const setMcpPort = useSchematicStore((s) => s.setMcpBridgePort);
+  const mcpStatus = useSchematicStore((s) => s.mcpBridgeStatus);
+  const mcpStatusDetail = useSchematicStore((s) => s.mcpBridgeStatusDetail);
   const [autoRoutePref, setAutoRoutePref] = useState(
     () => localStorage.getItem(AUTOROUTE_PREF_KEY) ?? "ask",
   );
@@ -473,6 +489,74 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
                 </div>
                 <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
                   Symbol used for cost fields in reports. All entered costs are assumed to be in this currency — no conversion is applied.
+                </p>
+              </div>
+            </>
+          )}
+
+          {activeTab === "ai" && (
+            <>
+              {/* AI Assistant (MCP) — Beta */}
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-2">
+                  AI Assistant (MCP) — Beta
+                </div>
+                <label className="flex items-center justify-between py-1 cursor-pointer">
+                  <span className="text-xs text-[var(--color-text)]">Let Claude read &amp; edit this schematic</span>
+                  <input
+                    type="checkbox"
+                    checked={mcpEnabled}
+                    onChange={(e) => setMcpEnabled(e.target.checked)}
+                    className="cursor-pointer accent-blue-600"
+                  />
+                </label>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                  Connects this tab to the EasySchematic MCP server running on your computer, so an AI assistant (Claude) can add devices, set properties, and make connections live. Off by default; your drawing is only reachable while this is on.
+                </p>
+
+                <div className="flex items-center justify-between py-1 mt-3">
+                  <span className="text-xs text-[var(--color-text)]">Pairing token</span>
+                  <input
+                    type="password"
+                    value={mcpToken}
+                    onChange={(e) => setMcpToken(e.target.value)}
+                    placeholder="Paste from the server"
+                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none w-[180px]"
+                  />
+                </div>
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">
+                  Copy the token the MCP server prints on startup and paste it here. This stops other programs on your computer from reaching the bridge.
+                </p>
+
+                <div className="flex items-center justify-between py-1 mt-3">
+                  <span className="text-xs text-[var(--color-text)]">Server port</span>
+                  <input
+                    type="number"
+                    value={mcpPort}
+                    onChange={(e) => setMcpPort(Number(e.target.value) || mcpPort)}
+                    className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1 text-xs outline-none w-[100px]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between py-1 mt-3">
+                  <span className="text-xs text-[var(--color-text)]">Status</span>
+                  <span
+                    className={`text-xs font-medium ${
+                      mcpStatus === "connected"
+                        ? "text-green-600"
+                        : mcpStatus === "error"
+                          ? "text-red-600"
+                          : "text-[var(--color-text-muted)]"
+                    }`}
+                  >
+                    {MCP_STATUS_LABELS[mcpStatus] ?? mcpStatus}
+                  </span>
+                </div>
+                {mcpStatusDetail && (
+                  <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5">{mcpStatusDetail}</p>
+                )}
+                <p className="text-[10px] text-[var(--color-text-muted)] mt-2">
+                  Setup help is in the docs under “AI Assistant (MCP)”. This is an early Beta — only a core set of actions is supported.
                 </p>
               </div>
             </>

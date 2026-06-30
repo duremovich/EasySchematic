@@ -21,6 +21,7 @@ import {
 } from "@xyflow/react";
 import { useSchematicStore, GRID_SIZE, setReconnectingEdgeId } from "./store";
 import { warmupRoutingWorker } from "./routing/routingClient";
+import { useMcpBridge } from "./mcpBridge";
 import { nodeTypes, edgeTypes } from "./nodeTypes";
 import SnapGuides from "./components/SnapGuides";
 import PageBoundaryOverlay from "./components/PageBoundaryOverlay";
@@ -1760,6 +1761,9 @@ export default function App() {
   const isSchematicActive = activePage === "schematic";
   const undo = useSchematicStore((s) => s.undo);
   const redo = useSchematicStore((s) => s.redo);
+
+  // MCP bridge (Beta): connect to the local MCP server when the user enables it.
+  useMcpBridge();
 
   // Keep the browser tab title in sync with the current schematic name, so it
   // reflects the active file (incl. after Save As / Open / rename). (#174)
