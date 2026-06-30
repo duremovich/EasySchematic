@@ -36,7 +36,8 @@ export const TOOLS: ToolDef[] = [
   },
   {
     name: "get_device",
-    description: "Get one device's details, including its ports (id, label, direction, signal type).",
+    description:
+      "Get one device's details, including its ports (id, label, direction, signal type) and, for a modular chassis, its slots (id and slot family) — the slotId values that list_slot_cards and install_card need.",
     inputSchema: {
       type: "object",
       properties: { nodeId: { type: "string", description: "The device id." } },
