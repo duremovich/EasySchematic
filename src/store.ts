@@ -1079,6 +1079,30 @@ let suppressedUndoPushes: { count: number } | null = null;
 /** Same idea for saveToLocalStorage: a bulk loop saves once at the end, not per step. */
 let deferredSave: { pending: boolean } | null = null;
 
+/** Trailing autosave for skipped drag ticks (see onNodesChange). Re-armed on every skipped
+ *  mid-drag tick and cancelled by any real save (saveToLocalStorage clears it), so it fires only
+ *  when a drag stops WITHOUT the normal dragging:false drop batch — React Flow aborts a drag
+ *  (skipping that batch and onNodeDragStop) when a second touch starts or the dragged node is
+ *  deleted mid-drag, and the resting positions must still persist. */
+const TRAILING_DRAG_SAVE_MS = 500;
+let trailingDragSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Flush a pending trailing drag save synchronously. Wired to pagehide/page-hidden below so a
+ *  tab close or app switch right after an aborted drag cannot outrun the timer. Exported as a
+ *  test seam. */
+export function flushTrailingDragSave() {
+  if (trailingDragSaveTimer === null) return;
+  clearTimeout(trailingDragSaveTimer);
+  trailingDragSaveTimer = null;
+  useSchematicStore.getState().saveToLocalStorage();
+}
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+  window.addEventListener("pagehide", flushTrailingDragSave);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushTrailingDragSave();
+  });
+}
+
 /** Edge ID being reconnected — excluded from isValidConnection duplicate checks. */
 let _reconnectingEdgeId: string | null = null;
 export function setReconnectingEdgeId(id: string | null) {
@@ -2113,7 +2137,25 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       ? syncEdgesFromWaypointNodes(oldEdges, normalized)
       : oldEdges;
     set({ nodes: normalized, ...(newEdges !== oldEdges ? { edges: newEdges } : {}) });
-    get().saveToLocalStorage();
+    // Skip persistence on intermediate drag ticks. A node drag fires onNodesChange ~60×/sec with
+    // dragging:true position changes, and re-serializing the whole document to localStorage each tick
+    // is wasteful. React Flow emits a final dragging:false position change on drop, so the resting
+    // position is still saved; any tick that also carries a non-drag change saves too. (Routing
+    // already skips during drag — this mirrors it.)
+    const isMidDragTick =
+      changes.length > 0 && changes.every((c) => c.type === "position" && c.dragging === true);
+    if (isMidDragTick) {
+      // Aborted drags never deliver the dragging:false batch, so arm a trailing save that
+      // persists the resting state once the ticks stop. Any real save cancels it (see
+      // saveToLocalStorage) and pagehide/page-hidden flushes it (see flushTrailingDragSave).
+      if (trailingDragSaveTimer !== null) clearTimeout(trailingDragSaveTimer);
+      trailingDragSaveTimer = setTimeout(() => {
+        trailingDragSaveTimer = null;
+        get().saveToLocalStorage();
+      }, TRAILING_DRAG_SAVE_MS);
+    } else {
+      get().saveToLocalStorage();
+    }
   },
 
   onEdgesChange: (changes) => {
@@ -5995,6 +6037,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   },
 
   saveToLocalStorage: () => {
+    // A save of current state supersedes any pending trailing drag save (see trailingDragSaveTimer).
+    if (trailingDragSaveTimer !== null) {
+      clearTimeout(trailingDragSaveTimer);
+      trailingDragSaveTimer = null;
+    }
     if (deferredSave) {
       deferredSave.pending = true;
       return;
