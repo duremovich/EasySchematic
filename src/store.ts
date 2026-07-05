@@ -1044,8 +1044,15 @@ function applyRoutingResult(r: RoutingResult): void {
   });
 }
 
+// Monotonic suffix so two clone calls in the same millisecond can't produce identical port IDs.
+// This happens when several devices are cloned in one synchronous tick (e.g. a multi-device paste,
+// or two copies of the same slotted template — cloneCardPorts' slotId is template-local, not
+// instance-unique, so it collides the same way). Resets on reload; the Date.now() prefix keeps IDs
+// distinct across sessions.
+let portClonePrefixSeq = 0;
+
 function clonePorts(ports: Port[]): Port[] {
-  const prefix = `p${Date.now()}`;
+  const prefix = `p${Date.now()}-${portClonePrefixSeq++}`;
   return ports.map((p, i) => {
     const clone: Port = { ...p, id: `${prefix}-${i}` };
     // Deep clone nested objects
@@ -1058,7 +1065,7 @@ function clonePorts(ports: Port[]): Port[] {
 
 /** Clone ports for a card installed in a slot, namespacing IDs and setting section. */
 function cloneCardPorts(ports: Port[], slotId: string, slotLabel: string): Port[] {
-  const prefix = `slot-${slotId}-${Date.now()}`;
+  const prefix = `slot-${slotId}-${Date.now()}-${portClonePrefixSeq++}`;
   return ports.map((p, i) => {
     const clone: Port = { ...p, id: `${prefix}-${i}`, section: slotLabel };
     if (p.capabilities) clone.capabilities = { ...p.capabilities };
@@ -3523,13 +3530,21 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   addOwnedGear: (template, quantity = 1) => {
     const normalizedQuantity = Math.max(1, Math.floor(quantity));
     const key = templateKey(template);
-    const ownedGear = [...get().ownedGear];
-    const existing = ownedGear.find((item) => templateKey(item.template) === key);
-    if (existing) {
-      existing.quantity += normalizedQuantity;
-    } else {
-      ownedGear.push({ template: structuredClone(template), quantity: normalizedQuantity });
-    }
+    const current = get().ownedGear;
+    // Build a new array immutably (mirrors updateOwnedGearQuantity). Mutating the matched item's
+    // quantity in place would clobber the live state object before set().
+    // Target the FIRST match only, exactly like the previous find()-based code: load/import paths
+    // take `ownedGear` verbatim, so a hand-edited file can carry two rows with the same key, and a
+    // blanket map() would bump both.
+    const index = current.findIndex((item) => templateKey(item.template) === key);
+    const ownedGear =
+      index === -1
+        ? [...current, { template: structuredClone(template), quantity: normalizedQuantity }]
+        : [
+            ...current.slice(0, index),
+            { ...current[index], quantity: current[index].quantity + normalizedQuantity },
+            ...current.slice(index + 1),
+          ];
     set({ ownedGear, showOwnedGearPane: true });
     get().saveToLocalStorage();
   },
@@ -5622,7 +5637,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         stubLabelShowRoom: DEFAULT_STUB_LABEL_SHOW_ROOM,
         stubLabelPageMode: DEFAULT_STUB_LABEL_PAGE_MODE,
         useShortNames: false,
-        wrapDeviceLabels: true,
+        wrapDeviceLabels: false,
         autoRoute: true,
         edgeHitboxSize: 10,
         panMode: DEFAULT_PAN_MODE,
