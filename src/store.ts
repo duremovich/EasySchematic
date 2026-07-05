@@ -897,14 +897,18 @@ function syncRackCounters(pages: SchematicPage[]) {
     const pm = page.id.match(/^rackpage-(\d+)$/);
     if (pm) rackPageIdCounter = Math.max(rackPageIdCounter, Number(pm[1]));
     if (page.type === "print-sheet") {
+      // The print-sheet id counter must advance for EVERY print sheet, even one
+      // with no viewports: a new sheet is created with `viewports: []`, so nesting
+      // this bump inside the viewport loop below left plain sheets unable to
+      // advance the counter on reload — the next new sheet then reused the id.
+      const sm = page.id.match(/^printsheet-(\d+)$/);
+      if (sm) printSheetIdCounter = Math.max(printSheetIdCounter, Number(sm[1]));
       // Arrays default to [] — an older/partial page missing these would throw
       // "not iterable" here, AFTER importFromJSON already loaded the schematic,
       // surfacing to callers as a false "Invalid schematic file." (#176)
       for (const vp of page.viewports ?? []) {
         const vm = vp.id.match(/^viewport-(\d+)$/);
         if (vm) viewportIdCounter = Math.max(viewportIdCounter, Number(vm[1]));
-        const sm = page.id.match(/^printsheet-(\d+)$/);
-        if (sm) printSheetIdCounter = Math.max(printSheetIdCounter, Number(sm[1]));
       }
       continue;
     }
