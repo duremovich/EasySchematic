@@ -32,6 +32,9 @@ import type {
   CustomTemplateGroup,
   CustomTemplateMeta,
   BundleMeta,
+  PatchHop,
+  PatchSegmentOverride,
+  PatchPanelViewPage,
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings, PanMode, StubLabelPageMode, ProjectStatus } from "./types";
@@ -61,6 +64,7 @@ import { syncDeviceWithTemplate, type SyncResult } from "./templateSync";
 import { chooseNewHandleSuffix, type SwapPlan, type NewPortRef } from "./deviceSwap";
 import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
 import { computeCableSchedule } from "./cableSchedule";
+import { getPanelOccupancy, isPortAvailable } from "./patchCircuits";
 import { autoFillSheetForRack } from "./printSheetAutoFill";
 import { allocateEdgeId, maxEdgeCounterFromIds, newLinkedConnectionId, uniquifyEdgeIds } from "./idUtils";
 
@@ -600,6 +604,29 @@ interface SchematicState {
   /** Map from edge ID to gradient colors for virtual edges bridging different signal types */
   virtualEdgeGradients: Record<string, { sourceColor: string; targetColor: string }>;
 
+  // Patch panel view (#232)
+  /** Transient: edge currently being patched from the Patch Panels page (assign mode). */
+  patchAssignEdgeId: string | null;
+  /** Transient: edge whose circuit is hover-traced on the Patch Panels page. */
+  patchTracedEdgeId: string | null;
+  setPatchAssignEdge: (edgeId: string | null) => void;
+  setPatchTracedEdge: (edgeId: string | null) => void;
+  /** Append a hop. Returns false (no-op) if the port is occupied or args don't resolve. */
+  addEdgePatchHop: (edgeId: string, hop: PatchHop) => boolean;
+  /** Remove all hops + segment overrides from a connection. */
+  clearEdgePatchHops: (edgeId: string) => void;
+  /** Set/merge one segment's override. Empty strings clear the field. */
+  setPatchSegmentOverride: (edgeId: string, segIndex: number, patch: PatchSegmentOverride) => void;
+  /** Create an off-canvas patch panel device from a template. Returns the node id. */
+  addOffCanvasPanel: (template: DeviceTemplate) => string;
+  /** Toggle a patch panel between canvas and off-canvas. Blocked (returns false) when
+   *  moving OFF canvas with wired edges attached. */
+  setPanelOffCanvas: (nodeId: string, offCanvas: boolean) => boolean;
+  /** Single-instance page: returns the existing page id when one already exists. */
+  addPatchPanelPage: () => string;
+  removePatchPanelPage: (pageId: string) => void;
+  renamePatchPanelPage: (pageId: string, label: string) => void;
+
   // Line jumps (#18)
   showLineJumps: boolean;
   setShowLineJumps: (show: boolean) => void;
@@ -798,6 +825,22 @@ function nextViewportId(): string {
 /** Apply fn to the rack-elevation page with the given id; leave other pages untouched. */
 function mapElevationPage(pages: SchematicPage[], pageId: string, fn: (p: RackElevationPage) => RackElevationPage): SchematicPage[] {
   return pages.map((p) => (p.id === pageId && p.type === "rack-elevation") ? fn(p) : p);
+}
+
+/** Remove patch hops that reference deleted panel nodes. Segment overrides are dropped
+ *  alongside (their indices shift when the hop list changes). */
+function stripDeadHops(edges: ConnectionEdge[], deadNodeIds: Set<string>): ConnectionEdge[] {
+  if (deadNodeIds.size === 0) return edges;
+  return edges.map((e) => {
+    const hops = e.data?.patchHops;
+    if (!hops?.length || !hops.some((h) => deadNodeIds.has(h.panelNodeId))) return e;
+    const kept = hops.filter((h) => !deadNodeIds.has(h.panelNodeId));
+    const data = { ...e.data! };
+    if (kept.length) data.patchHops = kept;
+    else delete (data as Record<string, unknown>).patchHops;
+    delete (data as Record<string, unknown>).patchSegments;
+    return { ...e, data };
+  });
 }
 
 /** Sync rack-related counters from pages data. */
@@ -1356,6 +1399,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   hiddenAdapterNodeIds: new Set(),
   hiddenVirtualEdgeIds: new Set(),
   virtualEdgeGradients: {},
+  patchAssignEdgeId: null,
+  patchTracedEdgeId: null,
   pages: [],
   activePage: "schematic",
 
@@ -1739,10 +1784,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     // Drop junction anchors orphaned by a dissolved bundle (and re-heal a live bundle whose
     // anchor was itself in the deleted selection).
     const healedNodes = reconcileBundleJunctions(reconciledNodes, gc.edges);
+    // Deleting a patch panel orphans any hops routed through it — strip them so
+    // schedules and the patch view never chase a dead node id.
+    const edgesAfterHopStrip = stripDeadHops(gc.edges, selectedNodeIds);
 
     set({
       nodes: renumberNodes(healedNodes),
-      edges: gc.edges,
+      edges: edgesAfterHopStrip,
       bundles: gc.bundles,
       pages,
       ...(nextDistances !== state.roomDistances ? { roomDistances: nextDistances } : {}),
@@ -1900,6 +1948,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       // not inherit the original's (IDs are permanent and label-printable).
       if (data?.cableId) {
         const { cableId: _omitCableId, ...rest } = data;
+        data = rest;
+      }
+      // Patch assignments are per-physical-port — a pasted duplicate would double-book
+      // the same panel ports. The copy starts unpatched.
+      if (data?.patchHops || data?.patchSegments) {
+        const { patchHops: _omitHops, patchSegments: _omitSegs, ...rest } = data;
         data = rest;
       }
       newEdges.push({
@@ -3964,6 +4018,154 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     }
   },
 
+  setPatchAssignEdge: (edgeId) => set({ patchAssignEdgeId: edgeId }),
+  setPatchTracedEdge: (edgeId) => set({ patchTracedEdgeId: edgeId }),
+
+  addEdgePatchHop: (edgeId, hop) => {
+    const state = get();
+    const edge = state.edges.find((e) => e.id === edgeId);
+    if (!edge?.data) return false;
+    const occ = getPanelOccupancy(state.nodes, state.edges);
+    if (!isPortAvailable(occ, hop.panelNodeId, hop.portId)) return false;
+    const panel = state.nodes.find((n) => n.id === hop.panelNodeId);
+    if (panel?.type !== "device") return false;
+    const port = (panel.data as DeviceData).ports.find((p) => p.id === hop.portId);
+    if (!port || port.direction !== "passthrough") return false;
+
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      edges: state.edges.map((e) => {
+        if (e.id !== edgeId) return e;
+        const data = { ...e.data!, patchHops: [...(e.data!.patchHops ?? []), hop] };
+        // Hop list changed → per-segment override indices are stale. Drop them.
+        delete (data as Record<string, unknown>).patchSegments;
+        return { ...e, data };
+      }),
+      undoSize: undoStack.length,
+      redoSize: 0,
+    });
+    get().saveToLocalStorage();
+    return true;
+  },
+
+  clearEdgePatchHops: (edgeId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      edges: state.edges.map((e) => {
+        if (e.id !== edgeId || !e.data) return e;
+        const data = { ...e.data };
+        delete (data as Record<string, unknown>).patchHops;
+        delete (data as Record<string, unknown>).patchSegments;
+        return { ...e, data };
+      }),
+      undoSize: undoStack.length,
+      redoSize: 0,
+    });
+    get().saveToLocalStorage();
+  },
+
+  setPatchSegmentOverride: (edgeId, segIndex, patch) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      edges: state.edges.map((e) => {
+        if (e.id !== edgeId || !e.data) return e;
+        const segs = [...(e.data.patchSegments ?? [])];
+        while (segs.length <= segIndex) segs.push({});
+        const merged: PatchSegmentOverride = { ...segs[segIndex], ...patch };
+        if (!merged.label?.trim()) delete merged.label;
+        if (!merged.cableLength?.trim()) delete merged.cableLength;
+        segs[segIndex] = merged;
+        return { ...e, data: { ...e.data, patchSegments: segs } };
+      }),
+      undoSize: undoStack.length,
+      redoSize: 0,
+    });
+    get().saveToLocalStorage();
+  },
+
+  addOffCanvasPanel: (template) => {
+    // Reuse addDevice for port cloning / presets / numbering, then mark the node
+    // off-canvas. Parked above the top-left of existing content so the minZoom
+    // bounds aren't skewed far from the drawing.
+    const before = get();
+    let anchor = { x: 0, y: 0 };
+    for (const n of before.nodes) {
+      if (n.type !== "device") continue;
+      anchor = { x: Math.min(anchor.x, n.position.x), y: Math.min(anchor.y, n.position.y) };
+    }
+    get().addDevice(template, { x: anchor.x, y: anchor.y - 400 });
+    const after = get();
+    const newNode = after.nodes[after.nodes.length - 1];
+    set({
+      nodes: after.nodes.map((n): SchematicNode =>
+        n.id === newNode.id && n.type === "device"
+          ? { ...n, hidden: true, data: { ...n.data, offCanvas: true } }
+          : n,
+      ),
+    });
+    get().saveToLocalStorage();
+    return newNode.id;
+  },
+
+  setPanelOffCanvas: (nodeId, offCanvas) => {
+    const state = get();
+    const node = state.nodes.find((n) => n.id === nodeId);
+    if (node?.type !== "device") return false;
+    if (offCanvas) {
+      // A physically wired panel must stay on canvas — its edges have nowhere to land.
+      const wired = state.edges.some((e) => e.source === nodeId || e.target === nodeId);
+      if (wired) return false;
+    }
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      nodes: state.nodes.map((n): SchematicNode =>
+        n.id === nodeId && n.type === "device"
+          ? { ...n, hidden: offCanvas, data: { ...n.data, offCanvas: offCanvas || undefined } }
+          : n,
+      ),
+      undoSize: undoStack.length,
+      redoSize: 0,
+    });
+    get().saveToLocalStorage();
+    return true;
+  },
+
+  addPatchPanelPage: () => {
+    const state = get();
+    const existing = state.pages.find((p) => p.type === "patch-panel");
+    if (existing) {
+      set({ activePage: existing.id });
+      return existing.id;
+    }
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const page: PatchPanelViewPage = { id: "patchbay-1", label: "Patch Bay", type: "patch-panel" };
+    set({ pages: [...state.pages, page], activePage: page.id, undoSize: undoStack.length, redoSize: 0 });
+    get().saveToLocalStorage();
+    return page.id;
+  },
+
+  removePatchPanelPage: (pageId) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const pages = state.pages.filter((p) => p.id !== pageId);
+    const activePage = state.activePage === pageId ? "schematic" : state.activePage;
+    set({ pages, activePage, undoSize: undoStack.length, redoSize: 0 });
+    get().saveToLocalStorage();
+  },
+
+  renamePatchPanelPage: (pageId, label) => {
+    const state = get();
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      pages: state.pages.map((p) => (p.id === pageId ? { ...p, label } : p)),
+      undoSize: undoStack.length,
+      redoSize: 0,
+    });
+    get().saveToLocalStorage();
+  },
+
   exportCustomTemplates: () => {
     return structuredClone(get().customTemplates);
   },
@@ -5859,9 +6061,15 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       ];
     }
 
-    // Exclude hidden adapter nodes from obstacle computation
-    const routingNodes = hiddenAdapterNodeIds.size > 0
-      ? state.nodes.filter((n) => !hiddenAdapterNodeIds.has(n.id))
+    // Exclude hidden adapters AND off-canvas devices (virtual patch panels) from
+    // obstacle computation — neither is rendered, so neither should block routes.
+    const offCanvasIds = new Set(
+      state.nodes
+        .filter((n) => n.type === "device" && (n.data as DeviceData).offCanvas)
+        .map((n) => n.id),
+    );
+    const routingNodes = (hiddenAdapterNodeIds.size > 0 || offCanvasIds.size > 0)
+      ? state.nodes.filter((n) => !hiddenAdapterNodeIds.has(n.id) && !offCanvasIds.has(n.id))
       : state.nodes;
 
     // Hand the heavy A* off to the routing worker. Build the DOM-derived handle snapshot here

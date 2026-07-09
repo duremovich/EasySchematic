@@ -955,6 +955,8 @@ export function enforceMinSpacing(
     if (n.type === "room" || n.type === "note" || n.type === "stub-label") return false;
     if (n.parentId !== draggedNode.parentId) return false;
     if (hiddenNodeIds?.has(n.id)) return false;
+    // Off-canvas devices (virtual patch panels) are invisible — never push against them.
+    if (n.type === "device" && (n.data as { offCanvas?: boolean }).offCanvas) return false;
     return true;
   });
 
