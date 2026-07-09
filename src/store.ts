@@ -817,6 +817,7 @@ function syncRackCounters(pages: SchematicPage[]) {
       }
       continue;
     }
+    if (page.type === "patch-panel") continue;
     for (const rack of page.racks ?? []) {
       const rm = rack.id.match(/^rack-(\d+)$/);
       if (rm) rackIdCounter = Math.max(rackIdCounter, Number(rm[1]));
@@ -4597,6 +4598,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           ),
         };
       }
+      if (p.type !== "rack-elevation") return p;
       if (p.id === srcPageId) {
         return {
           ...p,

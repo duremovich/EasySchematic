@@ -16,7 +16,7 @@ import { defaultStubPlacement } from "./stubPlacement";
 import { getPortAbsolutePositions } from "./snapUtils";
 import type { SchematicNode } from "./types";
 
-export const CURRENT_SCHEMA_VERSION = 42;
+export const CURRENT_SCHEMA_VERSION = 43;
 
 /** Stub-label nodes paint at this z-index so connection lines render UNDER their
  *  white box (matches waypoint/junction z — above edge z, below the 10000 edge labels). */
@@ -605,6 +605,12 @@ const migrations: Record<number, Migration> = {
     // tested/testedDate, file-level status, rack unitCost, note color. No transform needed;
     // absent fields read as undefined on the new code paths.
     data.version = 42;
+    return data;
+  },
+  42: (data) => {
+    // v42 → v43: patch panel view — adds optional edge.data.patchHops/patchSegments,
+    // DeviceData.offCanvas, and the "patch-panel" page variant. Purely additive.
+    data.version = 43;
     return data;
   },
 };

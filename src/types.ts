@@ -241,6 +241,10 @@ export interface DeviceData {
   hostname?: string;
   deviceType: string;
   ports: Port[];
+  /** Device exists in the project (BOQ, pack list, racks, patch view) but is not rendered
+   *  on the schematic canvas and is excluded from routing/overlap. v1: patch panels only,
+   *  created from the Patch Panels page. Paired with node.hidden = true (React Flow). */
+  offCanvas?: boolean;
   color?: string;
   /** Custom header background color (#9) */
   headerColor?: string;
@@ -431,6 +435,21 @@ export type BundleJunctionNode = Node<BundleJunctionData, "bundle-junction">;
 
 export type SchematicNode = DeviceNode | RoomNode | NoteNode | AnnotationNode | StubLabelNode | WaypointNode | BundleJunctionNode;
 
+/** One intermediate patch-panel hop on a connection's physical path (source → target order).
+ *  The panel is a real device node (deviceType "patch-panel"), possibly off-canvas. */
+export interface PatchHop {
+  panelNodeId: string;
+  /** Passthrough port id on that panel. */
+  portId: string;
+}
+
+/** Per-segment user overrides for a patched connection. Index i = physical segment i
+ *  (0 = source-side). Cleared wholesale whenever patchHops change (indices would shift). */
+export interface PatchSegmentOverride {
+  label?: string;
+  cableLength?: string;
+}
+
 export interface ConnectionData {
   [key: string]: unknown;
   signalType: SignalType;
@@ -496,6 +515,12 @@ export interface ConnectionData {
   tested?: boolean;
   /** ISO date (YYYY-MM-DD) the cable was tested / certified (#P2-031) */
   testedDate?: string;
+  /** Intermediate patch-panel hops (source → target). Presence (length > 0) marks the
+   *  connection as "patched": schedules expand it into hops.length+1 physical cables
+   *  with suffix IDs (E001 → E001-A/-B/…). The canvas edge itself is untouched. */
+  patchHops?: PatchHop[];
+  /** Sparse per-segment overrides, parallel to the segment list (patchHops.length + 1). */
+  patchSegments?: PatchSegmentOverride[];
 }
 
 export type ConnectionEdge = Edge<ConnectionData>;
@@ -729,7 +754,16 @@ export interface PrintSheetPage {
   showTitleBlock: boolean;
 }
 
-export type SchematicPage = RackElevationPage | PrintSheetPage;
+/** The Patch Panels view page — a single project-wide patch bay tab that renders every
+ *  patch-panel device (canvas or off-canvas) with its port occupancy. Pure view state;
+ *  panels and patch assignments live on nodes/edges, so deleting the page loses nothing. */
+export interface PatchPanelViewPage {
+  id: string;
+  label: string;
+  type: "patch-panel";
+}
+
+export type SchematicPage = RackElevationPage | PrintSheetPage | PatchPanelViewPage;
 
 /** Per-bundle metadata. Membership is on each connection's `data.bundleId`; this holds
  *  the label, an optional user-dragged trunk override, and collapse state. */
