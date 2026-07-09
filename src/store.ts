@@ -3917,7 +3917,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const state = get();
     const rows = computeCableSchedule(state.nodes, state.edges, state.cableNamingScheme);
     const map: Record<string, string> = {};
-    for (const r of rows) map[r.edgeId] = r.cableId;
+    for (const r of rows) {
+      if (map[r.edgeId]) continue;                // patched edges emit N segment rows — first wins
+      map[r.edgeId] = r.baseCableId ?? r.cableId; // persist/display the BASE id, never a suffixed segment id
+    }
     // Mirror cable IDs to the partner stub-leg edge so both halves render the same
     // cable label. The schedule emits one row per logical connection (source-side leg);
     // the target-side leg shares the same cable ID via linkedConnectionId.

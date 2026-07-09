@@ -7,6 +7,9 @@ import { SIGNAL_LABELS, CONNECTOR_LABELS } from "./types";
 import { computeCableSchedule, type CableScheduleDistanceContext } from "./cableSchedule";
 import { resolvePort, resolvePortLabel, getRoomLabel, escapeCsv, csvRow, groupBy } from "./packList";
 import { effectiveSignalType, resolvePortGender } from "./connectorTypes";
+import { getPanelOccupancy, getPatchSegments, devicePoint } from "./patchCircuits";
+import { getCableType } from "./cableTypes";
+import type { SignalType } from "./types";
 import { transformLabelNow } from "./labelCaseUtils";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
@@ -131,7 +134,13 @@ export function computePatchPanelSchedule(
   // Lookup cable IDs + gender-aware cable labels from the cable schedule so the same edge
   // shows the same cable ID and type in both reports.
   const cableRows = computeCableSchedule(nodes, edges, namingScheme, distanceContext);
-  const cableByEdge = new Map(cableRows.map((r) => [r.edgeId, r]));
+  // First row per edge wins: patched edges emit one row per physical segment, and the
+  // wired-edge lookups below want the edge's canonical (first/base) row.
+  const cableByEdge = new Map<string, (typeof cableRows)[number]>();
+  for (const r of cableRows) if (!cableByEdge.has(r.edgeId)) cableByEdge.set(r.edgeId, r);
+
+  // Metadata patch-hop occupancy (panels routed via edge.data.patchHops, incl. off-canvas panels).
+  const hopOccupancy = getPanelOccupancy(nodes, edges);
 
   // Index edges by (nodeId, portId). Strip -in/-out suffixes so bidirectional handles
   // match the underlying port. Each port id maps to at most one edge in practice
@@ -175,8 +184,52 @@ export function computePatchPanelSchedule(
 
       // ── Passthrough circuit: one row with split rear/front columns ──────────
       if (port.direction === "passthrough") {
-        const rear = resolveSide(node.id, port.id, "rear", edges, nodes, cableByEdge);
-        const front = resolveSide(node.id, port.id, "front", edges, nodes, cableByEdge);
+        let rear = resolveSide(node.id, port.id, "rear", edges, nodes, cableByEdge);
+        let front = resolveSide(node.id, port.id, "front", edges, nodes, cableByEdge);
+
+        // Hop-routed (metadata) occupancy fills faces that aren't physically wired —
+        // this is how off-canvas panels and "route via panel" assignments surface here.
+        const occ = hopOccupancy.get(node.id)?.get(port.id);
+        let hopSignal: SignalType | undefined;
+        if (occ?.kind === "hop" && (!rear.edgeId || !front.edgeId)) {
+          const hopEdge = edges.find((e) => e.id === occ.edgeId);
+          if (hopEdge) {
+            hopSignal = hopEdge.data?.signalType as SignalType | undefined;
+            const baseRow = cableByEdge.get(hopEdge.id);
+            const baseId = baseRow?.baseCableId ?? baseRow?.cableId
+              ?? (hopEdge.data?.cableId as string | undefined) ?? "";
+            const linkedPartnerEdge = hopEdge.data?.linkedConnectionId
+              ? edges.find((p) => p.id !== hopEdge.id && p.data?.linkedConnectionId === hopEdge.data?.linkedConnectionId)
+              : undefined;
+            const tgtEdge = linkedPartnerEdge ?? hopEdge;
+            const segs = getPatchSegments(
+              hopEdge, nodes, baseId,
+              devicePoint(nodes, hopEdge.source, hopEdge.sourceHandle),
+              devicePoint(nodes, tgtEdge.target, tgtEdge.targetHandle),
+            );
+            const sigRaw = (hopEdge.data?.signalType ?? "custom") as SignalType;
+            const inn = segs[occ.hopIndex];
+            const outSeg = segs[occ.hopIndex + 1];
+            if (!rear.edgeId && inn) {
+              rear = {
+                edgeId: hopEdge.id,
+                remoteDevice: inn.from.label, remotePort: inn.from.portLabel, remoteRoom: inn.from.room,
+                cableId: inn.label,
+                cableType: getCableType(inn.from.port, inn.to.port, sigRaw),
+                cableLength: inn.cableLength, computedLength: "",
+              };
+            }
+            if (!front.edgeId && outSeg) {
+              front = {
+                edgeId: hopEdge.id,
+                remoteDevice: outSeg.to.label, remotePort: outSeg.to.portLabel, remoteRoom: outSeg.to.room,
+                cableId: outSeg.label,
+                cableType: getCableType(outSeg.from.port, outSeg.to.port, sigRaw),
+                cableLength: outSeg.cableLength, computedLength: "",
+              };
+            }
+          }
+        }
 
         const rearConnectorType = port.rearConnectorType ?? port.connectorType;
         const frontConnectorType = port.frontConnectorType ?? port.connectorType;
@@ -189,7 +242,9 @@ export function computePatchPanelSchedule(
         const rearGender = rearG === "male" ? "M" : rearG === "female" ? "F" : EMPTY;
         const frontGender = frontG === "male" ? "M" : frontG === "female" ? "F" : EMPTY;
 
-        const resolvedSignal = effectiveSignalType(port, node.id, edges);
+        // effectiveSignalType resolves from WIRED edges only; a hop-only port inherits
+        // its signal from the hop edge instead.
+        const resolvedSignal = hopSignal ?? effectiveSignalType(port, node.id, edges);
         const signalType = SIGNAL_LABELS[resolvedSignal] ?? resolvedSignal;
 
         const edgeId = rear.edgeId || front.edgeId;

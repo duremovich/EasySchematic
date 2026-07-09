@@ -13,6 +13,7 @@ import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
 import type { DeviceData } from "./types";
 import { computeCableLength, formatLength, getRoomDistance } from "./roomDistance";
+import { getPatchSegments, resolvableHops, type PatchPointInfo } from "./patchCircuits";
 
 export interface CableScheduleDistanceContext {
   roomDistances?: Record<string, number>;
@@ -47,6 +48,11 @@ export interface CableScheduleRow {
   tested: string;
   /** Raw cable use: "patch" | "field" | "" (#P2-019). */
   cableUse: string;
+  /** Segment index for patched connections (0-based). Undefined for normal cables. */
+  segIndex?: number;
+  /** The parent connection's base cable ID (E001) when this row is a patch segment.
+   *  recomputeCableIds persists THIS (not the suffixed id) onto edge.data.cableId. */
+  baseCableId?: string;
 }
 
 /** Prefix letter for each signal type when using type-prefix cable naming */
@@ -251,9 +257,10 @@ export function computeCableSchedule(
     return `${prefix}${String(n).padStart(3, "0")}`;
   };
 
+  let rows: CableScheduleRow[];
   if (namingScheme === "type-prefix") {
     // Per-type counters for type-prefix naming (e.g. S001, S002, E001)
-    return connections.map((c) => {
+    rows = connections.map((c) => {
       const prefix = SIGNAL_PREFIX[c.rawSignalType] ?? "X";
       return {
         edgeId: c.edgeId,
@@ -278,9 +285,10 @@ export function computeCableSchedule(
         cableUse: c.cableUse,
       };
     });
+    return expandPatchedRows(rows, nodes, edges, linkedPartner);
   }
 
-  return connections.map((c) => ({
+  rows = connections.map((c) => ({
     edgeId: c.edgeId,
     cableId: c.storedCableId || nextId("C"),
     sourceDevice: c.sourceDevice,
@@ -302,6 +310,64 @@ export function computeCableSchedule(
     tested: c.tested,
     cableUse: c.cableUse,
   }));
+  return expandPatchedRows(rows, nodes, edges, linkedPartner);
+}
+
+/** Replace each patched connection's single row with one row per physical segment
+ *  (device → panel, panel → panel, panel → device). Endpoint labels reuse the base
+ *  row's already-reconciled values, so stub-split edges (whose real target was resolved
+ *  through the linked partner leg upstream) stay correct without re-deriving here. */
+function expandPatchedRows(
+  rows: CableScheduleRow[],
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+  linkedPartner: Map<string, ConnectionEdge>,
+): CableScheduleRow[] {
+  const edgeById = new Map(edges.map((e) => [e.id, e]));
+  const out: CableScheduleRow[] = [];
+  for (const row of rows) {
+    const edge = edgeById.get(row.edgeId);
+    if (!edge || resolvableHops(edge, nodes).length === 0) { out.push(row); continue; }
+
+    const effectiveTargetEdge = linkedPartner.get(edge.id) ?? edge;
+    const srcPoint: PatchPointInfo = {
+      kind: "device", nodeId: edge.source, label: row.sourceDevice,
+      portLabel: row.sourcePort, room: row.sourceRoom,
+      port: resolvePort(nodes.find((n) => n.id === edge.source), edge.sourceHandle),
+    };
+    const tgtPoint: PatchPointInfo = {
+      kind: "device", nodeId: effectiveTargetEdge.target, label: row.targetDevice,
+      portLabel: row.targetPort, room: row.targetRoom,
+      port: resolvePort(nodes.find((n) => n.id === effectiveTargetEdge.target), effectiveTargetEdge.targetHandle),
+    };
+
+    const signalType = (edge.data?.signalType ?? "custom") as SignalType;
+    const segs = getPatchSegments(edge, nodes, row.cableId, srcPoint, tgtPoint);
+    for (const seg of segs) {
+      out.push({
+        ...row,
+        segIndex: seg.index,
+        baseCableId: row.cableId,
+        cableId: seg.label,
+        sourceDevice: seg.from.label,
+        sourcePort: seg.from.portLabel,
+        sourceConnector: seg.from.port?.connectorType
+          ? (CONNECTOR_LABELS[seg.from.port.connectorType] ?? "—") : "—",
+        targetDevice: seg.to.label,
+        targetPort: seg.to.portLabel,
+        targetConnector: seg.to.port?.connectorType
+          ? (CONNECTOR_LABELS[seg.to.port.connectorType] ?? "—") : "—",
+        cableType: getCableType(seg.from.port, seg.to.port, signalType),
+        cableLength: seg.cableLength || (segs.length === 1 ? row.cableLength : ""),
+        // Room-distance estimates are whole-run, endpoint-room based; panel-adjacent
+        // segments can't reuse them — leave blank rather than mislead.
+        computedLength: "",
+        sourceRoom: seg.from.room,
+        targetRoom: seg.to.room,
+      });
+    }
+  }
+  return out;
 }
 
 function computeRowEstimatedLength(
