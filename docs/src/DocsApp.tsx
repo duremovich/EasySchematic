@@ -19,6 +19,7 @@ import SelfHostingPage from "./pages/SelfHosting";
 import AiAssistantPage from "./pages/AiAssistant";
 import RacksPage from "./pages/Racks";
 import PrintSheetsPage from "./pages/PrintSheets";
+import PatchPanelsPage from "./pages/PatchPanels";
 
 const routes: Record<string, { title: string; component: React.FC }> = {
   "": { title: "Overview", component: OverviewPage },
@@ -29,6 +30,7 @@ const routes: Record<string, { title: string; component: React.FC }> = {
   "connection-routing": { title: "Connection Routing", component: EdgeRoutingPage },
   "rooms-and-grouping": { title: "Rooms & Grouping", component: RoomsAndGroupingPage },
   racks: { title: "Rack Builder", component: RacksPage },
+  "patch-panels": { title: "Patch Panels & Patch Bay", component: PatchPanelsPage },
   "print-sheets": { title: "Print Sheets", component: PrintSheetsPage },
   notes: { title: "Notes & Annotations", component: NotesPage },
   "device-library": { title: "Device Library", component: DeviceLibraryPage },

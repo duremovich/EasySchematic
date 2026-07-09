@@ -76,6 +76,7 @@
 - **Flip ports** — move any port to the opposite side of the device for flexible signal flow layouts
 - **Connector gender** — auto-derived from connector type and direction, with per-port overrides for connectors where gender varies (XLR, powerCON, IEC, Cam-Lok, BNC, TRS). The cable schedule adds an `M-M` or `F-F` suffix to cables that need two like-gendered plugs, so pack lists reflect what you actually need to buy.
 - **Patch panels** — devices with `patch-panel` type render as front/rear instead of input/output, with column headers on the canvas; built-in templates for RJ45, BNC, XLR, fiber LC, and TT bantam patch bays in common port counts
+- **Patch Bay page** — route any connection through patch panel ports *without* drawing the panel on the schematic. Virtual panels (in reports and racks, never on the canvas), click-to-patch assignment with multi-panel hops, per-segment cable IDs with letter suffixes (`E001-A/-B/-C`) and label overrides, hover circuit tracing, and designation-strip PDFs printed at 100% physical scale for the panel's label holder
 
 ### Organization
 
@@ -140,7 +141,7 @@ Paper-based layout pages for composing rack viewports into a printable drawing.
 
 - **Pack list** — auto-generated bill of materials from your schematic (devices + cables)
 - **Cable schedule** — per-connection wiring report with editable cable IDs, connector info, cable types, signal types, room assignments, and an Est. Length column derived from room positions; fill series support for batch renaming
-- **Patch panel schedule** — per-port inventory of every patch panel in the schematic, including unconnected ports; occupancy badges per panel, group by Panel / Room / Signal / Face; shares cable IDs and estimated lengths with the cable schedule
+- **Patch panel schedule** — per-port inventory of every patch panel in the project (on-schematic and virtual), including unconnected ports; Patch Bay assignments and drawn connections appear side by side; occupancy badges per panel, group by Panel / Room / Signal / Face; shares cable IDs and estimated lengths with the cable schedule. Patched connections expand into per-segment cables (`E001-A/-B`) in the cable schedule and pack list
 - **Owned Gear library** — track inventory of gear you own; the pack list reports used vs. needed counts so a single schematic tells you what to pull from the shop and what to rent or buy
 - **Print preview** — WYSIWYG report editor with interactive header/footer grid, column visibility, grouping, sorting
 - **Multi-page preview** with accurate page breaks, page navigation, zoom, and "Page X of Y" numbering
