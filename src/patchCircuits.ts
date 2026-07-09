@@ -214,3 +214,102 @@ export function isPortAvailable(
 ): boolean {
   return !occ.get(panelNodeId)?.get(portId);
 }
+
+/** Segments for an edge using its own endpoints, following a stub-split partner leg
+ *  to the real target when linkedConnectionId is set. Convenience for UI/PDF callers;
+ *  cableSchedule builds endpoints from its already-reconciled rows instead. */
+export function segmentsForEdge(
+  edge: ConnectionEdge,
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+  baseCableId: string,
+): PatchSegmentInfo[] {
+  const partner = edge.data?.linkedConnectionId
+    ? edges.find((p) => p.id !== edge.id && p.data?.linkedConnectionId === edge.data?.linkedConnectionId)
+    : undefined;
+  const tgtEdge = partner ?? edge;
+  return getPatchSegments(
+    edge, nodes, baseCableId,
+    devicePoint(nodes, edge.source, edge.sourceHandle),
+    devicePoint(nodes, tgtEdge.target, tgtEdge.targetHandle),
+  );
+}
+
+export interface PortFaceDisplay {
+  /** Segment (or wired-cable) label shown on the chip / strip. */
+  cableLabel: string;
+  /** Far-end device/panel name. */
+  farLabel: string;
+  farPortLabel: string;
+  /** Segment index for hop faces (enables label override editing); undefined for wired faces. */
+  segIndex?: number;
+  overridden?: boolean;
+}
+
+export interface PortDisplay {
+  kind: "hop" | "wired";
+  /** The hop edge, or the first wired edge, occupying this port. */
+  edgeId: string;
+  signalType?: string;
+  /** Arriving / field side. */
+  rear?: PortFaceDisplay;
+  /** Departing / patch side. */
+  front?: PortFaceDisplay;
+}
+
+/** Resolve what to show for one panel port — hop-routed segments or physically wired
+ *  remotes. Shared by the Patch Panels page renderer and the strips PDF so screen and
+ *  paper never disagree. Returns null for spare ports. */
+export function resolvePortDisplay(
+  panelNodeId: string,
+  portId: string,
+  occ: Map<string, Map<string, PortOccupant>>,
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+  cableIdFor: (edge: ConnectionEdge) => string,
+): PortDisplay | null {
+  const occupant = occ.get(panelNodeId)?.get(portId);
+  if (!occupant) return null;
+
+  if (occupant.kind === "hop") {
+    const edge = edges.find((e) => e.id === occupant.edgeId);
+    if (!edge) return null;
+    const segs = segmentsForEdge(edge, nodes, edges, cableIdFor(edge));
+    const inn = segs[occupant.hopIndex];
+    const outSeg = segs[occupant.hopIndex + 1];
+    if (!inn || !outSeg) return null;
+    return {
+      kind: "hop",
+      edgeId: edge.id,
+      signalType: edge.data?.signalType as string | undefined,
+      rear: {
+        cableLabel: inn.label, farLabel: inn.from.label, farPortLabel: inn.from.portLabel,
+        segIndex: inn.index, overridden: inn.overridden,
+      },
+      front: {
+        cableLabel: outSeg.label, farLabel: outSeg.to.label, farPortLabel: outSeg.to.portLabel,
+        segIndex: outSeg.index, overridden: outSeg.overridden,
+      },
+    };
+  }
+
+  const wiredFace = (edgeId: string | undefined): PortFaceDisplay | undefined => {
+    if (!edgeId) return undefined;
+    const edge = edges.find((e) => e.id === edgeId);
+    if (!edge) return undefined;
+    const isSource = edge.source === panelNodeId;
+    const p = devicePoint(nodes, isSource ? edge.target : edge.source, isSource ? edge.targetHandle : edge.sourceHandle);
+    return { cableLabel: cableIdFor(edge), farLabel: p.label, farPortLabel: p.portLabel };
+  };
+  const rear = wiredFace(occupant.rearEdgeId);
+  const front = wiredFace(occupant.frontEdgeId);
+  const firstEdgeId = occupant.rearEdgeId ?? occupant.frontEdgeId ?? "";
+  const firstEdge = edges.find((e) => e.id === firstEdgeId);
+  return {
+    kind: "wired",
+    edgeId: firstEdgeId,
+    signalType: firstEdge?.data?.signalType as string | undefined,
+    rear,
+    front,
+  };
+}

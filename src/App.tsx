@@ -53,6 +53,7 @@ import QuickAddDevice from "./components/QuickAddDevice";
 import DeviceCreatorPicker from "./components/DeviceCreatorPicker";
 import PageTabs from "./components/PageTabs";
 import RackPage from "./components/RackPage";
+import PatchPanelPage from "./components/PatchPanelPage";
 import PrintSheetPage from "./components/PrintSheetPage";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
 import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode, StubLabelData } from "./types";
@@ -1856,6 +1857,8 @@ export default function App() {
         </div>
       ) : activePgType === "print-sheet" ? (
         <PrintSheetPage />
+      ) : activePgType === "patch-panel" ? (
+        <PatchPanelPage />
       ) : (
         <RackPage />
       )}
