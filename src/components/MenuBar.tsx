@@ -161,6 +161,14 @@ export default function MenuBar() {
     checkSession().then((u) => setIsLoggedIn(!!u));
   }, []);
 
+  // Other views (e.g. the Patch Bay page) open the Reports dialog on a specific tab
+  // via this event — the dialog's open state lives here.
+  useEffect(() => {
+    const open = (e: Event) => setReportsTab(((e as CustomEvent).detail as ReportsTab) ?? "cableSchedule");
+    window.addEventListener("easyschematic:open-reports", open);
+    return () => window.removeEventListener("easyschematic:open-reports", open);
+  }, []);
+
   const cloudSchematicId = useSchematicStore((s) => s.cloudSchematicId);
   const cloudSavedAt = useSchematicStore((s) => s.cloudSavedAt);
   const fileHandle = useSchematicStore((s) => s.fileHandle);

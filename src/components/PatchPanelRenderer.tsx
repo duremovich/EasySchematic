@@ -8,6 +8,7 @@ import {
   type PortDisplay,
   type PortFaceDisplay,
 } from "../patchCircuits";
+import { exportPatchPanelStripsPdf } from "../patchPanelPdf";
 
 // Face geometry (px) — tuned to fit two-line port cards under each jack.
 const PITCH = 84;
@@ -143,6 +144,31 @@ export default function PatchPanelRenderer() {
           </button>
         </div>
       )}
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 px-4 py-2 bg-white border-b border-neutral-200 text-xs" data-print-hide>
+        <span className="font-semibold text-neutral-700">Patch Bay</span>
+        <span className="text-neutral-400 hidden md:inline">Hover a port or cable to trace its circuit</span>
+        <div className="ml-auto flex gap-2">
+          <button
+            className="border border-neutral-300 rounded px-2.5 py-1 hover:border-blue-400 hover:text-blue-600 disabled:opacity-40"
+            disabled={panels.length === 0}
+            onClick={() => {
+              const name = useSchematicStore.getState().schematicName || "Schematic";
+              exportPatchPanelStripsPdf(nodes, edges, cableIdMap, name);
+            }}
+            title="Designation strips at 100% physical scale — cut and slide into the panel's label holder"
+          >
+            🖨 Print strips (PDF)
+          </button>
+          <button
+            className="bg-blue-600 text-white rounded px-2.5 py-1 hover:bg-blue-700"
+            onClick={() => window.dispatchEvent(new CustomEvent("easyschematic:open-reports", { detail: "patchPanel" }))}
+          >
+            Schedule report…
+          </button>
+        </div>
+      </div>
 
       <div className="p-5 pb-16">
         {panels.length === 0 && (

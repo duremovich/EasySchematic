@@ -416,6 +416,34 @@ export default function EdgeContextMenu() {
   const allowIncompatible = edge?.data?.allowIncompatible === true;
   const isDirectAttach = edge?.data?.directAttach === true;
   const customColor = (edge?.data?.color as string | undefined) ?? "";
+
+  // Patch panel routing (#232): hops live on the source-side leg of a stubbed pair —
+  // right-clicking the target leg redirects to the partner so the assignment lands right.
+  const patchEdge = (() => {
+    if (!edge) return undefined;
+    if (!edge.data?.linkedConnectionId) return edge;
+    const srcIsStub = store.nodes.find((n) => n.id === edge.source)?.type === "stub-label";
+    if (!srcIsStub) return edge;
+    return store.edges.find(
+      (e) => e.id !== edge.id && e.data?.linkedConnectionId === edge.data?.linkedConnectionId,
+    ) ?? edge;
+  })();
+  const isPatched = ((patchEdge?.data?.patchHops?.length ?? 0) as number) > 0;
+
+  const patchViaPanel = () => {
+    const s = useSchematicStore.getState();
+    if (!patchEdge) return;
+    const pageId = s.addPatchPanelPage();
+    s.setPatchAssignEdge(patchEdge.id);
+    s.setActivePage(pageId);
+    useSchematicStore.setState({ edgeContextMenu: null });
+  };
+
+  const removePatching = () => {
+    const s = useSchematicStore.getState();
+    if (patchEdge) s.clearEdgePatchHops(patchEdge.id);
+    useSchematicStore.setState({ edgeContextMenu: null });
+  };
   const bundleId = edge?.data?.bundleId;
   const inBundle = !!bundleId && (store.bundles[bundleId]?.id != null
     || store.edges.filter((e) => e.data?.bundleId === bundleId).length >= 2);
@@ -553,6 +581,15 @@ export default function EdgeContextMenu() {
         label={isStubbed ? "Show Full Connection" : "Stub Connection"}
         onClick={toggleStubbed}
       />
+      {!isDirectAttach && (
+        <>
+          <MenuItem
+            label={isPatched ? "Patch via Panel (Add Hop)..." : "Patch via Panel..."}
+            onClick={patchViaPanel}
+          />
+          {isPatched && <MenuItem label="Remove Patching" onClick={removePatching} />}
+        </>
+      )}
       {canBundleSelection && (
         <>
           <div className="h-px bg-gray-200 my-1" />
