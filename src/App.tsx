@@ -1428,6 +1428,7 @@ function SchematicCanvas() {
     if (nodes.length === 0) return 0.1;
     let left = Infinity, top = Infinity, right = -Infinity, bottom = -Infinity;
     for (const n of nodes) {
+      if (n.hidden) continue; // off-canvas devices (virtual patch panels) don't count toward content bounds
       const w = n.measured?.width ?? 144;
       const h = n.measured?.height ?? 48;
       left = Math.min(left, n.position.x);
@@ -1435,6 +1436,7 @@ function SchematicCanvas() {
       right = Math.max(right, n.position.x + w);
       bottom = Math.max(bottom, n.position.y + h);
     }
+    if (left === Infinity) return 0.1; // every node hidden (e.g. only virtual panels)
     const pad = 100;
     const contentW = right - left + pad * 2;
     const contentH = bottom - top + pad * 2;

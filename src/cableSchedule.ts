@@ -358,7 +358,10 @@ function expandPatchedRows(
         targetConnector: seg.to.port?.connectorType
           ? (CONNECTOR_LABELS[seg.to.port.connectorType] ?? "—") : "—",
         cableType: getCableType(seg.from.port, seg.to.port, signalType),
-        cableLength: seg.cableLength || (segs.length === 1 ? row.cableLength : ""),
+        // The connection's whole-run length can't be attributed to any single physical
+        // segment — lengths are per-segment overrides here. The edge-level value is
+        // preserved on the connection and reappears if it's unpatched.
+        cableLength: seg.cableLength,
         // Room-distance estimates are whole-run, endpoint-room based; panel-adjacent
         // segments can't reuse them — leave blank rather than mislead.
         computedLength: "",

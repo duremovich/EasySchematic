@@ -4029,6 +4029,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (!isPortAvailable(occ, hop.panelNodeId, hop.portId)) return false;
     const panel = state.nodes.find((n) => n.id === hop.panelNodeId);
     if (panel?.type !== "device") return false;
+    // Occupancy (the availability source of truth) only tracks patch-panel devices —
+    // a passthrough port on any other device would never surface in views/schedules.
+    if ((panel.data as DeviceData).deviceType !== "patch-panel") return false;
     const port = (panel.data as DeviceData).ports.find((p) => p.id === hop.portId);
     if (!port || port.direction !== "passthrough") return false;
 
@@ -5540,6 +5543,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     delete (tgtLegData as Record<string, unknown>).label;
     delete (tgtLegData as Record<string, unknown>).cableLength;
     delete (tgtLegData as Record<string, unknown>).multicableLabel;
+    // Patch hops live on the source-side leg ONLY — duplicating them here would
+    // double-book the panel ports and orphan them when the source leg unpatches.
+    delete (tgtLegData as Record<string, unknown>).patchHops;
+    delete (tgtLegData as Record<string, unknown>).patchSegments;
     const tgtLeg: ConnectionEdge = {
       ...edge,
       id: `${edge.id}-tgt`,

@@ -7,7 +7,7 @@ import { SIGNAL_LABELS, CONNECTOR_LABELS } from "./types";
 import { computeCableSchedule, type CableScheduleDistanceContext } from "./cableSchedule";
 import { resolvePort, resolvePortLabel, getRoomLabel, escapeCsv, csvRow, groupBy } from "./packList";
 import { effectiveSignalType, resolvePortGender } from "./connectorTypes";
-import { getPanelOccupancy, getPatchSegments, devicePoint } from "./patchCircuits";
+import { getPanelOccupancy, segmentsForEdge } from "./patchCircuits";
 import { getCableType } from "./cableTypes";
 import type { SignalType } from "./types";
 import { transformLabelNow } from "./labelCaseUtils";
@@ -198,15 +198,7 @@ export function computePatchPanelSchedule(
             const baseRow = cableByEdge.get(hopEdge.id);
             const baseId = baseRow?.baseCableId ?? baseRow?.cableId
               ?? (hopEdge.data?.cableId as string | undefined) ?? "";
-            const linkedPartnerEdge = hopEdge.data?.linkedConnectionId
-              ? edges.find((p) => p.id !== hopEdge.id && p.data?.linkedConnectionId === hopEdge.data?.linkedConnectionId)
-              : undefined;
-            const tgtEdge = linkedPartnerEdge ?? hopEdge;
-            const segs = getPatchSegments(
-              hopEdge, nodes, baseId,
-              devicePoint(nodes, hopEdge.source, hopEdge.sourceHandle),
-              devicePoint(nodes, tgtEdge.target, tgtEdge.targetHandle),
-            );
+            const segs = segmentsForEdge(hopEdge, nodes, edges, baseId);
             const sigRaw = (hopEdge.data?.signalType ?? "custom") as SignalType;
             const inn = segs[occ.hopIndex];
             const outSeg = segs[occ.hopIndex + 1];

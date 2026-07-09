@@ -12,7 +12,7 @@ import type {
   Port,
   PatchHop,
 } from "./types";
-import { resolvePortLabel, getRoomLabel } from "./packList";
+import { resolvePort, resolvePortLabel, getRoomLabel } from "./packList";
 import { transformLabelNow } from "./labelCaseUtils";
 
 export interface PatchPointInfo {
@@ -44,17 +44,6 @@ export interface PatchSegmentInfo {
 
 const SUFFIXES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-function stripFaceSuffix(handleId: string | null | undefined): string {
-  return (handleId ?? "").replace(/-(in|out|rear|front)$/, "");
-}
-
-/** Find the Port object for an edge endpoint handle on a device node. */
-function portForHandle(node: SchematicNode | undefined, handleId: string | null | undefined): Port | undefined {
-  if (!node || node.type !== "device") return undefined;
-  const baseId = stripFaceSuffix(handleId);
-  return (node.data as DeviceData).ports.find((p) => p.id === baseId);
-}
-
 /** Build a PatchPointInfo for a real device endpoint of an edge. */
 export function devicePoint(
   nodes: SchematicNode[],
@@ -70,7 +59,7 @@ export function devicePoint(
     nodeId,
     label,
     portLabel: node ? resolvePortLabel(node, handleId) : "",
-    port: portForHandle(node, handleId),
+    port: resolvePort(node, handleId),
     room: node ? getRoomLabel(nodes, node.parentId) : "Unknown",
   };
 }
@@ -124,8 +113,12 @@ export function getPatchSegments(
   srcPoint: PatchPointInfo,
   tgtPoint: PatchPointInfo,
 ): PatchSegmentInfo[] {
+  const rawHops = edge.data?.patchHops ?? [];
   const hops = resolvableHops(edge, nodes);
-  const overrides = edge.data?.patchSegments ?? [];
+  // Overrides are stored against the ORIGINAL segment indices. If read-time filtering
+  // dropped a stale hop, positional indexing would bind every later override to the
+  // wrong physical run — safer to ignore them all (matches stripDeadHops policy).
+  const overrides = hops.length === rawHops.length ? (edge.data?.patchSegments ?? []) : [];
 
   if (hops.length === 0) {
     return [{
@@ -197,8 +190,9 @@ export function getPanelOccupancy(
     }
   }
   for (const e of edges) {
-    const hops = e.data?.patchHops ?? [];
-    hops.forEach((h, i) => {
+    // Iterate the FILTERED hop list so hopIndex lines up with getPatchSegments output
+    // (which is also built from resolvableHops) even when a stale hop was dropped.
+    resolvableHops(e, nodes).forEach((h, i) => {
       if (!panelIds.has(h.panelNodeId)) return;
       if (occ.get(h.panelNodeId)?.get(h.portId)) return; // wired wins (shouldn't co-occur)
       put(h.panelNodeId, h.portId, { kind: "hop", edgeId: e.id, hopIndex: i });

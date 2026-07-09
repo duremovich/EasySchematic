@@ -47,6 +47,22 @@ export default function PatchPanelRenderer() {
     [cableIdMap],
   );
 
+  // Per-panel port displays, keyed by panel node id. Hover tracing re-renders the
+  // component (patchTracedEdgeId churn) but is NOT an input here — memoizing keeps
+  // pointer moves from re-deriving every segment on every panel.
+  const displaysByPanel = useMemo(() => {
+    const m = new Map<string, (PortDisplay | null)[]>();
+    for (const panel of panels) {
+      const data = panel.data as DeviceData;
+      const hiddenPorts = new Set((data.hiddenPorts as string[] | undefined) ?? []);
+      const visiblePorts = data.ports.filter((p) => p.direction === "passthrough" && !hiddenPorts.has(p.id));
+      m.set(panel.id, visiblePorts.map((port) =>
+        resolvePortDisplay(panel.id, port.id, occupancy, nodes, edges, baseIdFor),
+      ));
+    }
+    return m;
+  }, [panels, occupancy, nodes, edges, baseIdFor]);
+
   const assignEdge = patchAssignEdgeId ? edges.find((e) => e.id === patchAssignEdgeId) : undefined;
   const assigning = !!assignEdge;
 
@@ -198,9 +214,7 @@ export default function PatchPanelRenderer() {
             );
           }
 
-          const displays = visiblePorts.map((port) =>
-            resolvePortDisplay(panel.id, port.id, occupancy, nodes, edges, baseIdFor),
-          );
+          const displays = displaysByPanel.get(panel.id) ?? [];
 
           return (
             <div key={panel.id} id={`ppblk-${panel.id}`} className="mb-9">

@@ -103,6 +103,36 @@ describe("getPatchSegments", () => {
     expect(segs).toHaveLength(2);
     expect(segs[0].to.label).toBe("PP-01");
   });
+
+  it("ignores per-segment overrides when a stale hop was filtered (indices shifted)", () => {
+    const e = edge("e1", "dev-a", "dev-b", {
+      patchHops: [
+        { panelNodeId: "pp-gone", portId: "x" },
+        { panelNodeId: "pp-1", portId: "pp-port-1" },
+      ],
+      // Stored against the ORIGINAL 3-segment layout — positionally invalid after filtering.
+      patchSegments: [{ label: "TIE-01" }, { label: "TIE-02" }],
+    });
+    const segs = getPatchSegments(e, nodes, "E001", src, tgt);
+    expect(segs.map((s) => s.label)).toEqual(["E001-A", "E001-B"]);
+    expect(segs.every((s) => !s.overridden)).toBe(true);
+  });
+
+  it("occupancy hopIndex aligns with filtered segments when a stale hop is dropped", () => {
+    const e = edge("e1", "dev-a", "dev-b", {
+      patchHops: [
+        { panelNodeId: "pp-gone", portId: "x" },        // dropped at read time
+        { panelNodeId: "pp-1", portId: "pp-port-5" },   // raw index 1, filtered index 0
+      ],
+    });
+    const occ = getPanelOccupancy(nodes, [e]);
+    const occupant = occ.get("pp-1")?.get("pp-port-5");
+    expect(occupant).toMatchObject({ kind: "hop", hopIndex: 0 });
+    const segs = getPatchSegments(e, nodes, "E001", src, tgt);
+    // segs[hopIndex] / segs[hopIndex+1] must be the faces around pp-1
+    expect(segs[0].to.label).toBe("PP-01");
+    expect(segs[1].from.label).toBe("PP-01");
+  });
 });
 
 describe("getPanelOccupancy", () => {

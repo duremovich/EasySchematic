@@ -13,10 +13,10 @@
 import { jsPDF } from "jspdf";
 import type { ConnectionEdge, DeviceData, SchematicNode } from "./types";
 import { getPanelOccupancy, resolvePortDisplay } from "./patchCircuits";
+import { getPageDimensions, REPORT_MARGIN_MM } from "./reportLayout";
 
-const PAGE_W = 279.4;  // letter landscape (mm)
-const PAGE_H = 215.9;
-const MARGIN = 12;
+const { widthMm: PAGE_W, heightMm: PAGE_H } = getPageDimensions("letter", "landscape");
+const MARGIN = REPORT_MARGIN_MM;
 const STRIP_OPENING_MM = 450.85; // usable 19" rack opening
 const CELL_H = 12;
 const ROW_GAP = 10;
