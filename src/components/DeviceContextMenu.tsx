@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
+import { useUpdateNodeInternals } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import type { DeviceData, RackElevationPage } from "../types";
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
@@ -10,6 +11,7 @@ export default function DeviceContextMenu() {
   const pages = useMemo(() => allPages.filter((p): p is RackElevationPage => p.type === "rack-elevation"), [allPages]);
   const setActivePage = useSchematicStore((s) => s.setActivePage);
   const nodes = useSchematicStore((s) => s.nodes);
+  const updateNodeInternals = useUpdateNodeInternals();
   const { ref: menuRef, pos: menuPos } = useContextMenuPosition(
     menu?.screenX ?? 0,
     menu?.screenY ?? 0,
@@ -54,6 +56,18 @@ export default function DeviceContextMenu() {
     useSchematicStore.getState().deleteNode(menu.nodeId);
   }, [menu]);
 
+  const toggleShowOnlyConnected = useCallback(() => {
+    if (!menu) return;
+    const { patchDeviceData, nodes: ns } = useSchematicStore.getState();
+    const node = ns.find((n) => n.id === menu.nodeId);
+    if (!node || node.type !== "device") return;
+    const cur = (node.data as DeviceData).showOnlyConnectedPorts;
+    patchDeviceData(menu.nodeId, { showOnlyConnectedPorts: cur ? undefined : true });
+    // Handle count changes when ports are filtered — re-measure so edges stay routed.
+    updateNodeInternals(menu.nodeId);
+    useSchematicStore.setState({ deviceContextMenu: null });
+  }, [menu, updateNodeInternals]);
+
   if (!menu) return null;
 
   const { nodeId } = menu;
@@ -83,6 +97,14 @@ export default function DeviceContextMenu() {
       {deviceData && (
         <>
           <div className="border-t border-gray-200 my-1" />
+          <MenuItem
+            label="Show Only Connected Ports"
+            onClick={toggleShowOnlyConnected}
+            checked={!!deviceData.showOnlyConnectedPorts}
+          />
+          {(placement || pages.length > 0) && (
+            <div className="border-t border-gray-200 my-1" />
+          )}
           {placement ? (
             <MenuItem
               label={`Show in Rack (${placement.page.label})`}
@@ -140,22 +162,29 @@ function MenuItem({
   onClick,
   danger,
   indent,
+  checked,
 }: {
   label: string;
   onClick: () => void;
   danger?: boolean;
   indent?: boolean;
+  checked?: boolean;
 }) {
   return (
     <button
       className={`w-full text-left py-1.5 text-xs cursor-pointer ${indent ? "px-5" : "px-3"} ${
+        checked != null ? "flex items-center gap-1.5" : ""
+      } ${
         danger
           ? "text-red-600 hover:bg-red-50 hover:text-red-700"
           : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
       }`}
       onClick={onClick}
     >
-      {label}
+      {checked != null && (
+        <span className="w-3 text-center shrink-0 text-[10px]">{checked ? "✓" : ""}</span>
+      )}
+      {checked != null ? <span className="flex-1">{label}</span> : label}
     </button>
   );
 }

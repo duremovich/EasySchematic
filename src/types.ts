@@ -260,6 +260,12 @@ export interface DeviceData {
   category?: string;
   showAllPorts?: boolean;
   hiddenPorts?: string[];
+  /** Per-device "show only connected ports" toggle (#135). When true, ports with no
+   *  active connection are hidden from this device's canvas rendering (stubbed
+   *  connections count as connected). Independent of — and OR-combined with — the
+   *  global SchematicFile.hideUnconnectedPorts view setting. Display-only: reports and
+   *  routing are unaffected. */
+  showOnlyConnectedPorts?: boolean;
   dhcpServer?: DhcpServerConfig;
   isCableAccessory?: boolean;
   integratedWithCable?: boolean;
