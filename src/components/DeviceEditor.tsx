@@ -17,6 +17,7 @@ import {
   type AuxRow,
   type DeviceData,
   type DeviceNode,
+  type DeviceTemplate,
   type DhcpServerConfig,
   type SlotDefinition,
 } from "../types";
@@ -24,6 +25,7 @@ import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYP
 import { rackUnitLabel } from "../rackUtils";
 import { getBundledTemplates, getTemplateById, getCardsByFamily, fetchTemplates, checkSession, createDraft, createHandoff } from "../templateApi";
 import { getTemplateDrift } from "../templateSync";
+import { templateIdentityPatch } from "../inventoryKey";
 import LoginDialog from "./LoginDialog";
 import CardCreatorDialog from "./CardCreatorDialog";
 import TemplateSyncDialog from "./TemplateSyncDialog";
@@ -456,7 +458,7 @@ export default function DeviceEditor() {
     const trimmedAux = trimTrailingEmpty(auxiliaryData);
     const existing = node?.data;
 
-    addCustomTemplate({
+    const newTemplate: DeviceTemplate = {
       id: `custom-${Date.now()}`,
       deviceType: deviceType.trim() || "custom",
       label: label.trim() || "Custom Device",
@@ -495,8 +497,19 @@ export default function DeviceEditor() {
       ...(existing?.slotFamily ? { slotFamily: existing.slotFamily as string } : {}),
       ...(trimmedAux.some((r) => r.text.trim()) ? { auxiliaryData: trimmedAux } : {}),
       ...(() => { const t = searchTermsRaw.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 20); return t.length > 0 ? { searchTerms: t } : {}; })(),
-    });
-  }, [ports, label, shortName, hostname, addCustomTemplate, node, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isVenueProvided, deviceType, color, manufacturer, modelNumber, referenceUrl, category, auxiliaryData, searchTermsRaw]);
+    };
+    addCustomTemplate(newTemplate);
+
+    // Re-identify the on-canvas device as an instance of the new user template so
+    // reports keyed on device identity (pack list / BOQ derive the name from
+    // `model ?? baseLabel ?? label`) immediately reflect the template name instead
+    // of the original library device's. Mirrors a freshly-placed template instance
+    // (see `addDevice`), which is why the delete-and-re-add workaround shows the
+    // correct name. (#137)
+    if (editingNodeId) {
+      patchDeviceData(editingNodeId, templateIdentityPatch(newTemplate));
+    }
+  }, [ports, label, shortName, hostname, addCustomTemplate, patchDeviceData, editingNodeId, node, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isVenueProvided, deviceType, color, manufacturer, modelNumber, referenceUrl, category, auxiliaryData, searchTermsRaw]);
 
   const handleUpdateUserTemplate = useCallback(() => {
     if (!node?.data.templateId) return;
