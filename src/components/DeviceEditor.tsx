@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, type DragEvent } from "react";
 import { useSchematicStore } from "../store";
 import { buildBulkSlots } from "../slotBulk";
-import { autoNamePorts } from "../portNaming";
+import { autoNamePorts, duplicatePortLabel } from "../portNaming";
 import {
   SIGNAL_LABELS,
   SIGNAL_COLORS,
@@ -759,6 +759,28 @@ export default function DeviceEditor() {
     setPorts(ports.filter((p) => p.id !== id));
   };
 
+  // Duplicate a port row, copying every property and inserting the clone right
+  // after the original. The clone gets a fresh draft id (so it saves as a new
+  // port) and a uniquified name derived from the source (e.g. "Input 1" → "Input 2").
+  const duplicatePort = (id: string) => {
+    setPorts((prev) => {
+      const idx = prev.findIndex((p) => p.id === id);
+      if (idx === -1) return prev;
+      const orig = prev[idx];
+      const clone: PortDraft = {
+        ...orig,
+        id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        label: duplicatePortLabel(orig.label, prev.map((p) => p.label)),
+        // Deep-copy nested objects so editing the clone can't mutate the original.
+        networkConfig: orig.networkConfig ? { ...orig.networkConfig } : undefined,
+        capabilities: orig.capabilities ? { ...orig.capabilities } : undefined,
+      };
+      const next = [...prev];
+      next.splice(idx + 1, 0, clone);
+      return next;
+    });
+  };
+
   const updatePort = (id: string, updates: Partial<PortDraft>) => {
     setPorts(ports.map((p) => (p.id === id ? { ...p, ...updates } : p)));
   };
@@ -1104,6 +1126,7 @@ export default function DeviceEditor() {
             onAdd={() => addPort("input")}
             onBulkAdd={bulkAddPorts}
             onRemove={removePort}
+            onDuplicate={duplicatePort}
             onUpdate={updatePort}
             draggedPortId={draggedPortId}
             setDraggedPortId={setDraggedPortId}
@@ -1122,6 +1145,7 @@ export default function DeviceEditor() {
             onAdd={() => addPort("output")}
             onBulkAdd={bulkAddPorts}
             onRemove={removePort}
+            onDuplicate={duplicatePort}
             onUpdate={updatePort}
             draggedPortId={draggedPortId}
             setDraggedPortId={setDraggedPortId}
@@ -1141,6 +1165,7 @@ export default function DeviceEditor() {
               onAdd={() => addPort("bidirectional")}
               onBulkAdd={bulkAddPorts}
               onRemove={removePort}
+              onDuplicate={duplicatePort}
               onUpdate={updatePort}
               draggedPortId={draggedPortId}
               setDraggedPortId={setDraggedPortId}
@@ -1161,6 +1186,7 @@ export default function DeviceEditor() {
               onAdd={() => addPort("passthrough")}
               onBulkAdd={bulkAddPorts}
               onRemove={removePort}
+              onDuplicate={duplicatePort}
               onUpdate={updatePort}
               draggedPortId={draggedPortId}
               setDraggedPortId={setDraggedPortId}
@@ -2101,6 +2127,7 @@ function PortSection({
   onAdd,
   onBulkAdd,
   onRemove,
+  onDuplicate,
   onUpdate,
   draggedPortId,
   setDraggedPortId,
@@ -2117,6 +2144,7 @@ function PortSection({
   onAdd: () => void;
   onBulkAdd: (direction: PortDirection, prefix: string, start: number, count: number, signalType: SignalType, section: string) => void;
   onRemove: (id: string) => void;
+  onDuplicate: (id: string) => void;
   onUpdate: (id: string, updates: Partial<PortDraft>) => void;
   draggedPortId: string | null;
   setDraggedPortId: (id: string | null) => void;
@@ -2230,6 +2258,7 @@ function PortSection({
                   direction={direction}
                   deviceType={deviceType}
                   onRemove={() => onRemove(port.id)}
+                  onDuplicate={() => onDuplicate(port.id)}
                   onUpdate={(u) => onUpdate(port.id, u)}
                   isDragging={draggedPortId === port.id}
                   setDraggedPortId={setDraggedPortId}
@@ -2270,6 +2299,7 @@ function PortRow({
   direction,
   deviceType,
   onRemove,
+  onDuplicate,
   onUpdate,
   isDragging,
   setDraggedPortId,
@@ -2285,6 +2315,7 @@ function PortRow({
   direction: PortDirection;
   deviceType: string;
   onRemove: () => void;
+  onDuplicate: () => void;
   onUpdate: (updates: Partial<PortDraft>) => void;
   isDragging: boolean;
   setDraggedPortId: (id: string | null) => void;
@@ -2584,6 +2615,18 @@ function PortRow({
             title="Flip port to opposite side"
           >
             ⇄
+        </button>
+
+        {/* Duplicate port */}
+        <button
+          onClick={onDuplicate}
+          className="text-[var(--color-text-muted)] hover:text-blue-500 cursor-pointer px-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+          title="Duplicate port"
+        >
+          <svg viewBox="0 0 16 16" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+            <rect x="5.5" y="5.5" width="8" height="8" rx="1.5" />
+            <path d="M10.5 5.5V4A1.5 1.5 0 0 0 9 2.5H4A1.5 1.5 0 0 0 2.5 4v5A1.5 1.5 0 0 0 4 10.5h1.5" />
+          </svg>
         </button>
 
         <button

@@ -10,6 +10,7 @@ import {
   type DeviceTemplate,
 } from "../types";
 import { DEFAULT_CONNECTOR } from "../connectorTypes";
+import { duplicatePortLabel } from "../portNaming";
 
 const ALL_SIGNALS = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
   (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
@@ -80,6 +81,22 @@ export default function CardCreatorDialog({
   const removePort = (id: string) => setPorts(ports.filter((p) => p.id !== id));
   const updatePort = (id: string, patch: Partial<PortRow>) =>
     setPorts(ports.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  // Duplicate a port row, inserting the clone right after the original with a
+  // uniquified name (e.g. "SDI 1" → "SDI 2", "HDMI" → "HDMI (copy)").
+  const duplicatePort = (id: string) =>
+    setPorts((prev) => {
+      const idx = prev.findIndex((p) => p.id === id);
+      if (idx === -1) return prev;
+      const orig = prev[idx];
+      const clone: PortRow = {
+        ...orig,
+        id: `pr-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        label: duplicatePortLabel(orig.label, prev.map((p) => p.label)),
+      };
+      const next = [...prev];
+      next.splice(idx + 1, 0, clone);
+      return next;
+    });
 
   const canSave = label.trim().length > 0 && slotFamily.trim().length > 0;
 
@@ -152,6 +169,14 @@ export default function CardCreatorDialog({
           <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>
         ))}
       </select>
+      <button
+        type="button"
+        onClick={() => duplicatePort(p.id)}
+        className="text-[10px] text-blue-500 hover:text-blue-600 cursor-pointer px-1 leading-none"
+        title="Duplicate port"
+      >
+        Dup
+      </button>
       <button
         type="button"
         onClick={() => removePort(p.id)}
