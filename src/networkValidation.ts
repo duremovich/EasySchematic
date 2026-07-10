@@ -1,4 +1,4 @@
-import type { SchematicNode, DeviceData, DhcpServerConfig } from "./types";
+import type { SchematicNode, DeviceData, DhcpServerConfig, SignalType } from "./types";
 import type { ConnectionEdge } from "./types";
 import { NETWORK_SIGNAL_TYPES } from "./connectorTypes";
 
@@ -157,6 +157,69 @@ function resolvePort(node: SchematicNode | undefined, handleId: string | null | 
   return data.ports.find((p) => p.id === portId);
 }
 
+/** A raw or reassembled connection with real device endpoints on both ends. */
+interface LogicalEdge {
+  source: string;
+  target: string;
+  sourceHandle?: string | null;
+  targetHandle?: string | null;
+  signalType: SignalType;
+}
+
+/**
+ * Collapse stub-leg edges back into logical A→B edges.
+ *
+ * Stubbed connections split the original A→B edge into two legs joined by a
+ * shared linkedConnectionId, each terminating at a stub-label node (A→stubA,
+ * stubB→B). The stub node isn't a device, so graph walks and port lookups
+ * dead-end there (#220). Reassemble each pair of legs into one logical edge
+ * with the real device endpoints and handles; other edges pass through as-is.
+ */
+function collapseStubEdges(
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+): LogicalEdge[] {
+  const stubNodeIds = new Set(
+    nodes.filter((n) => n.type === "stub-label").map((n) => n.id),
+  );
+  const logical: LogicalEdge[] = [];
+  const stubLegsByLink = new Map<string, Partial<LogicalEdge>>();
+
+  for (const e of edges) {
+    if (!e.data) continue;
+    const link = e.data.linkedConnectionId;
+    if (!link) {
+      logical.push({
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle,
+        targetHandle: e.targetHandle,
+        signalType: e.data.signalType,
+      });
+      continue;
+    }
+    // The source-side leg keeps the real source (its target is the stub node);
+    // the target-side leg keeps the real target.
+    const entry = stubLegsByLink.get(link) ?? { signalType: e.data.signalType };
+    if (stubNodeIds.has(e.target)) {
+      entry.source = e.source;
+      entry.sourceHandle = e.sourceHandle;
+    }
+    if (stubNodeIds.has(e.source)) {
+      entry.target = e.target;
+      entry.targetHandle = e.targetHandle;
+    }
+    stubLegsByLink.set(link, entry);
+  }
+
+  for (const entry of stubLegsByLink.values()) {
+    if (entry.source != null && entry.target != null) {
+      logical.push(entry as LogicalEdge);
+    }
+  }
+  return logical;
+}
+
 /**
  * BFS from startNodeId across network-type edges only, collecting all reachable
  * device nodes that have dhcpServer.enabled === true.
@@ -171,10 +234,12 @@ export function findReachableDhcpServers(
 ): ReachableDhcpServer[] {
   const nodeMap = new Map<string, SchematicNode>(nodes.map((n) => [n.id, n]));
 
-  // Build adjacency map from network-type edges, filtering by VLAN compatibility
+  // Build adjacency map from network-type edges, filtering by VLAN compatibility.
+  // Stub-leg edges are collapsed back to their real device endpoints first so
+  // reachability crosses stubbed connections (#220).
   const adj = new Map<string, Set<string>>();
-  for (const edge of edges) {
-    if (!edge.data || !NETWORK_SIGNAL_TYPES.has(edge.data.signalType)) continue;
+  for (const edge of collapseStubEdges(nodes, edges)) {
+    if (!NETWORK_SIGNAL_TYPES.has(edge.signalType)) continue;
     const s = edge.source;
     const t = edge.target;
 
@@ -297,8 +362,9 @@ export function computeSubnetConflicts(
   const conflicts: SubnetConflict[] = [];
   const seen = new Set<string>();
 
-  for (const edge of edges) {
-    if (!edge.data || !NETWORK_SIGNAL_TYPES.has(edge.data.signalType)) continue;
+  // Collapse stub legs so both endpoint ports resolve for stubbed connections (#220)
+  for (const edge of collapseStubEdges(nodes, edges)) {
+    if (!NETWORK_SIGNAL_TYPES.has(edge.signalType)) continue;
 
     const srcPort = resolvePort(nodeMap.get(edge.source), edge.sourceHandle);
     const tgtPort = resolvePort(nodeMap.get(edge.target), edge.targetHandle);
