@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { DeviceTemplate, SlotDefinition } from "../../../src/types";
 import { CONNECTOR_LABELS } from "../../../src/types";
+import { rackUnitLabel } from "../../../src/rackUtils";
 import {
   loadDeviceTemplate,
   loadAllTemplates,
@@ -221,6 +222,19 @@ export default function DeviceDetailPage({ id, currentUser }: { id: string; curr
 
       {(template.heightMm != null || template.widthMm != null || template.depthMm != null || template.weightKg != null) && (
         <div className="mb-6 flex flex-wrap gap-4">
+          {(() => {
+            const u = rackUnitLabel(template);
+            if (!u) return null;
+            return (
+              <div
+                className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg"
+                title="Rack-mount height in rack units (1U = 44.45 mm / 1.75 in)"
+              >
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Rack Units</div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{u}</div>
+              </div>
+            );
+          })()}
           {template.heightMm != null && (
             <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">Height</div>

@@ -21,6 +21,7 @@ import {
   type SlotDefinition,
 } from "../types";
 import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES, resolvePortGender, shouldDefaultMultiConnect } from "../connectorTypes";
+import { rackUnitLabel } from "../rackUtils";
 import { getBundledTemplates, getTemplateById, getCardsByFamily, fetchTemplates, checkSession, createDraft, createHandoff } from "../templateApi";
 import { getTemplateDrift } from "../templateSync";
 import LoginDialog from "./LoginDialog";
@@ -1250,6 +1251,17 @@ export default function DeviceEditor() {
                 />
               </div>
             </div>
+            {(() => {
+              const rackU = node ? rackUnitLabel({ ...node.data, heightMm, widthMm }) : null;
+              if (!rackU) return null;
+              return (
+                <div className="pt-1.5 pl-2 text-[10px] text-[var(--color-text-muted)]">
+                  Rack height:{" "}
+                  <span className="text-[var(--color-text-secondary)] font-medium">{rackU}</span>
+                  <span className="ml-1 opacity-70">(1U = 44.45 mm)</span>
+                </div>
+              );
+            })()}
           </details>
 
           {ports.some((p) => p.connectorType === "rj45" || p.connectorType === "ethercon") && (
