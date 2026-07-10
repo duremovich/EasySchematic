@@ -320,6 +320,19 @@ interface SchematicState {
   ) => void;
   /** Reconcile a placed device against the latest version of its source template. */
   syncDeviceFromTemplate: (nodeId: string) => SyncResult | null;
+  /**
+   * Propagate an updated (or forked) template definition to every placed device on the
+   * current schematic that references `sourceTemplateId`, reconciling each instance's ports
+   * against `newTemplate` while preserving connections. Instances are re-pointed to
+   * `newTemplate.id` (needed when forking a built-in device into a user template). Skips
+   * `excludeNodeId` (the device being edited, which the editor saves itself). Runs as a
+   * single undo step. Returns how many instances were updated. (#127)
+   */
+  propagateTemplateToInstances: (
+    sourceTemplateId: string,
+    newTemplate: DeviceTemplate,
+    excludeNodeId?: string,
+  ) => { updated: number };
   /** Replace a device in place with a different template, remapping connections per the plan. */
   swapDevice: (nodeId: string, plan: SwapPlan) => void;
   /** UI state: when set, the Swap Device dialog is open targeting this node. */
@@ -2417,6 +2430,45 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     });
     get().saveToLocalStorage();
     return result;
+  },
+
+  propagateTemplateToInstances: (sourceTemplateId, newTemplate, excludeNodeId) => {
+    const state = get();
+    const targetIds = new Set(
+      state.nodes
+        .filter(
+          (n) =>
+            n.type === "device" &&
+            (n.data as DeviceData).templateId === sourceTemplateId &&
+            n.id !== excludeNodeId,
+        )
+        .map((n) => n.id),
+    );
+    if (targetIds.size === 0) return { updated: 0 };
+
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+
+    // Reconcile each instance against the new definition. syncDeviceWithTemplate keeps
+    // device-side port IDs stable (so live edges stay attached), adds new template ports,
+    // preserves per-instance overrides, and only orphans removed ports — never touching the
+    // edge list. Re-point templateId/version so a forked built-in now tracks the user copy.
+    const newNodes = state.nodes.map((n) => {
+      if (!targetIds.has(n.id) || n.type !== "device") return n;
+      const dn = n as DeviceNode;
+      const { updatedData } = syncDeviceWithTemplate(dn.data, newTemplate, n.id, state.edges);
+      return {
+        ...dn,
+        data: {
+          ...updatedData,
+          ...(newTemplate.id ? { templateId: newTemplate.id } : {}),
+          ...(newTemplate.version != null ? { templateVersion: newTemplate.version } : {}),
+        },
+      } as DeviceNode;
+    });
+
+    set({ nodes: newNodes });
+    get().saveToLocalStorage();
+    return { updated: targetIds.size };
   },
 
   swapDevice: (nodeId, plan) => {
