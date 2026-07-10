@@ -716,6 +716,11 @@ interface SchematicState {
   // Local file handle (File System Access API — Chromium only, not persisted)
   fileHandle: FileSystemFileHandle | null;
   setFileHandle: (handle: FileSystemFileHandle | null) => void;
+  // Adopt a local file as the current document: switch the editing session to
+  // `handle`, rename the schematic to the file's name, and detach any cloud
+  // association so subsequent saves target this file. Used by Save, Save As and
+  // Open so the session (and the window title) always follows the active file. (#174)
+  adoptLocalFile: (handle: FileSystemFileHandle) => void;
 
   // Online / offline state
   isOnline: boolean;
@@ -3980,6 +3985,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   setCloudSchematicId: (id) => { set({ cloudSchematicId: id }); get().saveToLocalStorage(); },
   setCloudSavedAt: (ts) => { set({ cloudSavedAt: ts }); get().saveToLocalStorage(); },
   setFileHandle: (handle) => set({ fileHandle: handle }),
+
+  adoptLocalFile: (handle) => {
+    const name = handle.name.replace(/\.json$/i, "");
+    set({
+      fileHandle: handle,
+      // Only rename when the filename yields a non-empty name (e.g. not ".json").
+      ...(name ? { schematicName: name } : {}),
+      // A local file is now the document of record — drop any cloud link so
+      // Ctrl+S writes to the file rather than the previously-linked cloud copy.
+      cloudSchematicId: null,
+      cloudSavedAt: null,
+    });
+    get().saveToLocalStorage();
+  },
 
   setIsOnline: (online) => set({ isOnline: online }),
 
