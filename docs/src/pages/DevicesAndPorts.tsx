@@ -23,7 +23,7 @@ export default function DevicesAndPortsPage() {
         only connect ports of the <strong>same signal type</strong>, with exceptions where the real hardware
         interoperates: an Allen &amp; Heath <strong>SLink</strong> port connects directly to <strong>dSnake</strong>,
         <strong> DX5</strong>, and <strong>GigaACE</strong> ports, since SLink auto-senses all three protocols.
-        EasySchematic includes 68 built-in signal types covering video, audio, data, power, and control:
+        EasySchematic includes 72 built-in signal types covering video, audio, data, power, and control:
       </p>
       <table>
         <thead>
@@ -72,6 +72,7 @@ export default function DevicesAndPortsPage() {
           <tr><td><strong>fibreACE</strong></td><td>Purple</td><td>Allen &amp; Heath fiber audio network</td></tr>
           <tr><td><strong>dSnake</strong></td><td>Orange</td><td>Allen &amp; Heath dSnake protocol over Cat5</td></tr>
           <tr><td><strong>Digilink</strong></td><td>Indigo</td><td>Avid/Digidesign Digilink audio I/O (HD/HDX)</td></tr>
+          <tr><td><strong>BLU link</strong></td><td>Blue</td><td>BSS/Harman Soundweb London digital audio bus</td></tr>
 
           <tr><td colSpan={3}><strong>Network</strong></td></tr>
           <tr><td><strong>Ethernet</strong></td><td>Teal</td><td>Network data</td></tr>
@@ -83,8 +84,10 @@ export default function DevicesAndPortsPage() {
           <tr><td><strong>DMX</strong></td><td>Dark Red</td><td>Lighting control (XLR-5)</td></tr>
           <tr><td><strong>GPIO</strong></td><td>Warm Gray</td><td>General purpose I/O</td></tr>
           <tr><td><strong>Contact Closure</strong></td><td>Slate</td><td>Dry-contact relay outputs / inputs</td></tr>
+          <tr><td><strong>Sensor</strong></td><td>Gray</td><td>Sensor input (occupancy, daylight, contact)</td></tr>
           <tr><td><strong>Control Voltage</strong></td><td>Amber</td><td>0–10 V control voltage (lighting dimmers, modular synths)</td></tr>
           <tr><td><strong>RS-422</strong></td><td>Deep Violet</td><td>Machine control</td></tr>
+          <tr><td><strong>RS-485</strong></td><td>Violet</td><td>Multi-drop serial control</td></tr>
           <tr><td><strong>Serial</strong></td><td>Gray</td><td>Generic serial</td></tr>
           <tr><td><strong>Tally</strong></td><td>Rose</td><td>Tally/status indicators</td></tr>
           <tr><td><strong>Art-Net</strong></td><td>Amber</td><td>Lighting network protocol (Ethernet)</td></tr>
@@ -93,6 +96,7 @@ export default function DevicesAndPortsPage() {
           <tr><td><strong>IR</strong></td><td>Orange</td><td>Infrared control</td></tr>
           <tr><td><strong>DX Link</strong></td><td>Blue</td><td>AMX/Harman control network</td></tr>
           <tr><td><strong>eBUS</strong></td><td>Slate</td><td>Crestron eBUS control bus</td></tr>
+          <tr><td><strong>Cresnet</strong></td><td>Magenta</td><td>Crestron Cresnet control bus</td></tr>
           <tr><td><strong>Extron Expansion</strong></td><td>Slate</td><td>Extron proprietary expansion bus</td></tr>
           <tr><td><strong>POTS</strong></td><td>Gray</td><td>Plain old telephone service / analog phone line</td></tr>
           <tr><td><strong>MIDI</strong></td><td>Fuchsia</td><td>Musical instrument digital interface</td></tr>
@@ -366,8 +370,8 @@ export default function DevicesAndPortsPage() {
         Per-port customizations follow the connection to its new home — custom port labels (e.g.
         "Camera Bay A" instead of "INPUT 1"), network configuration on Ethernet/AoIP ports, port
         notes, PoE draw, and gender overrides are all preserved. Per-device customizations like
-        custom hostname, short name, and label-wrap preference also survive the swap. The device's
-        node ID stays the same, so rack placements and undo history continue to work.
+        custom hostname, short name, and label-wrap preference also survive the swap. The device keeps
+        its identity, so rack placements and undo history continue to work.
       </p>
       <p>
         The footer summarizes how many connections will be remapped and how many will be dropped
@@ -437,7 +441,7 @@ export default function DevicesAndPortsPage() {
       <h2>Auxiliary data</h2>
       <p>
         Each device can display up to 5 lines of <strong>auxiliary text</strong> at the bottom
-        of the device node on the canvas. Use these for notes like serial numbers, firmware
+        of the device on the canvas. Use these for notes like serial numbers, firmware
         versions, or any other per-device metadata. Set auxiliary lines in the device editor
         under <strong>Auxiliary Data</strong>.
       </p>
@@ -449,7 +453,7 @@ export default function DevicesAndPortsPage() {
         <li>
           <strong>Bind to a device property</strong> — click the <strong>+</strong> button next to
           a row and pick a field. A token like <code>{"{{hostname}}"}</code> gets inserted at the
-          cursor. The device node shows the current value of that field and updates automatically
+          cursor. The device shows the current value of that field and updates automatically
           whenever the field changes.
         </li>
         <li>

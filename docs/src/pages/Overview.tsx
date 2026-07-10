@@ -178,7 +178,7 @@ export default function OverviewPage() {
           <strong>Hostname</strong> — per-device hostname field feeding into the network report
         </li>
         <li>
-          <strong>Auxiliary data</strong> — customizable text lines at the bottom of device nodes
+          <strong>Auxiliary data</strong> — customizable text lines at the bottom of each device
         </li>
         <li>
           <strong>Venue-provided gear</strong> — flag devices as venue-provided for pack list distinction
