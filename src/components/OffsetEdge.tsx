@@ -8,6 +8,7 @@ import { useSchematicStore } from "../store";
 import { LINE_STYLE_DASHARRAY, type ConnectionEdge, type LineStyle, type DeviceData } from "../types";
 import { usbcPowerShortfallW } from "../connectorTypes";
 import { midCustomLabelPlacement } from "../stubPlacement";
+import { computeEdgeLengthEstimate, resolveCableLengthLabel } from "../cableLengthLabel";
 
 function OffsetEdgeComponent({
   id,
@@ -154,6 +155,25 @@ function OffsetEdgeComponent({
   const edgeCableIdLabelMode = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
     return edge?.data?.cableIdLabelMode as "endpoint" | "midpoint" | undefined;
+  });
+
+  // Cable-length label (#100). Resolved to a display string here (a stable primitive
+  // selector): an explicit per-edge override wins, else the room-distance estimate.
+  // Empty when the toggle is off, on direct-attach edges, or when nothing is known.
+  const cableLengthLabel = useSchematicStore((s) => {
+    if (!s.showCableLengthLabels) return "";
+    const edge = s.edges.find((e) => e.id === id);
+    if (!edge || edge.data?.directAttach) return "";
+    const srcNode = s.nodes.find((n) => n.id === edge.source);
+    const tgtNode = s.nodes.find((n) => n.id === edge.target);
+    const computed = computeEdgeLengthEstimate(
+      srcNode?.parentId,
+      tgtNode?.parentId,
+      s.nodes,
+      s.roomDistances,
+      s.distanceSettings,
+    );
+    return resolveCableLengthLabel(edge.data?.cableLength as string | undefined, computed);
   });
 
   // Endpoint cable-ID labels are suppressed at any stub-label endpoint — the stub box
@@ -587,6 +607,38 @@ function OffsetEdgeComponent({
     </div>
   ) : null;
 
+  // Cable-length badge (#100) — one per cable at the midpoint, nudged below the
+  // centre so it clears a midpoint cable ID / custom label. Styled like the cable-ID
+  // badge for a consistent set. Double-click opens the length editor (writes the same
+  // cableLength field the schedule reads), matching how edge labels are edited here.
+  const cableLengthBadge = (cableLengthLabel && routeStr) ? (
+    <div
+      key="cable-length"
+      title="Double-click to set cable length"
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        useSchematicStore.setState({
+          edgeContextMenu: {
+            edgeId: id,
+            screenX: e.clientX,
+            screenY: e.clientY,
+            flowX: customMidPt.x,
+            flowY: customMidPt.y,
+            initialEdit: "length",
+          },
+        });
+      }}
+      style={{
+        ...cableIdLabelStyle,
+        pointerEvents: "auto",
+        cursor: "pointer",
+        transform: `translate(-50%, -50%) translate(${customMidPt.x}px, ${customMidPt.y + 14}px)`,
+      }}
+    >
+      {cableLengthLabel}
+    </div>
+  ) : null;
+
   // Visual-only reconnect circles + tooltip — rendered in HTML layer above cable labels.
   // Interaction is handled by RF's native SVG updater circles (pointer events pass through
   // labels since they have pointer-events: none). These HTML elements are purely decorative.
@@ -619,11 +671,12 @@ function OffsetEdgeComponent({
   ) : null;
 
   // All labels + reconnect visuals rendered via EdgeLabelRenderer (HTML layer above all SVG edges)
-  const hasPortalContent = customLabels || cableIdLabels || reconnectVisuals || usbcWarningBadge;
+  const hasPortalContent = customLabels || cableIdLabels || reconnectVisuals || usbcWarningBadge || cableLengthBadge;
   const edgeLabelsPortal = hasPortalContent ? (
     <EdgeLabelRenderer>
       {cableIdLabels}
       {customLabels}
+      {cableLengthBadge}
       {usbcWarningBadge}
       {reconnectVisuals}
     </EdgeLabelRenderer>

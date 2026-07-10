@@ -32,6 +32,8 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
   const setShowCableIdLabels = useSchematicStore((s) => s.setShowCableIdLabels);
   const showCustomLabels = useSchematicStore((s) => s.showCustomLabels);
   const setShowCustomLabels = useSchematicStore((s) => s.setShowCustomLabels);
+  const showCableLengthLabels = useSchematicStore((s) => s.showCableLengthLabels);
+  const setShowCableLengthLabels = useSchematicStore((s) => s.setShowCableLengthLabels);
   const cableIdGap = useSchematicStore((s) => s.cableIdGap);
   const setCableIdGap = useSchematicStore((s) => s.setCableIdGap);
   const cableIdMidOffset = useSchematicStore((s) => s.cableIdMidOffset);
@@ -398,6 +400,15 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
             className="w-3 h-3 accent-blue-500 cursor-pointer"
           />
           <span className="text-xs text-[var(--color-text)]">Show custom labels</span>
+        </label>
+        <label className="flex items-center gap-2 px-1 py-0.5 rounded hover:bg-[var(--color-surface-hover)] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showCableLengthLabels}
+            onChange={(e) => setShowCableLengthLabels(e.target.checked)}
+            className="w-3 h-3 accent-blue-500 cursor-pointer"
+          />
+          <span className="text-xs text-[var(--color-text)]">Show cable lengths</span>
         </label>
         <div className="flex items-center gap-2 px-1 py-0.5">
           <span className="text-xs text-[var(--color-text)]">Cable ID position</span>

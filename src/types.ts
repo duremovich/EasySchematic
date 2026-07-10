@@ -795,6 +795,8 @@ export interface SchematicFile {
   showCableIdLabels?: boolean;
   /** Show custom labels on connections (#61) */
   showCustomLabels?: boolean;
+  /** Show cable-length labels on connections (#100). Opt-in; off by default. */
+  showCableLengthLabels?: boolean;
   /** Cable ID endpoint spacing in pixels (#61) */
   cableIdGap?: number;
   /** Cable ID midpoint offset along path in pixels (#61) */

@@ -5,14 +5,14 @@ import type {
   DistanceSettings,
   BundleMeta,
 } from "./types";
-import { SIGNAL_LABELS, CONNECTOR_LABELS, DEFAULT_DISTANCE_SETTINGS } from "./types";
+import { SIGNAL_LABELS, CONNECTOR_LABELS } from "./types";
 import { getCableType } from "./cableTypes";
 import { resolvePort, resolvePortLabel, getRoomLabel, escapeCsv, csvRow, groupBy } from "./packList";
 import { transformLabelNow } from "./labelCaseUtils";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
 import type { DeviceData } from "./types";
-import { computeCableLength, formatLength, getRoomDistance } from "./roomDistance";
+import { computeEdgeLengthEstimate } from "./cableLengthLabel";
 
 export interface CableScheduleDistanceContext {
   roomDistances?: Record<string, number>;
@@ -310,11 +310,13 @@ function computeRowEstimatedLength(
   nodes: SchematicNode[],
   ctx: CableScheduleDistanceContext | undefined,
 ): string | undefined {
-  if (!ctx?.roomDistances) return undefined;
-  const dist = getRoomDistance(sourceParentId, targetParentId, { roomDistances: ctx.roomDistances }, nodes);
-  if (dist === undefined) return undefined;
-  const settings = ctx.distanceSettings ?? DEFAULT_DISTANCE_SETTINGS;
-  return formatLength(computeCableLength(dist, settings), settings.unit);
+  return computeEdgeLengthEstimate(
+    sourceParentId,
+    targetParentId,
+    nodes,
+    ctx?.roomDistances,
+    ctx?.distanceSettings,
+  );
 }
 
 export function exportCableScheduleCsv(

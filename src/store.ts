@@ -428,7 +428,7 @@ interface SchematicState {
   clearAllManualWaypoints: () => void;
   deviceContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   setDeviceContextMenu: (menu: { nodeId: string; screenX: number; screenY: number } | null) => void;
-  edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number } | null;
+  edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number; initialEdit?: "length" } | null;
   roomContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   stubLabelContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   portContextMenu: { nodeId: string; portId: string; screenX: number; screenY: number } | null;
@@ -646,6 +646,9 @@ interface SchematicState {
   setShowCableIdLabels: (show: boolean) => void;
   showCustomLabels: boolean;
   setShowCustomLabels: (show: boolean) => void;
+  /** Show cable-length labels on connections (#100). Opt-in; off by default. */
+  showCableLengthLabels: boolean;
+  setShowCableLengthLabels: (show: boolean) => void;
   cableIdGap: number;
   setCableIdGap: (gap: number) => void;
   cableIdMidOffset: number;
@@ -1357,6 +1360,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   showConnectionLabels: true,
   showCableIdLabels: true,
   showCustomLabels: true,
+  showCableLengthLabels: false,
   cableIdGap: 4,
   cableIdMidOffset: 0,
   cableIdLabelMode: "endpoint" as "endpoint" | "midpoint",
@@ -3931,6 +3935,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  setShowCableLengthLabels: (show) => {
+    set({ showCableLengthLabels: show });
+    get().saveToLocalStorage();
+  },
+
   setCableIdGap: (gap) => {
     set({ cableIdGap: gap });
     get().saveToLocalStorage();
@@ -4743,6 +4752,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showFacePlateDetail: state.showFacePlateDetail ? true : undefined,
       showCableIdLabels: !state.showCableIdLabels ? false : undefined,
       showCustomLabels: !state.showCustomLabels ? false : undefined,
+      showCableLengthLabels: state.showCableLengthLabels ? true : undefined,
       cableIdGap: state.cableIdGap !== 4 ? state.cableIdGap : undefined,
       cableIdMidOffset: state.cableIdMidOffset !== 0 ? state.cableIdMidOffset : undefined,
       cableIdLabelMode: state.cableIdLabelMode !== "endpoint" ? state.cableIdLabelMode : undefined,
@@ -4842,6 +4852,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             showCableIdLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
             showConnectionLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
             showCustomLabels: data.showCustomLabels ?? true,
+            showCableLengthLabels: data.showCableLengthLabels ?? false,
             cableIdGap: data.cableIdGap ?? 4,
             cableIdMidOffset: data.cableIdMidOffset ?? 0,
             cableIdLabelMode: data.cableIdLabelMode ?? "endpoint",
@@ -4923,6 +4934,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         showCableIdLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
         showConnectionLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
         showCustomLabels: data.showCustomLabels ?? true,
+        showCableLengthLabels: data.showCableLengthLabels ?? false,
         cableIdGap: data.cableIdGap ?? 4,
         cableIdMidOffset: data.cableIdMidOffset ?? 0,
         cableIdLabelMode: data.cableIdLabelMode ?? "endpoint",
@@ -5002,6 +5014,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showFacePlateDetail: state.showFacePlateDetail ? true : undefined,
       showCableIdLabels: !state.showCableIdLabels ? false : undefined,
       showCustomLabels: !state.showCustomLabels ? false : undefined,
+      showCableLengthLabels: state.showCableLengthLabels ? true : undefined,
       cableIdGap: state.cableIdGap !== 4 ? state.cableIdGap : undefined,
       cableIdMidOffset: state.cableIdMidOffset !== 0 ? state.cableIdMidOffset : undefined,
       cableIdLabelMode: state.cableIdLabelMode !== "endpoint" ? state.cableIdLabelMode : undefined,
@@ -5101,6 +5114,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showCableIdLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
       showConnectionLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
       showCustomLabels: data.showCustomLabels ?? true,
+      showCableLengthLabels: data.showCableLengthLabels ?? false,
       cableIdGap: data.cableIdGap ?? 4,
       cableIdMidOffset: data.cableIdMidOffset ?? 0,
       cableIdLabelMode: data.cableIdLabelMode ?? "endpoint",
@@ -5205,6 +5219,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         showConnectionLabels: true,
         showCableIdLabels: true,
         showCustomLabels: true,
+        showCableLengthLabels: false,
         cableIdGap: 4,
         cableIdMidOffset: 0,
         cableIdLabelMode: "endpoint" as "endpoint" | "midpoint",
