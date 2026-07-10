@@ -122,11 +122,22 @@ function AutoRouteChip() {
   const autoRoute = useSchematicStore((s) => s.autoRoute);
   const isRouting = useSchematicStore((s) => s.isRouting);
   const toggleAutoRoute = useSchematicStore((s) => s.toggleAutoRoute);
+  const cancelRouting = useSchematicStore((s) => s.cancelRouting);
 
   if (isRouting) {
     return (
-      <div className="absolute top-3 right-3 z-50 bg-black/70 text-white text-xs px-3 py-1.5 rounded-full animate-pulse pointer-events-none">
-        ⚡ Routing…
+      <div className="absolute top-3 right-3 z-50 flex items-center gap-1.5">
+        <div className="bg-black/70 text-white text-xs px-3 py-1.5 rounded-full animate-pulse pointer-events-none">
+          ⚡ Routing…
+        </div>
+        <button
+          type="button"
+          className="bg-black/70 text-white/90 hover:bg-red-600/80 text-xs px-3 py-1.5 rounded-full cursor-pointer select-none transition-colors"
+          onClick={cancelRouting}
+          title={"Stop the current auto-routing pass.\nRoutes computed so far are kept; a later edit routes again."}
+        >
+          Cancel
+        </button>
       </div>
     );
   }

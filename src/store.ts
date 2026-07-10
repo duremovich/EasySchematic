@@ -46,7 +46,7 @@ import { healStaleWaypoints } from "./waypointHealing";
 import { newBundleId, gcBundles, reconcileBundleJunctions, bundleJunctionsFor, splitMemberWaypoints } from "./bundles";
 import { computeBundleTrunk, type BundleEndpoint } from "./routing/bundleRoute";
 import { buildHandleSnapshot } from "./routing/handleSnapshot";
-import { requestRoutes, setRoutingResultHandler, type RoutingResult } from "./routing/routingClient";
+import { requestRoutes, setRoutingResultHandler, cancelRouting as cancelRoutingClient, type RoutingResult } from "./routing/routingClient";
 import { reconcileWaypointNodes, syncEdgesFromWaypointNodes, spliceWaypointsForRemovedNodes } from "./waypointSync";
 import { orthogonalize, extractSegments, segmentsCross, type RoutedEdge, type CrossingPoint } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath, waypointsToSvgPathWithHops } from "./pathfinding";
@@ -439,6 +439,8 @@ interface SchematicState {
   routingDebugData: any;
   recomputeRoutes: (rfInstance: ReactFlowInstance) => void;
   computeSimpleRoutes: (rfInstance: ReactFlowInstance) => void;
+  /** Abort the in-flight auto-route pass (#207); keeps already-applied routes, clears isRouting. */
+  cancelRouting: () => void;
 
   // Auto-route toggle
   autoRoute: boolean;
@@ -5970,6 +5972,17 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       debug: state.debugEdges,
       routingParams: (globalThis as Record<string, unknown>).__routingParams as Record<string, number> | undefined,
     });
+  },
+
+  cancelRouting: () => {
+    // Stop the running portfolio in the worker pool (#207). Drop the pending apply context so any
+    // straggler result is discarded, then clear the indicator. Auto-route stays ON: we abort only
+    // THIS pass; the last committed routedEdges (a complete, consistent map) is kept as-is, and a
+    // later edit re-fires routing normally.
+    if (!get().isRouting) return;
+    cancelRoutingClient();
+    pendingRouteCtx = null;
+    set({ isRouting: false });
   },
 
   toggleAutoRoute: () => {

@@ -84,6 +84,22 @@ When edges of different signal types run in parallel corridors, the proximity th
 | Y_GAP_THRESHOLD | 50 | Max Y gap for overlap grouping neighbors |
 | GRID_SIZE | 20 | Canvas snap grid (node positions, port heights) |
 
+### Async offload & cancellation (#207)
+- `recomputeRoutes` (store.ts) hands the heavy A\* to a **Web Worker pool** via `routingClient.ts`,
+  which fans a request out across a diversified candidate portfolio and applies the best result
+  asynchronously (`applyRoutingResult`). `isRouting` gates the "⚡ Routing…" chip in `App.tsx`.
+- **Cancel** (`store.cancelRouting` → `routingClient.cancelRouting`): while a pass runs, a Cancel
+  button sits beside the chip. It latches a `cancelled` flag (so straggler/sync results are
+  dropped), **terminates** any worker still crunching a candidate (prompt stop, frees the core),
+  and eagerly rebuilds the pool for the next pass. `isRouting` is cleared.
+- **Partial-result policy:** each candidate result is a *complete* routing of every edge and
+  `applyRoutingResult` swaps the whole `routedEdges` map atomically — there is never half-written
+  geometry. Cancel therefore **keeps** whatever was last committed (the previous full routing, or a
+  progressively-applied better candidate) and leaves the rest untouched; nothing is rolled back.
+  Auto-route stays ON, so a later edit re-fires routing normally.
+- **Zero-cost on the normal path:** cancellation only adds a `cancelled = false` reset per request;
+  routing *output* is unchanged, so the routing-baseline gate (`npm run routing:check`) is unaffected.
+
 ### Grid alignment invariants
 - Node positions snap to GRID_SIZE (20px)
 - Device header: 40px (2 grid units)

@@ -82,6 +82,11 @@ let collected: RoutingResult[] = [];
 let appliedBest: RoutingResult | null = null; // best result already handed to the store this seq
 let awaiting = false;
 let jobQueue: RoutingRequest[] = [];
+// Set by cancelRouting(), cleared at the start of every requestRoutes(). Guards the sync-fallback
+// microtask so a cancel that lands between runSyncPortfolio() and its queued apply is honoured. On
+// the worker path teardownPool() + awaiting=false already drop in-flight/late results; this only
+// matters where no Worker exists (main-thread fallback, most test environments).
+let cancelled = false;
 
 function teardownPool(): void {
   for (const w of pool) { try { w.terminate(); } catch { /* ignore */ } }
@@ -204,7 +209,8 @@ function runSyncPortfolio(req: RoutingRequest): void {
   }
   const best = pickBestResult(results);
   // Keep the async shape so the caller's apply path is uniform whether or not a worker exists.
-  queueMicrotask(() => { if (best && handler) handler(best); });
+  // Re-check `cancelled` at apply time: a cancelRouting() between here and the microtask must win.
+  queueMicrotask(() => { if (!cancelled && best && handler) handler(best); });
 }
 
 /** Queue a routing request. Returns immediately; the winning result arrives via the handler. */
@@ -215,6 +221,7 @@ export function requestRoutes(req: RoutingRequest): void {
   collected = [];
   appliedBest = null;
   jobQueue = [];
+  cancelled = false; // fresh pass — clear any prior cancellation latch
 
   const subs = buildSubJobs(req);
   expectedForSeq = subs.length;
@@ -232,4 +239,30 @@ export function requestRoutes(req: RoutingRequest): void {
 /** Eagerly spawn the worker pool so the first real route doesn't pay construction latency. */
 export function warmupRoutingWorker(): void {
   ensurePool();
+}
+
+/**
+ * Abort the in-flight routing pass (#207). Drops the queued/collected portfolio and latches
+ * `cancelled` so any straggler (a late worker message, or the sync-fallback microtask) is
+ * discarded instead of clobbering the store. Workers still crunching a candidate are TERMINATED
+ * rather than left to finish-then-discard, so a core is freed immediately; the pool is eagerly
+ * rebuilt so the next pass doesn't pay worker-construction latency.
+ *
+ * Already-applied routes are intentionally left in place — each candidate result is a COMPLETE
+ * routing of every edge (applyRoutingResult swaps the whole routedEdges map atomically), so
+ * whatever the store last committed is internally consistent; there is no partial edge geometry
+ * to roll back. Callers that also want the "routing…" indicator cleared handle that in the store.
+ */
+export function cancelRouting(): void {
+  cancelled = true;
+  awaiting = false;
+  jobQueue = [];
+  collected = [];
+  appliedBest = null;
+  latestMasterReq = null;
+  latestSeq = -1;
+  expectedForSeq = 0;
+  const hadPool = pool.length > 0;
+  teardownPool();
+  if (hadPool) ensurePool();
 }
