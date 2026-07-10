@@ -20,6 +20,7 @@ import {
   type Connection,
 } from "@xyflow/react";
 import { useSchematicStore, GRID_SIZE, setReconnectingEdgeId } from "./store";
+import { normalizeShortcutKey } from "./keyUtils";
 import { warmupRoutingWorker } from "./routing/routingClient";
 import { useMcpBridge } from "./mcpBridge";
 import { nodeTypes, edgeTypes } from "./nodeTypes";
@@ -785,9 +786,8 @@ function SchematicCanvas() {
         return;
       }
 
-      // Normalize letter keys so shortcuts still fire with Caps Lock on (#179):
-      // e.key is uppercase under Caps Lock, which broke the lowercase comparisons.
-      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      // Normalize letter keys so shortcuts still fire with Caps Lock on (#179).
+      const k = normalizeShortcutKey(e.key);
       if (e.key === "Delete" || e.key === "Backspace") {
         removeSelected();
       } else if ((e.ctrlKey || e.metaKey) && k === "c") {
@@ -1796,7 +1796,7 @@ export default function App() {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement).isContentEditable) return;
 
       // Normalize letter keys so shortcuts still fire with Caps Lock on (#179).
-      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      const k = normalizeShortcutKey(e.key);
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && k === "z") {
         e.preventDefault();
         redo();
