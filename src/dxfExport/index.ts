@@ -91,6 +91,7 @@ export function exportDxf(rfInstance: ReactFlowInstance) {
 
   // ─── Connection lines (with hops + per-edge line style) ─────────────
   const allArcCrossings = collectAllArcCrossings(routedEdges);
+  const stubNodeIds = new Set(nodes.filter((n) => n.type === "stub-label").map((n) => n.id));
 
   for (const edge of edges) {
     const routed = routedEdges[edge.id];
@@ -119,7 +120,13 @@ export function exportDxf(rfInstance: ReactFlowInstance) {
       state.cableIdLabelMode, state.cableIdGap, state.cableIdMidOffset,
       trueColor,
     );
-    emitCustomLabel(writer, edge, routed, trueColor);
+    // A stub leg has exactly one endpoint on a stub-label node; anchor the
+    // custom middle label to that end so it matches the canvas (#201).
+    const stubEnd: "source" | "target" | null =
+      stubNodeIds.has(edge.source) ? "source"
+      : stubNodeIds.has(edge.target) ? "target"
+      : null;
+    emitCustomLabel(writer, edge, routed, trueColor, stubEnd);
   }
 
   // ─── Title block (if configured) ───────────────────────────────────

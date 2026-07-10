@@ -5349,9 +5349,12 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     };
     const tgtLegData = { ...baseData, linkedConnectionId } as ConnectionEdge["data"];
     delete (tgtLegData as Record<string, unknown>).cableId;
-    delete (tgtLegData as Record<string, unknown>).label;
     delete (tgtLegData as Record<string, unknown>).cableLength;
     delete (tgtLegData as Record<string, unknown>).multicableLabel;
+    // The custom middle label (data.label) is intentionally KEPT on the target
+    // leg (#201): each leg carries the same logical connection's custom label so
+    // it shows on both halves, between the cable ID and the stub-label box. Cable
+    // ID stays source-leg-only (mirrored to the target leg via cableIdMap).
     const tgtLeg: ConnectionEdge = {
       ...edge,
       id: `${edge.id}-tgt`,
