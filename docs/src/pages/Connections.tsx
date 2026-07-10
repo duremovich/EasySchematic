@@ -338,8 +338,8 @@ export default function ConnectionsPage() {
       </p>
       <p>
         Each stub end displays a <strong>label</strong> showing where the connection goes — the destination device
-        name, room (if applicable), and page number (in print view). Labels are <strong>draggable</strong> — grab
-        and move them to reposition the stub endpoint.
+        name, its far-end port (shown by default at both ends), room (if applicable), and page number (in print
+        view). Labels are <strong>draggable</strong> — grab and move them to reposition the stub endpoint.
       </p>
       <ul>
         <li>Stub lines follow <strong>orthogonal routing</strong> with curved corners, matching normal connections</li>

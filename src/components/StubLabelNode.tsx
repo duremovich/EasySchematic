@@ -8,6 +8,7 @@ import { computePageGrid } from "../printPageGrid";
 import { getPaperSize } from "../printConfig";
 import { STUB_GAP } from "../stubPlacement";
 import { getPortAbsolutePositions } from "../snapUtils";
+import { buildStubLabelText } from "../stubLabelText";
 
 /** Find the connecting edge: source-side stub is the TARGET of an edge from a device;
  *  target-side stub is the SOURCE of an edge to a device. */
@@ -221,15 +222,10 @@ function StubLabelNodeComponent({ id, data, selected }: NodeProps<StubLabelNodeT
   const text = useMemo(() => {
     if (!labelStr) return "?";
     const [arrow, farLabel, farPort, farRoom, myPage, farPage] = labelStr.split("\0");
-    let t = `${arrow} ${farLabel}`;
-    if (effectiveShowPort && farPort) t += ` [${farPort}]`;
-    if (effectiveShowRoom && farRoom) t += ` (${farRoom})`;
-    const showPage = !!farPage && (
-      effectivePageMode === "always" ||
-      (effectivePageMode === "cross-page" && farPage !== myPage)
+    return buildStubLabelText(
+      { arrow, farLabel, farPort, farRoom, myPage, farPage },
+      { showPort: effectiveShowPort, showRoom: effectiveShowRoom, pageMode: effectivePageMode },
     );
-    if (showPage) t += ` Pg ${farPage}`;
-    return t;
   }, [labelStr, effectiveShowPort, effectiveShowRoom, effectivePageMode]);
 
   const color = SIGNAL_COLORS[data.signalType] ?? "#999";

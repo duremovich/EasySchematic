@@ -863,7 +863,11 @@ export type PanMode = "select-first" | "pan-first";
 export const DEFAULT_PAN_MODE: PanMode = "select-first";
 
 export type StubLabelPageMode = "always" | "cross-page" | "never";
-export const DEFAULT_STUB_LABEL_SHOW_PORT = false;
+// Show the far-end port name (e.g. "[HDMI In 1]") on stub labels by default, at both
+// ends of a stubbed connection — the destination device alone is often ambiguous when a
+// device has several ports of the same signal type (issue #200). Still user-toggleable
+// globally (Preferences) and per-stub (right-click → Show port).
+export const DEFAULT_STUB_LABEL_SHOW_PORT = true;
 export const DEFAULT_STUB_LABEL_SHOW_ROOM = true;
 export const DEFAULT_STUB_LABEL_PAGE_MODE: StubLabelPageMode = "cross-page";
 
