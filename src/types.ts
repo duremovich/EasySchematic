@@ -406,6 +406,32 @@ export interface StubLabelData {
 
 export type StubLabelNode = Node<StubLabelData, "stub-label">;
 
+/** A free-text "stub" attached to a SINGLE device port (#196). Unlike a stub-label,
+ *  it is NOT backed by any real connection — there is no edge and no linkedConnectionId,
+ *  so it never appears in cable/pack/network reports and does not count a port as
+ *  "connected". Used to note things like "Client LAN" on a port without drawing a device
+ *  for the far end. The node draws its own short leader line to the anchor port. */
+export interface TextStubData {
+  [key: string]: unknown;
+  /** Free text the user types (e.g. "Client LAN"). */
+  text: string;
+  /** Signal type of the anchored port — drives the border/leader colour only. */
+  signalType: SignalType;
+  /** The device this text stub is attached to. */
+  anchorNodeId: string;
+  /** The base port id (not the -in/-out/-rear/-front handle) this stub annotates. */
+  anchorPortId: string;
+  /** Which side of the label box faces the device ("l" = device is to the left of the
+   *  box, "r" = device is to the right). Mirrors defaultStubPlacement's handle. */
+  side: "l" | "r";
+  /** True once one-shot auto-placement has aligned the box with its port (see StubLabelData.placed). */
+  placed?: boolean;
+  /** True once the user has dragged the box; suppresses auto-re-placement on device moves. */
+  userMoved?: boolean;
+}
+
+export type TextStubNode = Node<TextStubData, "text-stub">;
+
 export interface WaypointData {
   [key: string]: unknown;
   /** The connection edge this waypoint belongs to. */
@@ -435,7 +461,7 @@ export interface BundleJunctionData {
 
 export type BundleJunctionNode = Node<BundleJunctionData, "bundle-junction">;
 
-export type SchematicNode = DeviceNode | RoomNode | NoteNode | AnnotationNode | StubLabelNode | WaypointNode | BundleJunctionNode;
+export type SchematicNode = DeviceNode | RoomNode | NoteNode | AnnotationNode | StubLabelNode | TextStubNode | WaypointNode | BundleJunctionNode;
 
 export interface ConnectionData {
   [key: string]: unknown;

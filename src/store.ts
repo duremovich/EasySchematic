@@ -35,9 +35,10 @@ import type {
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings, PanMode, StubLabelPageMode, ProjectStatus } from "./types";
-import { defaultStubPlacement, healStubPortAlignment } from "./stubPlacement";
+import { defaultStubPlacement, healStubPortAlignment, STUB_W_EST } from "./stubPlacement";
 import { getPortAbsolutePositions } from "./snapUtils";
-import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_SHOW_ROOM, DEFAULT_STUB_LABEL_PAGE_MODE } from "./types";
+import { textStubSideForPort, textStubBoxPosition } from "./textStub";
+import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_SHOW_ROOM, DEFAULT_STUB_LABEL_PAGE_MODE, portSide } from "./types";
 import { pairKey } from "./roomDistance";
 import type { Orientation } from "./printConfig";
 import { computeAlignment, resolveAlignmentOverlaps, type AlignOperation } from "./alignUtils";
@@ -237,7 +238,8 @@ function snapNodesToGrid(nodes: SchematicNode[]): SchematicNode[] {
     // (healStubPortAlignment in recomputeRoutes) — DOM-measured ports can sit a few px
     // off the model grid, so snapping the stub to the abstract grid here would BREAK
     // colinearity with such ports (kink at the label). Leave their stored Y alone.
-    if (n.type === "stub-label") continue;
+    // Text stubs (#196) store the same sub-grid, port-centred Y for the same reason.
+    if (n.type === "stub-label" || n.type === "text-stub") continue;
     n.position.x = Math.round(n.position.x / GRID_SIZE) * GRID_SIZE;
     n.position.y = Math.round(n.position.y / GRID_SIZE) * GRID_SIZE;
   }
@@ -431,6 +433,7 @@ interface SchematicState {
   edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number; initialEdit?: "length" } | null;
   roomContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   stubLabelContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
+  textStubContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   portContextMenu: { nodeId: string; portId: string; screenX: number; screenY: number } | null;
 
   // Centralized edge routing
@@ -666,6 +669,11 @@ interface SchematicState {
   wrapDeviceLabels: boolean;
   setWrapDeviceLabels: (wrap: boolean) => void;
   patchStubLabelData: (nodeId: string, patch: Partial<import("./types").StubLabelData>) => void;
+  /** Attach a free-text stub to a single device port (#196). No edge/connection is
+   *  created; the new node starts in edit mode. */
+  addTextStub: (nodeId: string, portId: string) => void;
+  /** Update a text stub's free text. */
+  updateTextStubText: (nodeId: string, text: string) => void;
   cableIdMap: Record<string, string>;
   recomputeCableIds: () => void;
 
@@ -1292,6 +1300,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   edgeContextMenu: null,
   roomContextMenu: null,
   stubLabelContextMenu: null,
+  textStubContextMenu: null,
   portContextMenu: null,
   autoRoute: true,
   _edgeWaypointStash: null,
@@ -1714,6 +1723,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return n;
       });
 
+    // Cascade-remove text stubs (#196) whose anchor device was deleted — they carry no
+    // edge, so the edge-based orphan pruning above never touches them.
+    const survivingNodeIds = new Set(remainingNodes.map((n) => n.id));
+    const remainingNodesPruned = remainingNodes.filter(
+      (n) => n.type !== "text-stub" || survivingNodeIds.has((n.data as import("./types").TextStubData).anchorNodeId),
+    );
+
     // Cascade-remove rack placements for deleted devices; clear room links for deleted rooms
     const pages = state.pages.length > 0 && selectedNodeIds.size > 0
       ? state.pages.map((page): SchematicPage => {
@@ -1742,7 +1758,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     // After deleting nodes/edges, waypoint node ids may be stale (indices shifted
     // or owning edges removed). Reconcile against the new canonical edges.
-    const reconciledNodes = reconcileWaypointNodes(remainingNodes, edgesAfterSplice);
+    const reconciledNodes = reconcileWaypointNodes(remainingNodesPruned, edgesAfterSplice);
 
     // Purge any pairwise distances referencing a deleted room (#146).
     let nextDistances = state.roomDistances;
@@ -5288,6 +5304,89 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return { ...n, data: merged };
       }),
     });
+    get().saveToLocalStorage();
+  },
+
+  addTextStub: (nodeId, portId) => {
+    const state = get();
+    const device = state.nodes.find((n) => n.id === nodeId);
+    if (!device || device.type !== "device") return;
+    const port = (device.data as DeviceData).ports.find((p) => p.id === portId);
+    if (!port) return;
+
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n] as const));
+    const positions = getPortAbsolutePositions(device, nodeMap, {
+      useShortNames: state.useShortNames,
+      wrapDeviceLabels: state.wrapDeviceLabels,
+    });
+    const wanted = portSide(port);
+    // A port can expose two handles (bidirectional in/out, passthrough rear/front) on
+    // opposite sides; anchor to the one on the port's natural outward side.
+    const candidates = positions.filter((p) => p.portId === portId);
+    const portPos =
+      candidates.find((p) => p.side === wanted) ?? candidates[0];
+    if (!portPos) return;
+
+    const side = textStubSideForPort(portPos.side);
+    const absPos = (n: SchematicNode): { x: number; y: number } => {
+      let x = n.position.x;
+      let y = n.position.y;
+      let pid = n.parentId;
+      while (pid) {
+        const p = state.nodes.find((nn) => nn.id === pid);
+        if (!p) break;
+        x += p.position.x;
+        y += p.position.y;
+        pid = p.parentId;
+      }
+      return { x, y };
+    };
+    const boxAbs = textStubBoxPosition({ x: portPos.absX, y: portPos.absY }, side, STUB_W_EST);
+    const parentId = device.parentId;
+    const parentAbs = parentId
+      ? absPos(state.nodes.find((n) => n.id === parentId)!)
+      : { x: 0, y: 0 };
+
+    const id = `text-stub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const newNode: SchematicNode = {
+      id,
+      type: "text-stub",
+      position: {
+        x: Math.round(boxAbs.x - parentAbs.x),
+        y: Math.round(boxAbs.y - parentAbs.y),
+      },
+      ...(parentId ? { parentId } : {}),
+      zIndex: STUB_LABEL_Z_INDEX,
+      selected: false,
+      data: {
+        text: "",
+        signalType: port.signalType,
+        anchorNodeId: nodeId,
+        anchorPortId: portId,
+        side,
+        // Leave `placed` unset so the component re-anchors once React Flow has measured
+        // the real box width (a wide text can shift a left-facing box's X).
+      },
+    } as SchematicNode;
+
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({ nodes: renumberNodes([...state.nodes, newNode]), portContextMenu: null });
+    get().saveToLocalStorage();
+    // Drop straight into edit mode so the user can type the note text.
+    get().setEditingNodeId(id);
+  },
+
+  updateTextStubText: (nodeId, text) => {
+    const state = get();
+    let changed = false;
+    const nodes = state.nodes.map((n) => {
+      if (n.id !== nodeId || n.type !== "text-stub") return n;
+      if ((n.data as import("./types").TextStubData).text === text) return n;
+      changed = true;
+      return { ...n, data: { ...n.data, text } };
+    });
+    if (!changed) return;
+    set({ nodes });
     get().saveToLocalStorage();
   },
 

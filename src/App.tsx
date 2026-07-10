@@ -48,6 +48,7 @@ import SelectionFilterBar from "./components/SelectionFilterBar";
 import RoomContextMenu from "./components/RoomContextMenu";
 import DeviceContextMenu from "./components/DeviceContextMenu";
 import StubLabelContextMenu from "./components/StubLabelContextMenu";
+import TextStubContextMenu from "./components/TextStubContextMenu";
 import RoomEditor from "./components/RoomEditor";
 import AnnotationEditor from "./components/AnnotationEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
@@ -56,7 +57,7 @@ import PageTabs from "./components/PageTabs";
 import RackPage from "./components/RackPage";
 import PrintSheetPage from "./components/PrintSheetPage";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
-import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode, StubLabelData } from "./types";
+import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode, StubLabelData, TextStubData } from "./types";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { loadSharedSchematic, checkSession } from "./templateApi";
@@ -1407,13 +1408,26 @@ function SchematicCanvas() {
           const devEnd = srcStub ? e.target : e.source;
           if (devEnd === draggedNode.id) followStubs.add(srcStub ? e.source : e.target);
         }
-        if (followStubs.size > 0) {
+        // Text stubs (#196) anchor by data.anchorNodeId, not an edge — re-anchor those too.
+        const followTextStubs = new Set(
+          st.nodes
+            .filter((n) => n.type === "text-stub" && (n.data as TextStubData).anchorNodeId === draggedNode.id)
+            .map((n) => n.id),
+        );
+        if (followStubs.size > 0 || followTextStubs.size > 0) {
           useSchematicStore.setState((prev) => ({
             nodes: prev.nodes.map((n) => {
-              if (!followStubs.has(n.id) || n.type !== "stub-label") return n;
-              const d = n.data as StubLabelData;
-              if (d.userMoved || d.placed !== true) return n; // respect manual placement / pending
-              return { ...n, data: { ...d, placed: false } };
+              if (followStubs.has(n.id) && n.type === "stub-label") {
+                const d = n.data as StubLabelData;
+                if (d.userMoved || d.placed !== true) return n; // respect manual placement / pending
+                return { ...n, data: { ...d, placed: false } };
+              }
+              if (followTextStubs.has(n.id) && n.type === "text-stub") {
+                const d = n.data as TextStubData;
+                if (d.userMoved || d.placed !== true) return n;
+                return { ...n, data: { ...d, placed: false } };
+              }
+              return n;
             }),
           }));
         }
@@ -1422,6 +1436,15 @@ function SchematicCanvas() {
           nodes: prev.nodes.map((n) =>
             n.id === draggedNode.id && n.type === "stub-label"
               ? { ...n, data: { ...(n.data as StubLabelData), userMoved: true, placed: true } }
+              : n,
+          ),
+        }));
+        useSchematicStore.getState().saveToLocalStorage();
+      } else if (draggedNode.type === "text-stub") {
+        useSchematicStore.setState((prev) => ({
+          nodes: prev.nodes.map((n) =>
+            n.id === draggedNode.id && n.type === "text-stub"
+              ? { ...n, data: { ...(n.data as TextStubData), userMoved: true, placed: true } }
               : n,
           ),
         }));
@@ -1553,6 +1576,11 @@ function SchematicCanvas() {
           event.preventDefault();
           useSchematicStore.setState({
             stubLabelContextMenu: { nodeId: node.id, screenX: event.clientX, screenY: event.clientY },
+          });
+        } else if (node.type === "text-stub") {
+          event.preventDefault();
+          useSchematicStore.setState({
+            textStubContextMenu: { nodeId: node.id, screenX: event.clientX, screenY: event.clientY },
           });
         }
       }}
@@ -1877,6 +1905,7 @@ export default function App() {
       <RoomContextMenu />
       <DeviceContextMenu />
       <StubLabelContextMenu />
+      <TextStubContextMenu />
       <PortContextMenu />
       <IncompatibleConnectionDialog />
       <DeviceSwapDialog />

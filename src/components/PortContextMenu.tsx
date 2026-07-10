@@ -67,6 +67,11 @@ export default function PortContextMenu() {
     useSchematicStore.setState({ portContextMenu: null });
   }, [menu]);
 
+  const addTextStub = useCallback(() => {
+    if (!menu) return;
+    useSchematicStore.getState().addTextStub(menu.nodeId, menu.portId);
+  }, [menu]);
+
   const convertToPassthrough = useCallback(() => {
     if (!menu) return;
     const state = useSchematicStore.getState();
@@ -218,6 +223,7 @@ export default function PortContextMenu() {
         <MenuItem label="Convert All Ports to Passthrough" onClick={convertAllToPassthrough} />
       )}
       <div className="border-t border-gray-200 my-1" />
+      <MenuItem label="Add Text Stub..." onClick={addTextStub} />
       <MenuItem label="Edit Device..." onClick={editDevice} />
     </div>
   );
