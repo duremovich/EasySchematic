@@ -1,6 +1,6 @@
 import React, { memo, useMemo, useState, useCallback, useEffect } from "react";
 import { useSchematicStore } from "../store";
-import { computeNetworkReport, computeDhcpServerSummary, computePoeBudget, type NetworkReportRow } from "../networkReport";
+import { computeNetworkReport, computeDhcpServerSummary, computePoeBudget, buildNetworkReportCsv, type NetworkReportRow } from "../networkReport";
 import { isValidIpv4, isValidSubnetMask, isValidVlan, findDuplicateIps, computeDhcpWarnings, computeSubnetConflicts, type DhcpWarning } from "../networkValidation";
 import {
   computePackList,
@@ -2769,29 +2769,7 @@ function renderGroupedDevices(devices: PackListDevice[], currency = "USD") {
 
 function exportNetworkCsv(nodes: SchematicNode[], edges: import("../types").ConnectionEdge[], schematicName: string) {
   const rows = computeNetworkReport(nodes, edges);
-  const header = ["Device", "Port", "Room", "Signal", "Hostname", "IP", "Subnet Mask", "Gateway", "VLAN", "Speed", "PoE (W)", "DHCP", "DHCP Server", "Notes"];
-  const lines = [
-    header.join(","),
-    ...rows.map((r) =>
-      [
-        csvEscape(r.deviceLabel),
-        csvEscape(r.portLabel),
-        csvEscape(r.room),
-        csvEscape(r.signalType),
-        csvEscape(r.hostname),
-        r.ip,
-        r.subnetMask,
-        r.gateway,
-        r.vlan,
-        r.linkSpeed,
-        r.poeDrawW,
-        r.dhcp ? "Yes" : "No",
-        csvEscape(r.dhcpServerLabel),
-        csvEscape(r.notes),
-      ].join(","),
-    ),
-  ];
-  downloadCsv(lines.join("\n"), `${schematicName} - Network Report.csv`);
+  downloadCsv(buildNetworkReportCsv(rows), `${schematicName} - Network Report.csv`);
 }
 
 function exportDevicesCsv(nodes: SchematicNode[], ownedGear: OwnedGearItem[], schematicName: string) {

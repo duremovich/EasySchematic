@@ -554,16 +554,18 @@ export function csvRow(cells: string[]): string {
   return cells.map(escapeCsv).join(",");
 }
 
-export function exportPackListCsv(
+/** Build the pack-list CSV file contents (including the UTF-8 BOM). */
+export function buildPackListCsv(
   data: PackListData,
   schematicName: string,
   cableCosts?: Record<string, number>,
   summary?: string,
-): void {
+  generatedDate: string = new Date().toLocaleDateString(),
+): string {
   const lines: string[] = [];
 
   lines.push(`Pack List — ${schematicName}`);
-  lines.push(`Generated ${new Date().toLocaleDateString()}`);
+  lines.push(`Generated ${generatedDate}`);
   if (summary) lines.push(summary);
   lines.push("");
 
@@ -656,7 +658,16 @@ export function exportPackListCsv(
     lines.push(csvRow(["", "", "", "", "", "TOTAL", cableTotal.toFixed(2)]));
   }
 
-  const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  return "\uFEFF" + lines.join("\n");
+}
+
+export function exportPackListCsv(
+  data: PackListData,
+  schematicName: string,
+  cableCosts?: Record<string, number>,
+  summary?: string,
+): void {
+  const blob = new Blob([buildPackListCsv(data, schematicName, cableCosts, summary)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

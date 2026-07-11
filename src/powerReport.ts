@@ -219,14 +219,16 @@ export function computePowerReport(
 
 // ─── CSV Export ───
 
-export function exportPowerReportCsv(
+/** Build the power-report CSV file contents (including the UTF-8 BOM). */
+export function buildPowerReportCsv(
   data: PowerReportData,
   schematicName: string,
-): void {
+  generatedDate: string = new Date().toLocaleDateString(),
+): string {
   const lines: string[] = [];
 
   lines.push(`Power Report — ${schematicName}`);
-  lines.push(`Generated ${new Date().toLocaleDateString()}`);
+  lines.push(`Generated ${generatedDate}`);
   lines.push("");
 
   lines.push("DEVICE POWER DRAW");
@@ -272,7 +274,16 @@ export function exportPowerReportCsv(
     }
   }
 
-  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  // UTF-8 BOM so Excel decodes "≈" / "⚠" correctly (same mojibake fix as the
+  // cable-schedule CSV from the v0.42 playtest)
+  return "﻿" + lines.join("\n");
+}
+
+export function exportPowerReportCsv(
+  data: PowerReportData,
+  schematicName: string,
+): void {
+  const blob = new Blob([buildPowerReportCsv(data, schematicName)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

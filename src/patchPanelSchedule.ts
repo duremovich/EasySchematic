@@ -334,14 +334,16 @@ export function computePatchPanelSchedule(
   return rows;
 }
 
-export function exportPatchPanelScheduleCsv(
+/** Build the patch-panel-schedule CSV file contents (including the UTF-8 BOM). */
+export function buildPatchPanelScheduleCsv(
   rows: PatchPanelScheduleRow[],
   schematicName: string,
-): void {
+  generatedDate: string = new Date().toLocaleDateString(),
+): string {
   const lines: string[] = [];
 
   lines.push(`Patch Panel Schedule — ${escapeCsv(schematicName)}`);
-  lines.push(`Generated ${new Date().toLocaleDateString()}`);
+  lines.push(`Generated ${generatedDate}`);
   lines.push("");
 
   // Legacy columns (1-15) are unchanged from prior versions for back-compat.
@@ -380,7 +382,16 @@ export function exportPatchPanelScheduleCsv(
     }
   }
 
-  const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+  // UTF-8 BOM so Excel decodes the em-dash title / "✓" cells correctly (same
+  // mojibake fix as the cable-schedule CSV from the v0.42 playtest)
+  return "﻿" + lines.join("\n");
+}
+
+export function exportPatchPanelScheduleCsv(
+  rows: PatchPanelScheduleRow[],
+  schematicName: string,
+): void {
+  const blob = new Blob([buildPatchPanelScheduleCsv(rows, schematicName)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

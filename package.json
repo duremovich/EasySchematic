@@ -39,6 +39,9 @@
     "routing:report": "npx tsx src/routingHarness/run.ts",
     "routing:check": "npx tsx src/routingHarness/run.ts --check",
     "routing:baseline": "npx tsx src/routingHarness/run.ts --update-baselines",
+    "reports:report": "npx tsx src/reportsHarness/run.ts",
+    "reports:check": "npx tsx src/reportsHarness/run.ts --check",
+    "reports:baseline": "npx tsx src/reportsHarness/run.ts --update-baselines",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install chromium"
   },

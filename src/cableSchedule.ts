@@ -319,14 +319,16 @@ function computeRowEstimatedLength(
   );
 }
 
-export function exportCableScheduleCsv(
+/** Build the cable-schedule CSV file contents (including the UTF-8 BOM). */
+export function buildCableScheduleCsv(
   rows: CableScheduleRow[],
   schematicName: string,
-): void {
+  generatedDate: string = new Date().toLocaleDateString(),
+): string {
   const lines: string[] = [];
 
   lines.push(`Cable Schedule — ${escapeCsv(schematicName)}`);
-  lines.push(`Generated ${new Date().toLocaleDateString()}`);
+  lines.push(`Generated ${generatedDate}`);
   lines.push("");
 
   lines.push(csvRow([
@@ -347,7 +349,14 @@ export function exportCableScheduleCsv(
     ]));
   }
 
-  const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  return "﻿" + lines.join("\n");
+}
+
+export function exportCableScheduleCsv(
+  rows: CableScheduleRow[],
+  schematicName: string,
+): void {
+  const blob = new Blob([buildCableScheduleCsv(rows, schematicName)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
