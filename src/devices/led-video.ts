@@ -159,6 +159,48 @@ export const templates: DeviceTemplate[] = [
     ],
   },
   {
+    id: "c0a80101-030b-4000-8000-000000000711",
+    deviceType: "led-processor",
+    category: "led-processing",
+    label: "Novastar MX30",
+    manufacturer: "Novastar",
+    modelNumber: "MX30",
+    referenceUrl:
+      "https://oss.novastar.tech/uploads/2025/09/MX30-LED-Display-Controller-Specifications-V1.5.0.pdf",
+    searchTerms: ["novastar", "mx30", "coex", "led processor", "all-in-one", "vmp"],
+    powerDrawW: 55, // max
+    voltage: "100-240V",
+    heightMm: 94.2,
+    widthMm: 483,
+    depthMm: 466.7,
+    weightKg: 7.2,
+    ports: [
+      port("HDMI 2.0-1 In", "hdmi", "input"),
+      port("HDMI 1.4-2 In", "hdmi", "input"),
+      port("DP 1.1 In", "displayport", "input"),
+      port("3G-SDI In 1", "sdi", "input"),
+      port("3G-SDI In 2", "sdi", "input"),
+      port("Genlock In", "genlock", "input"),
+      port("HDMI 2.0-1 Loop", "hdmi", "output"),
+      port("HDMI 1.4-2 Loop", "hdmi", "output"),
+      port("3G-SDI Loop 1", "sdi", "output"),
+      port("3G-SDI Loop 2", "sdi", "output"),
+      port("Genlock Loop", "genlock", "output"),
+      ...ports("LED Out", "ethernet", "output", 10, "rj45"),
+      port("SPDIF Out", "spdif", "output"),
+      port("Ethernet 1", "ethernet", "bidirectional"),
+      port("Ethernet 2", "ethernet", "bidirectional"),
+      port("Aux (RS232)", "serial", "bidirectional", "other"), // connector type not published
+      port("USB 2.0", "usb", "input", "usb-a"), // front panel — diagnostic export
+      port("AC Power", "power", "input"),
+    ],
+    slots: [
+      // 10G optical outs — no module fitted from the factory
+      { id: "sfp-1", label: "OPT 1", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+      { id: "sfp-2", label: "OPT 2", slotFamily: "sfp", defaultCardId: "sfp-10g-sr" },
+    ],
+  },
+  {
     id: "c0a80101-010e-4000-8000-000000000346",
     deviceType: "led-processor",
     category: "led-processing",
