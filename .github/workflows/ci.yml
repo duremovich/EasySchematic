@@ -31,6 +31,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # src/deviceLibrary.fallback.json is gitignored, and templateApi.ts imports it —
+      # so a fresh checkout can't run the tests until it's generated. `npm run build`
+      # does this too, but the tests should fail fast, before the slower vite build.
+      - name: Generate device library fallback
+        run: npm run generate-fallback
+
       - name: Unit tests
         run: npm test
 
