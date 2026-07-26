@@ -23,8 +23,22 @@ jobs:
       - name: Install API dependencies
         run: cd api && npm ci
 
+      # Separate package with its own lockfile — nothing else installs it, so
+      # without this step its tests never run anywhere.
+      - name: Install MCP server dependencies
+        run: cd mcp-server && npm ci
+
       - name: Lint
         run: npm run lint
 
+      - name: Unit tests
+        run: npm test
+
       - name: Type-check and build
         run: npm run build
+
+      # `npm test` here runs its pretest build first, which regenerates
+      # protocol.generated.ts from src/mcp/protocol.ts — so a protocol change in
+      # the app that breaks the server fails CI instead of drifting silently.
+      - name: MCP server build + tests
+        run: cd mcp-server && npm test
