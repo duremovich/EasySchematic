@@ -5,6 +5,7 @@ import {
   isPortAvailable,
   devicePoint,
   resolvableHops,
+  checkHopConnectors,
 } from "../patchCircuits";
 import type { SchematicNode, ConnectionEdge } from "../types";
 
@@ -163,5 +164,78 @@ describe("getPanelOccupancy", () => {
     const e = edge("e1", "dev-a", "dev-b", { patchHops: [{ panelNodeId: "dev-b", portId: "in1" }] });
     const occ = getPanelOccupancy(nodes, [e]);
     expect(occ.get("dev-b")).toBeUndefined();
+  });
+});
+
+describe("checkHopConnectors", () => {
+  // An SDI run (BNC on both ends) and a BNC-fitted panel to patch it through.
+  const sdiNodes: SchematicNode[] = [
+    deviceNode("cam", "Camera", [
+      { id: "sdi-out", label: "SDI OUT", signalType: "sdi", direction: "output", connectorType: "bnc" },
+    ]),
+    deviceNode("swi", "Switcher", [
+      { id: "sdi-in", label: "SDI IN", signalType: "sdi", direction: "input", connectorType: "bnc" },
+    ]),
+    ...nodes.filter((n) => n.id.startsWith("pp-")),
+    {
+      id: "pp-bnc", type: "device", position: { x: 0, y: 0 },
+      data: {
+        label: "PP-BNC", deviceType: "patch-panel", offCanvas: true,
+        ports: [{
+          id: "b1", label: "1", signalType: "sdi", direction: "passthrough",
+          rearConnectorType: "bnc", frontConnectorType: "bnc",
+        }],
+      },
+    } as unknown as SchematicNode,
+  ];
+  const sdiEdge = {
+    id: "e-sdi", source: "cam", target: "swi",
+    sourceHandle: "sdi-out-out", targetHandle: "sdi-in-in",
+    data: { signalType: "sdi" },
+  } as unknown as ConnectionEdge;
+  const sdiSrc = devicePoint(sdiNodes, "cam", "sdi-out-out");
+  const sdiTgt = devicePoint(sdiNodes, "swi", "sdi-in-in");
+
+  it("rejects an SDI run patched through an RJ45 panel", () => {
+    const m = checkHopConnectors(sdiEdge, sdiNodes, { panelNodeId: "pp-1", portId: "pp-port-1" }, sdiSrc, sdiTgt);
+    expect(m).not.toBeNull();
+    expect(m!.face).toBe("rear");
+    expect(m!.panelConnector).toBe("rj45");
+    expect(m!.otherConnector).toBe("bnc");
+    expect(m!.otherLabel).toBe("Camera SDI OUT");
+  });
+
+  it("accepts an SDI run patched through a BNC panel", () => {
+    expect(
+      checkHopConnectors(sdiEdge, sdiNodes, { panelNodeId: "pp-bnc", portId: "b1" }, sdiSrc, sdiTgt),
+    ).toBeNull();
+  });
+
+  it("accepts an ethernet run through an RJ45 panel", () => {
+    const src = devicePoint(nodes, "dev-a", "out1-out");
+    const tgt = devicePoint(nodes, "dev-b", "in1-in");
+    expect(
+      checkHopConnectors(edge("e1", "dev-a", "dev-b"), nodes, { panelNodeId: "pp-1", portId: "pp-port-1" }, src, tgt),
+    ).toBeNull();
+  });
+
+  it("checks the new hop's rear against the PREVIOUS hop's front, not the source device", () => {
+    // First hop lands on an RJ45 panel, so a second BNC hop clashes on its rear face.
+    const patched = { ...sdiEdge, data: { ...sdiEdge.data, patchHops: [{ panelNodeId: "pp-bnc", portId: "b1" }] } } as ConnectionEdge;
+    const m = checkHopConnectors(patched, sdiNodes, { panelNodeId: "pp-1", portId: "pp-port-1" }, sdiSrc, sdiTgt);
+    expect(m).not.toBeNull();
+    expect(m!.face).toBe("rear");
+    expect(m!.otherLabel).toBe("PP-BNC 1");
+  });
+
+  it("passes when connector info is missing on either side", () => {
+    const noConn = [
+      deviceNode("plain", "Plain", [{ id: "p1", label: "P1", signalType: "custom", direction: "output" }]),
+      ...sdiNodes.filter((n) => n.id !== "plain"),
+    ];
+    const e = { ...sdiEdge, source: "plain", sourceHandle: "p1-out" } as ConnectionEdge;
+    expect(
+      checkHopConnectors(e, noConn, { panelNodeId: "pp-1", portId: "pp-port-1" }, devicePoint(noConn, "plain", "p1-out"), sdiTgt),
+    ).not.toBeNull(); // front face still clashes with the BNC target
   });
 });

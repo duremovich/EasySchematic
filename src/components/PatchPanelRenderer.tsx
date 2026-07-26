@@ -5,6 +5,8 @@ import { useSchematicStore } from "../store";
 import {
   getPanelOccupancy,
   resolvePortDisplay,
+  checkHopConnectors,
+  devicePoint,
   type PortDisplay,
   type PortFaceDisplay,
 } from "../patchCircuits";
@@ -13,7 +15,13 @@ import { exportPatchPanelStripsPdf } from "../patchPanelPdf";
 // Face geometry (px) — tuned to fit two-line port cards under each jack.
 const PITCH = 84;
 const EAR = 42;
-const FACE_H = 118;
+const FACE_H = 124;
+
+/** One designation-strip line. 16 chars is what fits in the 72px box at 7.5px mono. */
+const clampStrip = (s: string | undefined) => {
+  const v = s ?? "—";
+  return v.length > 16 ? v.slice(0, 15) + "…" : v;
+};
 
 /** Main area of the Patch Panels page: one block per panel — SVG face + per-port cards —
  *  plus the assign-mode banner and hover circuit tracing. */
@@ -66,7 +74,9 @@ export default function PatchPanelRenderer() {
   const assignEdge = patchAssignEdgeId ? edges.find((e) => e.id === patchAssignEdgeId) : undefined;
   const assigning = !!assignEdge;
 
-  // Esc cancels assign mode; clear transient state when leaving the page.
+  // Esc cancels assign mode. Leaving the page clears assign/trace state in
+  // setActivePage — doing it in an unmount cleanup here would let StrictMode's
+  // double-invoked effects wipe an arm set by "Patch via Panel..." on the schematic.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setPatchAssignEdge(null);
@@ -74,14 +84,27 @@ export default function PatchPanelRenderer() {
     if (assigning) window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [assigning, setPatchAssignEdge]);
-  useEffect(() => () => {
-    setPatchAssignEdge(null);
-    setPatchTracedEdge(null);
-  }, [setPatchAssignEdge, setPatchTracedEdge]);
 
   const tryAssign = (panelNodeId: string, portId: string) => {
-    if (!patchAssignEdgeId) return;
-    const ok = addEdgePatchHop(patchAssignEdgeId, { panelNodeId, portId });
+    if (!patchAssignEdgeId || !assignEdge) return;
+    const hop = { panelNodeId, portId };
+    const mismatch = checkHopConnectors(
+      assignEdge,
+      nodes,
+      hop,
+      devicePoint(nodes, assignEdge.source, assignEdge.sourceHandle),
+      devicePoint(nodes, assignEdge.target, assignEdge.targetHandle),
+    );
+    if (mismatch) {
+      const faceLabel = mismatch.face === "rear" ? "rear" : "front";
+      addToast(
+        `Won't fit — this port's ${faceLabel} is ${CONNECTOR_LABELS[mismatch.panelConnector]}, ` +
+          `but ${mismatch.otherLabel} is ${CONNECTOR_LABELS[mismatch.otherConnector]}.`,
+        "error",
+      );
+      return;
+    }
+    const ok = addEdgePatchHop(patchAssignEdgeId, hop);
     if (!ok) addToast("That port is already occupied", "info");
   };
 
@@ -248,9 +271,6 @@ export default function PatchPanelRenderer() {
                     const traced = display && patchTracedEdgeId === display.edgeId;
                     const conn = port.frontConnectorType ?? port.connectorType;
                     const connLabel = conn ? (CONNECTOR_LABELS[conn] ?? conn) : "";
-                    const stripText = display
-                      ? `${display.rear?.cableLabel ?? "—"} / ${display.front?.cableLabel ?? "—"}`
-                      : "";
                     return (
                       <g
                         key={port.id}
@@ -271,11 +291,16 @@ export default function PatchPanelRenderer() {
                         <text x={cx} y={cy + 3.5} textAnchor="middle" fill="#9ca3af" fontSize={9} fontWeight={600}>
                           {connLabel}
                         </text>
-                        {stripText && (
+                        {display && (
                           <>
-                            <rect x={cx - 27} y={cy + 26} width={54} height={14} rx={2} fill="#fff" opacity={0.92} />
-                            <text x={cx} y={cy + 36} textAnchor="middle" fontSize={7.5} fill="#111" fontFamily="ui-monospace, monospace">
-                              {stripText.length > 15 ? stripText.slice(0, 14) + "…" : stripText}
+                            {/* Two lines (rear over front) rather than "rear / front" on one —
+                                a default pair like E001-A / E001-B already overran the old box. */}
+                            <rect x={cx - 36} y={cy + 24} width={72} height={22} rx={2} fill="#fff" opacity={0.92} />
+                            <text x={cx} y={cy + 32.5} textAnchor="middle" fontSize={7.5} fill="#111" fontFamily="ui-monospace, monospace">
+                              {clampStrip(display.rear?.cableLabel)}
+                            </text>
+                            <text x={cx} y={cy + 42} textAnchor="middle" fontSize={7.5} fill="#111" fontFamily="ui-monospace, monospace">
+                              {clampStrip(display.front?.cableLabel)}
                             </text>
                           </>
                         )}

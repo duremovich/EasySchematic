@@ -4156,7 +4156,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     pushUndo({ nodes: state.nodes, edges: state.edges });
     const pages = state.pages.filter((p) => p.id !== pageId);
     const activePage = state.activePage === pageId ? "schematic" : state.activePage;
-    set({ pages, activePage, undoSize: undoStack.length, redoSize: 0 });
+    // The page is gone — its assign/trace state has nothing left to point at.
+    set({ pages, activePage, patchAssignEdgeId: null, patchTracedEdgeId: null, undoSize: undoStack.length, redoSize: 0 });
     get().saveToLocalStorage();
   },
 
@@ -4211,7 +4212,15 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   // ── Rack builder actions ──────────────────────────────────────────
 
   setActivePage: (pageId) => {
-    set({ activePage: pageId });
+    const state = get();
+    // Assign/trace state is scoped to the Patch Bay page, so drop it on the way out.
+    // This lives here rather than in a PatchPanelRenderer unmount cleanup because
+    // StrictMode double-invokes effects (mount → cleanup → mount), and that cleanup
+    // wiped an arm set moments earlier by "Patch via Panel..." on the schematic.
+    const target = state.pages.find((p) => p.id === pageId);
+    set(target?.type === "patch-panel"
+      ? { activePage: pageId }
+      : { activePage: pageId, patchAssignEdgeId: null, patchTracedEdgeId: null });
   },
 
   addRackPage: (label) => {

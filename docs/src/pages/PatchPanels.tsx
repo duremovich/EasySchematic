@@ -91,6 +91,11 @@ export default function PatchPanelsPage() {
       <h2>Good to know</h2>
       <ul>
         <li>Copy/pasting a patched connection pastes it <em>unpatched</em> — two cables can't share one physical port.</li>
+        <li>
+          A connection can only be patched through a port whose connector actually mates with it —
+          an SDI run on BNC won't land in an RJ45 panel. Signal type isn't checked, since a panel is
+          signal-agnostic conduit: running AES3 through an analog XLR panel is fine.
+        </li>
         <li>Estimated lengths (from room distances) apply to whole runs, not per-segment; enter segment lengths via the label override editor or the cable schedule.</li>
         <li>Audio patchbay normalling (full/half-normal) isn't modeled yet — the schedule reports it as "None".</li>
       </ul>

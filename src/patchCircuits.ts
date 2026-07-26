@@ -11,9 +11,11 @@ import type {
   DeviceData,
   Port,
   PatchHop,
+  ConnectorType,
 } from "./types";
 import { resolvePort, resolvePortLabel, getRoomLabel } from "./packList";
 import { transformLabelNow } from "./labelCaseUtils";
+import { areConnectorsCompatible } from "./connectorTypes";
 
 export interface PatchPointInfo {
   kind: "device" | "panel";
@@ -147,6 +149,60 @@ export function getPatchSegments(
     });
   }
   return segs;
+}
+
+export interface HopConnectorMismatch {
+  /** Which face of the new panel port doesn't mate. */
+  face: "rear" | "front";
+  panelConnector: ConnectorType;
+  otherConnector: ConnectorType;
+  /** "Device Label Port" on the other end of the offending segment. */
+  otherLabel: string;
+}
+
+/**
+ * Whether a hop can physically land on a panel port, checked at the CONNECTOR level only.
+ * A patch panel is signal-agnostic conduit — AES3 through an analog XLR panel is a real
+ * thing people do — but BNC does not fit an RJ45 jack no matter the signal.
+ *
+ * Hops append to the end of the path, so the new panel's REAR face takes over arrival
+ * from the previous point and its FRONT face feeds the remaining run to the target.
+ * Returns null when compatible, or when either side's connector is unknown
+ * (`areConnectorsCompatible` treats missing info as "no mismatch").
+ */
+export function checkHopConnectors(
+  edge: ConnectionEdge,
+  nodes: SchematicNode[],
+  hop: PatchHop,
+  srcPoint: PatchPointInfo,
+  tgtPoint: PatchPointInfo,
+): HopConnectorMismatch | null {
+  const newRear = panelPoint(nodes, hop, "rear");
+  const newFront = panelPoint(nodes, hop, "front");
+  if (!newRear || !newFront) return null;
+
+  const hops = resolvableHops(edge, nodes);
+  const prev = hops.length === 0
+    ? srcPoint
+    : panelPoint(nodes, hops[hops.length - 1], "front") ?? srcPoint;
+
+  const checks = [
+    { face: "rear" as const, panel: newRear, other: prev },
+    { face: "front" as const, panel: newFront, other: tgtPoint },
+  ];
+  for (const c of checks) {
+    const panelConnector = c.panel.port?.connectorType;
+    const otherConnector = c.other.port?.connectorType;
+    if (panelConnector && otherConnector && !areConnectorsCompatible(panelConnector, otherConnector)) {
+      return {
+        face: c.face,
+        panelConnector,
+        otherConnector,
+        otherLabel: `${c.other.label} ${c.other.portLabel}`.trim(),
+      };
+    }
+  }
+  return null;
 }
 
 export type PortOccupant =

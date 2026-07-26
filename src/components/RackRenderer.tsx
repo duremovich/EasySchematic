@@ -1588,12 +1588,26 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
           setDropTarget({ rackId: hit.rack.id, uPosition: clampedU, heightU: inRackDrag.heightU, halfRackSide: inRackDrag.halfRackSide, valid: false, face: dragFace });
         } else {
           const clampedU = Math.max(1, Math.min(hit.uPosition, hit.rack.heightU - inRackDrag.heightU + 1));
+          const excludeDevice = inRackDrag.kind === "device" ? inRackDrag.id : undefined;
+          const excludeAccessory = inRackDrag.kind === "accessory" ? inRackDrag.id : undefined;
+          // A half-rack device can move between bays, so re-derive its side from the
+          // cursor rather than pinning the side it was first placed on — otherwise it's
+          // stuck in whichever bay it originally landed. Skipped in side view, where
+          // horizontal position already means "which face", not "which bay".
+          let halfSide = inRackDrag.halfRackSide;
+          if (halfSide && viewMode !== "side") {
+            const rackInteriorLeft = hit.rack.position.x + RACK_PAD_X + RULER_WIDTH + DEVICE_INSET;
+            const preferred: "left" | "right" = c.x < rackInteriorLeft + FULL_WIDTH / 2 ? "left" : "right";
+            const preferredOk = isRackSlotAvailable(
+              page.id, hit.rack.id, clampedU, inRackDrag.heightU, dragFace, preferred, excludeDevice, excludeAccessory,
+            );
+            halfSide = preferredOk ? preferred : (preferred === "left" ? "right" : "left");
+          }
           const valid = isRackSlotAvailable(
-            page.id, hit.rack.id, clampedU, inRackDrag.heightU, dragFace, inRackDrag.halfRackSide,
-            inRackDrag.kind === "device" ? inRackDrag.id : undefined,
-            inRackDrag.kind === "accessory" ? inRackDrag.id : undefined,
+            page.id, hit.rack.id, clampedU, inRackDrag.heightU, dragFace, halfSide,
+            excludeDevice, excludeAccessory,
           );
-          setDropTarget({ rackId: hit.rack.id, uPosition: clampedU, heightU: inRackDrag.heightU, halfRackSide: inRackDrag.halfRackSide, valid, face: dragFace });
+          setDropTarget({ rackId: hit.rack.id, uPosition: clampedU, heightU: inRackDrag.heightU, halfRackSide: halfSide, valid, face: dragFace });
         }
       } else {
         setDropTarget(null);
@@ -1644,8 +1658,16 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
         const clampedU = Math.max(1, Math.min(hit.uPosition, hit.rack.heightU - inRackDrag.heightU + 1));
         if (inRackDrag.kind === "device") {
           const original = page.placements.find((p) => p.id === inRackDrag.id);
+          // dropTarget.halfRackSide is the bay the preview settled on, which may differ
+          // from where the drag started — carry that through both move paths.
+          const halfSide = dropTarget.halfRackSide ?? inRackDrag.halfRackSide;
           if (dropTarget.rackId === original?.rackId) {
-            updateRackPlacement(page.id, inRackDrag.id, { uPosition: clampedU, rackId: dropTarget.rackId, face: inRackDrag.face });
+            updateRackPlacement(page.id, inRackDrag.id, {
+              uPosition: clampedU,
+              rackId: dropTarget.rackId,
+              face: inRackDrag.face,
+              ...(halfSide ? { halfRackSide: halfSide } : {}),
+            });
           } else {
             removeRackPlacement(page.id, inRackDrag.id);
             addRackPlacement(page.id, {
@@ -1653,7 +1675,7 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
               deviceNodeId: inRackDrag.deviceNodeId!,
               uPosition: clampedU,
               face: inRackDrag.face,
-              ...(inRackDrag.halfRackSide ? { halfRackSide: inRackDrag.halfRackSide } : {}),
+              ...(halfSide ? { halfRackSide: halfSide } : {}),
             });
           }
         } else {
