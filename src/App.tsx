@@ -20,6 +20,7 @@ import {
   type Connection,
 } from "@xyflow/react";
 import { useSchematicStore, GRID_SIZE, setReconnectingEdgeId } from "./store";
+import { normalizeShortcutKey } from "./keyUtils";
 import { warmupRoutingWorker } from "./routing/routingClient";
 import { useMcpBridge } from "./mcpBridge";
 import { nodeTypes, edgeTypes } from "./nodeTypes";
@@ -47,6 +48,7 @@ import SelectionFilterBar from "./components/SelectionFilterBar";
 import RoomContextMenu from "./components/RoomContextMenu";
 import DeviceContextMenu from "./components/DeviceContextMenu";
 import StubLabelContextMenu from "./components/StubLabelContextMenu";
+import TextStubContextMenu from "./components/TextStubContextMenu";
 import RoomEditor from "./components/RoomEditor";
 import AnnotationEditor from "./components/AnnotationEditor";
 import QuickAddDevice from "./components/QuickAddDevice";
@@ -56,7 +58,7 @@ import RackPage from "./components/RackPage";
 import PatchPanelPage from "./components/PatchPanelPage";
 import PrintSheetPage from "./components/PrintSheetPage";
 import { computeSnap, enforceMinSpacing, detectOverlap, speculativeReparent, type GuideLine } from "./snapUtils";
-import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode, StubLabelData } from "./types";
+import type { ConnectionEdge, DeviceData, DeviceTemplate, SchematicFile, SchematicNode, StubLabelData, TextStubData } from "./types";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge, areConnectorsCompatible } from "./connectorTypes";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { loadSharedSchematic, checkSession } from "./templateApi";
@@ -122,11 +124,22 @@ function AutoRouteChip() {
   const autoRoute = useSchematicStore((s) => s.autoRoute);
   const isRouting = useSchematicStore((s) => s.isRouting);
   const toggleAutoRoute = useSchematicStore((s) => s.toggleAutoRoute);
+  const cancelRouting = useSchematicStore((s) => s.cancelRouting);
 
   if (isRouting) {
     return (
-      <div className="absolute top-3 right-3 z-50 bg-black/70 text-white text-xs px-3 py-1.5 rounded-full animate-pulse pointer-events-none">
-        ⚡ Routing…
+      <div className="absolute top-3 right-3 z-50 flex items-center gap-1.5">
+        <div className="bg-black/70 text-white text-xs px-3 py-1.5 rounded-full animate-pulse pointer-events-none">
+          ⚡ Routing…
+        </div>
+        <button
+          type="button"
+          className="bg-black/70 text-white/90 hover:bg-red-600/80 text-xs px-3 py-1.5 rounded-full cursor-pointer select-none transition-colors"
+          onClick={cancelRouting}
+          title={"Stop the current auto-routing pass.\nRoutes computed so far are kept; a later edit routes again."}
+        >
+          Cancel
+        </button>
       </div>
     );
   }
@@ -786,9 +799,8 @@ function SchematicCanvas() {
         return;
       }
 
-      // Normalize letter keys so shortcuts still fire with Caps Lock on (#179):
-      // e.key is uppercase under Caps Lock, which broke the lowercase comparisons.
-      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      // Normalize letter keys so shortcuts still fire with Caps Lock on (#179).
+      const k = normalizeShortcutKey(e.key);
       if (e.key === "Delete" || e.key === "Backspace") {
         removeSelected();
       } else if ((e.ctrlKey || e.metaKey) && k === "c") {
@@ -1397,13 +1409,26 @@ function SchematicCanvas() {
           const devEnd = srcStub ? e.target : e.source;
           if (devEnd === draggedNode.id) followStubs.add(srcStub ? e.source : e.target);
         }
-        if (followStubs.size > 0) {
+        // Text stubs (#196) anchor by data.anchorNodeId, not an edge — re-anchor those too.
+        const followTextStubs = new Set(
+          st.nodes
+            .filter((n) => n.type === "text-stub" && (n.data as TextStubData).anchorNodeId === draggedNode.id)
+            .map((n) => n.id),
+        );
+        if (followStubs.size > 0 || followTextStubs.size > 0) {
           useSchematicStore.setState((prev) => ({
             nodes: prev.nodes.map((n) => {
-              if (!followStubs.has(n.id) || n.type !== "stub-label") return n;
-              const d = n.data as StubLabelData;
-              if (d.userMoved || d.placed !== true) return n; // respect manual placement / pending
-              return { ...n, data: { ...d, placed: false } };
+              if (followStubs.has(n.id) && n.type === "stub-label") {
+                const d = n.data as StubLabelData;
+                if (d.userMoved || d.placed !== true) return n; // respect manual placement / pending
+                return { ...n, data: { ...d, placed: false } };
+              }
+              if (followTextStubs.has(n.id) && n.type === "text-stub") {
+                const d = n.data as TextStubData;
+                if (d.userMoved || d.placed !== true) return n;
+                return { ...n, data: { ...d, placed: false } };
+              }
+              return n;
             }),
           }));
         }
@@ -1412,6 +1437,15 @@ function SchematicCanvas() {
           nodes: prev.nodes.map((n) =>
             n.id === draggedNode.id && n.type === "stub-label"
               ? { ...n, data: { ...(n.data as StubLabelData), userMoved: true, placed: true } }
+              : n,
+          ),
+        }));
+        useSchematicStore.getState().saveToLocalStorage();
+      } else if (draggedNode.type === "text-stub") {
+        useSchematicStore.setState((prev) => ({
+          nodes: prev.nodes.map((n) =>
+            n.id === draggedNode.id && n.type === "text-stub"
+              ? { ...n, data: { ...(n.data as TextStubData), userMoved: true, placed: true } }
               : n,
           ),
         }));
@@ -1545,6 +1579,11 @@ function SchematicCanvas() {
           event.preventDefault();
           useSchematicStore.setState({
             stubLabelContextMenu: { nodeId: node.id, screenX: event.clientX, screenY: event.clientY },
+          });
+        } else if (node.type === "text-stub") {
+          event.preventDefault();
+          useSchematicStore.setState({
+            textStubContextMenu: { nodeId: node.id, screenX: event.clientX, screenY: event.clientY },
           });
         }
       }}
@@ -1799,7 +1838,7 @@ export default function App() {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target as HTMLElement).isContentEditable) return;
 
       // Normalize letter keys so shortcuts still fire with Caps Lock on (#179).
-      const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      const k = normalizeShortcutKey(e.key);
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && k === "z") {
         e.preventDefault();
         redo();
@@ -1871,6 +1910,7 @@ export default function App() {
       <RoomContextMenu />
       <DeviceContextMenu />
       <StubLabelContextMenu />
+      <TextStubContextMenu />
       <PortContextMenu />
       <IncompatibleConnectionDialog />
       <DeviceSwapDialog />

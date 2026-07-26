@@ -264,6 +264,12 @@ export interface DeviceData {
   category?: string;
   showAllPorts?: boolean;
   hiddenPorts?: string[];
+  /** Per-device "show only connected ports" toggle (#135). When true, ports with no
+   *  active connection are hidden from this device's canvas rendering (stubbed
+   *  connections count as connected). Independent of — and OR-combined with — the
+   *  global SchematicFile.hideUnconnectedPorts view setting. Display-only: reports and
+   *  routing are unaffected. */
+  showOnlyConnectedPorts?: boolean;
   dhcpServer?: DhcpServerConfig;
   isCableAccessory?: boolean;
   integratedWithCable?: boolean;
@@ -404,6 +410,32 @@ export interface StubLabelData {
 
 export type StubLabelNode = Node<StubLabelData, "stub-label">;
 
+/** A free-text "stub" attached to a SINGLE device port (#196). Unlike a stub-label,
+ *  it is NOT backed by any real connection — there is no edge and no linkedConnectionId,
+ *  so it never appears in cable/pack/network reports and does not count a port as
+ *  "connected". Used to note things like "Client LAN" on a port without drawing a device
+ *  for the far end. The node draws its own short leader line to the anchor port. */
+export interface TextStubData {
+  [key: string]: unknown;
+  /** Free text the user types (e.g. "Client LAN"). */
+  text: string;
+  /** Signal type of the anchored port — drives the border/leader colour only. */
+  signalType: SignalType;
+  /** The device this text stub is attached to. */
+  anchorNodeId: string;
+  /** The base port id (not the -in/-out/-rear/-front handle) this stub annotates. */
+  anchorPortId: string;
+  /** Which side of the label box faces the device ("l" = device is to the left of the
+   *  box, "r" = device is to the right). Mirrors defaultStubPlacement's handle. */
+  side: "l" | "r";
+  /** True once one-shot auto-placement has aligned the box with its port (see StubLabelData.placed). */
+  placed?: boolean;
+  /** True once the user has dragged the box; suppresses auto-re-placement on device moves. */
+  userMoved?: boolean;
+}
+
+export type TextStubNode = Node<TextStubData, "text-stub">;
+
 export interface WaypointData {
   [key: string]: unknown;
   /** The connection edge this waypoint belongs to. */
@@ -433,7 +465,7 @@ export interface BundleJunctionData {
 
 export type BundleJunctionNode = Node<BundleJunctionData, "bundle-junction">;
 
-export type SchematicNode = DeviceNode | RoomNode | NoteNode | AnnotationNode | StubLabelNode | WaypointNode | BundleJunctionNode;
+export type SchematicNode = DeviceNode | RoomNode | NoteNode | AnnotationNode | StubLabelNode | TextStubNode | WaypointNode | BundleJunctionNode;
 
 /** One intermediate patch-panel hop on a connection's physical path (source → target order).
  *  The panel is a real device node (deviceType "patch-panel"), possibly off-canvas. */
@@ -831,6 +863,8 @@ export interface SchematicFile {
   showCableIdLabels?: boolean;
   /** Show custom labels on connections (#61) */
   showCustomLabels?: boolean;
+  /** Show cable-length labels on connections (#100). Opt-in; off by default. */
+  showCableLengthLabels?: boolean;
   /** Cable ID endpoint spacing in pixels (#61) */
   cableIdGap?: number;
   /** Cable ID midpoint offset along path in pixels (#61) */
@@ -905,7 +939,11 @@ export type PanMode = "select-first" | "pan-first";
 export const DEFAULT_PAN_MODE: PanMode = "select-first";
 
 export type StubLabelPageMode = "always" | "cross-page" | "never";
-export const DEFAULT_STUB_LABEL_SHOW_PORT = false;
+// Show the far-end port name (e.g. "[HDMI In 1]") on stub labels by default, at both
+// ends of a stubbed connection — the destination device alone is often ambiguous when a
+// device has several ports of the same signal type (issue #200). Still user-toggleable
+// globally (Preferences) and per-stub (right-click → Show port).
+export const DEFAULT_STUB_LABEL_SHOW_PORT = true;
 export const DEFAULT_STUB_LABEL_SHOW_ROOM = true;
 export const DEFAULT_STUB_LABEL_PAGE_MODE: StubLabelPageMode = "cross-page";
 

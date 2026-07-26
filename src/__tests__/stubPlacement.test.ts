@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { healStubPortAlignment, snapStubHandleY, STUB_H_EST } from "../stubPlacement";
+import { healStubPortAlignment, midCustomLabelPlacement, snapStubHandleY, STUB_H_EST } from "../stubPlacement";
 import type { SchematicNode, ConnectionEdge } from "../types";
 import type { HandleSnapshot } from "../routing/handleSnapshot";
 
@@ -67,5 +67,25 @@ describe("healStubPortAlignment", () => {
     const healed = healStubPortAlignment(nodes(160), edges, snapshot(100, 60, "p1-out", 160));
     expect(healed).not.toBeNull();
     expect(healed!.find((n) => n.id === "s1")!.position.y).toBe(153);
+  });
+});
+
+describe("midCustomLabelPlacement", () => {
+  it("keeps the label at the midpoint on a normal edge (no stub ends)", () => {
+    expect(midCustomLabelPlacement(false, false)).toEqual({ mode: "midpoint" });
+  });
+
+  it("anchors to the source end when the source is the stub (target-side leg)", () => {
+    // stub → device leg: the stub is the SOURCE, so the label offsets in from source.
+    expect(midCustomLabelPlacement(true, false)).toEqual({ mode: "stub-end", fromSource: true });
+  });
+
+  it("anchors to the target end when the target is the stub (source-side leg)", () => {
+    // device → stub leg: the stub is the TARGET, so the label offsets in from target.
+    expect(midCustomLabelPlacement(false, true)).toEqual({ mode: "stub-end", fromSource: false });
+  });
+
+  it("falls back to midpoint if somehow both ends are stubs", () => {
+    expect(midCustomLabelPlacement(true, true)).toEqual({ mode: "midpoint" });
   });
 });

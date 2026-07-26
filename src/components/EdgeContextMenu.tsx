@@ -221,8 +221,22 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
-  const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable" | "source" | "target">(false);
+  const [editingLabel, setEditingLabel] = useState<false | "label" | "multicable" | "source" | "target" | "length">(false);
   const [labelValue, setLabelValue] = useState("");
+
+  // When opened directly into length-edit mode (double-click on the length label,
+  // #100), prime the editor with the current override; otherwise a fresh open of
+  // the menu shows the normal item list.
+  useEffect(() => {
+    if (!menu) return;
+    if (menu.initialEdit === "length") {
+      const edge = useSchematicStore.getState().edges.find((e) => e.id === menu.edgeId);
+      setLabelValue((edge?.data?.cableLength as string) ?? "");
+      setEditingLabel("length");
+    } else {
+      setEditingLabel(false);
+    }
+  }, [menu]);
 
   const setEdgeColor = useCallback((hex: string) => {
     if (!menu) return;
@@ -257,6 +271,14 @@ export default function EdgeContextMenu() {
     setEditingLabel("multicable");
   }, [menu]);
 
+  const setCableLength = useCallback(() => {
+    if (!menu) return;
+    const store = useSchematicStore.getState();
+    const edge = store.edges.find((e) => e.id === menu.edgeId);
+    setLabelValue((edge?.data?.cableLength as string) ?? "");
+    setEditingLabel("length");
+  }, [menu]);
+
   const setSourceEndLabel = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
@@ -280,6 +302,7 @@ export default function EdgeContextMenu() {
       editingLabel === "multicable" ? "multicableLabel"
       : editingLabel === "source" ? "sourceLabel"
       : editingLabel === "target" ? "targetLabel"
+      : editingLabel === "length" ? "cableLength"
       : "label";
     store.patchEdgeData(menu.edgeId, { [field]: labelValue.trim() || undefined });
     useSchematicStore.setState({ edgeContextMenu: null });
@@ -504,6 +527,7 @@ export default function EdgeContextMenu() {
           {editingLabel === "multicable" ? "Cable Label"
             : editingLabel === "source" ? "Source-end Label"
             : editingLabel === "target" ? "Target-end Label"
+            : editingLabel === "length" ? "Cable Length"
             : "Midpoint Label"}
         </div>
         <input
@@ -518,7 +542,11 @@ export default function EdgeContextMenu() {
               useSchematicStore.setState({ edgeContextMenu: null });
             }
           }}
-          placeholder={editingLabel === "multicable" ? "e.g. Audio Snake A" : "e.g. Program Feed"}
+          placeholder={
+            editingLabel === "multicable" ? "e.g. Audio Snake A"
+            : editingLabel === "length" ? "e.g. 50 ft"
+            : "e.g. Program Feed"
+          }
           autoFocus
         />
         <div className="flex justify-end gap-1 mt-1.5">
@@ -568,6 +596,9 @@ export default function EdgeContextMenu() {
       <MenuItem label="Set Target-end Label..." onClick={setTargetEndLabel} />
       {isTrunkEdge && (
         <MenuItem label="Set Cable Label..." onClick={setCableLabel} />
+      )}
+      {!isDirectAttach && (
+        <MenuItem label="Set Cable Length..." onClick={setCableLength} />
       )}
       <MenuItem
         label={isCableIdHidden ? "Show Cable ID" : "Hide Cable ID"}

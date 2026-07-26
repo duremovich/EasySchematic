@@ -15,10 +15,17 @@ export const MM_PER_U = 44.45;
 export const mmToU = (mm: number): number => Math.round(mm / MM_PER_U);
 
 /**
+ * Minimal device shape needed to reason about rack sizing. Satisfied by both
+ * placed devices (DeviceData) and library entries (DeviceTemplate), so rack
+ * math can be shared between the schematic app and the devices site.
+ */
+export type RackSizable = Pick<DeviceData, "heightMm" | "widthMm" | "rackForm" | "deviceType" | "ports">;
+
+/**
  * Get or infer a rack height in U for a device.
  * If heightMm is set, converts to U. Otherwise uses port count / device type heuristics.
  */
-export function inferRackHeightU(data: DeviceData): number {
+export function inferRackHeightU(data: RackSizable): number {
   if (data.heightMm) return Math.max(1, mmToU(data.heightMm));
 
   const portCount = data.ports?.length ?? 0;
@@ -54,7 +61,7 @@ export type RackForm = "full" | "half" | "shelf-only" | "oversize" | "unknown";
  * Infer how a device should mount in a rack, from its physical dimensions.
  * Honors an explicit `device.rackForm` override before applying the heuristic.
  */
-export function inferRackForm(device: DeviceData): RackForm {
+export function inferRackForm(device: RackSizable): RackForm {
   if (device.rackForm) return device.rackForm;
 
   const w = device.widthMm;
@@ -84,6 +91,19 @@ export function inferRackForm(device: DeviceData): RackForm {
 
   // Has heightMm but no widthMm — can't say
   return "unknown";
+}
+
+/**
+ * Display label for a rack-mountable device's occupied height in rack units
+ * (e.g. "2U"), or null when the device isn't a 19"/half-rack unit and so has no
+ * meaningful U height. Derives U with the same math the rack builder uses
+ * (`inferRackHeightU`), so a device's specs never disagree with how tall it
+ * renders in the rack view.
+ */
+export function rackUnitLabel(device: RackSizable): string | null {
+  const form = inferRackForm(device);
+  if (form !== "full" && form !== "half") return null;
+  return `${inferRackHeightU(device)}U`;
 }
 
 /** Pixels per rack unit at zoom=1 */

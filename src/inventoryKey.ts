@@ -21,3 +21,29 @@ export function inventoryKeyFromDeviceData(
 ): string {
   return `${d.manufacturer ?? ""}|${d.modelNumber ?? ""}|${d.model ?? d.baseLabel ?? d.label}`;
 }
+
+/**
+ * Identity fields that re-tag a placed device as an instance of `template`.
+ *
+ * Used when saving a modified on-canvas device as a new user template: without
+ * re-stamping these, the device keeps the original library device's `model`, so
+ * identity-keyed reports (pack list / BOQ derive the name from
+ * `model ?? baseLabel ?? label`) keep showing the old name. Re-stamping mirrors a
+ * freshly-placed template instance (see `addDevice`), which is why the
+ * delete-and-re-add workaround shows the correct name. (#137)
+ */
+export function templateIdentityPatch(
+  template: Pick<DeviceTemplate, "id" | "label" | "shortName" | "version">,
+): Pick<
+  DeviceData,
+  "label" | "baseLabel" | "model" | "templateId" | "templateVersion" | "shortName"
+> {
+  return {
+    label: template.label,
+    baseLabel: template.label,
+    model: template.label,
+    templateId: template.id,
+    templateVersion: template.version,
+    shortName: template.shortName,
+  };
+}

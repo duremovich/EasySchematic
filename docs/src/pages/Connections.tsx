@@ -292,7 +292,7 @@ export default function ConnectionsPage() {
       </p>
       <p>
         Use the <strong>View</strong> menu to toggle cable labels on or off across the entire canvas. You can also
-        hide the label on a single connection by right-clicking it and choosing <strong>Hide Label</strong>.
+        hide the label on a single connection by right-clicking it and choosing <strong>Hide Cable ID</strong>.
       </p>
 
       <h2>Line jump arcs</h2>
@@ -338,8 +338,8 @@ export default function ConnectionsPage() {
       </p>
       <p>
         Each stub end displays a <strong>label</strong> showing where the connection goes — the destination device
-        name, room (if applicable), and page number (in print view). Labels are <strong>draggable</strong> — grab
-        and move them to reposition the stub endpoint.
+        name, its far-end port (shown by default at both ends), room (if applicable), and page number (in print
+        view). Labels are <strong>draggable</strong> — grab and move them to reposition the stub endpoint.
       </p>
       <ul>
         <li>Stub lines follow <strong>orthogonal routing</strong> with curved corners, matching normal connections</li>
@@ -366,8 +366,8 @@ export default function ConnectionsPage() {
         </li>
       </ul>
       <p>
-        Both settings can also be overridden on a single connection. Right-click a stubbed connection and use
-        <strong>Stub Port</strong> or <strong>Stub Page</strong> — each cycles through <em>Default</em>
+        Both settings can also be overridden on a single stub. Right-click the <strong>stub label</strong> itself
+        and use <strong>Show port</strong> or <strong>Page mode</strong> — each cycles through <em>Default</em>
         (use the global setting) and explicit values, so an individual stub can opt in or out independently.
       </p>
 

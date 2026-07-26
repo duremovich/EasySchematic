@@ -333,6 +333,49 @@ test("#180 adding an expansion slot keeps the Device Name field", async ({ page 
   ).toHaveValue("Slot 1");
 });
 
+// #180 — the reporter's exact flow: while CREATING a NEW device (not editing an
+// existing one), fill in Name/Manufacturer and some I/O, then add an expansion slot.
+// Adding the slot must not reset ANY in-progress field. This exercises the
+// creating-node path (createAndEditDevice → editingNodeId === creatingNodeId) and
+// asserts Name, Manufacturer AND a freshly-typed I/O port all survive — the previous
+// #180 test only covered an already-placed device and only the Name field.
+test("#180 new-device: adding an expansion slot keeps name, manufacturer and I/O", async ({ page }) => {
+  await boot(page);
+
+  // Double-click empty canvas → QuickAdd → Create New Device → Start Blank.
+  await page.locator(".react-flow__pane").dblclick({ position: { x: 220, y: 220 } });
+  await page.locator("span").filter({ hasText: /^Create New Device$/ }).click();
+  await page.getByText("Start Blank", { exact: true }).click();
+
+  const nameInput = page.getByPlaceholder("e.g. Camera 1");
+  const mfrInput = page.getByPlaceholder("e.g. Sony");
+  await expect(nameInput).toBeVisible({ timeout: 10_000 });
+
+  await nameInput.fill("Field Recorder 9000");
+  await mfrInput.fill("Atomos");
+
+  // Add an input port and label it (the reporter's "add in all the I/O" step).
+  await page.getByRole("button", { name: "+ Add", exact: true }).first().click();
+  const portLabel = page.getByPlaceholder("Port label").first();
+  await portLabel.fill("SDI In 1");
+  await expect(portLabel).toHaveValue("SDI In 1");
+
+  // Now add an expansion slot — the reported symptom was a full form reset here.
+  await page.getByRole("button", { name: "+ Add Slot" }).click();
+  await page.waitForTimeout(400);
+
+  await expect(nameInput, "Device Name must survive adding a slot on a new device (#180)").toHaveValue("Field Recorder 9000");
+  await expect(mfrInput, "Manufacturer must survive adding a slot on a new device (#180)").toHaveValue("Atomos");
+  await expect(
+    page.getByPlaceholder("Port label").first(),
+    "the typed I/O port must survive adding a slot on a new device (#180)",
+  ).toHaveValue("SDI In 1");
+  await expect(
+    page.locator('input[placeholder="Slot label"]'),
+    "the added slot should show up in the editor's slot list",
+  ).toHaveValue("Slot 1");
+});
+
 // #194 — bulk-add expansion slots: one form adds a numbered range of slots in a
 // single step (the slot analog of bulk-add I/O), for large modular frames.
 test("#194 bulk-add creates a numbered range of expansion slots", async ({ page }) => {

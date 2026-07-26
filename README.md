@@ -62,7 +62,7 @@
 - **Stubbed connections** — render as short stubs with destination labels (device name, optional port, room, page) instead of full routed lines; drag labels to reposition, add intermediate waypoints via right-click. Globally toggle port-name display and page-number mode (cross-page only / always / never), or override per connection.
 - **Connector mismatch override** — force-connect ports with incompatible connectors
 - **Bare wire compatibility** — Phoenix and Terminal Block connectors connect to any connector type without adapter warnings
-- **68 signal types**, all color-coded (see below)
+- **72 signal types**, all color-coded (see below)
 - **Connection line styles** — solid, dashed, dotted, or dash-dot per connection or per signal type
 - **Adapters** — automatic adapter insertion between incompatible ports, with direct-attach support, barrels, gender labels, and per-adapter visibility controls
 
@@ -303,7 +303,7 @@ The installed app opens in its own window without browser chrome, works fully of
 | Double-click canvas | Quick-add device search dialog |
 | Double-click room background | Quick-add device inside room |
 | Right-click room | Room context menu (edit properties, lock/unlock) |
-| Right-click connection | Connection context menu (waypoints, stub, override connector mismatch, hide label, reset route) |
+| Right-click connection | Connection context menu (waypoints, stub, override connector mismatch, hide cable ID, reset route) |
 | `Ctrl+Shift+S` | Save As |
 | `Shift+click` | Toggle item in selection |
 | `Shift+drag` | Directional toggle selection |

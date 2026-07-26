@@ -109,10 +109,13 @@ export default function ImportExportPage() {
 
       <h2>PNG / SVG (image export)</h2>
       <ul>
-        <li><strong>Export PNG</strong> — raster image at screen resolution, suitable for documents and presentations</li>
+        <li><strong>Export PNG</strong> — high-resolution raster image rendered at 4× pixel density, suitable for documents and presentations</li>
         <li><strong>Export SVG</strong> — vector image, scalable to any size without quality loss</li>
       </ul>
-      <p>Both capture the current viewport contents.</p>
+      <p>
+        Both capture the entire schematic — every device on the canvas, framed to its bounds with a small
+        margin — regardless of how the canvas is currently panned or zoomed.
+      </p>
 
       <h2>DXF (CAD export)</h2>
       <p>

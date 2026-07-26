@@ -39,6 +39,32 @@ export default function DeviceLibraryPage() {
       </ol>
       <p>User templates persist in your browser's localStorage.</p>
 
+      <h2>Updating a template</h2>
+      <p>
+        You can change a template after the fact and have the change follow through to every
+        instance already placed on the current schematic:
+      </p>
+      <ul>
+        <li>
+          <strong>User templates</strong> — editing a device that came from one of your user
+          templates shows an <strong>Update User Template</strong> button. It overwrites the saved
+          template with the current configuration. If the device is placed elsewhere on the
+          schematic you're asked to confirm, then those other instances are reconciled to the new
+          definition — new ports are added, and existing connections are preserved wherever the
+          port still exists.
+        </li>
+        <li>
+          <strong>Built-in devices</strong> — editing a built-in library device shows an{" "}
+          <strong>Update as Custom</strong> button. It creates a user template named with{" "}
+          <em>(Custom)</em> appended (rename it later like any user template), re-points this device
+          at it, and applies the change to the other instances of that built-in on the schematic.
+        </li>
+      </ul>
+      <p>
+        Removed ports whose connections are still in use are kept as orphaned ports so no cabling is
+        silently lost; you can clean them up manually.
+      </p>
+
       <h2>Favorites</h2>
       <p>
         Star any device template in the library to mark it as a favorite. Favorites are pinned to

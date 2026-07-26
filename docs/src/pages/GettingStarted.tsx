@@ -207,6 +207,11 @@ export default function GettingStartedPage() {
           <strong>Hide adapters</strong> — collapse adapter devices into single connection lines (see
           Connections guide for details)
         </li>
+        <li>
+          <strong>Minimap</strong> — show or hide the canvas minimap. You can also dismiss it with the{" "}
+          <strong>✕</strong> in its corner and bring it back from the <strong>View</strong> menu; the
+          choice is remembered across sessions
+        </li>
       </ul>
 
       <h2>Saving your work</h2>

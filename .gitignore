@@ -61,6 +61,14 @@ src/__tests__/fixtures/routing/baselines/*
 !src/__tests__/fixtures/routing/baselines/bundle-mixed-signal.json
 !src/__tests__/fixtures/routing/baselines/bundle-with-traffic.json
 
+# Reports harness — generated snapshots (baselines/ are committed golden snapshots);
+# same public-repo rule as routing: dropped-in client exports and their goldens stay local.
+src/__tests__/fixtures/reports/snapshots/
+src/__tests__/fixtures/reports/*.json
+src/__tests__/fixtures/reports/baselines/*
+!src/__tests__/fixtures/reports/baselines/kitchen-sink.json
+!src/__tests__/fixtures/reports/baselines/defaultSchematic.json
+
 # Playwright
 e2e/test-results/
 e2e/screenshots/

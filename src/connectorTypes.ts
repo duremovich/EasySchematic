@@ -89,6 +89,9 @@ export const CONNECTOR_ACCEPTS: Partial<Record<ConnectorType, ConnectorAcceptanc
   "opticalcon":    { native: ["lc"] },
   "binding-post-banana": { native: ["binding-post", "banana"] },
   "usb-c":         { adapter: ["usb-a", "usb-b"] },
+  // USB host (Type-A) to peripheral (Type-B / mini-B / micro-B) is the standard
+  // USB cable, not an adapter — e.g. computer to printer or audio interface.
+  "usb-a":         { native: ["usb-b", "usb-mini", "usb-micro"] },
   "mini-xlr":      { adapter: ["xlr-3"] },
   "dvi":           { adapter: ["hdmi"] },
   "mini-hdmi":     { adapter: ["hdmi"] },

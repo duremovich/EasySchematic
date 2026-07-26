@@ -2,7 +2,7 @@ import type { SchematicNode, DeviceData, ConnectionEdge } from "./types";
 import { SIGNAL_LABELS } from "./types";
 import { NETWORK_SIGNAL_TYPES } from "./connectorTypes";
 import { findReachableDhcpServers } from "./networkValidation";
-import { getRoomLabel } from "./packList";
+import { getRoomLabel, escapeCsv } from "./packList";
 import { transformLabelNow } from "./labelCaseUtils";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
@@ -87,6 +87,33 @@ export function computeNetworkReport(nodes: SchematicNode[], edges: ConnectionEd
   }
 
   return rows;
+}
+
+/** Build the network-report CSV contents (no BOM — the download wrapper adds it). */
+export function buildNetworkReportCsv(rows: NetworkReportRow[]): string {
+  const header = ["Device", "Port", "Room", "Signal", "Hostname", "IP", "Subnet Mask", "Gateway", "VLAN", "Speed", "PoE (W)", "DHCP", "DHCP Server", "Notes"];
+  const lines = [
+    header.join(","),
+    ...rows.map((r) =>
+      [
+        escapeCsv(r.deviceLabel),
+        escapeCsv(r.portLabel),
+        escapeCsv(r.room),
+        escapeCsv(r.signalType),
+        escapeCsv(r.hostname),
+        r.ip,
+        r.subnetMask,
+        r.gateway,
+        r.vlan,
+        r.linkSpeed,
+        r.poeDrawW,
+        r.dhcp ? "Yes" : "No",
+        escapeCsv(r.dhcpServerLabel),
+        escapeCsv(r.notes),
+      ].join(","),
+    ),
+  ];
+  return lines.join("\n");
 }
 
 export interface DhcpServerSummaryRow {

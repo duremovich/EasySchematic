@@ -42,6 +42,31 @@ describe("1/4\" TS connector (#208)", () => {
   });
 });
 
+describe("USB-A to USB-B connections (#219)", () => {
+  it("mates USB-A with USB-B natively — the standard host-to-peripheral cable", () => {
+    expect(areConnectorsCompatible("usb-a", "usb-b")).toBe(true);
+    expect(areConnectorsCompatible("usb-b", "usb-a")).toBe(true);
+    expect(needsAdapter("usb-a", "usb-b")).toBe(false);
+  });
+
+  it("mates USB-A with mini/micro-B natively — same host-to-peripheral convention", () => {
+    expect(areConnectorsCompatible("usb-a", "usb-mini")).toBe(true);
+    expect(areConnectorsCompatible("usb-a", "usb-micro")).toBe(true);
+    expect(needsAdapter("usb-a", "usb-mini")).toBe(false);
+    expect(needsAdapter("usb-a", "usb-micro")).toBe(false);
+  });
+
+  it("still treats USB-B to mini/micro-B as incompatible — no such standard cable", () => {
+    expect(areConnectorsCompatible("usb-b", "usb-mini")).toBe(false);
+    expect(areConnectorsCompatible("usb-b", "usb-micro")).toBe(false);
+  });
+
+  it("keeps USB-C reaching USB-A/B via adapter", () => {
+    expect(areConnectorsCompatible("usb-c", "usb-a")).toBe(true);
+    expect(needsAdapter("usb-c", "usb-a")).toBe(true);
+  });
+});
+
 describe("USB-C Power Delivery shortfall (#204)", () => {
   const src = (w: number) => ({ usbcPowerSourceW: w });
   const sink = (w: number) => ({ usbcPowerDrawW: w });

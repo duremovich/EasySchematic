@@ -38,9 +38,10 @@ import type {
 } from "./types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings, PanMode, StubLabelPageMode, ProjectStatus } from "./types";
-import { defaultStubPlacement, healStubPortAlignment } from "./stubPlacement";
+import { defaultStubPlacement, healStubPortAlignment, STUB_W_EST } from "./stubPlacement";
 import { getPortAbsolutePositions } from "./snapUtils";
-import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_SHOW_ROOM, DEFAULT_STUB_LABEL_PAGE_MODE } from "./types";
+import { textStubSideForPort, textStubBoxPosition } from "./textStub";
+import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_SHOW_ROOM, DEFAULT_STUB_LABEL_PAGE_MODE, portSide } from "./types";
 import { pairKey } from "./roomDistance";
 import type { Orientation } from "./printConfig";
 import { computeAlignment, resolveAlignmentOverlaps, type AlignOperation } from "./alignUtils";
@@ -49,7 +50,7 @@ import { healStaleWaypoints } from "./waypointHealing";
 import { newBundleId, gcBundles, reconcileBundleJunctions, bundleJunctionsFor, splitMemberWaypoints } from "./bundles";
 import { computeBundleTrunk, type BundleEndpoint } from "./routing/bundleRoute";
 import { buildHandleSnapshot } from "./routing/handleSnapshot";
-import { requestRoutes, setRoutingResultHandler, type RoutingResult } from "./routing/routingClient";
+import { requestRoutes, setRoutingResultHandler, cancelRouting as cancelRoutingClient, type RoutingResult } from "./routing/routingClient";
 import { reconcileWaypointNodes, syncEdgesFromWaypointNodes, spliceWaypointsForRemovedNodes } from "./waypointSync";
 import { orthogonalize, extractSegments, segmentsCross, type RoutedEdge, type CrossingPoint } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath, waypointsToSvgPathWithHops } from "./pathfinding";
@@ -241,7 +242,8 @@ function snapNodesToGrid(nodes: SchematicNode[]): SchematicNode[] {
     // (healStubPortAlignment in recomputeRoutes) — DOM-measured ports can sit a few px
     // off the model grid, so snapping the stub to the abstract grid here would BREAK
     // colinearity with such ports (kink at the label). Leave their stored Y alone.
-    if (n.type === "stub-label") continue;
+    // Text stubs (#196) store the same sub-grid, port-centred Y for the same reason.
+    if (n.type === "stub-label" || n.type === "text-stub") continue;
     n.position.x = Math.round(n.position.x / GRID_SIZE) * GRID_SIZE;
     n.position.y = Math.round(n.position.y / GRID_SIZE) * GRID_SIZE;
   }
@@ -331,6 +333,19 @@ interface SchematicState {
   ) => void;
   /** Reconcile a placed device against the latest version of its source template. */
   syncDeviceFromTemplate: (nodeId: string) => SyncResult | null;
+  /**
+   * Propagate an updated (or forked) template definition to every placed device on the
+   * current schematic that references `sourceTemplateId`, reconciling each instance's ports
+   * against `newTemplate` while preserving connections. Instances are re-pointed to
+   * `newTemplate.id` (needed when forking a built-in device into a user template). Skips
+   * `excludeNodeId` (the device being edited, which the editor saves itself). Runs as a
+   * single undo step. Returns how many instances were updated. (#127)
+   */
+  propagateTemplateToInstances: (
+    sourceTemplateId: string,
+    newTemplate: DeviceTemplate,
+    excludeNodeId?: string,
+  ) => { updated: number };
   /** Replace a device in place with a different template, remapping connections per the plan. */
   swapDevice: (nodeId: string, plan: SwapPlan) => void;
   /** UI state: when set, the Swap Device dialog is open targeting this node. */
@@ -435,9 +450,10 @@ interface SchematicState {
   clearAllManualWaypoints: () => void;
   deviceContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   setDeviceContextMenu: (menu: { nodeId: string; screenX: number; screenY: number } | null) => void;
-  edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number } | null;
+  edgeContextMenu: { edgeId: string; screenX: number; screenY: number; flowX: number; flowY: number; initialEdit?: "length" } | null;
   roomContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   stubLabelContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
+  textStubContextMenu: { nodeId: string; screenX: number; screenY: number } | null;
   portContextMenu: { nodeId: string; portId: string; screenX: number; screenY: number } | null;
 
   // Centralized edge routing
@@ -446,6 +462,8 @@ interface SchematicState {
   routingDebugData: any;
   recomputeRoutes: (rfInstance: ReactFlowInstance) => void;
   computeSimpleRoutes: (rfInstance: ReactFlowInstance) => void;
+  /** Abort the in-flight auto-route pass (#207); keeps already-applied routes, clears isRouting. */
+  cancelRouting: () => void;
 
   // Auto-route toggle
   autoRoute: boolean;
@@ -674,6 +692,9 @@ interface SchematicState {
   setShowCableIdLabels: (show: boolean) => void;
   showCustomLabels: boolean;
   setShowCustomLabels: (show: boolean) => void;
+  /** Show cable-length labels on connections (#100). Opt-in; off by default. */
+  showCableLengthLabels: boolean;
+  setShowCableLengthLabels: (show: boolean) => void;
   cableIdGap: number;
   setCableIdGap: (gap: number) => void;
   cableIdMidOffset: number;
@@ -691,6 +712,11 @@ interface SchematicState {
   wrapDeviceLabels: boolean;
   setWrapDeviceLabels: (wrap: boolean) => void;
   patchStubLabelData: (nodeId: string, patch: Partial<import("./types").StubLabelData>) => void;
+  /** Attach a free-text stub to a single device port (#196). No edge/connection is
+   *  created; the new node starts in edit mode. */
+  addTextStub: (nodeId: string, portId: string) => void;
+  /** Update a text stub's free text. */
+  updateTextStubText: (nodeId: string, text: string) => void;
   cableIdMap: Record<string, string>;
   recomputeCableIds: () => void;
 
@@ -760,6 +786,11 @@ interface SchematicState {
   // Local file handle (File System Access API — Chromium only, not persisted)
   fileHandle: FileSystemFileHandle | null;
   setFileHandle: (handle: FileSystemFileHandle | null) => void;
+  // Adopt a local file as the current document: switch the editing session to
+  // `handle`, rename the schematic to the file's name, and detach any cloud
+  // association so subsequent saves target this file. Used by Save, Save As and
+  // Open so the session (and the window title) always follows the active file. (#174)
+  adoptLocalFile: (handle: FileSystemFileHandle) => void;
 
   // Online / offline state
   isOnline: boolean;
@@ -1374,6 +1405,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   edgeContextMenu: null,
   roomContextMenu: null,
   stubLabelContextMenu: null,
+  textStubContextMenu: null,
   portContextMenu: null,
   autoRoute: true,
   _edgeWaypointStash: null,
@@ -1442,6 +1474,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   showConnectionLabels: true,
   showCableIdLabels: true,
   showCustomLabels: true,
+  showCableLengthLabels: false,
   cableIdGap: 4,
   cableIdMidOffset: 0,
   cableIdLabelMode: "endpoint" as "endpoint" | "midpoint",
@@ -1798,6 +1831,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return n;
       });
 
+    // Cascade-remove text stubs (#196) whose anchor device was deleted — they carry no
+    // edge, so the edge-based orphan pruning above never touches them.
+    const survivingNodeIds = new Set(remainingNodes.map((n) => n.id));
+    const remainingNodesPruned = remainingNodes.filter(
+      (n) => n.type !== "text-stub" || survivingNodeIds.has((n.data as import("./types").TextStubData).anchorNodeId),
+    );
+
     // Cascade-remove rack placements for deleted devices; clear room links for deleted rooms
     const pages = state.pages.length > 0 && selectedNodeIds.size > 0
       ? state.pages.map((page): SchematicPage => {
@@ -1826,7 +1866,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     // After deleting nodes/edges, waypoint node ids may be stale (indices shifted
     // or owning edges removed). Reconcile against the new canonical edges.
-    const reconciledNodes = reconcileWaypointNodes(remainingNodes, edgesAfterSplice);
+    const reconciledNodes = reconcileWaypointNodes(remainingNodesPruned, edgesAfterSplice);
 
     // Purge any pairwise distances referencing a deleted room (#146).
     let nextDistances = state.roomDistances;
@@ -2554,6 +2594,45 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     });
     get().saveToLocalStorage();
     return result;
+  },
+
+  propagateTemplateToInstances: (sourceTemplateId, newTemplate, excludeNodeId) => {
+    const state = get();
+    const targetIds = new Set(
+      state.nodes
+        .filter(
+          (n) =>
+            n.type === "device" &&
+            (n.data as DeviceData).templateId === sourceTemplateId &&
+            n.id !== excludeNodeId,
+        )
+        .map((n) => n.id),
+    );
+    if (targetIds.size === 0) return { updated: 0 };
+
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+
+    // Reconcile each instance against the new definition. syncDeviceWithTemplate keeps
+    // device-side port IDs stable (so live edges stay attached), adds new template ports,
+    // preserves per-instance overrides, and only orphans removed ports — never touching the
+    // edge list. Re-point templateId/version so a forked built-in now tracks the user copy.
+    const newNodes = state.nodes.map((n) => {
+      if (!targetIds.has(n.id) || n.type !== "device") return n;
+      const dn = n as DeviceNode;
+      const { updatedData } = syncDeviceWithTemplate(dn.data, newTemplate, n.id, state.edges);
+      return {
+        ...dn,
+        data: {
+          ...updatedData,
+          ...(newTemplate.id ? { templateId: newTemplate.id } : {}),
+          ...(newTemplate.version != null ? { templateVersion: newTemplate.version } : {}),
+        },
+      } as DeviceNode;
+    });
+
+    set({ nodes: newNodes });
+    get().saveToLocalStorage();
+    return { updated: targetIds.size };
   },
 
   swapDevice: (nodeId, plan) => {
@@ -4058,6 +4137,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  setShowCableLengthLabels: (show) => {
+    set({ showCableLengthLabels: show });
+    get().saveToLocalStorage();
+  },
+
   setCableIdGap: (gap) => {
     set({ cableIdGap: gap });
     get().saveToLocalStorage();
@@ -4321,6 +4405,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   setCloudSchematicId: (id) => { set({ cloudSchematicId: id }); get().saveToLocalStorage(); },
   setCloudSavedAt: (ts) => { set({ cloudSavedAt: ts }); get().saveToLocalStorage(); },
   setFileHandle: (handle) => set({ fileHandle: handle }),
+
+  adoptLocalFile: (handle) => {
+    const name = handle.name.replace(/\.json$/i, "");
+    set({
+      fileHandle: handle,
+      // Only rename when the filename yields a non-empty name (e.g. not ".json").
+      ...(name ? { schematicName: name } : {}),
+      // A local file is now the document of record — drop any cloud link so
+      // Ctrl+S writes to the file rather than the previously-linked cloud copy.
+      cloudSchematicId: null,
+      cloudSavedAt: null,
+    });
+    get().saveToLocalStorage();
+  },
 
   setIsOnline: (online) => set({ isOnline: online }),
 
@@ -5049,6 +5147,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showFacePlateDetail: state.showFacePlateDetail ? true : undefined,
       showCableIdLabels: !state.showCableIdLabels ? false : undefined,
       showCustomLabels: !state.showCustomLabels ? false : undefined,
+      showCableLengthLabels: state.showCableLengthLabels ? true : undefined,
       cableIdGap: state.cableIdGap !== 4 ? state.cableIdGap : undefined,
       cableIdMidOffset: state.cableIdMidOffset !== 0 ? state.cableIdMidOffset : undefined,
       cableIdLabelMode: state.cableIdLabelMode !== "endpoint" ? state.cableIdLabelMode : undefined,
@@ -5148,6 +5247,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             showCableIdLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
             showConnectionLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
             showCustomLabels: data.showCustomLabels ?? true,
+            showCableLengthLabels: data.showCableLengthLabels ?? false,
             cableIdGap: data.cableIdGap ?? 4,
             cableIdMidOffset: data.cableIdMidOffset ?? 0,
             cableIdLabelMode: data.cableIdLabelMode ?? "endpoint",
@@ -5229,6 +5329,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         showCableIdLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
         showConnectionLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
         showCustomLabels: data.showCustomLabels ?? true,
+        showCableLengthLabels: data.showCableLengthLabels ?? false,
         cableIdGap: data.cableIdGap ?? 4,
         cableIdMidOffset: data.cableIdMidOffset ?? 0,
         cableIdLabelMode: data.cableIdLabelMode ?? "endpoint",
@@ -5308,6 +5409,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showFacePlateDetail: state.showFacePlateDetail ? true : undefined,
       showCableIdLabels: !state.showCableIdLabels ? false : undefined,
       showCustomLabels: !state.showCustomLabels ? false : undefined,
+      showCableLengthLabels: state.showCableLengthLabels ? true : undefined,
       cableIdGap: state.cableIdGap !== 4 ? state.cableIdGap : undefined,
       cableIdMidOffset: state.cableIdMidOffset !== 0 ? state.cableIdMidOffset : undefined,
       cableIdLabelMode: state.cableIdLabelMode !== "endpoint" ? state.cableIdLabelMode : undefined,
@@ -5407,6 +5509,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       showCableIdLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
       showConnectionLabels: data.showCableIdLabels ?? data.showConnectionLabels ?? true,
       showCustomLabels: data.showCustomLabels ?? true,
+      showCableLengthLabels: data.showCableLengthLabels ?? false,
       cableIdGap: data.cableIdGap ?? 4,
       cableIdMidOffset: data.cableIdMidOffset ?? 0,
       cableIdLabelMode: data.cableIdLabelMode ?? "endpoint",
@@ -5511,6 +5614,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         showConnectionLabels: true,
         showCableIdLabels: true,
         showCustomLabels: true,
+        showCableLengthLabels: false,
         cableIdGap: 4,
         cableIdMidOffset: 0,
         cableIdLabelMode: "endpoint" as "endpoint" | "midpoint",
@@ -5579,6 +5683,89 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return { ...n, data: merged };
       }),
     });
+    get().saveToLocalStorage();
+  },
+
+  addTextStub: (nodeId, portId) => {
+    const state = get();
+    const device = state.nodes.find((n) => n.id === nodeId);
+    if (!device || device.type !== "device") return;
+    const port = (device.data as DeviceData).ports.find((p) => p.id === portId);
+    if (!port) return;
+
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n] as const));
+    const positions = getPortAbsolutePositions(device, nodeMap, {
+      useShortNames: state.useShortNames,
+      wrapDeviceLabels: state.wrapDeviceLabels,
+    });
+    const wanted = portSide(port);
+    // A port can expose two handles (bidirectional in/out, passthrough rear/front) on
+    // opposite sides; anchor to the one on the port's natural outward side.
+    const candidates = positions.filter((p) => p.portId === portId);
+    const portPos =
+      candidates.find((p) => p.side === wanted) ?? candidates[0];
+    if (!portPos) return;
+
+    const side = textStubSideForPort(portPos.side);
+    const absPos = (n: SchematicNode): { x: number; y: number } => {
+      let x = n.position.x;
+      let y = n.position.y;
+      let pid = n.parentId;
+      while (pid) {
+        const p = state.nodes.find((nn) => nn.id === pid);
+        if (!p) break;
+        x += p.position.x;
+        y += p.position.y;
+        pid = p.parentId;
+      }
+      return { x, y };
+    };
+    const boxAbs = textStubBoxPosition({ x: portPos.absX, y: portPos.absY }, side, STUB_W_EST);
+    const parentId = device.parentId;
+    const parentAbs = parentId
+      ? absPos(state.nodes.find((n) => n.id === parentId)!)
+      : { x: 0, y: 0 };
+
+    const id = `text-stub-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const newNode: SchematicNode = {
+      id,
+      type: "text-stub",
+      position: {
+        x: Math.round(boxAbs.x - parentAbs.x),
+        y: Math.round(boxAbs.y - parentAbs.y),
+      },
+      ...(parentId ? { parentId } : {}),
+      zIndex: STUB_LABEL_Z_INDEX,
+      selected: false,
+      data: {
+        text: "",
+        signalType: port.signalType,
+        anchorNodeId: nodeId,
+        anchorPortId: portId,
+        side,
+        // Leave `placed` unset so the component re-anchors once React Flow has measured
+        // the real box width (a wide text can shift a left-facing box's X).
+      },
+    } as SchematicNode;
+
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({ nodes: renumberNodes([...state.nodes, newNode]), portContextMenu: null });
+    get().saveToLocalStorage();
+    // Drop straight into edit mode so the user can type the note text.
+    get().setEditingNodeId(id);
+  },
+
+  updateTextStubText: (nodeId, text) => {
+    const state = get();
+    let changed = false;
+    const nodes = state.nodes.map((n) => {
+      if (n.id !== nodeId || n.type !== "text-stub") return n;
+      if ((n.data as import("./types").TextStubData).text === text) return n;
+      changed = true;
+      return { ...n, data: { ...n.data, text } };
+    });
+    if (!changed) return;
+    set({ nodes });
     get().saveToLocalStorage();
   },
 
@@ -5709,13 +5896,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     };
     const tgtLegData = { ...baseData, linkedConnectionId } as ConnectionEdge["data"];
     delete (tgtLegData as Record<string, unknown>).cableId;
-    delete (tgtLegData as Record<string, unknown>).label;
     delete (tgtLegData as Record<string, unknown>).cableLength;
     delete (tgtLegData as Record<string, unknown>).multicableLabel;
     // Patch hops live on the source-side leg ONLY — duplicating them here would
     // double-book the panel ports and orphan them when the source leg unpatches.
     delete (tgtLegData as Record<string, unknown>).patchHops;
     delete (tgtLegData as Record<string, unknown>).patchSegments;
+    // The custom middle label (data.label) is intentionally KEPT on the target
+    // leg (#201): each leg carries the same logical connection's custom label so
+    // it shows on both halves, between the cable ID and the stub-label box. Cable
+    // ID stays source-leg-only (mirrored to the target leg via cableIdMap).
     const tgtLeg: ConnectionEdge = {
       ...edge,
       id: `${edge.id}-tgt`,
@@ -6285,6 +6475,17 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       debug: state.debugEdges,
       routingParams: (globalThis as Record<string, unknown>).__routingParams as Record<string, number> | undefined,
     });
+  },
+
+  cancelRouting: () => {
+    // Stop the running portfolio in the worker pool (#207). Drop the pending apply context so any
+    // straggler result is discarded, then clear the indicator. Auto-route stays ON: we abort only
+    // THIS pass; the last committed routedEdges (a complete, consistent map) is kept as-is, and a
+    // later edit re-fires routing normally.
+    if (!get().isRouting) return;
+    cancelRoutingClient();
+    pendingRouteCtx = null;
+    set({ isRouting: false });
   },
 
   toggleAutoRoute: () => {

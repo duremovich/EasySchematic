@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo, type WheelEvent } from "react";
 import type { DeviceData, FacePlateLayout, FacePlateLabel } from "../types";
 import { autoLayoutPorts, inferRackHeightU, PX_PER_U, DEVICE_WIDTH_PX, PX_PER_MM } from "../rackUtils";
+import { normalizeShortcutKey } from "../keyUtils";
 import { ConnectorIcon, getConnectorSpec } from "./connectorIcons";
 import { SIGNAL_COLORS } from "../types";
 
@@ -528,7 +529,7 @@ export default function FacePlateEditor({ deviceData, onSave, onClose }: FacePla
         onKeyDown={(e) => {
           e.stopPropagation();
           // Normalize letter keys so shortcuts still fire with Caps Lock on (#179).
-          const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+          const k = normalizeShortcutKey(e.key);
           if (e.key === "Delete" || e.key === "Backspace") handleDeleteSelected();
           if (e.key === "Escape") { if (selectedIds.size > 0) setSelectedIds(new Set()); else onClose(); }
           if (k === "a" && (e.ctrlKey || e.metaKey)) {

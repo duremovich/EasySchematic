@@ -7,6 +7,8 @@ import {
 import { useSchematicStore } from "../store";
 import { LINE_STYLE_DASHARRAY, type ConnectionEdge, type LineStyle, type DeviceData } from "../types";
 import { usbcPowerShortfallW } from "../connectorTypes";
+import { midCustomLabelPlacement } from "../stubPlacement";
+import { computeEdgeLengthEstimate, resolveCableLengthLabel } from "../cableLengthLabel";
 
 function OffsetEdgeComponent({
   id,
@@ -153,6 +155,25 @@ function OffsetEdgeComponent({
   const edgeCableIdLabelMode = useSchematicStore((s) => {
     const edge = s.edges.find((e) => e.id === id);
     return edge?.data?.cableIdLabelMode as "endpoint" | "midpoint" | undefined;
+  });
+
+  // Cable-length label (#100). Resolved to a display string here (a stable primitive
+  // selector): an explicit per-edge override wins, else the room-distance estimate.
+  // Empty when the toggle is off, on direct-attach edges, or when nothing is known.
+  const cableLengthLabel = useSchematicStore((s) => {
+    if (!s.showCableLengthLabels) return "";
+    const edge = s.edges.find((e) => e.id === id);
+    if (!edge || edge.data?.directAttach) return "";
+    const srcNode = s.nodes.find((n) => n.id === edge.source);
+    const tgtNode = s.nodes.find((n) => n.id === edge.target);
+    const computed = computeEdgeLengthEstimate(
+      srcNode?.parentId,
+      tgtNode?.parentId,
+      s.nodes,
+      s.roomDistances,
+      s.distanceSettings,
+    );
+    return resolveCableLengthLabel(edge.data?.cableLength as string | undefined, computed);
   });
 
   // Endpoint cable-ID labels are suppressed at any stub-label endpoint — the stub box
@@ -482,6 +503,12 @@ function OffsetEdgeComponent({
   const showMidLabel = showAnyCustom && !!edgeLabel;
   const showTgtLabel = showAnyCustom && !!edgeTargetLabel;
 
+  // Middle custom label placement. Normal edges keep it at the geometric
+  // midpoint; a stub leg anchors it to the stub end so it reads between the
+  // cable ID and the stub-label box (#201).
+  const midPlacement = midCustomLabelPlacement(sourceIsStub, targetIsStub);
+  const midAtMidpoint = showMidLabel && midPlacement.mode === "midpoint";
+
   // Calculate custom label endpoint offset (past cable ID badge when cable ID is also at the same endpoint)
   const cableIdBadgeWidth = labelText ? estimateBadgeWidth(labelText, 9, 3) : 0;
   const customEndpointOffset = (showCableId && cableIdLabelMode === "endpoint")
@@ -491,8 +518,9 @@ function OffsetEdgeComponent({
   // Compute midpoint position along the path (for cable ID midpoint and custom midpoint label).
   // When a custom middle label shares the midpoint, the cable ID is nudged further along
   // the route so the two render side by side instead of stacking on top of each other —
-  // the custom label stays centered, the cable ID sits just past it (#175).
-  const midPairOffset = showMidLabel
+  // the custom label stays centered, the cable ID sits just past it (#175). A stub leg's
+  // custom label is anchored to the stub end, not the midpoint, so no nudge is needed.
+  const midPairOffset = midAtMidpoint
     ? estimateBadgeWidth(edgeLabel, 9, 3) / 2 + estimateBadgeWidth(labelText, 9, 3) / 2 + 6
     : 0;
   const cidMidPt = totalLen > 0 ? pointAtDistance(totalLen / 2 + cidMidOff + midPairOffset) : { x: lx, y: ly };
@@ -520,22 +548,37 @@ function OffsetEdgeComponent({
     )
   ) : null;
 
+  // The stub end never carries a cable ID (suppressed above), so the stub-anchored
+  // middle label uses the plain custom-label gap rather than the cable-ID-aware
+  // endpoint offset (#201).
+  const midCustomLabel = showMidLabel
+    ? (midPlacement.mode === "stub-end"
+        ? makeEndpointLabel(
+            midPlacement.fromSource, CUSTOM_LABEL_GAP, edgeLabel, customLabelStyle, "clbl-mid",
+            midPlacement.fromSource ? sourceX : tgtLabelX,
+            midPlacement.fromSource ? sourceY : tgtLabelY,
+            midPlacement.fromSource ? srcDx : -tgtDx,
+            midPlacement.fromSource ? srcDy : -tgtDy,
+          )
+        : (
+          <div
+            key="clbl-mid"
+            style={{
+              ...customLabelStyle,
+              transform: `translate(-50%, -50%) translate(${customMidPt.x}px, ${customMidPt.y}px)`,
+            }}
+          >
+            {edgeLabel}
+          </div>
+        ))
+    : null;
+
   // Custom labels — three independent slots (#114 rework). Each renders if its text is set.
   const customLabels = (showSrcLabel || showMidLabel || showTgtLabel) ? (
     <>
       {showSrcLabel && makeEndpointLabel(true, customEndpointOffset, edgeSourceLabel, customLabelStyle, "clbl-src",
         sourceX, sourceY, srcDx, srcDy)}
-      {showMidLabel && (
-        <div
-          key="clbl-mid"
-          style={{
-            ...customLabelStyle,
-            transform: `translate(-50%, -50%) translate(${customMidPt.x}px, ${customMidPt.y}px)`,
-          }}
-        >
-          {edgeLabel}
-        </div>
-      )}
+      {midCustomLabel}
       {showTgtLabel && makeEndpointLabel(false, customEndpointOffset, edgeTargetLabel, customLabelStyle, "clbl-tgt",
         tgtLabelX, tgtLabelY, -tgtDx, -tgtDy)}
     </>
@@ -561,6 +604,38 @@ function OffsetEdgeComponent({
       }}
     >
       ⚡ −{usbcShortfall}W
+    </div>
+  ) : null;
+
+  // Cable-length badge (#100) — one per cable at the midpoint, nudged below the
+  // centre so it clears a midpoint cable ID / custom label. Styled like the cable-ID
+  // badge for a consistent set. Double-click opens the length editor (writes the same
+  // cableLength field the schedule reads), matching how edge labels are edited here.
+  const cableLengthBadge = (cableLengthLabel && routeStr) ? (
+    <div
+      key="cable-length"
+      title="Double-click to set cable length"
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        useSchematicStore.setState({
+          edgeContextMenu: {
+            edgeId: id,
+            screenX: e.clientX,
+            screenY: e.clientY,
+            flowX: customMidPt.x,
+            flowY: customMidPt.y,
+            initialEdit: "length",
+          },
+        });
+      }}
+      style={{
+        ...cableIdLabelStyle,
+        pointerEvents: "auto",
+        cursor: "pointer",
+        transform: `translate(-50%, -50%) translate(${customMidPt.x}px, ${customMidPt.y + 14}px)`,
+      }}
+    >
+      {cableLengthLabel}
     </div>
   ) : null;
 
@@ -596,11 +671,12 @@ function OffsetEdgeComponent({
   ) : null;
 
   // All labels + reconnect visuals rendered via EdgeLabelRenderer (HTML layer above all SVG edges)
-  const hasPortalContent = customLabels || cableIdLabels || reconnectVisuals || usbcWarningBadge;
+  const hasPortalContent = customLabels || cableIdLabels || reconnectVisuals || usbcWarningBadge || cableLengthBadge;
   const edgeLabelsPortal = hasPortalContent ? (
     <EdgeLabelRenderer>
       {cableIdLabels}
       {customLabels}
+      {cableLengthBadge}
       {usbcWarningBadge}
       {reconnectVisuals}
     </EdgeLabelRenderer>

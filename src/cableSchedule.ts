@@ -5,15 +5,17 @@ import type {
   DistanceSettings,
   BundleMeta,
 } from "./types";
-import { SIGNAL_LABELS, CONNECTOR_LABELS, DEFAULT_DISTANCE_SETTINGS } from "./types";
+import { SIGNAL_LABELS, CONNECTOR_LABELS } from "./types";
 import { getCableType } from "./cableTypes";
 import { resolvePort, resolvePortLabel, getRoomLabel, escapeCsv, csvRow, groupBy } from "./packList";
 import { transformLabelNow } from "./labelCaseUtils";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
 import type { DeviceData } from "./types";
-import { computeCableLength, formatLength, getRoomDistance } from "./roomDistance";
 import { getPatchSegments, resolvableHops, type PatchPointInfo } from "./patchCircuits";
+// Room-distance estimation moved behind this shared helper (#100) — it backs both the
+// schedule's computedLength column and the on-canvas cable-length badge.
+import { computeEdgeLengthEstimate } from "./cableLengthLabel";
 
 export interface CableScheduleDistanceContext {
   roomDistances?: Record<string, number>;
@@ -379,21 +381,25 @@ function computeRowEstimatedLength(
   nodes: SchematicNode[],
   ctx: CableScheduleDistanceContext | undefined,
 ): string | undefined {
-  if (!ctx?.roomDistances) return undefined;
-  const dist = getRoomDistance(sourceParentId, targetParentId, { roomDistances: ctx.roomDistances }, nodes);
-  if (dist === undefined) return undefined;
-  const settings = ctx.distanceSettings ?? DEFAULT_DISTANCE_SETTINGS;
-  return formatLength(computeCableLength(dist, settings), settings.unit);
+  return computeEdgeLengthEstimate(
+    sourceParentId,
+    targetParentId,
+    nodes,
+    ctx?.roomDistances,
+    ctx?.distanceSettings,
+  );
 }
 
-export function exportCableScheduleCsv(
+/** Build the cable-schedule CSV file contents (including the UTF-8 BOM). */
+export function buildCableScheduleCsv(
   rows: CableScheduleRow[],
   schematicName: string,
-): void {
+  generatedDate: string = new Date().toLocaleDateString(),
+): string {
   const lines: string[] = [];
 
   lines.push(`Cable Schedule — ${escapeCsv(schematicName)}`);
-  lines.push(`Generated ${new Date().toLocaleDateString()}`);
+  lines.push(`Generated ${generatedDate}`);
   lines.push("");
 
   lines.push(csvRow([
@@ -414,7 +420,14 @@ export function exportCableScheduleCsv(
     ]));
   }
 
-  const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  return "﻿" + lines.join("\n");
+}
+
+export function exportCableScheduleCsv(
+  rows: CableScheduleRow[],
+  schematicName: string,
+): void {
+  const blob = new Blob([buildCableScheduleCsv(rows, schematicName)], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

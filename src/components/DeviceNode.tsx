@@ -14,6 +14,7 @@ import {
 import type { AuxRow } from "../types";
 import { useDisplayLabel } from "../labelCaseUtils";
 import { resolveDeviceLabel } from "../displayName";
+import { isPortConnected } from "../portVisibility";
 
 type ColumnItem =
   | { type: "port"; port: Port }
@@ -67,7 +68,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     [hiddenPinSignalTypesStr],
   );
 
-  const hideUnconnectedPorts = useSchematicStore((s) => s.hideUnconnectedPorts);
+  const globalHideUnconnectedPorts = useSchematicStore((s) => s.hideUnconnectedPorts);
+  // Effective filter = global view toggle OR this device's per-device toggle (#135).
+  const hideUnconnectedPorts = globalHideUnconnectedPorts || !!data.showOnlyConnectedPorts;
   const showPortCounts = useSchematicStore((s) => s.showPortCounts);
   const currency = useSchematicStore((s) => s.currency);
   const templateHiddenStr = useSchematicStore((s) => {
@@ -125,14 +128,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
       if (hiddenPinSignalTypes?.has(p.signalType)) return false;
       if (tplHidden?.has(p.signalType)) return false;
       if (devHiddenPorts?.has(p.id)) return false;
-      if (hideUnconnectedPorts) {
-        const connected = p.direction === "bidirectional"
-          ? connectedHandles.has(`${p.id}-in`) || connectedHandles.has(`${p.id}-out`)
-          : p.direction === "passthrough"
-          ? connectedHandles.has(`${p.id}-rear`) || connectedHandles.has(`${p.id}-front`)
-          : connectedHandles.has(p.id);
-        if (!connected) return false;
-      }
+      if (hideUnconnectedPorts && !isPortConnected(p, connectedHandles)) return false;
       return true;
     });
   }, [data.ports, data.showAllPorts, data.hiddenPorts,
@@ -153,13 +149,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     if (total === 0) return null;
     let connected = 0;
     for (const p of data.ports) {
-      if (p.direction === "bidirectional") {
-        if (connectedHandles.has(`${p.id}-in`) || connectedHandles.has(`${p.id}-out`)) connected++;
-      } else if (p.direction === "passthrough") {
-        if (connectedHandles.has(`${p.id}-rear`) || connectedHandles.has(`${p.id}-front`)) connected++;
-      } else {
-        if (connectedHandles.has(p.id)) connected++;
-      }
+      if (isPortConnected(p, connectedHandles)) connected++;
     }
     return { connected, total };
   }, [showPortCounts, data.ports, connectedHandles]);

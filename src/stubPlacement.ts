@@ -79,6 +79,26 @@ export function healStubPortAlignment(
 }
 
 /**
+ * Decide where the middle custom label sits on an edge (#201).
+ *
+ * A normal connection keeps the label at the geometric midpoint of the route.
+ * A stub LEG has exactly one endpoint that is a stub-label node; there the label
+ * is anchored to the STUB end so it reads between the cable ID (near the device /
+ * leg midpoint) and the stub-label box — matching the request to expose custom
+ * labels "in between the Cable ID and Stub Label". `fromSource` reports which end
+ * carries the stub, so the caller can offset inward from it.
+ */
+export function midCustomLabelPlacement(
+  sourceIsStub: boolean,
+  targetIsStub: boolean,
+): { mode: "midpoint" } | { mode: "stub-end"; fromSource: boolean } {
+  // Exactly one end is a stub → this is a stub leg. (A well-formed edge never
+  // has both ends on stub nodes; guard by treating that as "not a stub leg".)
+  if (sourceIsStub === targetIsStub) return { mode: "midpoint" };
+  return { mode: "stub-end", fromSource: sourceIsStub };
+}
+
+/**
  * Place the stub box so the BOX EDGE facing the device is `STUB_GAP` from the
  * device port, and the box CENTER aligns with the port's Y. Returns the absolute
  * top-left position plus which side ("l"|"r") of the box is the connecting handle.

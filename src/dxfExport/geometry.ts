@@ -389,12 +389,17 @@ export function emitCableIdLabels(
 
 /** Emit custom labels for an edge. Three independent slots: sourceLabel at
  *  the source endpoint, label at the midpoint, targetLabel at the target
- *  endpoint. Each slot renders iff its text is non-empty (#114). */
+ *  endpoint. Each slot renders iff its text is non-empty (#114).
+ *
+ *  On a stub leg, `stubEnd` names the endpoint that terminates at the stub-label
+ *  box; the middle label is then anchored just inside that end so it reads
+ *  between the cable ID and the stub label, matching the canvas (#201). */
 export function emitCustomLabel(
   writer: DxfWriter,
   edge: ConnectionEdge,
   routed: RoutedEdge,
   trueColor: number,
+  stubEnd: "source" | "target" | null = null,
 ) {
   const sourceLabel = edge.data?.sourceLabel as string | undefined;
   const midLabel = edge.data?.label as string | undefined;
@@ -415,7 +420,9 @@ export function emitCustomLabel(
     );
   }
   if (midLabel) {
-    const pos = findMidpointLabelPos(routed, 0);
+    const pos = stubEnd
+      ? findEndpointLabelPos(routed, stubEnd === "source", gap)
+      : findMidpointLabelPos(routed, 0);
     writer.addMText(
       CANONICAL_LAYERS.LABELS,
       pxToIn(pos.x), -pxToIn(pos.y),

@@ -289,10 +289,8 @@ export default function MenuBar() {
     if ("showSaveFilePicker" in window) {
       const handle = await pickFileHandle();
       if (!handle) return;
-      store.setFileHandle(handle);
-      // Update schematic name to match chosen filename
-      const name = handle.name.replace(/\.json$/i, "");
-      if (name) store.setSchematicName(name);
+      // Switch the session to the chosen file (handle + name + tab title). (#174)
+      store.adoptLocalFile(handle);
       try {
         await writeToFileHandle(handle);
         store.addToast("Saved", "success", 1500);
@@ -310,14 +308,10 @@ export default function MenuBar() {
       const handle = await pickFileHandle();
       if (!handle) return;
       const store = useSchematicStore.getState();
-      // Detach from cloud — user explicitly chose local destination
-      if (store.cloudSchematicId) {
-        store.setCloudSchematicId(null);
-        store.setCloudSavedAt(null);
-      }
-      store.setFileHandle(handle);
-      const name = handle.name.replace(/\.json$/i, "");
-      if (name) store.setSchematicName(name);
+      // Switch the editing session to the new file: adopt the handle, rename to
+      // match it, and detach from cloud (user chose a local destination). This
+      // makes subsequent Ctrl+S saves and the window title follow the new file. (#174)
+      store.adoptLocalFile(handle);
       try {
         await writeToFileHandle(handle);
         store.addToast("Saved", "success", 1500);
@@ -365,11 +359,9 @@ export default function MenuBar() {
       } catch (err) {
         console.error("Schematic import error (file parsed OK):", err);
       }
-      // Store the handle so future saves go back to this file
-      useSchematicStore.getState().setFileHandle(handle);
-      // Update name to match file
-      const name = handle.name.replace(/\.json$/i, "");
-      if (name) useSchematicStore.getState().setSchematicName(name);
+      // Switch the session to the opened file so future saves and the window
+      // title follow it (importFromJSON already reset the handle/cloud state). (#174)
+      useSchematicStore.getState().adoptLocalFile(handle);
     } else {
       fileInputRef.current?.click();
     }
