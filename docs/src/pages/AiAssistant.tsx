@@ -86,8 +86,9 @@ node dist/index.js`}</code>
 
       <ul>
         <li>
-          <strong>Read</strong> — view the schematic, list devices, inspect one
-          device, and search the device library.
+          <strong>Read</strong> — view the schematic (its devices, connections,
+          rooms and notes), list devices, inspect one device, and search the device
+          library.
         </li>
         <li>
           <strong>Add a device</strong> from a library template.
@@ -105,7 +106,69 @@ node dist/index.js`}</code>
           connection is validated before it is made.
         </li>
         <li>
+          <strong>Move a device</strong> to a new position. The device stays in its
+          current room or rack — this does not move it into or out of one.
+        </li>
+        <li>
+          <strong>Create a room</strong> — a labelled container devices can sit
+          inside. Size is optional (defaults to 400×300). Any devices already inside
+          the new room's outline are pulled into it.
+        </li>
+        <li>
+          <strong>Place a device in a room.</strong> The position is given relative
+          to the room's top-left corner. If the spot is outside the room the request
+          is refused and nothing changes, so a device is never reported as placed
+          when it isn't. To nudge a device that is already in a room, use move a
+          device instead.
+        </li>
+        <li>
+          <strong>Add, edit, and delete notes</strong> — text note cards placed on
+          the canvas to annotate or explain the schematic. The text is shown literally
+          and line breaks are kept. Existing notes show up when the assistant reads the
+          schematic, so it can rewrite a note's text or remove it. Editing replaces the
+          whole note, so a note you formatted in the editor (bold, lists) becomes plain
+          text when the assistant rewrites it.
+        </li>
+        <li>
+          <strong>Remove a single connection.</strong> Stubbed connections can't be
+          removed this way yet — delete one of their devices, or remove them in the
+          editor.
+        </li>
+        <li>
           <strong>Delete a device.</strong>
+        </li>
+        <li>
+          <strong>Fill a modular chassis</strong> — for a device with slots, the
+          assistant can see its slots (via the device details), list the expansion
+          cards that fit a slot, install a card into an empty slot, and remove a card
+          to empty a slot. A card is only installed when its slot family matches the
+          slot's, and installing never silently replaces a card already in a slot.
+          (Defining new slots is still done in the editor.)
+        </li>
+        <li>
+          <strong>Build a rack elevation</strong> — the assistant can see your rack
+          elevations, create a rack (it makes a rack-elevation page if you don't have
+          one), mount a device into a rack at a given U position (front or rear), and
+          remove a device from a rack. It won't stack two devices in the same space,
+          place a device that's already in another rack, or use the rear of a 2-post
+          frame. Full- and half-rack gear is placed automatically from each device's
+          physical size; very small gear that needs a shelf is dropped onto a shelf the
+          assistant adds for it, and removing that device later clears the shelf too —
+          unless you've made the shelf your own (renamed, resized, moved it, or put
+          another device on it), in which case the assistant leaves it alone. Removing
+          the device any other way (deleting it, or unracking it in the editor) keeps the
+          empty shelf, just as the editor always has. Other rack accessories like blanking
+          panels are still added in the editor.
+        </li>
+        <li>
+          <strong>Work in batches</strong> — add many devices, make many
+          connections, install many chassis cards, or mount many devices into racks,
+          each in a single request. Each item is handled on its own: if one fails, the
+          rest still go through, and the assistant gets back a per-item list of what
+          succeeded and what didn't. Items are applied in order, so an earlier one can
+          affect a later one (for example, filling a slot or a rack position the next
+          item wanted). Undo works just like doing each action one at a time (so a
+          batch takes a few presses of undo to fully reverse, not one).
         </li>
       </ul>
 

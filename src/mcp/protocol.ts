@@ -18,7 +18,16 @@ export const DEFAULT_BRIDGE_PORT = 8765;
  *  refuses to pair instead of misbehaving. */
 export const PROTOCOL_VERSION = 1;
 
-/** The eight tools exposed in Ship 1 ("working core"). */
+/** The bridge tools: the eight Ship-1 "working core" tools, the two Ship-2
+ *  "editing & layout" tools (move_device, delete_connection), the two Ship-3
+ *  "batch" tools (add_devices, connect_devices_batch), the two Ship-4
+ *  "rooms" tools (create_room, place_device_in_room), the Ship-5
+ *  "annotations" tool (add_note), the three Ship-6 "slots / modular chassis"
+ *  tools (list_slot_cards, install_card, remove_card), and the four Ship-7
+ *  "racks / rack elevation" tools (list_racks, create_rack, place_device_in_rack,
+ *  remove_device_from_rack), the two Ship-8 "notes" tools (update_note,
+ *  delete_note — get_schematic also now reports rooms + notes), and the two Ship-9
+ *  "batch structural" tools (install_card_batch, place_device_in_rack_batch). */
 export type CommandType =
   | "get_schematic"
   | "list_devices"
@@ -27,11 +36,38 @@ export type CommandType =
   | "add_device"
   | "set_device_property"
   | "connect_devices"
-  | "delete_device";
+  | "delete_device"
+  | "move_device"
+  | "delete_connection"
+  | "add_devices"
+  | "connect_devices_batch"
+  | "create_room"
+  | "place_device_in_room"
+  | "add_note"
+  | "list_slot_cards"
+  | "install_card"
+  | "remove_card"
+  | "list_racks"
+  | "create_rack"
+  | "place_device_in_rack"
+  | "remove_device_from_rack"
+  | "update_note"
+  | "delete_note"
+  | "install_card_batch"
+  | "place_device_in_rack_batch";
+
+/** Max items accepted by a single batch tool call (input arrives over the bridge,
+ *  so it is capped). The mcp-server tool schemas mirror this as `maxItems`. */
+export const MAX_BATCH_ITEMS = 100;
 
 /** Which two-sided face of a port to wire. Required only for bidirectional ports
  *  (`in`/`out`) and passthrough ports (`rear`/`front`); ignored for plain ports. */
 export type PortFace = "in" | "out" | "rear" | "front";
+
+/** The rack enclosure types, mirroring `RackType` in `src/types.ts`. Kept here as the
+ *  single source the bridge validates against (create_rack); the server tool schema
+ *  mirrors the same five values. */
+export const RACK_TYPES = ["floor-19", "wall-mount", "desktop", "open-2post", "open-4post"] as const;
 
 // ---------------------------------------------------------------------------
 // App -> server: handshake. The app proves it is the real editor (token) and the
@@ -124,6 +160,152 @@ export interface SearchTemplatesParams {
 
 export interface DeleteDeviceParams {
   nodeId: string;
+}
+
+export interface MoveDeviceParams {
+  nodeId: string;
+  /** New position in the SAME coordinate space get_device/get_schematic report for
+   *  this device: canvas coordinates for a top-level device, or coordinates relative
+   *  to its room/rack when the device has a parentId. Does not change containment. */
+  x: number;
+  y: number;
+}
+
+export interface DeleteConnectionParams {
+  /** The connection (edge) id from get_schematic / connect_devices. */
+  connectionId: string;
+}
+
+export interface AddDevicesParams {
+  /** Devices to add in one call; each is added independently (best-effort). */
+  devices: AddDeviceParams[];
+}
+
+export interface ConnectDevicesBatchParams {
+  /** Connections to make in one call; each is attempted independently in array
+   *  order (best-effort), so an earlier connection can affect a later one. */
+  connections: ConnectDevicesParams[];
+}
+
+export interface CreateRoomParams {
+  /** The room's name, shown on the canvas. */
+  label: string;
+  /** Room top-left position in canvas coordinates. */
+  x: number;
+  y: number;
+  /** Optional room size; both are required together when given. Defaults to
+   *  400x300. Minimums mirror the editor: width >= 200, height >= 150. */
+  width?: number;
+  height?: number;
+}
+
+export interface PlaceDeviceInRoomParams {
+  /** The device to place inside the room. */
+  deviceId: string;
+  /** The target room (container) id from get_schematic / create_room. */
+  roomId: string;
+  /** Position relative to the room's top-left corner; defaults to (16,16). The
+   *  device's center must land inside the room or the call fails (nothing changes). */
+  x?: number;
+  y?: number;
+}
+
+export interface AddNoteParams {
+  /** Plain text for the note card. It is HTML-escaped on the way in (the note
+   *  renders as HTML), so it always shows literally; newlines become line breaks. */
+  text: string;
+  /** Note top-left position in canvas coordinates. */
+  x: number;
+  y: number;
+}
+
+export interface ListSlotCardsParams {
+  /** The modular device (chassis) whose slot you want cards for. */
+  deviceId: string;
+  /** A slot id from get_device's `slots`. */
+  slotId: string;
+}
+
+export interface InstallCardParams {
+  /** The modular device (chassis) to install the card into. */
+  deviceId: string;
+  /** The (empty) slot's id, from get_device's `slots`. */
+  slotId: string;
+  /** A card templateId from list_slot_cards. Its slot family must match the slot's. */
+  cardTemplateId: string;
+}
+
+export interface RemoveCardParams {
+  /** The modular device (chassis) to remove a card from. */
+  deviceId: string;
+  /** The (filled) slot's id, from get_device's `slots`. */
+  slotId: string;
+}
+
+export interface CreateRackParams {
+  /** Display name for the rack. Defaults to "Rack". */
+  label?: string;
+  /** Rack height in rack units. Clamped to the editor's range [2, 60]. Default 42. */
+  heightU?: number;
+  /** One of RACK_TYPES. Default "floor-19". */
+  rackType?: string;
+  /** Rack depth in mm. Clamped to the editor's range [100, 2000]. Default 600. */
+  depthMm?: number;
+  /** Target rack-elevation page id (from list_racks). When omitted, a new rack page
+   *  is created and the rack is added to it. */
+  pageId?: string;
+  /** Name for the new rack page, used only when `pageId` is omitted. Default
+   *  "Rack Elevation". */
+  pageLabel?: string;
+}
+
+export interface PlaceDeviceInRackParams {
+  /** The device (from get_schematic) to mount in the rack. */
+  deviceId: string;
+  /** The target rack's id, from list_racks. Its page is derived from this id. */
+  rackId: string;
+  /** Bottom U position (1-based, counted from the bottom). The device's height in U
+   *  is inferred from its dimensions; the call fails if the span is occupied or out of
+   *  the rack's bounds. */
+  uPosition: number;
+  /** Which face to mount on; defaults to "front". "rear" is rejected on 2-post racks. */
+  face?: "front" | "rear";
+}
+
+export interface RemoveDeviceFromRackParams {
+  /** The placement id to remove, from list_racks. The device itself stays on the
+   *  schematic — only its rack placement is removed. */
+  placementId: string;
+}
+
+export interface UpdateNoteParams {
+  /** The note id, from get_schematic's `notes`. */
+  noteId: string;
+  /** New plain text for the note. HTML-escaped on the way in (the note renders as
+   *  HTML), so it always shows literally; newlines become line breaks. Replaces the
+   *  note's content (a note with rich editor formatting becomes plain text). */
+  text: string;
+}
+
+export interface DeleteNoteParams {
+  /** The note id to delete, from get_schematic's `notes`. */
+  noteId: string;
+}
+
+export interface InstallCardBatchParams {
+  /** Cards to install in one call; each is attempted independently in array order
+   *  (best-effort). Order matters: installing a card that itself adds sub-slots can make
+   *  a later install into one of those sub-slots valid, and two installs targeting the
+   *  same slot leave only the first applied (the second fails — the slot is now filled). */
+  installs: InstallCardParams[];
+}
+
+export interface PlaceDeviceInRackBatchParams {
+  /** Placements to make in one call; each is attempted independently in array order
+   *  (best-effort), so an earlier placement can affect a later one (it consumes the U
+   *  span / half-rack side, and a device already placed by an earlier item is rejected
+   *  by a later one). */
+  placements: PlaceDeviceInRackParams[];
 }
 
 // ---------------------------------------------------------------------------

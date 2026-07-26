@@ -1,5 +1,18 @@
 import { describe, it, expect } from "vitest";
-import { classifyDeviceProperties, resolveHandleFromCandidates } from "../mcp/validation";
+import {
+  classifyDeviceProperties,
+  resolveHandleFromCandidates,
+  validatePosition,
+  validateRoomSize,
+  planConnectionRemoval,
+  runBatch,
+  noteTextToHtml,
+  noteHtmlToText,
+  validateCardForSlot,
+  validateUPosition,
+  validateRackFace,
+  validateRackSpec,
+} from "../mcp/validation";
 
 describe("classifyDeviceProperties", () => {
   it("routes label and shortName to their dedicated buckets", () => {
@@ -73,5 +86,259 @@ describe("resolveHandleFromCandidates", () => {
     const r = resolveHandleFromCandidates(["lan-in", "lan-out"], "lan", "rear");
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/Invalid face/);
+  });
+});
+
+describe("validatePosition", () => {
+  it("accepts finite integers, floats, zero and negatives", () => {
+    expect(validatePosition(100, 50)).toEqual({ ok: true, position: { x: 100, y: 50 } });
+    expect(validatePosition(0, 0)).toEqual({ ok: true, position: { x: 0, y: 0 } });
+    expect(validatePosition(-12.5, 33.25)).toEqual({ ok: true, position: { x: -12.5, y: 33.25 } });
+  });
+
+  it("rejects missing, NaN, Infinity and non-number values", () => {
+    for (const [x, y] of [
+      [undefined, 0],
+      [0, undefined],
+      [NaN, 0],
+      [0, Infinity],
+      ["100", 0],
+      [0, null],
+      [{}, 0],
+    ] as [unknown, unknown][]) {
+      expect(validatePosition(x, y).ok).toBe(false);
+    }
+  });
+});
+
+describe("validateRoomSize", () => {
+  it("accepts omitting both (caller uses the default)", () => {
+    expect(validateRoomSize(undefined, undefined)).toEqual({ ok: true, size: undefined });
+  });
+
+  it("accepts a size at or above the editor minimums", () => {
+    expect(validateRoomSize(200, 150)).toEqual({ ok: true, size: { width: 200, height: 150 } });
+    expect(validateRoomSize(800, 600)).toEqual({ ok: true, size: { width: 800, height: 600 } });
+  });
+
+  it("rejects a width below the minimum", () => {
+    expect(validateRoomSize(199, 300).ok).toBe(false);
+  });
+
+  it("rejects a height below the minimum", () => {
+    expect(validateRoomSize(400, 149).ok).toBe(false);
+  });
+
+  it("rejects a partial size (only one dimension given)", () => {
+    expect(validateRoomSize(400, undefined).ok).toBe(false);
+    expect(validateRoomSize(undefined, 300).ok).toBe(false);
+  });
+
+  it("rejects non-finite values", () => {
+    expect(validateRoomSize(NaN, 300).ok).toBe(false);
+    expect(validateRoomSize(400, Infinity).ok).toBe(false);
+    expect(validateRoomSize("400", "300").ok).toBe(false);
+  });
+});
+
+describe("planConnectionRemoval", () => {
+  it("removes a plain connection by id", () => {
+    const edges = [{ id: "edge-1" }, { id: "edge-2" }];
+    expect(planConnectionRemoval(edges, "edge-1")).toEqual({ ok: true, removeId: "edge-1" });
+  });
+
+  it("errors when the connection id is not found", () => {
+    const r = planConnectionRemoval([{ id: "edge-1" }], "edge-9");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/No connection found/);
+  });
+
+  it("rejects a stubbed (linked) connection rather than orphaning its partner leg", () => {
+    const edges = [{ id: "edge-1", data: { linkedConnectionId: "cable-7" } }];
+    const r = planConnectionRemoval(edges, "edge-1");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/stubbed/);
+  });
+});
+
+describe("noteTextToHtml", () => {
+  it("leaves plain text unchanged", () => {
+    expect(noteTextToHtml("Main rack")).toBe("Main rack");
+  });
+
+  it("entity-escapes &, < and > so text can never become markup", () => {
+    expect(noteTextToHtml("a < b && c > d")).toBe("a &lt; b &amp;&amp; c &gt; d");
+    expect(noteTextToHtml('<script>alert(1)</script>')).toBe(
+      "&lt;script&gt;alert(1)&lt;/script&gt;",
+    );
+  });
+
+  it("escapes the ampersand before the angle brackets (no double-encoding)", () => {
+    // If & were escaped after <, the "&lt;" it produces would be re-escaped to
+    // "&amp;lt;". Order matters; this guards it.
+    expect(noteTextToHtml("<")).toBe("&lt;");
+  });
+
+  it("converts newlines to <br>, normalizing CRLF and lone CR first", () => {
+    expect(noteTextToHtml("line1\nline2")).toBe("line1<br>line2");
+    expect(noteTextToHtml("line1\r\nline2")).toBe("line1<br>line2");
+    expect(noteTextToHtml("line1\rline2")).toBe("line1<br>line2");
+  });
+
+  it("returns an empty string for empty input", () => {
+    expect(noteTextToHtml("")).toBe("");
+  });
+});
+
+describe("validateCardForSlot", () => {
+  it("accepts a card whose slot family matches the slot", () => {
+    expect(validateCardForSlot("yamaha-my", "yamaha-my")).toEqual({ ok: true });
+  });
+
+  it("rejects a template that is not an expansion card (no slot family)", () => {
+    const r = validateCardForSlot("yamaha-my", undefined);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/not an expansion card/);
+  });
+
+  it("rejects a mismatched slot family", () => {
+    const r = validateCardForSlot("yamaha-my", "disguise-vfc");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/does not fit/);
+  });
+
+  it("rejects when the slot itself has no slot family", () => {
+    const r = validateCardForSlot(undefined, "yamaha-my");
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/no slot family/);
+  });
+});
+
+describe("runBatch", () => {
+  const double = (n: number) => n * 2;
+
+  it("rejects a non-array, an empty array, and an over-cap array", () => {
+    expect(runBatch("nope" as unknown, 10, double).ok).toBe(false);
+    expect(runBatch([], 10, double).ok).toBe(false);
+    expect(runBatch([1, 2, 3], 2, double).ok).toBe(false);
+  });
+
+  it("applies fn to every item and reports per-item success with index order", () => {
+    const r = runBatch([1, 2, 3], 10, double);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.succeeded).toBe(3);
+    expect(r.failed).toBe(0);
+    expect(r.results).toEqual([
+      { index: 0, ok: true, result: 2 },
+      { index: 1, ok: true, result: 4 },
+      { index: 2, ok: true, result: 6 },
+    ]);
+  });
+
+  it("is best-effort: a throwing item is captured, the rest still run", () => {
+    const r = runBatch([1, 2, 3], 10, (n: number) => {
+      if (n === 2) throw new Error("boom on 2");
+      return n * 10;
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.succeeded).toBe(2);
+    expect(r.failed).toBe(1);
+    expect(r.results[0]).toEqual({ index: 0, ok: true, result: 10 });
+    expect(r.results[1].ok).toBe(false);
+    expect(r.results[1].error).toMatch(/boom on 2/);
+    expect(r.results[2]).toEqual({ index: 2, ok: true, result: 30 });
+  });
+});
+
+describe("validateUPosition", () => {
+  it("accepts a whole number >= 1", () => {
+    expect(validateUPosition(1)).toEqual({ ok: true, u: 1 });
+    expect(validateUPosition(42)).toEqual({ ok: true, u: 42 });
+  });
+
+  it("rejects zero, negatives, fractions and non-numbers", () => {
+    for (const bad of [0, -1, 1.5, "3", NaN, undefined]) {
+      expect(validateUPosition(bad as unknown).ok).toBe(false);
+    }
+  });
+});
+
+describe("validateRackFace", () => {
+  it("defaults to front when omitted", () => {
+    expect(validateRackFace(undefined)).toEqual({ ok: true, face: "front" });
+  });
+
+  it("accepts front and rear", () => {
+    expect(validateRackFace("front")).toEqual({ ok: true, face: "front" });
+    expect(validateRackFace("rear")).toEqual({ ok: true, face: "rear" });
+  });
+
+  it("rejects any other value", () => {
+    expect(validateRackFace("side").ok).toBe(false);
+    expect(validateRackFace("top").ok).toBe(false);
+  });
+});
+
+describe("validateRackSpec", () => {
+  it("applies defaults when all fields are omitted", () => {
+    expect(validateRackSpec(undefined, undefined, undefined)).toEqual({
+      ok: true,
+      rackType: "floor-19",
+      heightU: 42,
+      depthMm: 600,
+    });
+  });
+
+  it("clamps heightU and depthMm to the editor's ranges and rounds", () => {
+    const tall = validateRackSpec("floor-19", 100, 5000);
+    expect(tall).toEqual({ ok: true, rackType: "floor-19", heightU: 60, depthMm: 2000 });
+    const tiny = validateRackSpec("wall-mount", 1, 50);
+    expect(tiny).toEqual({ ok: true, rackType: "wall-mount", heightU: 2, depthMm: 100 });
+    const rounded = validateRackSpec("desktop", 8.4, 612.7);
+    expect(rounded).toEqual({ ok: true, rackType: "desktop", heightU: 8, depthMm: 613 });
+  });
+
+  it("rejects an unknown rackType", () => {
+    const r = validateRackSpec("server-rack", 42, 600);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/rackType must be one of/);
+  });
+
+  it("rejects a supplied but non-numeric heightU or depthMm", () => {
+    expect(validateRackSpec("floor-19", NaN, 600).ok).toBe(false);
+    expect(validateRackSpec("floor-19", 42, Infinity).ok).toBe(false);
+  });
+});
+
+describe("noteHtmlToText", () => {
+  it("round-trips text put through noteTextToHtml", () => {
+    const text = "Head end\nrack 2 & 3";
+    expect(noteHtmlToText(noteTextToHtml(text))).toBe(text);
+  });
+
+  it("turns <br> into newlines and unescapes entities", () => {
+    expect(noteHtmlToText("a<br>b")).toBe("a\nb");
+    expect(noteHtmlToText("x &amp; y &lt; z")).toBe("x & y < z");
+  });
+
+  it("keeps block structure (div/p/li) as line breaks rather than merging text", () => {
+    expect(noteHtmlToText("<div>A</div><div>B</div>")).toBe("A\nB");
+    expect(noteHtmlToText("first<div>second</div>")).toBe("first\nsecond");
+    expect(noteHtmlToText("<ul><li>one</li><li>two</li></ul>")).toBe("one\ntwo");
+  });
+
+  it("strips inline formatting tags but keeps their text", () => {
+    expect(noteHtmlToText("<b>bold</b> and <i>italic</i>")).toBe("bold and italic");
+  });
+
+  it("does not double-unescape (&amp;lt; stays literal &lt;)", () => {
+    expect(noteHtmlToText("a &amp;lt; b")).toBe("a &lt; b");
+  });
+
+  it("returns empty string for empty/whitespace html", () => {
+    expect(noteHtmlToText("")).toBe("");
+    expect(noteHtmlToText("<div></div>")).toBe("");
   });
 });

@@ -12,9 +12,15 @@
 import { randomBytes } from "node:crypto";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import { AppBridge } from "./bridge.js";
 import { TOOLS } from "./tools.js";
+import { PROMPTS, getPrompt, SERVER_INSTRUCTIONS } from "./prompts.js";
 import { DEFAULT_BRIDGE_PORT } from "./protocol.generated.js";
 
 const log = (msg: string) => process.stderr.write(`[easyschematic-mcp] ${msg}\n`);
@@ -35,9 +41,18 @@ log(`Pairing token: ${token}`);
 log("Paste this token into EasySchematic → Preferences → AI (Beta), then turn the toggle on.");
 log("");
 
-const server = new Server({ name: "easyschematic", version: "0.1.0" }, { capabilities: { tools: {} } });
+const server = new Server(
+  { name: "easyschematic", version: "0.1.0" },
+  { capabilities: { tools: {}, prompts: {} }, instructions: SERVER_INSTRUCTIONS },
+);
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
+
+server.setRequestHandler(ListPromptsRequestSchema, async () => ({ prompts: PROMPTS }));
+
+server.setRequestHandler(GetPromptRequestSchema, async (req) =>
+  getPrompt(req.params.name, req.params.arguments),
+);
 
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args } = req.params;

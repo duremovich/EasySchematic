@@ -304,6 +304,13 @@ interface SchematicState {
   removeSelected: () => void;
   deleteNode: (nodeId: string) => void;
   deleteNodeAndChildren: (nodeId: string) => void;
+  /** Reposition a single node within its current parent (one undo step). Does not
+   *  reparent — used by the MCP bridge's move_device tool. */
+  moveDevice: (nodeId: string, position: { x: number; y: number }) => void;
+  /** Remove a single connection by id via the standard removeSelected path (so bundle
+   *  GC, junction + waypoint reconciliation all run). Used by the bridge's
+   *  delete_connection tool. */
+  deleteConnection: (connectionId: string) => void;
   copySelected: () => void;
   pasteClipboard: () => void;
   alignSelectedNodes: (op: AlignOperation) => void;
@@ -340,7 +347,7 @@ interface SchematicState {
   setEditingNodeId: (id: string | null) => void;
   setCreatingNodeId: (id: string | null) => void;
   createAndEditDevice: (template: DeviceTemplate, position: { x: number; y: number }) => void;
-  addRoom: (label: string, position: { x: number; y: number }) => void;
+  addRoom: (label: string, position: { x: number; y: number }, size?: { width: number; height: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
   updateAnnotation: (nodeId: string, data: Partial<import("./types").AnnotationData>) => void;
@@ -349,6 +356,15 @@ interface SchematicState {
   addNote: (position: { x: number; y: number }) => void;
   updateNoteHtml: (nodeId: string, html: string) => void;
   reparentNode: (nodeId: string, absolutePosition: { x: number; y: number }, options?: { skipUndo?: boolean }) => void;
+  /** Place a device inside a specific room (set parentId) by routing through
+   *  reparentNode, so parentId stays consistent with geometry. Atomic: if the
+   *  device's center would not land inside `roomId` (outside its bounds, or inside a
+   *  nested room), nothing changes. `relativePosition` is relative to the room's
+   *  top-left and defaults to (16,16). Returns true only if the device was actually
+   *  placed (committed), false on any no-op/reject — so a caller can't mistake an
+   *  unchanged "already in this room" device for a successful placement. Used by the
+   *  bridge's place_device_in_room tool. */
+  placeDeviceInRoom: (nodeId: string, roomId: string, relativePosition?: { x: number; y: number }) => boolean;
   /** Re-evaluate room membership for every non-room node. Used after a room is
    *  created, resized, or moved so devices get parented/unparented to match
    *  the new layout. */
@@ -711,6 +727,7 @@ interface SchematicState {
     uPosition: number,
     face: "front" | "rear",
     preferredHalfRackSide?: "left" | "right",
+    markShelfCreatedByBridge?: boolean,
   ) => { ok: true; placementId: string; shelfId?: string } | { ok: false; reason: "oversize" | "no-page" | "no-device" };
   removeRackPlacement: (pageId: string, placementId: string) => void;
   updateRackPlacement: (pageId: string, placementId: string, patch: Partial<RackDevicePlacement>) => void;
@@ -1195,6 +1212,50 @@ function findBestEnclosingRoom(
     }
   }
   return best;
+}
+
+/** The geometric center of a node placed at `absolutePosition`, using the same
+ *  measured-size fallbacks reparentNode and reparentAllDevices rely on (room
+ *  400x300, device 144x48). Shared so any room-membership pre-check stays in
+ *  lockstep with the reparent that follows it. */
+function nodeCenterFromAbsolute(
+  node: SchematicNode,
+  absolutePosition: { x: number; y: number },
+): { x: number; y: number } {
+  const isRoom = node.type === "room";
+  const w = node.measured?.width ?? (isRoom ? 400 : 144);
+  const h = node.measured?.height ?? (isRoom ? 300 : 48);
+  return { x: absolutePosition.x + w / 2, y: absolutePosition.y + h / 2 };
+}
+
+/** #182: when a device moves, clear `placed` on its connected auto-placed stub
+ *  labels so they re-follow the device's port instead of stranding with a dogleg.
+ *  A stub leg is an edge with exactly one stub-label end; the other end is the
+ *  device. User-positioned stub labels are left alone. Returns a new nodes array
+ *  (or the same array when nothing needs clearing). Shared by moveDevice and
+ *  placeDeviceInRoom so the "which stubs follow" logic lives in one place. */
+function reanchorConnectedStubLabels(
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+  deviceId: string,
+): SchematicNode[] {
+  const stubIds = new Set(nodes.filter((n) => n.type === "stub-label").map((n) => n.id));
+  const followStubs = new Set<string>();
+  for (const e of edges) {
+    const srcStub = stubIds.has(e.source);
+    const tgtStub = stubIds.has(e.target);
+    if (srcStub === tgtStub) continue; // not a stub leg
+    const devEnd = srcStub ? e.target : e.source;
+    if (devEnd === deviceId) followStubs.add(srcStub ? e.source : e.target);
+  }
+  if (followStubs.size === 0) return nodes;
+  return nodes.map((n) => {
+    if (followStubs.has(n.id) && n.type === "stub-label") {
+      const d = n.data as import("./types").StubLabelData;
+      if (!d.userMoved && d.placed === true) return { ...n, data: { ...d, placed: false } };
+    }
+    return n;
+  });
 }
 
 function getPortFromHandle(
@@ -1804,6 +1865,31 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({
       nodes: get().nodes.map((n) => ({ ...n, selected: n.id === nodeId })),
       edges: get().edges.map((e) => ({ ...e, selected: false })),
+    });
+    get().removeSelected();
+  },
+
+  moveDevice: (nodeId, position) => {
+    const state = get();
+    if (!state.nodes.some((n) => n.id === nodeId)) return;
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    // #182: keep stub labels glued to the moved device (mirrors the drag-stop path in
+    // App.tsx so an MCP move_device behaves like a drag).
+    const reanchored = reanchorConnectedStubLabels(state.nodes, state.edges, nodeId);
+    set({
+      nodes: reanchored.map((n) => (n.id === nodeId ? { ...n, position } : n)),
+    });
+    get().saveToLocalStorage();
+  },
+
+  deleteConnection: (connectionId: string) => {
+    const state = get();
+    if (!state.edges.some((e) => e.id === connectionId)) return;
+    // Select only this edge, deselect everything else, then removeSelected — the same
+    // path the UI uses, so undo, bundle GC, junction + waypoint reconciliation all run.
+    set({
+      nodes: state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
+      edges: state.edges.map((e) => ({ ...e, selected: e.id === connectionId })),
     });
     get().removeSelected();
   },
@@ -2953,7 +3039,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({ editingNodeId: newNodeId, creatingNodeId: newNodeId });
   },
 
-  addRoom: (label, position) => {
+  addRoom: (label, position, size) => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
     const newRoom: SchematicNode = {
@@ -2961,7 +3047,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       type: "room",
       position,
       data: { label },
-      style: { width: 400, height: 300 },
+      style: { width: size?.width ?? 400, height: size?.height ?? 300 },
       selected: true,
       zIndex: -1,
     };
@@ -3117,12 +3203,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
     const isRoom = node.type === "room";
-    const nodeW = node.measured?.width ?? (isRoom ? 400 : 144);
-    const nodeH = node.measured?.height ?? (isRoom ? 300 : 48);
-    const centerX = absolutePosition.x + nodeW / 2;
-    const centerY = absolutePosition.y + nodeH / 2;
+    const center = nodeCenterFromAbsolute(node, absolutePosition);
 
-    const targetRoom = findBestEnclosingRoom(nodeId, isRoom, centerX, centerY, state.nodes, nodeMap);
+    const targetRoom = findBestEnclosingRoom(nodeId, isRoom, center.x, center.y, state.nodes, nodeMap);
 
     const currentParent = node.parentId;
     const newParent = targetRoom?.id;
@@ -3158,6 +3241,52 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     set({ nodes: updated });
     get().saveToLocalStorage();
+  },
+
+  placeDeviceInRoom: (nodeId, roomId, relativePosition) => {
+    const state = get();
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
+    const room = nodeMap.get(roomId);
+    const device = nodeMap.get(nodeId);
+    // Unknown room/device, or the target isn't a room -> no-op. Return false so the
+    // caller never mistakes a non-placement for success (the read-back alone can't tell
+    // a rejected placement of an already-in-this-room device from a real one).
+    if (!room || room.type !== "room" || !device) return false;
+
+    const roomAbs = getAbsolutePosition(roomId, nodeMap);
+    const rel = relativePosition ?? { x: 16, y: 16 };
+    const absPos = { x: roomAbs.x + rel.x, y: roomAbs.y + rel.y };
+
+    // PRE-CHECK (atomicity): will the device's center land in THIS room? Use the same
+    // center math + enclosing-room logic reparentNode will use, so a success here
+    // guarantees the commit below reparents into roomId. If the target room would not
+    // win (the point is outside it, or inside a smaller nested room), change NOTHING —
+    // no undo snapshot, no set, no save — and return false so a rejected placement has
+    // no side effects and is never reported as success.
+    const center = nodeCenterFromAbsolute(device, absPos);
+    const winner = findBestEnclosingRoom(nodeId, false, center.x, center.y, state.nodes, nodeMap);
+    if (winner?.id !== roomId) return false;
+
+    // Idempotent: already in this room at exactly this position -> the desired end state
+    // already holds, so report success without mutating or pushing an empty undo step.
+    if (device.parentId === roomId && device.position.x === rel.x && device.position.y === rel.y) {
+      return true;
+    }
+
+    // COMMIT: re-anchor connected stub labels (as a drag/move would), move the device
+    // to the absolute target as a temporarily top-level node, then let reparentNode do
+    // the geometric reparent + relative-coord conversion + parent-first sort. Clearing
+    // parentId first avoids reparentNode's "parent unchanged" early-return.
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const reanchored = reanchorConnectedStubLabels(state.nodes, state.edges, nodeId);
+    set({
+      nodes: reanchored.map((n) =>
+        n.id === nodeId ? { ...n, parentId: undefined, position: absPos } : n,
+      ),
+    });
+    get().reparentNode(nodeId, absPos, { skipUndo: true });
+    get().saveToLocalStorage();
+    return true;
   },
 
   reparentAllDevices: (options) => {
@@ -4312,7 +4441,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     return id;
   },
 
-  addPlacementSmart: (pageId, rackId, deviceNodeId, uPosition, face, preferredHalfRackSide) => {
+  addPlacementSmart: (pageId, rackId, deviceNodeId, uPosition, face, preferredHalfRackSide, markShelfCreatedByBridge) => {
     const state = get();
     const page = state.pages.find((p) => p.id === pageId && p.type === "rack-elevation") as RackElevationPage | undefined;
     if (!page) return { ok: false, reason: "no-page" };
@@ -4340,6 +4469,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         uPosition,
         heightU: 1,
         face,
+        // Bridge-created shelves are stamped with the placement they were made for, atomically
+        // here (same set/pushUndo) so there is no window where the shelf persists unflagged.
+        // Editor drag-drop passes no flag, so user-created shelves stay unmarked.
+        bridgeCreatedForPlacementId: markShelfCreatedByBridge ? placementId : undefined,
       };
       const newW = device.widthMm ?? innerWMm;
       // Center on the shelf when there's room; otherwise pin to the left rail.
@@ -4411,10 +4544,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   updateRackPlacement: (pageId, placementId, patch) => {
     const state = get();
+    // A user editing/moving a shelf-mounted device adopts/detaches the shelves involved, so
+    // drop bridge auto-cleanup provenance on BOTH: the shelf this placement was the bridge's
+    // original occupant of (source detach), AND any shelf it is being (re)mounted onto via a
+    // cross-shelf drag (destination adoption — the user just put a device on it). Same single
+    // chokepoint + non-undoing caveat as updateRackAccessory.
+    const destShelfId = patch.mountedOnShelfId;
     set({
       pages: mapElevationPage(state.pages, pageId, (p) => ({
         ...p,
         placements: p.placements.map((pl) => pl.id === placementId ? { ...pl, ...patch } : pl),
+        accessories: p.accessories.map((a) =>
+          (a.bridgeCreatedForPlacementId === placementId || (destShelfId != null && a.id === destShelfId))
+            ? { ...a, bridgeCreatedForPlacementId: undefined }
+            : a),
       })),
     });
     get().saveToLocalStorage();
@@ -4448,7 +4591,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     set({
       pages: mapElevationPage(state.pages, pageId, (p) => ({
         ...p,
-        accessories: p.accessories.map((a) => a.id === accessoryId ? { ...a, ...patch } : a),
+        // Any user edit (rename/resize/depth/move) marks the shelf as adopted, so the MCP
+        // bridge will never auto-remove it. Clearing bridgeCreatedForPlacementId here is the
+        // single chokepoint for that (all editor shelf-edit paths route through this action;
+        // the bridge never calls it). NOTE: like the rest of updateRackAccessory this does not
+        // pushUndo, so the provenance clear is not reverted by undo — acceptable because it
+        // only ever loosens auto-cleanup (an un-adopted shelf can still be removed manually).
+        accessories: p.accessories.map((a) => a.id === accessoryId ? { ...a, ...patch, bridgeCreatedForPlacementId: undefined } : a),
       })),
     });
     get().saveToLocalStorage();
@@ -4524,7 +4673,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       shelfOffsetMm: offset,
     };
     set({
-      pages: mapElevationPage(state.pages, pageId, (p) => ({ ...p, placements: [...p.placements, placement] })),
+      pages: mapElevationPage(state.pages, pageId, (p) => ({
+        ...p,
+        placements: [...p.placements, placement],
+        // A user manually stacking a device onto this shelf adopts it — drop the bridge's
+        // auto-cleanup provenance so the shelf is never auto-removed out from under them.
+        accessories: p.accessories.map((a) => a.id === shelfId ? { ...a, bridgeCreatedForPlacementId: undefined } : a),
+      })),
       undoSize: undoStack.length, redoSize: 0,
     });
     get().saveToLocalStorage();
@@ -4702,6 +4857,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...a,
         id: nid,
         rackId: rackIdMap.get(a.rackId) ?? a.rackId,
+        // The provenance binding points at the source page's placement id, which doesn't exist
+        // on the copy — drop it so a duplicated shelf is a plain (non-bridge) shelf.
+        bridgeCreatedForPlacementId: undefined,
       };
     });
     const newPlacements = src.placements.map((pl) => ({

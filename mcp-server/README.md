@@ -4,9 +4,12 @@ A small local program that lets an AI assistant (Claude) **read and edit a schem
 live** in your running EasySchematic editor. It speaks [MCP](https://modelcontextprotocol.io)
 to the assistant over stdio, and connects to the editor over a localhost WebSocket.
 
-> Beta — only a core set of actions is supported: read the schematic, search the
-> device library, add a device, set safe device properties, connect devices, and
-> delete a device.
+> Beta — supported actions: read the schematic, search the device library, add and
+> delete devices, set safe device properties, connect and disconnect devices, move a
+> device, group devices into rooms, add/edit/delete text notes, fit expansion cards
+> into modular-chassis slots, and build rack elevations (create racks, mount devices).
+> Adding devices, making connections, installing cards and mounting devices in racks
+> each have a batch version for doing many at once.
 
 ## How it fits together
 
@@ -64,6 +67,27 @@ claude mcp add easyschematic -- node /absolute/path/to/EasySchematic/mcp-server/
 
 Then ask Claude things like *“search for a 4K display, add it, and connect the
 laptop's HDMI output to it.”*
+
+## Playbooks & instructions
+
+The server also ships **companion guidance** so any paired client (Claude Desktop,
+claude.ai, Claude Code) drives the schematic the right way without you spelling out
+each step:
+
+- **Server instructions** — a short always-on overview (call `get_schematic` first,
+  `search_templates` before adding, prefer the batch tools, re-read `get_device`
+  after structural changes, use AV terms with the user) that clients surface at
+  connect time.
+- **Prompts** — three named, step-by-step playbooks the user can pick from the
+  client's prompt menu, each taking an optional plain-words argument:
+
+  | Prompt | Argument | What it walks through |
+  |--------|----------|------------------------|
+  | `build-schematic` | `brief` | Lay out and wire a system: `get_schematic` → `search_templates` → `add_devices` → rooms → `connect_devices_batch`. |
+  | `rack-elevation` | `rack` | Build and populate a rack: `list_racks` → `create_rack` → `place_device_in_rack_batch`. |
+  | `modular-chassis` | `chassis` | Fit cards into a chassis: `get_device` → `list_slot_cards` → `install_card_batch`. |
+
+The text lives in `src/prompts.ts`.
 
 ## Develop
 
