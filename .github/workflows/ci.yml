@@ -40,6 +40,11 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      # The headless harness is the routing oracle — it re-routes every fixture and
+      # fails on any diff, so an accidental pathfinding change can't land silently.
+      - name: Routing regression check
+        run: npm run routing:check
+
       - name: Type-check and build
         run: npm run build
 
@@ -48,3 +53,20 @@ jobs:
       # the app that breaks the server fails CI instead of drifting silently.
       - name: MCP server build + tests
         run: cd mcp-server && npm test
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts starts its own `npm run dev` when CI is set. There's no
+      # API worker here and no .env.local, so the app runs on the bundled device
+      # library — the same degraded path the #181 spec asserts on purpose.
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      - name: Upload e2e artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: e2e/test-results/
+          retention-days: 7
