@@ -414,8 +414,9 @@ export default function DevicesAndPortsPage() {
       </ul>
       <p>
         For edge cases the size heuristic gets wrong (desktop unit with optional rack ears,
-        oddly-sized half-rack gear, etc.), set an explicit <strong>rackForm</strong> on the device
-        or template — values are <code>full</code>, <code>half</code>, or <code>shelf-only</code>.
+        oddly-sized half-rack gear, etc.), set an explicit <strong>Rack Form</strong> in the device
+        editor&apos;s Physical Dimensions section — <strong>Auto</strong>,{" "}
+        <strong>Full width</strong>, <strong>Half width</strong>, or <strong>Shelf only</strong>.
       </p>
 
       <h2>Face-plate editor</h2>

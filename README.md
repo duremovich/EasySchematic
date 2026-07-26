@@ -315,6 +315,12 @@ The installed app opens in its own window without browser chrome, works fully of
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions, architecture notes, and guidelines.
 
+### Community Contributors
+
+The device library grows through community submissions — see the full [Contributors hall of fame](https://devices.easyschematic.live/contributors). Special thanks to:
+
+- **HI-T3C** — Alfatron and Atlona device templates (PTZ camera, HDBaseT switchers, touch panel)
+
 ## License
 
 AGPL-3.0

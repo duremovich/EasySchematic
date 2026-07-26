@@ -192,6 +192,8 @@ export default function DeviceEditor() {
   const [widthMm, setWidthMm] = useState<number | undefined>(undefined);
   const [depthMm, setDepthMm] = useState<number | undefined>(undefined);
   const [weightKg, setWeightKg] = useState<number | undefined>(undefined);
+  // Rack-form override — undefined means "auto" (infer from size heuristic)
+  const [rackForm, setRackForm] = useState<DeviceData["rackForm"]>(undefined);
 
   // Cable accessory flags
   const [isCableAccessory, setIsCableAccessory] = useState(false);
@@ -269,6 +271,7 @@ export default function DeviceEditor() {
     setWidthMm(node.data.widthMm);
     setDepthMm(node.data.depthMm);
     setWeightKg(node.data.weightKg);
+    setRackForm(node.data.rackForm);
     setIsCableAccessory(node.data.isCableAccessory ?? false);
     setIntegratedWithCable(node.data.integratedWithCable ?? false);
     setIsVenueProvided(node.data.isVenueProvided ?? false);
@@ -417,6 +420,7 @@ export default function DeviceEditor() {
       ...(widthMm != null ? { widthMm } : {}),
       ...(depthMm != null ? { depthMm } : {}),
       ...(weightKg != null ? { weightKg } : {}),
+      ...(rackForm ? { rackForm } : {}),
       ...(isCableAccessory ? { isCableAccessory: true } : {}),
       ...(integratedWithCable ? { integratedWithCable: true } : {}),
       ...(isVenueProvided ? { isVenueProvided: true } : {}),
@@ -432,7 +436,7 @@ export default function DeviceEditor() {
     updateDevice(editingNodeId, data);
     setCreatingNodeId(null); // commit the node — close won't undo it
     close();
-  }, [editingNodeId, ports, label, shortName, useShortName, wrapLabel, hostname, deviceType, manufacturer, modelNumber, referenceUrl, category, color, headerColor, node, updateDevice, close, setCreatingNodeId, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, serialNumber, note, isSpare, procurementSource, heightMm, widthMm, depthMm, weightKg, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData, searchTermsRaw]);
+  }, [editingNodeId, ports, label, shortName, useShortName, wrapLabel, hostname, deviceType, manufacturer, modelNumber, referenceUrl, category, color, headerColor, node, updateDevice, close, setCreatingNodeId, showAllPorts, hiddenPorts, dhcpServer, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, serialNumber, note, isSpare, procurementSource, heightMm, widthMm, depthMm, weightKg, rackForm, isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData, searchTermsRaw]);
 
   // Ctrl+Enter anywhere in the editor → Apply & Close
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
@@ -478,6 +482,7 @@ export default function DeviceEditor() {
       ...(widthMm != null ? { widthMm } : {}),
       ...(depthMm != null ? { depthMm } : {}),
       ...(weightKg != null ? { weightKg } : {}),
+      ...(rackForm ? { rackForm } : {}),
       ...(isVenueProvided ? { isVenueProvided: true } : {}),
       // Convert InstalledSlot[] back to the blueprint SlotDefinition[] that DeviceTemplate
       // expects — card selections are per-placement, not part of the template spec.
@@ -495,7 +500,7 @@ export default function DeviceEditor() {
       ...(trimmedAux.some((r) => r.text.trim()) ? { auxiliaryData: trimmedAux } : {}),
       ...(() => { const t = searchTermsRaw.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 20); return t.length > 0 ? { searchTerms: t } : {}; })(),
     });
-  }, [ports, label, shortName, hostname, addCustomTemplate, node, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isVenueProvided, deviceType, color, manufacturer, modelNumber, referenceUrl, category, auxiliaryData, searchTermsRaw]);
+  }, [ports, label, shortName, hostname, addCustomTemplate, node, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, rackForm, isVenueProvided, deviceType, color, manufacturer, modelNumber, referenceUrl, category, auxiliaryData, searchTermsRaw]);
 
   const handleUpdateUserTemplate = useCallback(() => {
     if (!node?.data.templateId) return;
@@ -531,6 +536,7 @@ export default function DeviceEditor() {
       ...(widthMm != null ? { widthMm } : {}),
       ...(depthMm != null ? { depthMm } : {}),
       ...(weightKg != null ? { weightKg } : {}),
+      ...(rackForm ? { rackForm } : {}),
       ...(isVenueProvided ? { isVenueProvided: true } : {}),
       ...(existing.slots && existing.slots.length > 0
         ? {
@@ -547,7 +553,7 @@ export default function DeviceEditor() {
       ...(() => { const t = searchTermsRaw.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 20); return t.length > 0 ? { searchTerms: t } : {}; })(),
     });
     handleSave();
-  }, [node, ports, label, shortName, hostname, updateCustomTemplate, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isVenueProvided, deviceType, color, manufacturer, modelNumber, referenceUrl, category, auxiliaryData, searchTermsRaw, handleSave]);
+  }, [node, ports, label, shortName, hostname, updateCustomTemplate, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, rackForm, isVenueProvided, deviceType, color, manufacturer, modelNumber, referenceUrl, category, auxiliaryData, searchTermsRaw, handleSave]);
 
   const handleSubmitToCommunity = useCallback(async () => {
     const finalPorts: Port[] = ports
@@ -590,6 +596,7 @@ export default function DeviceEditor() {
       ...(widthMm != null ? { widthMm } : {}),
       ...(depthMm != null ? { depthMm } : {}),
       ...(weightKg != null ? { weightKg } : {}),
+      ...(rackForm ? { rackForm } : {}),
       ...(isVenueProvided ? { isVenueProvided: true } : {}),
       ...(trimmedAux.some((r) => r.text.trim()) ? { auxiliaryData: trimmedAux } : {}),
       ...(() => { const t = searchTermsRaw.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 20); return t.length > 0 ? { searchTerms: t } : {}; })(),
@@ -619,7 +626,7 @@ export default function DeviceEditor() {
     } catch (e) {
       console.error("Failed to create draft:", e);
     }
-  }, [ports, label, shortName, deviceType, color, node, hostname, poeBudgetW, poeDrawW, unitCost, manufacturer, modelNumber, referenceUrl, category, powerDrawW, powerCapacityW, voltage, thermalBtuh, heightMm, widthMm, depthMm, weightKg, isVenueProvided, auxiliaryData, searchTermsRaw]);
+  }, [ports, label, shortName, deviceType, color, node, hostname, poeBudgetW, poeDrawW, unitCost, manufacturer, modelNumber, referenceUrl, category, powerDrawW, powerCapacityW, voltage, thermalBtuh, heightMm, widthMm, depthMm, weightKg, rackForm, isVenueProvided, auxiliaryData, searchTermsRaw]);
 
   const handleSaveAsPreset = useCallback(() => {
     if (!editingNodeId || !node?.data.templateId) return;
@@ -716,6 +723,7 @@ export default function DeviceEditor() {
       setWidthMm(tpl.widthMm);
       setDepthMm(tpl.depthMm);
       setWeightKg(tpl.weightKg);
+      setRackForm(tpl.rackForm);
       setIsVenueProvided(tpl.isVenueProvided ?? false);
       setAuxiliaryData(normalizeAuxRows(tpl.auxiliaryData));
       setSearchTermsRaw((tpl.searchTerms ?? []).join(", "));
@@ -867,6 +875,7 @@ export default function DeviceEditor() {
         widthMm !== tpl.widthMm ||
         depthMm !== tpl.depthMm ||
         weightKg !== tpl.weightKg ||
+        (rackForm ?? undefined) !== (tpl.rackForm ?? undefined) ||
         isVenueProvided !== (tpl.isVenueProvided ?? false)
       ))
     );
@@ -878,7 +887,7 @@ export default function DeviceEditor() {
     );
 
     return { dirtyVsPreset, dirtyVsTemplate };
-  }, [templateId, ports, hiddenPorts, color, templatePresets, customTemplates, label, manufacturer, modelNumber, referenceUrl, category, hostname, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, isVenueProvided, templatesLoaded]);
+  }, [templateId, ports, hiddenPorts, color, templatePresets, customTemplates, label, manufacturer, modelNumber, referenceUrl, category, hostname, powerDrawW, powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, heightMm, widthMm, depthMm, weightKg, rackForm, isVenueProvided, templatesLoaded]);
 
   if (!editingNodeId || !node) return null;
 
@@ -1249,6 +1258,26 @@ export default function DeviceEditor() {
                   onKeyDown={(e) => e.stopPropagation()}
                 />
               </div>
+            </div>
+            <div className="pt-2 pl-2">
+              <label className="block text-[10px] uppercase tracking-wider text-[var(--color-text-muted)] mb-0.5">
+                Rack Form
+              </label>
+              <select
+                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-1 text-xs outline-none focus:border-blue-500"
+                value={rackForm ?? ""}
+                onChange={(e) =>
+                  setRackForm(e.target.value ? (e.target.value as DeviceData["rackForm"]) : undefined)
+                }
+              >
+                <option value="">Auto (from size)</option>
+                <option value="full">Full width (19&quot;)</option>
+                <option value="half">Half width (9.5&quot;)</option>
+                <option value="shelf-only">Shelf only</option>
+              </select>
+              <p className="text-[10px] text-[var(--color-text-muted)] mt-0.5 leading-tight">
+                Overrides how this device mounts in a rack. Auto infers from width &amp; height.
+              </p>
             </div>
           </details>
 

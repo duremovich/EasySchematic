@@ -83,9 +83,10 @@ export default function RacksPage() {
         </li>
       </ul>
       <p>
-        You can override the heuristic per-device with a <strong>rackForm</strong> field on the
-        template (<code>full</code> / <code>half</code> / <code>shelf-only</code>) — useful for
-        edge cases like desktop units with optional rack ears.
+        You can override the heuristic per-device with the <strong>Rack Form</strong> dropdown in
+        the device editor&apos;s Physical Dimensions section (<strong>Auto</strong> /{' '}
+        <strong>Full width</strong> / <strong>Half width</strong> / <strong>Shelf only</strong>) —
+        useful for edge cases like desktop units with optional rack ears.
       </p>
       <p>
         Right-click a device on the schematic and choose <strong>Place in Rack</strong> to send it
