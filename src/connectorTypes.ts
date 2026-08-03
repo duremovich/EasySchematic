@@ -162,6 +162,11 @@ export function areSignalPairsCompatible(a: SignalType, b: SignalType): boolean 
 /** Check if two connector types are compatible (same type or one accepts the other) */
 export function areConnectorsCompatible(a: ConnectorType | undefined, b: ConnectorType | undefined): boolean {
   if (!a || !b) return true; // missing connector info = no mismatch
+  // Identical connectors always mate. This is why USB-A to USB-A and USB-B to
+  // USB-B connect without a warning — a deliberate call on #219, not an
+  // oversight. Making a connector invalid against itself would need gender
+  // modelled too (an A-male to A-female extension is legitimate), and a false
+  // warning on a valid run is worse than a missing one on a questionable run.
   if (a === b) return true;
   if (BARE_WIRE_CONNECTORS.has(a) || BARE_WIRE_CONNECTORS.has(b)) return true;
   const aAccepts = CONNECTOR_ACCEPTS[a];

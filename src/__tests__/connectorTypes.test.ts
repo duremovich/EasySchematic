@@ -49,6 +49,16 @@ describe("USB-A to USB-B connections (#219)", () => {
     expect(needsAdapter("usb-a", "usb-b")).toBe(false);
   });
 
+  // The issue also asked for A-to-A and B-to-B to be REJECTED. Deliberately not
+  // done — see the decision recorded on #219. A-to-A cables exist and get used,
+  // and a strict rule would need gender to avoid rejecting an A-male to A-female
+  // extension, so a false warning on a valid run would cost more than the missing
+  // warning here. Asserted so the "fix" isn't reintroduced by accident.
+  it("still allows A-to-A and B-to-B rather than warning on them (#219, by decision)", () => {
+    expect(areConnectorsCompatible("usb-a", "usb-a")).toBe(true);
+    expect(areConnectorsCompatible("usb-b", "usb-b")).toBe(true);
+  });
+
   it("mates USB-A with mini/micro-B natively — same host-to-peripheral convention", () => {
     expect(areConnectorsCompatible("usb-a", "usb-mini")).toBe(true);
     expect(areConnectorsCompatible("usb-a", "usb-micro")).toBe(true);
