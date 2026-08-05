@@ -5272,9 +5272,22 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             distanceSettings: data.distanceSettings ?? undefined,
             loadSeq: get().loadSeq + 1,
           });
-          if (data.pages?.length) syncRackCounters(data.pages);
+          // Same ordering as the main load path: arm autosave before the
+          // post-load side-effect so a throw can't disable autosave or escape as
+          // an unhandled rejection.
           hydrated = true;
+          try {
+            if (data.pages?.length) syncRackCounters(data.pages);
+          } catch (err) {
+            console.error("Post-load side-effect failed (demo still loaded):", err);
+          }
           get().saveToLocalStorage();
+        }).catch((err) => {
+          // First-run only: localStorage was empty, so there is no saved copy to
+          // protect. Arm autosave anyway so the visitor's own edits on the blank
+          // canvas still persist, and log the demo-load failure so it isn't silent.
+          hydrated = true;
+          console.error("Failed to load the demo schematic:", err);
         });
         return false;
       }
@@ -5359,11 +5372,27 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         cloudSavedAt: parsed.cloudSavedAt ?? null,
         loadSeq: get().loadSeq + 1,
       });
-      if (data.pages?.length) syncRackCounters(data.pages);
+      // The schematic is committed to state above; arm autosave here, BEFORE the
+      // post-load side-effect, so a throw below can neither strand a loaded
+      // schematic with autosave off nor mislabel it as a failed load (#176).
       hydrated = true;
+      try {
+        if (data.pages?.length) syncRackCounters(data.pages);
+      } catch (err) {
+        console.error("Post-load side-effect failed (schematic still loaded):", err);
+      }
       return true;
-    } catch {
-      hydrated = true;
+    } catch (err) {
+      // Reaching here means the load failed BEFORE the schematic was committed to
+      // state (bad JSON / migration / heal), so the canvas is still blank. Leave
+      // `hydrated` false so autosave stays a no-op and can't overwrite the saved
+      // copy still on disk with this empty state. Surface the failure instead of
+      // blanking silently; New / Open / Import re-arm autosave for a fresh document.
+      console.error("Failed to load saved schematic from localStorage:", err);
+      get().addToast(
+        "Couldn't open your last saved schematic. Autosave is paused so your saved copy isn't overwritten — starting a new schematic, opening a file, or importing one resumes it.",
+        "error",
+      );
       return false;
     }
   },
@@ -5540,15 +5569,28 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       fileHandle: null,
       loadSeq: get().loadSeq + 1,
     });
+    // Re-arm autosave for this just-loaded document. If the initial localStorage
+    // hydrate failed, `hydrated` is still false; without this an opened / imported
+    // schematic (file, share link, or cloud) would silently never autosave.
+    hydrated = true;
     // Post-load side-effects (ID counters + persistence). The schematic is
     // already committed to state above; a failure here must NOT propagate, or a
     // caller's try/catch mislabels a successfully-loaded file as invalid (#176).
+    // They are guarded SEPARATELY so they can't take each other down: sharing one
+    // try meant a bad `pages` shape threw past the persist, leaving the imported
+    // schematic unsaved until the next edit — and on the recovery path (import
+    // after a failed hydrate) a reload before that edit would drop the user back
+    // onto the old unreadable blob.
     try {
       if (data.pages?.length) syncRackCounters(data.pages);
+    } catch (err) {
+      console.error("Post-import counter sync failed (schematic still loaded):", err);
+    }
+    try {
       saveCategoryOrder(data.categoryOrder ?? null);
       get().saveToLocalStorage();
     } catch (err) {
-      console.error("Post-import side-effect failed (schematic still loaded):", err);
+      console.error("Post-import persist failed (schematic still loaded):", err);
     }
   },
 
@@ -5566,6 +5608,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       nodes: renumberNodes(mergedNodes),
       edges: mergedEdges,
     });
+    // A CSV import establishes real content the same way New / Open / Import do,
+    // so it re-arms autosave too. Without this, importing after a failed initial
+    // hydrate would leave `hydrated` false and every save below a silent no-op.
+    hydrated = true;
     get().saveToLocalStorage();
   },
 
@@ -5635,6 +5681,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         loadSeq: get().loadSeq + 1,
       });
     }
+    // Establishing a blank / template document also re-arms autosave in case the
+    // initial localStorage hydrate had failed (which leaves `hydrated` false).
+    hydrated = true;
     get().saveToLocalStorage();
   },
 
