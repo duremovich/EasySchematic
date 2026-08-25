@@ -20,6 +20,7 @@ import {
   type HandleType,
 } from "@xyflow/react";
 import { useSchematicStore, GRID_SIZE, setReconnectingEdgeId } from "./store";
+import { useShallow } from "zustand/react/shallow";
 import { normalizeShortcutKey } from "./keyUtils";
 import { warmupRoutingWorker } from "./routing/routingClient";
 import { useMcpBridge } from "./mcpBridge";
@@ -234,6 +235,9 @@ function AutoRouteConfirmDialog() {
 const STUB_TAG_END_MSG = "A stub label isn't a connection end — re-route the device end instead";
 
 function SchematicCanvas() {
+  // Select only the fields this component uses (shallow-compared) so it re-renders on changes to
+  // these — not on every unrelated store set(). The actions are stable references; in practice this
+  // narrows re-renders to nodes/edges changes, which the canvas needs anyway.
   const {
     nodes,
     edges,
@@ -252,7 +256,27 @@ function SchematicCanvas() {
     reparentNode,
     reparentAllDevices,
     loadFromLocalStorage,
-  } = useSchematicStore();
+  } = useSchematicStore(
+    useShallow((s) => ({
+      nodes: s.nodes,
+      edges: s.edges,
+      onNodesChange: s.onNodesChange,
+      onEdgesChange: s.onEdgesChange,
+      onConnect: s.onConnect,
+      isValidConnection: s.isValidConnection,
+      addDevice: s.addDevice,
+      addRoom: s.addRoom,
+      addNote: s.addNote,
+      removeSelected: s.removeSelected,
+      copySelected: s.copySelected,
+      pasteClipboard: s.pasteClipboard,
+      setPendingUndoSnapshot: s.setPendingUndoSnapshot,
+      flushPendingSnapshot: s.flushPendingSnapshot,
+      reparentNode: s.reparentNode,
+      reparentAllDevices: s.reparentAllDevices,
+      loadFromLocalStorage: s.loadFromLocalStorage,
+    })),
+  );
 
   const rfInstance = useReactFlow();
   const rfStore = useStoreApi();
