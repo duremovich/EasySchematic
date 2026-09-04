@@ -124,6 +124,8 @@ export const CONNECTOR_ACCEPTS: Partial<Record<ConnectorType, ConnectorAcceptanc
   "trs-eighth":    { adapter: ["trs-quarter", "ts-quarter"] },
   "rca":           { adapter: ["xlr-3"] },
   "edison":        { adapter: ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
+  "schuko":        { native: ["europlug"], adapter: ["french-power", "iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
+  "french-power":  { native: ["europlug"], adapter: ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
 };
 
 /** Bare-wire connectors that are still a REAL termination — a screw-terminal block the
@@ -268,6 +270,9 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   "iec-c7": "IEC C7",
   "iec-c15": "IEC C15",
   "iec-c20": "IEC C20",
+  schuko: "Schuko",
+  "french-power": "French Power",
+  europlug: "Europlug",
   speakon: "speakON",
   socapex: "Socapex",
   multipin: "Multi-pin",
@@ -600,6 +605,9 @@ export const CONNECTOR_GENDER: Partial<Record<ConnectorType, Gender | { input: G
   "iec-c15":          { input: "male",   output: "female" },
   "iec-c20":          { input: "male",   output: "female" },
   edison:             { input: "male",   output: "female" },
+  schuko:             { input: "male",   output: "female" },
+  "french-power":     { input: "male",   output: "female" },
+  europlug:           { input: "male",   output: "female" },
   "l5-20":            { input: "male",   output: "female" },
   "l6-20":            { input: "male",   output: "female" },
   "l6-30":            { input: "male",   output: "female" },
@@ -620,7 +628,7 @@ export const CONNECTORS_WITH_GENDER_VARIATION: Set<ConnectorType> = new Set([
   "xlr-3", "xlr-4", "xlr-5", "mini-xlr",
   "powercon", "powercon-true1",
   "iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20",
-  "edison", "l5-20", "l6-20", "l6-30", "l21-30",
+  "edison", "schuko", "french-power", "europlug", "l5-20", "l6-20", "l6-30", "l21-30",
   "cam-lok", "socapex", "multipin",
   "speakon", "banana", "binding-post", "binding-post-banana",
   "bnc",

@@ -133,3 +133,39 @@ describe("multi-connect defaults (#273)", () => {
     expect(shouldDefaultMultiConnect("hdmi", "hdmi")).toBe(false);
   });
 });
+
+describe("CEE 7 European power connectors", () => {
+  it("has dropdown labels and pack-list cable names", () => {
+    expect(CONNECTOR_LABELS["schuko"]).toBe("CEE Schuko (7/3/4)");
+    expect(CONNECTOR_LABELS["french-power"]).toBe("CEE French Power (7/5/7)");
+    expect(CONNECTOR_LABELS["europlug"]).toBe("CEE Europlug (7/16)");
+    expect(CONNECTOR_TO_CABLE["schuko"]).toBe("Schuko");
+    expect(CONNECTOR_TO_CABLE["french-power"]).toBe("French Power");
+    expect(CONNECTOR_TO_CABLE["europlug"]).toBe("Europlug");
+  });
+
+  it("follows the IEC-style direction-conditional gender, with an override exposed", () => {
+    expect(CONNECTOR_GENDER["schuko"]).toEqual({ input: "male", output: "female" });
+    expect(CONNECTOR_GENDER["french-power"]).toEqual({ input: "male", output: "female" });
+    expect(CONNECTORS_WITH_GENDER_VARIATION.has("schuko")).toBe(true);
+    expect(CONNECTORS_WITH_GENDER_VARIATION.has("french-power")).toBe(true);
+  });
+
+  it("follows the same direction-conditional gender as the rest of the power family — europlug sockets exist on power strips", () => {
+    expect(CONNECTOR_GENDER["europlug"]).toEqual({ input: "male", output: "female" });
+    expect(CONNECTORS_WITH_GENDER_VARIATION.has("europlug")).toBe(true);
+  });
+
+  it("mates a europlug into either socket shape with no adapter", () => {
+    expect(areConnectorsCompatible("europlug", "schuko")).toBe(true);
+    expect(needsAdapter("europlug", "schuko")).toBe(false);
+    expect(areConnectorsCompatible("europlug", "french-power")).toBe(true);
+    expect(needsAdapter("europlug", "french-power")).toBe(false);
+  });
+
+  it("requires an adapter between Schuko and the French system, and to reach IEC/Edison", () => {
+    expect(needsAdapter("schuko", "french-power")).toBe(true);
+    expect(needsAdapter("schuko", "iec")).toBe(true);
+    expect(needsAdapter("french-power", "edison")).toBe(true);
+  });
+});

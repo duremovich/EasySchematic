@@ -844,6 +844,23 @@ const CONNECTOR_SPECS: Partial<Record<ConnectorType, ConnectorSpec>> = {
     return (<g>{outline}<rect x={-5.6} y={0.5} width={1.2} height={4} fill={color} /><rect x={4.4} y={0.5} width={1.2} height={4} fill={color} /><circle cx={0} cy={-4.5} r={1.5} fill={color} /></g>);
   }},
 
+  // ── CEE 7 European power ──
+  "schuko": { widthMm: 42.0, heightMm: 42.0, render: ({ color, detail, strokeWidth }) => {
+    const outline = renderCircle(42.0, { color, detail, strokeWidth });
+    if (detail < 2) return outline;
+    return (<g>{outline}<circle cx={-9.5} cy={0} r={2.4} fill="none" stroke={color} strokeWidth={strokeWidth} /><circle cx={9.5} cy={0} r={2.4} fill="none" stroke={color} strokeWidth={strokeWidth} /><rect x={-3} y={-21} width={6} height={3} fill={color} /><rect x={-3} y={18} width={6} height={3} fill={color} /></g>);
+  }},
+  "french-power": { widthMm: 42.0, heightMm: 42.0, render: ({ color, detail, strokeWidth }) => {
+    const outline = renderCircle(42.0, { color, detail, strokeWidth });
+    if (detail < 2) return outline;
+    return (<g>{outline}<circle cx={-9.5} cy={0} r={2.4} fill="none" stroke={color} strokeWidth={strokeWidth} /><circle cx={9.5} cy={0} r={2.4} fill="none" stroke={color} strokeWidth={strokeWidth} /><circle cx={0} cy={-12} r={2.4} fill={color} /></g>);
+  }},
+  "europlug": { widthMm: 30.0, heightMm: 38.0, render: ({ color, detail, strokeWidth }) => {
+    const outline = renderRectangle(30.0, 38.0, 6.0, { color, detail, strokeWidth });
+    if (detail < 2) return outline;
+    return (<g>{outline}<circle cx={-9.5} cy={0} r={1.5} fill={color} /><circle cx={9.5} cy={0} r={1.5} fill={color} /></g>);
+  }},
+
   // ── NEMA / Edison ──
   "edison": { widthMm: 33.3, heightMm: 26.2, render: ({ color, detail, strokeWidth }) => {
     const outline = renderRectangle(33.3, 26.2, 1.0, { color, detail, strokeWidth });
