@@ -169,3 +169,31 @@ describe("CEE 7 European power connectors", () => {
     expect(needsAdapter("french-power", "edison")).toBe(true);
   });
 });
+
+describe("BS 1363 UK power connector", () => {
+  it("has a dropdown label and pack-list cable name", () => {
+    expect(CONNECTOR_LABELS["uk-power"]).toBe("UK Power (BS 1363)");
+    expect(CONNECTOR_TO_CABLE["uk-power"]).toBe("UK Power");
+  });
+
+  it("appears in the Power connector group", () => {
+    expect(CONNECTOR_GROUPS["Power"]).toContain("uk-power");
+  });
+
+  it("follows the IEC-style direction-conditional gender, with an override exposed", () => {
+    expect(CONNECTOR_GENDER["uk-power"]).toEqual({ input: "male", output: "female" });
+    expect(CONNECTORS_WITH_GENDER_VARIATION.has("uk-power")).toBe(true);
+  });
+
+  it("has no native mate — shuttered sockets need the earth pin to unlock, so even a Europlug needs an adapter", () => {
+    expect(needsAdapter("uk-power", "europlug")).toBe(true);
+    expect(needsAdapter("uk-power", "schuko")).toBe(true);
+    expect(needsAdapter("uk-power", "french-power")).toBe(true);
+    expect(needsAdapter("uk-power", "iec")).toBe(true);
+    expect(needsAdapter("uk-power", "edison")).toBe(true);
+  });
+
+  it("is still flagged compatible (via adapter), not rejected outright", () => {
+    expect(areConnectorsCompatible("uk-power", "iec")).toBe(true);
+  });
+});

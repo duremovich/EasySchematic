@@ -860,6 +860,11 @@ const CONNECTOR_SPECS: Partial<Record<ConnectorType, ConnectorSpec>> = {
     if (detail < 2) return outline;
     return (<g>{outline}<circle cx={-9.5} cy={0} r={1.5} fill={color} /><circle cx={9.5} cy={0} r={1.5} fill={color} /></g>);
   }},
+  "uk-power": { widthMm: 50.0, heightMm: 38.0, render: ({ color, detail, strokeWidth }) => {
+    const outline = renderRectangle(50.0, 38.0, 3.0, { color, detail, strokeWidth });
+    if (detail < 2) return outline;
+    return (<g>{outline}<rect x={-2} y={-14} width={4} height={6} fill={color} /><rect x={-14.5} y={5} width={3} height={5.5} fill={color} /><rect x={11.5} y={5} width={3} height={5.5} fill={color} /></g>);
+  }},
 
   // ── NEMA / Edison ──
   "edison": { widthMm: 33.3, heightMm: 26.2, render: ({ color, detail, strokeWidth }) => {
