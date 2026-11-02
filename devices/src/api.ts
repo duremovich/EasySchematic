@@ -795,16 +795,9 @@ function typeWriteInit(method: string, body?: unknown): RequestInit {
   };
 }
 
-/** A refused type write. `suggestedColor` is the API's nearest passing colour (guardrail 2). */
-export class TypeWriteError extends Error {
-  constructor(message: string, readonly suggestedColor?: string) {
-    super(message);
-  }
-}
-
 async function typeError(res: Response, what: string): Promise<Error> {
-  const err = (await res.json().catch(() => ({}))) as { error?: string; suggestedColor?: string };
-  return new TypeWriteError(err.error || `Failed to ${what}: ${res.status}`, err.suggestedColor);
+  const err = (await res.json().catch(() => ({}))) as { error?: string };
+  return new Error(err.error || `Failed to ${what}: ${res.status}`);
 }
 
 export async function fetchCustomTypes(kind?: CustomTypeKind): Promise<CustomTypeRecord[]> {

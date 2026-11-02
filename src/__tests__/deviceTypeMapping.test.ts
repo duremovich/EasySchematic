@@ -326,9 +326,10 @@ describe("#315(b) — the refusal actually reaches the moderator", () => {
     await expect(approveSubmission("sub-1")).rejects.toThrow("Failed to approve: 504");
   });
 
-  it("resolves on success", async () => {
-    respondWith(JSON.stringify({ ok: true }), 200);
-    await expect(approveSubmission("sub-1")).resolves.toBeUndefined();
+  it("resolves on success, with the body (custom-types P3: it may carry warnings)", async () => {
+    const body = { ok: true, status: "approved", warnings: ['Signal "x" is not a built-in or community signal type.'] };
+    respondWith(JSON.stringify(body), 200);
+    await expect(approveSubmission("sub-1")).resolves.toEqual(body);
   });
 });
 
