@@ -147,7 +147,7 @@ export function checkSignalColor(input: unknown): SignalColorCheck {
   const min = `${MIN_CANVAS_CONTRAST}:1`;
   if (contrast(l, L_LIGHT) < MIN_CANVAS_CONTRAST) problems.push(`too light for the light canvas (${contrastLight}:1, needs ${min})`);
   if (contrast(l, L_DARK) < MIN_CANVAS_CONTRAST) problems.push(`too dark for the dark canvas (${contrastDark}:1, needs ${min})`);
-  if (aci === ACI_GREY) problems.push("reads as grey in DXF exports (ACI 8)");
+  if (aci === ACI_GREY) problems.push("mapped to grey in DXF exports (ACI 8)");
   if (!problems.length) return { ok: true, hex, contrastLight, contrastDark, aci, problems };
   return { ok: false, hex, contrastLight, contrastDark, aci, problems, suggestion: nearestPassingColor(hex) };
 }
