@@ -13,6 +13,7 @@ import {
 } from "../packList";
 import { createDefaultPackListLayout } from "../reportLayout";
 import ReportPreviewDialog from "./ReportPreviewDialog";
+import { deviceTypeDisplay } from "../typeRegistry";
 
 type Tab = "devices" | "cables";
 
@@ -183,7 +184,7 @@ function DeviceRows({ devices, keyPrefix }: { devices: PackListDevice[]; keyPref
               {d.model}
               {d.cards.length > 0 && <span className="text-[9px] text-[var(--color-text-muted)] ml-1">*</span>}
             </td>
-            <td className={tdClass}>{d.deviceType}</td>
+            <td className={tdClass}>{deviceTypeDisplay(d.deviceType)}</td>
           </tr>
           {d.cards.map((c, ci) => (
             <tr key={`${keyPrefix ?? ""}d-${di}-c-${ci}`} className="bg-[var(--color-surface)]">

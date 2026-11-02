@@ -229,6 +229,13 @@ export function normalizeTypeDefs(raw: unknown): Required<CustomTypeDefs> {
   return out;
 }
 
+/** A user type's id (`x-<slug>-<4 random>`, decision 4): never shown in the UI or exports. */
+export const USER_TYPE_ID_RE = /^x-[a-z0-9-]+-[a-z0-9]{4}$/;
+
+export function isUserTypeId(id: string): boolean {
+  return USER_TYPE_ID_RE.test(id);
+}
+
 /** True when the three lists hold nothing. */
 export function isEmptyTypeDefs(defs: CustomTypeDefs | undefined): boolean {
   return !defs || (!defs.signals?.length && !defs.connectors?.length && !defs.deviceTypes?.length);

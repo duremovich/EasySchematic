@@ -1,7 +1,8 @@
 import type { LineStyle, SignalType } from "../types";
 import type { LayerDef, LtypeDef } from "./writer";
 import { ACI_NEAR_BLACK, hexToRgb, rgbToAci, rgbToTrueColor, sanitizeName } from "./units";
-import { signalColor } from "../typeRegistry";
+import { signalColor, signalLabel } from "../typeRegistry";
+import { isUserTypeId } from "../customTypes/model";
 
 export const CANONICAL_LAYERS = {
   DEFAULT: "0",
@@ -37,9 +38,10 @@ export const LTYPE_DEFS: LtypeDef[] = [
   { name: "ES_MISMATCH", description: "Connector mismatch", pattern: [0.375, -0.1875] },
 ];
 
-/** Layer name for a specific signal-type connection. */
+/** Layer name for a specific signal-type connection. A user type is named by its label
+ *  (`…-SHOW-COMMS`), since its `x-…-k3f9` id is never shown. */
 export function signalLayerName(sig: SignalType): string {
-  const sanitized = sanitizeName(sig);
+  const sanitized = sanitizeName(isUserTypeId(sig) ? signalLabel(sig) : sig);
   return `EasySchematic-Connections-${sanitized}`;
 }
 
@@ -68,11 +70,16 @@ export function buildLayerDefs(
     { name: CANONICAL_LAYERS.LEGEND, color: ACI_NEAR_BLACK },
   ];
 
+  const named = new Set<string>();
   for (const sig of usedSignalTypes) {
     const hex = signalColors?.[sig] ?? signalColor(sig);
     const [r, g, b] = hexToRgb(hex);
+    const name = signalLayerName(sig);
+    // Two user types with one label share a layer; the table must not list it twice.
+    if (named.has(name)) continue;
+    named.add(name);
     layers.push({
-      name: signalLayerName(sig),
+      name,
       color: rgbToAci(r, g, b),
     });
   }

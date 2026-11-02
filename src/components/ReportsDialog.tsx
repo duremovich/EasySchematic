@@ -51,6 +51,7 @@ import { formatCurrency } from "../auxiliaryData";
 import { useSpreadsheetSelection } from "../spreadsheet/useSpreadsheetSelection";
 import type { SpreadsheetColumn } from "../spreadsheet/types";
 import FillSeriesDialog from "../spreadsheet/FillSeriesDialog";
+import { deviceTypeDisplay } from "../typeRegistry";
 
 export type ReportsTab = "network" | "devices" | "packList" | "cableSchedule" | "patchPanel" | "power";
 
@@ -1470,7 +1471,7 @@ const DeviceRow = memo(function DeviceRow({
           </td>
         );
       })()}
-      <td className={tdClass}>{row.deviceType}</td>
+      <td className={tdClass}>{deviceTypeDisplay(row.deviceType)}</td>
       <td className={tdClass}>{row.manufacturer || "—"}</td>
       <td className={tdClass}>{row.model}</td>
       <td className={tdClass}>{row.modelNumber || "—"}</td>
@@ -2776,7 +2777,7 @@ function renderDeviceRows(devices: PackListDevice[], keyPrefix = "", currency = 
       <tr key={`${keyPrefix}${idx}`} className={rowClass(idx)}>
         <td className={tdClass}>{d.count}&times;</td>
         <td className={tdClass}>{d.model}</td>
-        <td className={tdClass}>{d.deviceType}</td>
+        <td className={tdClass}>{deviceTypeDisplay(d.deviceType)}</td>
         <td className={tdClass}>{d.unitCost > 0 ? formatCurrency(d.unitCost, currency) : "—"}</td>
         <td className={tdClass}>{extCost > 0 ? formatCurrency(extCost, currency) : "—"}</td>
       </tr>,
@@ -3000,7 +3001,7 @@ function PowerReportTab() {
                 <tr key={`${d.model}-${d.room}-${i}`} className={rowClass(i)}>
                   <td className={tdClass}>{d.count}x</td>
                   <td className={tdClass}>{d.model}</td>
-                  <td className={tdClass}>{d.deviceType}</td>
+                  <td className={tdClass}>{deviceTypeDisplay(d.deviceType)}</td>
                   <td className={tdClass}>{d.room}</td>
                   <td className={tdClass}>{d.powerDrawW > 0 ? d.powerDrawW.toLocaleString() : "—"}</td>
                   <td className={tdClass}>{d.powerDrawW > 0 ? (d.powerDrawW * d.count).toLocaleString() : "—"}</td>

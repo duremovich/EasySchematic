@@ -40,6 +40,7 @@ import PortEditConflictDialog from "./components/PortEditConflictDialog";
 import DeviceSwapDialog from "./components/DeviceSwapDialog";
 import MobileGate from "./components/MobileGate";
 import ToastContainer from "./components/ToastContainer";
+import CustomTypeDialogHost from "./components/CustomTypeDialog";
 import PendingSubmissionBanner from "./components/PendingSubmissionBanner";
 import BetaBanner from "./components/BetaBanner";
 import UpdatePill from "./components/UpdatePill";
@@ -2157,6 +2158,7 @@ export default function App() {
       <DeviceSwapDialog />
       <MobileGate />
       <ToastContainer />
+      <CustomTypeDialogHost />
     </div>
   );
 }

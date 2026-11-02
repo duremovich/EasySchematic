@@ -3,6 +3,7 @@ import { useSchematicStore } from "../store";
 import { HEADER_COLOR_SWATCH_FALLBACK, resolveDefaultDeviceHeaderColor } from "../deviceHeaderColor";
 import { DEFAULT_SCROLL_CONFIG, DEFAULT_STUB_LABEL_SHOW_ARROW, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_PAGE_MODE, DEFAULT_STUB_LABEL_MODE, DEFAULT_CONNECTION_TYPE, PROJECT_STATUS_LABELS } from "../types";
 import type { DefaultConnectionType, LabelCaseMode, PanMode, ProjectStatus, ScrollAction, ScrollConfig, StubLabelMode, StubLabelPageMode } from "../types";
+import CustomTypesPanel from "./CustomTypesPanel";
 
 const AUTOROUTE_PREF_KEY = "easyschematic-autoroute-pref";
 
@@ -155,11 +156,12 @@ function ColorRow({
   );
 }
 
-type PrefTab = "canvas" | "display" | "ai";
+type PrefTab = "canvas" | "display" | "types" | "ai";
 
 const TAB_LABELS: Record<PrefTab, string> = {
   canvas: "Canvas",
   display: "Display",
+  types: "Custom types",
   ai: "AI (Beta)",
 };
 
@@ -718,6 +720,8 @@ export default function PreferencesDialog({ onClose }: { onClose: () => void }) 
               </div>
             </>
           )}
+
+          {activeTab === "types" && <CustomTypesPanel />}
 
           {activeTab === "ai" && (
             <>

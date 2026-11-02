@@ -4,6 +4,7 @@ import { useSchematicStore, GRID_SIZE } from "../store";
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { scoreTemplate } from "../templateSearch";
 import type { DeviceTemplate } from "../types";
+import { deviceTypeDisplay } from "../typeRegistry";
 
 export default function DeviceCreatorPicker({
   position: positionProp,
@@ -179,7 +180,7 @@ export default function DeviceCreatorPicker({
                     </div>
                     <div className="text-[10px] text-[var(--color-text-muted)] truncate">
                       {t.manufacturer ? `${t.manufacturer} \u00b7 ` : ""}
-                      {t.deviceType} \u00b7 {t.ports.length} port{t.ports.length !== 1 ? "s" : ""}
+                      {deviceTypeDisplay(t.deviceType)} \u00b7 {t.ports.length} port{t.ports.length !== 1 ? "s" : ""}
                     </div>
                   </div>
                 </button>

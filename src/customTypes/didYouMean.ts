@@ -8,10 +8,22 @@
  * best field per candidate. Shown inline as suggestions — never a blocker.
  */
 import { DEVICE_TYPE_ALIASES, DEVICE_TYPE_LABELS, DEVICE_TYPE_TO_CATEGORY } from "../deviceTypeCategories";
-import { builtinConnectors, builtinSignals, connectorGroup, connectorLabel, signalAliases, signalGroup, signalLabel } from "../typeRegistry";
+import {
+  builtinConnectors,
+  builtinSignals,
+  connectorGroup,
+  connectorLabel,
+  signalAliases,
+  signalGroup,
+  signalLabel,
+  typeLayer,
+  type TypeSource as RegistrySource,
+} from "../typeRegistry";
 import type { CustomTypeKind, CustomTypeRecord } from "./model";
 
-export type TypeSource = "built-in" | "community";
+/** Where a candidate is defined. `user` / `document` are the app's own tiers (P5): the
+ *  user's library and the open file's embedded types. */
+export type TypeSource = "built-in" | "community" | "user" | "document";
 
 export interface TypeCandidate {
   kind: CustomTypeKind;
@@ -208,4 +220,33 @@ export function typeCandidates(kind: CustomTypeKind, community: readonly CustomT
   if (kind === "signal") return signalTypeCandidates(community);
   if (kind === "connector") return connectorTypeCandidates(community);
   return deviceTypeCandidates(community);
+}
+
+/**
+ * Every type of a kind the app knows right now, for the in-app create dialog: built-ins
+ * (with aliases) plus each registered layer — community, the user's library and the open
+ * file — tagged with where it comes from. One id in several layers is listed once, under
+ * the layer that wins (community, then document, then user).
+ */
+export function registryTypeCandidates(kind: CustomTypeKind): TypeCandidate[] {
+  const builtins = typeCandidates(kind, []);
+  const seen = new Set(builtins.map((c) => c.id));
+  const out = [...builtins];
+  const listKey = kind === "signal" ? "signals" : kind === "connector" ? "connectors" : "deviceTypes";
+  for (const source of ["community", "document", "user"] as const satisfies readonly RegistrySource[]) {
+    for (const d of typeLayer(source)[listKey] ?? []) {
+      if (seen.has(d.id)) continue;
+      seen.add(d.id);
+      const def = d as { id: string; label: string; retired?: boolean; group?: string; category?: string };
+      out.push({
+        kind,
+        id: def.id,
+        label: def.label,
+        source,
+        retired: def.retired,
+        ...(kind === "device" ? { category: def.category } : { group: def.group }),
+      });
+    }
+  }
+  return out;
 }

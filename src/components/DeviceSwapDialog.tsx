@@ -12,7 +12,7 @@ import {
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { scoreTemplate } from "../templateSearch";
 import type { DeviceTemplate, DeviceNode, Port } from "../types";
-import { connectorLabel, signalLabel } from "../typeRegistry";
+import { connectorLabel, deviceTypeDisplay, signalLabel } from "../typeRegistry";
 
 export default function DeviceSwapDialog() {
   const target = useSchematicStore((s) => s.deviceSwapTarget);
@@ -149,7 +149,7 @@ export default function DeviceSwapDialog() {
                         </div>
                         <div className="text-[10px] text-[var(--color-text-muted)] truncate">
                           {t.manufacturer ? `${t.manufacturer} · ` : ""}
-                          {t.deviceType} · {t.ports.length} port{t.ports.length !== 1 ? "s" : ""}
+                          {deviceTypeDisplay(t.deviceType)} · {t.ports.length} port{t.ports.length !== 1 ? "s" : ""}
                         </div>
                       </div>
                     </button>

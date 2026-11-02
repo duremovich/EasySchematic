@@ -41,6 +41,8 @@ import { visibleSaveActions, SAVE_ACTION_LABELS, SAVE_ACTION_TITLES, type SaveAc
 import { visiblePortRowControls, PORT_ROW_CONTROL_TITLES, type PortRowControlId } from "../portRowControls";
 import { connectorGroups, connectorLabel, connectorsByLabel, defaultConnector, perRegistryVersion, signalCssColor, signalLabel, signalsByLabel } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
+import { NEW_TYPE_OPTION_LABEL, NEW_TYPE_VALUE, requestNewType } from "../newTypeRequest";
+import DeviceTypeField from "./DeviceTypeField";
 
 /** Grouped connector dropdown order — preserves `connectorGroups()` ordering, alphabetizes within each
  *  group, and sweeps any connector missing from its groups into "Other" so a new ConnectorType
@@ -855,8 +857,9 @@ export default function DeviceEditor() {
     });
   };
 
+  // Functional: a "+ New … type" pick lands after the create dialog closes.
   const updatePort = (id: string, updates: Partial<PortDraft>) => {
-    setPorts(ports.map((p) => (p.id === id ? { ...p, ...updates } : p)));
+    setPorts((ps) => ps.map((p) => (p.id === id ? { ...p, ...updates } : p)));
   };
 
   const bulkAddPorts = (spec: BulkPortSpec) => {
@@ -1087,11 +1090,12 @@ export default function DeviceEditor() {
               </label>
             </div>
             <Field label="Device Type">
-              <input
-                className="w-full bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-2 py-1.5 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500"
+              <DeviceTypeField
                 value={deviceType}
-                onChange={(e) => setDeviceType(e.target.value)}
-                placeholder="e.g. camera"
+                onChange={(type, cat) => {
+                  setDeviceType(type);
+                  if (cat && cat !== "Other") setCategory((c) => c || cat);
+                }}
               />
             </Field>
             <Field label="Manufacturer">
@@ -2021,20 +2025,27 @@ function BulkAddForm({
           value={signalType}
           title="Signal type"
           onChange={(e) => {
-            const next = e.target.value as SignalType;
-            setSignalType(next);
-            setConnectorType(defaultConnector(next));
+            const pick = (next: SignalType) => {
+              setSignalType(next);
+              setConnectorType(defaultConnector(next));
+            };
+            if (e.target.value === NEW_TYPE_VALUE) requestNewType("signal", pick);
+            else pick(e.target.value as SignalType);
           }}
         >
           {signalsByLabel().map((t) => (
             <option key={t} value={t}>{signalLabel(t)}</option>
           ))}
+          <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.signal}</option>
         </select>
         <select
           className="bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] rounded px-1 py-1 text-xs outline-none focus:border-blue-500 cursor-pointer max-w-[140px]"
           value={connectorType}
           title="Connector type"
-          onChange={(e) => setConnectorType(e.target.value as ConnectorType)}
+          onChange={(e) => {
+            if (e.target.value === NEW_TYPE_VALUE) requestNewType("connector", setConnectorType);
+            else setConnectorType(e.target.value as ConnectorType);
+          }}
         >
           {connectorGroupEntries().map(([groupName, types]) => (
             <optgroup key={groupName} label={groupName}>
@@ -2045,6 +2056,7 @@ function BulkAddForm({
               ))}
             </optgroup>
           ))}
+          <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.connector}</option>
         </select>
       </div>
       <label className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)] cursor-pointer">
@@ -2744,6 +2756,8 @@ function PortRow({
                 const v = e.target.value;
                 if (v === "") {
                   onUpdate({ signalType: "custom", inheritsSignal: true });
+                } else if (v === NEW_TYPE_VALUE) {
+                  requestNewType("signal", (id) => onUpdate({ signalType: id, inheritsSignal: undefined }));
                 } else {
                   onUpdate({ signalType: v as SignalType, inheritsSignal: undefined });
                 }
@@ -2753,24 +2767,28 @@ function PortRow({
               {signalsByLabel().map((t) => (
                 <option key={t} value={t}>{signalLabel(t)}</option>
               ))}
+              <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.signal}</option>
             </select>
           ) : (
             <select
               className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-1 text-xs text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer max-w-[120px]"
               value={port.signalType}
               onChange={(e) => {
-                const newSignal = e.target.value as SignalType;
-                onUpdate({
+                const pick = (newSignal: SignalType) => onUpdate({
                   signalType: newSignal,
                   connectorType: defaultConnector(newSignal),
                 });
+                if (e.target.value === NEW_TYPE_VALUE) requestNewType("signal", pick);
+                else pick(e.target.value as SignalType);
               }}
+              data-testid="port-signal-select"
             >
               {signalsByLabel().map((t) => (
                 <option key={t} value={t}>
                   {signalLabel(t)}
                 </option>
               ))}
+              <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.signal}</option>
             </select>
           )}
 
@@ -2778,8 +2796,12 @@ function PortRow({
             <select
               className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-1 text-[10px] text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer max-w-[80px]"
               value={port.connectorType ?? defaultConnector(port.signalType)}
-              onChange={(e) => onUpdate({ connectorType: e.target.value as ConnectorType })}
+              onChange={(e) => {
+                if (e.target.value === NEW_TYPE_VALUE) requestNewType("connector", (id) => onUpdate({ connectorType: id }));
+                else onUpdate({ connectorType: e.target.value as ConnectorType });
+              }}
               title="Connector type"
+              data-testid="port-connector-select"
             >
               {connectorGroupEntries().map(([groupName, types]) => (
                 <optgroup key={groupName} label={groupName}>
@@ -2790,6 +2812,7 @@ function PortRow({
                   ))}
                 </optgroup>
               ))}
+              <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.connector}</option>
             </select>
           )}
 
@@ -2912,7 +2935,11 @@ function PortRow({
               <select
                 className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-1 text-[10px] text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer"
                 value={port.rearConnectorType ?? ""}
-                onChange={(e) => onUpdate({ rearConnectorType: e.target.value ? (e.target.value as ConnectorType) : undefined })}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === NEW_TYPE_VALUE) requestNewType("connector", (id) => onUpdate({ rearConnectorType: id }));
+                  else onUpdate({ rearConnectorType: v ? (v as ConnectorType) : undefined });
+                }}
                 title="Rear connector type"
               >
                 <option value="">(unset)</option>
@@ -2923,6 +2950,7 @@ function PortRow({
                     ))}
                   </optgroup>
                 ))}
+                <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.connector}</option>
               </select>
               {port.rearConnectorType && CONNECTORS_WITH_GENDER_VARIATION.has(port.rearConnectorType) && (
                 <select
@@ -2947,7 +2975,11 @@ function PortRow({
               <select
                 className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-1 text-[10px] text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer"
                 value={port.frontConnectorType ?? ""}
-                onChange={(e) => onUpdate({ frontConnectorType: e.target.value ? (e.target.value as ConnectorType) : undefined })}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === NEW_TYPE_VALUE) requestNewType("connector", (id) => onUpdate({ frontConnectorType: id }));
+                  else onUpdate({ frontConnectorType: v ? (v as ConnectorType) : undefined });
+                }}
                 title="Front connector type"
               >
                 <option value="">(unset)</option>
@@ -2958,6 +2990,7 @@ function PortRow({
                     ))}
                   </optgroup>
                 ))}
+                <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.connector}</option>
               </select>
               {port.frontConnectorType && CONNECTORS_WITH_GENDER_VARIATION.has(port.frontConnectorType) && (
                 <select

@@ -1,6 +1,7 @@
 import type { AuxRow, DeviceData, Port } from "./types";
 import { effectiveThermalBtuh } from "./thermal";
 import { GRID_SIZE } from "./gridConstants";
+import { deviceTypeDisplay } from "./typeRegistry";
 
 export interface AuxResolveContext {
   /** Number of connected port handles — only known at render time in DeviceNode. */
@@ -23,6 +24,9 @@ const str = (v: unknown): string => (v == null || v === "" ? "" : String(v));
 const prettyDeviceType = (v: unknown): string => {
   const s = str(v);
   if (!s) return "";
+  // A community / user type has a real label (and a user type's id is never shown).
+  const label = deviceTypeDisplay(s);
+  if (label !== s) return label;
   return s.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 };
 

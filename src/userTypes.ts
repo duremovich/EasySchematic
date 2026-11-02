@@ -8,6 +8,7 @@
  * device library has), and a `storage` event from another tab re-reads and re-registers.
  */
 import {
+  isKnownConnectorRef,
   normalizeTypeDefs,
   slugifyTypeId,
   type ConnectorTypeDef,
@@ -16,7 +17,8 @@ import {
   type DeviceTypeDef,
   type SignalTypeDef,
 } from "./customTypes";
-import { registerTypes } from "./typeRegistry";
+import { registerTypes, registeredTypes } from "./typeRegistry";
+import type { ExistingCustomType } from "./customTypes";
 
 export const USER_TYPES_KEY = "easyschematic-custom-types";
 
@@ -151,4 +153,29 @@ export function importUserTypes(raw: unknown, overwrite = false): number {
   };
   if (changed) commit(next);
   return changed;
+}
+
+/**
+ * Every registered non-built-in type (community, library, open file) in the shape the
+ * shared validator checks against: cable-prefix uniqueness, and which connectors a
+ * default connector or a mating list may name.
+ */
+export function registeredTypesForValidation(): ExistingCustomType[] {
+  const all = registeredTypes();
+  const rec = (kind: CustomTypeKind, d: UserTypeDef): ExistingCustomType => ({
+    kind,
+    id: d.id,
+    status: d.retired ? "retired" : "active",
+    data: d as unknown as Record<string, unknown>,
+  });
+  return [
+    ...all.signals.map((d) => rec("signal", d)),
+    ...all.connectors.map((d) => rec("connector", d)),
+    ...all.deviceTypes.map((d) => rec("device", d)),
+  ];
+}
+
+/** Any tier already uses this id (so a fresh random id must avoid it). */
+export function isTypeIdTaken(id: string): boolean {
+  return registeredTypesForValidation().some((r) => r.id === id) || isKnownConnectorRef(id, []);
 }

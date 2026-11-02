@@ -269,6 +269,15 @@ export function deviceTypeLabel(id: string): string {
   return builtinEntry(DEVICE_TYPE_LABELS, id) ?? extraDeviceTypes.get(id)?.label ?? id;
 }
 
+/**
+ * Text for a device type where the app shows the stored value as-is (reports, pack lists,
+ * template pickers): a community or user type's label, anything else unchanged. Built-ins
+ * keep reading exactly as before, and a user type's `x-…` id never reaches the screen.
+ */
+export function deviceTypeDisplay(id: string): string {
+  return extraDeviceTypes.get(id)?.label ?? id;
+}
+
 export function deviceTypeCategory(id: string): string {
   return builtinEntry(DEVICE_TYPE_TO_CATEGORY, id) ?? extraDeviceTypes.get(id)?.category ?? UNKNOWN_TYPE_GROUP;
 }

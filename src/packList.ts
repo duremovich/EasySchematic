@@ -12,7 +12,7 @@ import { transformLabelNow, labelsAreRaw } from "./labelCaseUtils";
 import { findPortByHandle } from "./portHandles";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
-import { signalLabel } from "./typeRegistry";
+import { deviceTypeDisplay, signalLabel } from "./typeRegistry";
 
 export type CableCategory = "Video" | "Audio" | "Control" | "Data" | "Power" | "Custom";
 
@@ -327,7 +327,7 @@ export function computePackList(
     } else {
       deviceMap.set(key, {
         model,
-        deviceType: data.deviceType,
+        deviceType: deviceTypeDisplay(data.deviceType),
         room,
         count: 1,
         manufacturer: data.manufacturer ?? "",

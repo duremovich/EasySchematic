@@ -9,6 +9,7 @@ import {
 } from "../types";
 import { duplicatePortLabel } from "../portNaming";
 import { connectorLabel, connectorsByLabel, defaultConnector, signalLabel, signalsByLabel } from "../typeRegistry";
+import { NEW_TYPE_OPTION_LABEL, NEW_TYPE_VALUE, requestNewType } from "../newTypeRequest";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 
@@ -73,8 +74,9 @@ export default function CardCreatorDialog({
 
   const addPort = (direction: PortDirection) => setPorts([...ports, newPortRow(direction)]);
   const removePort = (id: string) => setPorts(ports.filter((p) => p.id !== id));
+  // Functional: a "+ New … type" pick lands after the create dialog closes.
   const updatePort = (id: string, patch: Partial<PortRow>) =>
-    setPorts(ports.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+    setPorts((ps) => ps.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   // Duplicate a port row, inserting the clone right after the original with a
   // uniquified name (e.g. "SDI 1" → "SDI 2", "HDMI" → "HDMI (copy)").
   const duplicatePort = (id: string) =>
@@ -142,8 +144,9 @@ export default function CardCreatorDialog({
       <select
         value={p.signalType}
         onChange={(e) => {
-          const sig = e.target.value as SignalType;
-          updatePort(p.id, { signalType: sig, connectorType: defaultConnector(sig) });
+          const pick = (sig: SignalType) => updatePort(p.id, { signalType: sig, connectorType: defaultConnector(sig) });
+          if (e.target.value === NEW_TYPE_VALUE) requestNewType("signal", pick);
+          else pick(e.target.value as SignalType);
         }}
         className="px-1 py-0.5 text-[10px] rounded border outline-none focus:border-blue-500"
         style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}
@@ -151,10 +154,14 @@ export default function CardCreatorDialog({
         {signalsByLabel().map((s) => (
           <option key={s} value={s}>{signalLabel(s)}</option>
         ))}
+        <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.signal}</option>
       </select>
       <select
         value={p.connectorType ?? ""}
-        onChange={(e) => updatePort(p.id, { connectorType: (e.target.value || undefined) as ConnectorType | undefined })}
+        onChange={(e) => {
+          if (e.target.value === NEW_TYPE_VALUE) requestNewType("connector", (id) => updatePort(p.id, { connectorType: id }));
+          else updatePort(p.id, { connectorType: (e.target.value || undefined) as ConnectorType | undefined });
+        }}
         className="px-1 py-0.5 text-[10px] rounded border outline-none focus:border-blue-500"
         style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}
       >
@@ -162,6 +169,7 @@ export default function CardCreatorDialog({
         {connectorsByLabel().map((c) => (
           <option key={c} value={c}>{connectorLabel(c)}</option>
         ))}
+        <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.connector}</option>
       </select>
       <button
         type="button"
