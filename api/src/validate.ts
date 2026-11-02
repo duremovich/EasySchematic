@@ -71,6 +71,13 @@ function checkString(value: unknown, field: string, maxLen = MAX_STRING): string
 }
 
 /**
+ * Community device types the approval gate accepts, keyed by id → status.
+ * Loaded from D1 `custom_types` by the approval route (see index.ts); a plain
+ * map so this module stays synchronous and unit-testable.
+ */
+export type CommunityDeviceTypes = ReadonlyMap<string, "active" | "retired">;
+
+/**
  * Approval-time gate (#315). DeviceForm's "Other — suggest new type" lets a
  * submitter free-type any slug and nothing ever forced the moderator to add the
  * matching entry, so approvals silently minted orphan types: unpickable in the
@@ -78,13 +85,22 @@ function checkString(value: unknown, field: string, maxLen = MAX_STRING): string
  * in api/seed/import-vendor.ts. Returns an error string, or null when mapped.
  * Deliberately not folded into validateTemplate — submission and public
  * template writes still accept free strings; only approval is gated.
+ *
+ * Since custom-types P1 a type is "mapped" when it is built in OR an active
+ * community device type that a moderator created on the devices site's Types
+ * page (`/admin/types`) — no deploy needed.
  */
-export function checkDeviceTypeMapped(deviceType: unknown): string | null {
+export function checkDeviceTypeMapped(deviceType: unknown, community?: CommunityDeviceTypes): string | null {
   if (typeof deviceType === "string" && Object.hasOwn(DEVICE_TYPE_TO_CATEGORY, deviceType)) return null;
   if (typeof deviceType === "string" && Object.hasOwn(DEVICE_TYPE_ALIASES, deviceType)) {
     return `deviceType ${JSON.stringify(deviceType)} is a non-canonical spelling. Edit the submission to use "${DEVICE_TYPE_ALIASES[deviceType]}" and approve again.`;
   }
-  return `deviceType ${JSON.stringify(deviceType)} has no entry in DEVICE_TYPE_TO_CATEGORY. Add it to src/deviceTypeCategories.ts and deploy before approving, or defer the submission.`;
+  const status = typeof deviceType === "string" ? community?.get(deviceType) : undefined;
+  if (status === "active") return null;
+  if (status === "retired") {
+    return `deviceType ${JSON.stringify(deviceType)} is a retired community device type. Unretire it on the Types page (/admin/types), or edit the submission to use another type, and approve again.`;
+  }
+  return `deviceType ${JSON.stringify(deviceType)} is not a known device type. Create it on the Types page (/admin/types) or edit the submission to use an existing type, then approve again.`;
 }
 
 /**
@@ -98,9 +114,17 @@ export function checkApprovalDeviceType(
   action: string,
   approvedDeviceType: unknown,
   currentDeviceType: unknown,
+  community?: CommunityDeviceTypes,
 ): string | null {
   if (action !== "create" && approvedDeviceType === currentDeviceType) return null;
-  return checkDeviceTypeMapped(approvedDeviceType);
+  return checkDeviceTypeMapped(approvedDeviceType, community);
+}
+
+/** True when a deviceType needs the D1 community lookup (not built in, not an alias). */
+export function needsCommunityDeviceTypeLookup(deviceType: unknown): deviceType is string {
+  return typeof deviceType === "string"
+    && !Object.hasOwn(DEVICE_TYPE_TO_CATEGORY, deviceType)
+    && !Object.hasOwn(DEVICE_TYPE_ALIASES, deviceType);
 }
 
 export function validateTemplate(body: unknown): ValidationResult {

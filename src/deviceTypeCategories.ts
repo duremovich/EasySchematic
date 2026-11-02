@@ -202,28 +202,30 @@ export const DEVICE_TYPE_ALIASES: Record<string, string> = {
   "AVoIP Encoder": "avoip-encoder",
 };
 
+/** Kebab-case device type slug → Title Case with known acronyms ("wireless-dmx-node" → "Wireless DMX Node"). */
+export function formatDeviceTypeLabel(slug: string): string {
+  return slug
+    .split("-")
+    .map((word) => {
+      const upper = word.toUpperCase();
+      // Preserve known acronyms
+      if (["ptz", "ccu", "da", "tv", "ndi", "dsp", "kvm", "led", "nas", "usb", "hdmi", "ups", "pir", "rf", "dali"].includes(word)) return upper;
+      if (word === "av") return "AV";
+      if (word === "avoip") return "AVoIP";
+      if (word === "24vdc") return "24VDC";
+      if (word === "ip") return "IP";
+      if (word === "wifi") return "Wi-Fi";
+      if (word === "hdbaset") return "HDBaseT";
+      if (word === "iem") return "IEM";
+      if (word === "dmx") return "DMX";
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
+}
+
 /** Human-readable labels for device types (kebab-case → Title Case with known acronyms) */
 export const DEVICE_TYPE_LABELS: Record<string, string> = Object.fromEntries(
-  Object.keys(DEVICE_TYPE_TO_CATEGORY).map((key) => [
-    key,
-    key
-      .split("-")
-      .map((word) => {
-        const upper = word.toUpperCase();
-        // Preserve known acronyms
-        if (["ptz", "ccu", "da", "tv", "ndi", "dsp", "kvm", "led", "nas", "usb", "hdmi", "ups", "pir", "rf", "dali"].includes(word)) return upper;
-        if (word === "av") return "AV";
-        if (word === "avoip") return "AVoIP";
-        if (word === "24vdc") return "24VDC";
-        if (word === "ip") return "IP";
-        if (word === "wifi") return "Wi-Fi";
-        if (word === "hdbaset") return "HDBaseT";
-        if (word === "iem") return "IEM";
-        if (word === "dmx") return "DMX";
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      })
-      .join(" "),
-  ]),
+  Object.keys(DEVICE_TYPE_TO_CATEGORY).map((key) => [key, formatDeviceTypeLabel(key)]),
 );
 
 /** All unique categories derived from the device type map, sorted */

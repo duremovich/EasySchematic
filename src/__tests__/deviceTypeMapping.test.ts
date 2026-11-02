@@ -255,11 +255,11 @@ describe("#315(b) — approval refuses unmapped device types", () => {
     expect(checkDeviceTypeMapped("network-switch")).toBeNull();
   });
 
-  it("rejects a free-typed slug and names the file to edit", () => {
+  it("rejects a free-typed slug and points at the Types page", () => {
     // "Camera Tracker" is one of the real orphans this gate exists to stop.
     const err = checkDeviceTypeMapped("Camera Tracker");
     expect(err).toContain("Camera Tracker");
-    expect(err).toContain("src/deviceTypeCategories.ts");
+    expect(err).toContain("/admin/types");
   });
 
   it("rejects the folded aliases and names the spelling that won", () => {
@@ -318,7 +318,7 @@ describe("#315(b) — the refusal actually reaches the moderator", () => {
 
   it("surfaces the guard's message instead of a bare status code", async () => {
     respondWith(JSON.stringify({ error: checkDeviceTypeMapped("Camera Tracker") }), 400);
-    await expect(approveSubmission("sub-1")).rejects.toThrow("src/deviceTypeCategories.ts");
+    await expect(approveSubmission("sub-1")).rejects.toThrow("/admin/types");
   });
 
   it("falls back to the status when the body carries no error text", async () => {

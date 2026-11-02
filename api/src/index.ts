@@ -4,7 +4,10 @@ import { createMiddleware } from "hono/factory";
 import { rowToTemplate, rowToSummary, templateToRow } from "./db";
 import { authMiddleware, sessionMiddleware, requireSession, requireModerator, requireModeratorOrToken, requireAdmin, requireAdminOrToken } from "./auth";
 import type { Env } from "./auth";
-import { validateTemplate, checkApprovalDeviceType } from "./validate";
+import { validateTemplate, checkApprovalDeviceType, needsCommunityDeviceTypeLookup } from "./validate";
+import type { CommunityDeviceTypes } from "./validate";
+import { validateNewCustomType, validateCustomTypeUpdate, isCustomTypeKind } from "../../src/customTypes";
+import type { CustomTypeKind, CustomTypeRecord, CustomTypeStatus } from "../../src/customTypes";
 import { checkRateLimit, cleanupExpiredRateLimits } from "./rateLimiter";
 
 const app = new Hono<Env>();
@@ -32,6 +35,7 @@ const PUBLIC_LIBRARY_READS = new Set([
   "/templates/device-types",
   "/templates/manufacturers",
   "/templates/search-terms",
+  "/types",
 ]);
 const publicLibraryCors = cors({
   origin: "*",
@@ -81,6 +85,9 @@ const bumpLibraryVersion = createMiddleware<Env>(async (c, next) => {
 // second registration would double-bump.
 app.use("/templates/*", bumpLibraryVersion);
 app.use("/submissions/:id/approve", bumpLibraryVersion);
+// Community types (custom-types P1): GET /types' ETag rides the same version,
+// and P4 ships types alongside the library. "/types/*" also matches "/types".
+app.use("/types/*", bumpLibraryVersion);
 
 /** Current library version, or null if the meta row is missing (then callers
  *  skip ETag handling and serve fresh). One row read. */
@@ -1055,11 +1062,23 @@ app.post("/submissions/:id/approve", async (c) => {
   }
 
   // Refuse to mint another orphan device type (#315). The moderator can edit the
-  // type inline via body.data, add the mapping and redeploy, or defer.
+  // type inline via body.data, or create it as a community type on the devices
+  // site's Types page (custom-types P1). Only a type that is neither built in
+  // nor an alias costs the one-row community lookup.
+  const approvedDeviceType = (data as { deviceType?: unknown }).deviceType;
+  let communityDeviceTypes: CommunityDeviceTypes | undefined;
+  if (needsCommunityDeviceTypeLookup(approvedDeviceType)) {
+    const ct = await db
+      .prepare("SELECT status FROM custom_types WHERE kind = 'device' AND id = ?")
+      .bind(approvedDeviceType)
+      .first<{ status: "active" | "retired" }>();
+    if (ct) communityDeviceTypes = new Map([[approvedDeviceType, ct.status]]);
+  }
   const typeErr = checkApprovalDeviceType(
     submission.action,
-    (data as { deviceType?: unknown }).deviceType,
+    approvedDeviceType,
     currentDeviceType,
+    communityDeviceTypes,
   );
   if (typeErr) return c.json({ error: typeErr }, 400);
 
@@ -2196,6 +2215,214 @@ app.delete("/templates/:id", async (c) => {
   await c.env.easyschematic_db.prepare("DELETE FROM templates WHERE id = ?").bind(id).run();
 
   return c.body(null, 204);
+});
+
+// ==================== COMMUNITY TYPES ====================
+// Device types (P1) — and signals/connectors in P3 — that moderators add on the
+// devices site's Types page, so a submission needing a new type no longer
+// waits on a code deploy. Validation is shared with the devices site
+// (src/customTypes). See .claude/plans/custom-types.md.
+
+interface CustomTypeRow {
+  kind: CustomTypeKind;
+  id: string;
+  label: string;
+  data: string;
+  status: CustomTypeStatus;
+  reason_or_url: string | null;
+  created_by: string | null;
+  created_by_name?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function rowToCustomType(row: CustomTypeRow): CustomTypeRecord {
+  let data: Record<string, unknown> = {};
+  try {
+    const parsed = JSON.parse(row.data);
+    if (parsed && typeof parsed === "object") data = parsed;
+  } catch {
+    // leave {}: a malformed row still lists, with its id and label
+  }
+  return {
+    kind: row.kind,
+    id: row.id,
+    label: row.label,
+    data,
+    status: row.status,
+    reasonOrUrl: row.reason_or_url,
+    createdBy: row.created_by,
+    createdByName: row.created_by_name ?? null,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+type TypeAction = "type_create" | "type_edit" | "type_retire" | "type_unretire" | "type_delete";
+
+/** Audit row for a type write. mod_actions.moderator_id is NOT NULL, so (as
+ *  with approvals) ADMIN_TOKEN writes go unlogged. Never masks the write. */
+async function logTypeAction(
+  db: D1Database,
+  moderatorId: string | null,
+  action: TypeAction,
+  kind: CustomTypeKind,
+  id: string,
+  before: CustomTypeRecord | null,
+  after: CustomTypeRecord | null,
+): Promise<void> {
+  if (!moderatorId) return;
+  try {
+    await db
+      .prepare("INSERT INTO mod_actions (moderator_id, action, before_data, after_data, note) VALUES (?, ?, ?, ?, ?)")
+      .bind(moderatorId, action, before ? JSON.stringify(before) : null, after ? JSON.stringify(after) : null, `${kind} type ${id}`)
+      .run();
+  } catch (e) {
+    console.error(`Failed to write mod_actions audit log for ${action}:`, e);
+  }
+}
+
+async function loadCustomType(db: D1Database, kind: string, id: string): Promise<CustomTypeRecord | null> {
+  const row = await db
+    .prepare(
+      `SELECT ct.*, u.name AS created_by_name FROM custom_types ct
+       LEFT JOIN users u ON ct.created_by = u.id
+       WHERE ct.kind = ? AND ct.id = ?`,
+    )
+    .bind(kind, id)
+    .first<CustomTypeRow>();
+  return row ? rowToCustomType(row) : null;
+}
+
+app.get("/types", async (c) => {
+  const kindParam = c.req.query("kind");
+  if (kindParam !== undefined && !isCustomTypeKind(kindParam)) {
+    return c.json({ error: "kind must be one of: device, signal, connector" }, 400);
+  }
+  // Same scheme as /templates: revalidate every time, but a match costs one
+  // library_meta row instead of reading the table. "public" so any cache may
+  // store it; "no-cache" so a freshly created type shows up immediately.
+  const db = c.env.easyschematic_db;
+  const version = await getLibraryVersion(db);
+  const etag = version != null ? `"lib-${version}-types-${kindParam ?? "all"}"` : null;
+  const headers: Record<string, string> = { "Cache-Control": "public, no-cache" };
+  if (etag) headers.ETag = etag;
+  if (etag && etagMatches(c.req.header("If-None-Match"), etag)) {
+    return c.body(null, 304, headers);
+  }
+  const sql = `SELECT ct.*, u.name AS created_by_name FROM custom_types ct
+               LEFT JOIN users u ON ct.created_by = u.id
+               ${kindParam ? "WHERE ct.kind = ?" : ""}
+               ORDER BY ct.kind, ct.label`;
+  const stmt = kindParam ? db.prepare(sql).bind(kindParam) : db.prepare(sql);
+  const { results } = await stmt.all<CustomTypeRow>();
+  return c.json(results.map(rowToCustomType), 200, headers);
+});
+
+app.post("/types", async (c) => {
+  const auth = requireModeratorOrToken(c);
+  if (!auth) return c.json({ error: "Moderator access required" }, 403);
+  const moderatorId = auth === "token" ? null : auth.id;
+  const db = c.env.easyschematic_db;
+
+  const body = await c.req.json().catch(() => null);
+  const b = (body ?? {}) as { kind?: unknown; id?: unknown };
+  const existing = isCustomTypeKind(b.kind) && typeof b.id === "string"
+    ? (await db
+        .prepare("SELECT kind, id, status FROM custom_types WHERE kind = ? AND id = ?")
+        .bind(b.kind, b.id.toLowerCase())
+        .all<{ kind: CustomTypeKind; id: string; status: CustomTypeStatus }>()).results
+    : [];
+  const v = validateNewCustomType(body, existing);
+  if (!v.ok) return c.json({ error: v.error }, existing.length ? 409 : 400);
+
+  const t = v.value;
+  try {
+    await db
+      .prepare(
+        "INSERT INTO custom_types (kind, id, label, data, status, reason_or_url, created_by) VALUES (?, ?, ?, ?, 'active', ?, ?)",
+      )
+      .bind(t.kind, t.id, t.label, JSON.stringify(t.data), t.reasonOrUrl, moderatorId)
+      .run();
+  } catch {
+    // Lost a race with another moderator creating the same id.
+    return c.json({ error: `"${t.id}" is already a community ${t.kind} type.` }, 409);
+  }
+  const created = await loadCustomType(db, t.kind, t.id);
+  await logTypeAction(db, moderatorId, "type_create", t.kind, t.id, null, created);
+  return c.json(created, 201, NO_CACHE_HEADERS);
+});
+
+app.put("/types/:kind/:id", async (c) => {
+  const auth = requireModeratorOrToken(c);
+  if (!auth) return c.json({ error: "Moderator access required" }, 403);
+  const moderatorId = auth === "token" ? null : auth.id;
+  const db = c.env.easyschematic_db;
+
+  const current = await loadCustomType(db, c.req.param("kind"), c.req.param("id"));
+  if (!current) return c.json({ error: "Type not found" }, 404);
+
+  const body = await c.req.json().catch(() => null);
+  const v = validateCustomTypeUpdate(current, body);
+  if (!v.ok) return c.json({ error: v.error }, 400);
+  const u = v.value;
+
+  await db
+    .prepare(
+      "UPDATE custom_types SET label = ?, data = ?, status = ?, reason_or_url = ?, updated_at = datetime('now') WHERE kind = ? AND id = ?",
+    )
+    .bind(u.label, JSON.stringify(u.data), u.status, u.reasonOrUrl, current.kind, current.id)
+    .run();
+  const updated = await loadCustomType(db, current.kind, current.id);
+  const action: TypeAction = u.status !== current.status
+    ? (u.status === "retired" ? "type_retire" : "type_unretire")
+    : "type_edit";
+  await logTypeAction(db, moderatorId, action, current.kind, current.id, current, updated);
+  return c.json(updated, 200, NO_CACHE_HEADERS);
+});
+
+app.delete("/types/:kind/:id", async (c) => {
+  const auth = requireModeratorOrToken(c);
+  if (!auth) return c.json({ error: "Moderator access required" }, 403);
+  const moderatorId = auth === "token" ? null : auth.id;
+  const db = c.env.easyschematic_db;
+
+  const current = await loadCustomType(db, c.req.param("kind"), c.req.param("id"));
+  if (!current) return c.json({ error: "Type not found" }, 404);
+
+  // Guardrail 3: ids are permanent once used. Anything still pointing at the
+  // type (templates, including ones flagged for deletion, and open
+  // submissions) means retire, not delete. P3 adds port-level counts for the
+  // signal and connector kinds.
+  if (current.kind !== "device") {
+    return c.json({ error: `Deleting community ${current.kind} types is not supported yet. Retire it instead.` }, 409);
+  }
+  const refs = await db
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM templates WHERE device_type = ?1) AS templates,
+         (SELECT COUNT(*) FROM submissions
+            WHERE status IN ('pending', 'deferred')
+              AND (CASE WHEN json_valid(data) THEN json_extract(data, '$.deviceType') END) = ?1) AS submissions`,
+    )
+    .bind(current.id)
+    .first<{ templates: number; submissions: number }>();
+  const templates = refs?.templates ?? 0;
+  const submissions = refs?.submissions ?? 0;
+  if (templates > 0 || submissions > 0) {
+    return c.json(
+      {
+        error: `"${current.id}" is used by ${templates} device${templates === 1 ? "" : "s"} and ${submissions} open submission${submissions === 1 ? "" : "s"}. Retire it instead: it leaves the pickers but existing devices keep rendering.`,
+        templates,
+        submissions,
+      },
+      409,
+    );
+  }
+
+  await db.prepare("DELETE FROM custom_types WHERE kind = ? AND id = ?").bind(current.kind, current.id).run();
+  await logTypeAction(db, moderatorId, "type_delete", current.kind, current.id, current, null);
+  return c.json({ ok: true }, 200, NO_CACHE_HEADERS);
 });
 
 // ==================== SUPPORT EMAIL ENDPOINTS ====================
