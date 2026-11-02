@@ -1,3 +1,101 @@
+import bundledCommunityTypes from "../../../src/communityTypes.fallback.json";
+import {
+  connectorTypesOf,
+  deviceTypesOf,
+  signalTypesOf,
+  type CustomTypeRecord,
+} from "../../../src/customTypes/model";
+import { connectorLabel } from "../../../src/typeRegistry";
+
+// The community types baked into this build by `npm run generate-fallback` (active only).
+const COMMUNITY = (bundledCommunityTypes as CustomTypeRecord[]).filter((r) => r.status !== "retired");
+const COMMUNITY_SIGNALS = signalTypesOf(COMMUNITY);
+const COMMUNITY_CONNECTORS = connectorTypesOf(COMMUNITY);
+const COMMUNITY_DEVICE_TYPES = deviceTypesOf(COMMUNITY);
+const COMMUNITY_CONNECTOR_LABELS = new Map(COMMUNITY_CONNECTORS.map((r) => [r.id, r.label]));
+
+function connectorName(id: string): string {
+  return COMMUNITY_CONNECTOR_LABELS.get(id) ?? connectorLabel(id);
+}
+
+function connectorList(ids: readonly string[] | undefined): string {
+  return ids?.length ? ids.map(connectorName).join(", ") : "—";
+}
+
+function CommunityTypes() {
+  if (COMMUNITY.length === 0) {
+    return <p>None yet. When moderators add community types, they are listed here.</p>;
+  }
+  return (
+    <>
+      {COMMUNITY_SIGNALS.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>Signal Type</th>
+              <th>Color</th>
+              <th>Cable ID Prefix</th>
+              <th>Default Connector</th>
+              <th>Use Case</th>
+            </tr>
+          </thead>
+          <tbody>
+            {COMMUNITY_SIGNALS.map((r) => (
+              <tr key={r.id}>
+                <td><strong>{r.label}</strong></td>
+                <td><span style={{ color: r.data.color }}>&#9679;</span> {r.data.color}</td>
+                <td>{r.data.cablePrefix}</td>
+                <td>{connectorName(r.data.defaultConnector)}</td>
+                <td>{r.data.description || r.data.group}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {COMMUNITY_CONNECTORS.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>Connector</th>
+              <th>Cable Type</th>
+              <th>Mates With</th>
+              <th>Through an Adapter</th>
+            </tr>
+          </thead>
+          <tbody>
+            {COMMUNITY_CONNECTORS.map((r) => (
+              <tr key={r.id}>
+                <td>{r.label}</td>
+                <td>{r.data.cable}</td>
+                <td>{connectorList(r.data.matesWith)}</td>
+                <td>{connectorList(r.data.adaptsTo)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {COMMUNITY_DEVICE_TYPES.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>Device Type</th>
+              <th>Category</th>
+            </tr>
+          </thead>
+          <tbody>
+            {COMMUNITY_DEVICE_TYPES.map((r) => (
+              <tr key={r.id}>
+                <td>{r.label}</td>
+                <td>{r.data.category}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </>
+  );
+}
+
 export default function DevicesAndPortsPage() {
   return (
     <>
@@ -303,6 +401,18 @@ export default function DevicesAndPortsPage() {
         <li>Two female ports (e.g. front and rear of a TT bantam patch bay) need an <strong>M-M</strong> cable — male plugs on both ends</li>
         <li>Two male ports (rare — e.g. two appliance-side IEC inlets wired back-to-back) need an <strong>F-F</strong> cable</li>
       </ul>
+
+      <h2>Community types</h2>
+      <p>
+        Beyond the built-in tables above, moderators on the{" "}
+        <a href="https://devices.easyschematic.live" target="_blank" rel="noopener noreferrer">community device database</a>{" "}
+        can add <strong>community signal types</strong>, <strong>connector types</strong> and <strong>device types</strong> without
+        an app update. The app loads them with the device library and keeps the last copy for offline use. A community
+        signal has its own color and cable ID prefix; a community connector lists what it mates with directly and what it
+        reaches through an adapter cable, which the cable schedule names as an adapter run. A device that uses a type your
+        copy of the app doesn{"'"}t know yet still opens: the port shows the raw type name in gray. This build ships with:
+      </p>
+      <CommunityTypes />
 
       <h2>Patch panels</h2>
       <p>
