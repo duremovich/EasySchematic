@@ -11,7 +11,7 @@ import { resolvePort } from "../packList";
 import { midCustomLabelPlacement } from "../stubPlacement";
 import { computeEdgeLengthEstimate, resolveCableLengthLabel } from "../cableLengthLabel";
 import { showPathEditHint, soleSelectedCableId } from "../pathEditHint";
-import { isBuiltinSignal, signalCssColor } from "../typeRegistry";
+import { isBuiltinSignal, isKnownSignal, signalCssColor } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 function OffsetEdgeComponent({
@@ -27,13 +27,15 @@ function OffsetEdgeComponent({
 }: EdgeProps<ConnectionEdge>) {
   // A community or user signal's stroke is a literal hex frozen when the connection was
   // drawn. Re-resolve it through the registry, so a type that registered later (or was
-  // recoloured) shows its live colour. Built-ins keep their stored var(--color-*).
+  // recoloured) shows its live colour. Built-ins keep their stored var(--color-*), and an
+  // id this client doesn't know keeps the colour the file was saved with.
   const registryVersion = useTypeRegistryVersion();
   const liveStroke = useSchematicStore((s) => {
     void registryVersion;
     const d = s.edges.find((e) => e.id === id)?.data;
-    if (!d?.signalType || d.directAttach || d.color || isBuiltinSignal(d.signalType)) return undefined;
-    return signalCssColor(d.signalType);
+    const sig = d?.signalType;
+    if (!sig || d.directAttach || d.color || isBuiltinSignal(sig) || !isKnownSignal(sig)) return undefined;
+    return signalCssColor(sig);
   });
   const style = liveStroke ? { ...storedStyle, stroke: liveStroke } : storedStyle;
   const debugEdges = useSchematicStore((s) => s.debugEdges);
