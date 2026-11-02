@@ -2,11 +2,9 @@ import { useState, useMemo, useRef, useCallback } from "react";
 import { LINE_STYLE_DASHARRAY, type SignalType, type LineStyle, type Port } from "../types";
 import { useSchematicStore } from "../store";
 import { DEFAULT_SIGNAL_COLORS, loadSignalColors } from "../signalColors";
-import { allSignals, signalColor, signalCssColor, signalGroups, signalLabel } from "../typeRegistry";
+import { isBuiltinSignal, signalColor, signalCssColor, signalGroups, signalLabel, signalsByLabel } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
-const ALL_SIGNAL_TYPES = allSignals().sort(
-  (a, b) => signalLabel(a).localeCompare(signalLabel(b)),
-);
 const LINE_STYLES: LineStyle[] = ["solid", "dashed", "dotted", "dash-dot"];
 const LINE_STYLE_TIPS: Record<LineStyle, string> = {
   solid: "Solid",
@@ -16,6 +14,7 @@ const LINE_STYLE_TIPS: Record<LineStyle, string> = {
 };
 
 export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean; onClose?: () => void } = {}) {
+  const registryVersion = useTypeRegistryVersion(); // community signals join the lists once registered
   const [collapsed, setCollapsed] = useState(true);
   const hiddenSignalTypesStr = useSchematicStore((s) => s.hiddenSignalTypes);
   const hiddenPinSignalTypesStr = useSchematicStore((s) => s.hiddenPinSignalTypes);
@@ -73,12 +72,12 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
 
   const [showFullList, setShowFullList] = useState(false);
 
-  const displayedSignalTypes = useMemo(
-    () => showFullList
-      ? ALL_SIGNAL_TYPES
-      : ALL_SIGNAL_TYPES.filter((t) => usedSignalTypes.has(t)),
-    [showFullList, usedSignalTypes],
-  );
+  const displayedSignalTypes = useMemo(() => {
+    void registryVersion; // signalsByLabel() is module state; the version is what changed
+    return showFullList
+      ? signalsByLabel()
+      : signalsByLabel().filter((t) => usedSignalTypes.has(t));
+  }, [showFullList, usedSignalTypes, registryVersion]);
 
   const hiddenSet = useMemo(
     () => (hiddenSignalTypesStr ? new Set(hiddenSignalTypesStr.split(",")) : new Set<string>()),
@@ -256,15 +255,15 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
                 Reset
               </button>
             )}
-            {hasCustomizations && usedSignalTypes.size < ALL_SIGNAL_TYPES.length && (
+            {hasCustomizations && usedSignalTypes.size < signalsByLabel().length && (
               <span className="text-[var(--color-text-muted)] text-[8px]">|</span>
             )}
-            {usedSignalTypes.size < ALL_SIGNAL_TYPES.length && (
+            {usedSignalTypes.size < signalsByLabel().length && (
               <button
                 onClick={() => setShowFullList((v) => !v)}
                 className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
               >
-                {showFullList ? "Used only" : `All (${ALL_SIGNAL_TYPES.length})`}
+                {showFullList ? "Used only" : `All (${signalsByLabel().length})`}
               </button>
             )}
           </div>
@@ -340,12 +339,22 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
                     />
                   </svg>
                 </button>
-                <button
-                  className="w-2.5 h-2.5 rounded-full shrink-0 cursor-pointer border border-transparent hover:border-[var(--color-text-muted)] transition-colors"
-                  style={{ background: signalCssColor(type) }}
-                  onClick={(e) => handleColorClick(type, e)}
-                  title="Change color"
-                />
+                {isBuiltinSignal(type) ? (
+                  <button
+                    className="w-2.5 h-2.5 rounded-full shrink-0 cursor-pointer border border-transparent hover:border-[var(--color-text-muted)] transition-colors"
+                    style={{ background: signalCssColor(type) }}
+                    onClick={(e) => handleColorClick(type, e)}
+                    title="Change color"
+                  />
+                ) : (
+                  // Colour overrides ride the built-ins' --color-* variables; a community
+                  // signal's colour is a literal set on the devices site, so it isn't overridable.
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 border border-transparent"
+                    style={{ background: signalCssColor(type) }}
+                    title="Community signal: its colour is set on the devices site"
+                  />
+                )}
                 <span className="text-xs text-[var(--color-text)] flex-1 truncate">
                   {signalLabel(type)}
                 </span>

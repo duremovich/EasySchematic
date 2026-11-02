@@ -12,6 +12,7 @@ import {
 } from "../textStub";
 import { STUB_H_EST } from "../stubPlacement";
 import { signalCssColor } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 /** Walk parent chain to compute absolute position. */
 function absolutePos(node: SchematicNode | undefined, nodeMap: Map<string, SchematicNode>): { x: number; y: number } {
@@ -48,6 +49,7 @@ function resolvePortAbs(
 }
 
 function TextStubNodeComponent({ id, data, selected }: NodeProps<TextStubNodeType>) {
+  useTypeRegistryVersion(); // community signal labels / colours resolve once registered
   const updateTextStubText = useSchematicStore((s) => s.updateTextStubText);
   const pushSnapshot = useSchematicStore((s) => s.pushSnapshot);
   const editingGlobal = useSchematicStore((s) => s.editingNodeId === id);

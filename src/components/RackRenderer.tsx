@@ -28,6 +28,7 @@ import FacePlateEditor from "./FacePlateEditor";
 import type { FacePlateLayout } from "../types";
 import { getDevicesInRoom, proposeRackPlacements } from "../rackLink";
 import { signalCssColor } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -240,6 +241,7 @@ interface DeviceBlockProps {
 }
 
 function DeviceBlock({ placement, rack, deviceData, isSelected, isDragging, zoom, showFacePlateDetail, schematicDefaults, onSelect, onDragStart, onContextMenu }: DeviceBlockProps) {
+  useTypeRegistryVersion(); // community signal labels / colours resolve once registered
   const resolved = resolveDeviceLabel(deviceData, schematicDefaults);
   const label = resolved.text;
   const heightU = inferRackHeightU(deviceData);

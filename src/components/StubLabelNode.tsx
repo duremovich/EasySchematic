@@ -9,6 +9,7 @@ import { buildStubLabelText, UNRESOLVED_STUB_LABEL_TEXT } from "../stubLabelText
 import { buildPrintPageLookup, resolveStubLabelPartsForMode } from "../stubLabelResolve";
 import { useDisplayLabel } from "../labelCaseUtils";
 import { signalCssColor } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 /** Find the connecting edge: source-side stub is the TARGET of an edge from a device;
  *  target-side stub is the SOURCE of an edge to a device. */
@@ -35,6 +36,7 @@ function absolutePos(node: SchematicNode | undefined, nodeMap: Map<string, Schem
 }
 
 function StubLabelNodeComponent({ id, data, selected }: NodeProps<StubLabelNodeType>) {
+  useTypeRegistryVersion(); // community signal labels / colours resolve once registered
   // Single combined selector returning a serialized string — minimizes re-renders.
   // The resolution itself lives in stubLabelResolve so the DXF export emits the same
   // text this box shows (#319); only the serialization is local.

@@ -6,7 +6,7 @@
 import type { SignalType, Port, DeviceTemplate, SchematicNode, DeviceNode, ConnectionEdge } from "./types";
 import { normalizeHeaderColor } from "./deviceHeaderColor";
 import { scoreTemplate } from "./templateSearch";
-import { allSignals, defaultConnector, signalAliases, signalCssColor, signalLabel } from "./typeRegistry";
+import { allSignals, defaultConnector, perRegistryVersion, signalAliases, signalCssColor, signalLabel } from "./typeRegistry";
 
 // ---------- Types ----------
 
@@ -224,25 +224,30 @@ export function detectColumns(headers: string[]): ColumnMapping {
 
 // ---------- Signal Type Parsing ----------
 
-const SIGNAL_REVERSE = new Map<string, SignalType>();
-for (const key of allSignals()) {
-  SIGNAL_REVERSE.set(signalLabel(key).toLowerCase(), key);
-  SIGNAL_REVERSE.set(key.toLowerCase(), key);
-}
-// Common aliases
-for (const [alias, type] of Object.entries(signalAliases())) SIGNAL_REVERSE.set(alias, type);
+// Rebuilt after a registration, so community and user signals parse by label or id.
+const signalReverse = perRegistryVersion(() => {
+  const map = new Map<string, SignalType>();
+  for (const key of allSignals()) {
+    map.set(signalLabel(key).toLowerCase(), key);
+    map.set(key.toLowerCase(), key);
+  }
+  // Common aliases
+  for (const [alias, type] of Object.entries(signalAliases())) map.set(alias, type);
+  return map;
+});
 
 export function parseSignalType(raw: string): SignalType {
   if (!raw) return "custom";
+  const reverse = signalReverse();
   const normalized = raw.toLowerCase().trim().replace(/[_\-/]/g, " ").replace(/\s+/g, " ");
-  const direct = SIGNAL_REVERSE.get(normalized);
+  const direct = reverse.get(normalized);
   if (direct) return direct;
   // Try without spaces/hyphens
   const compact = normalized.replace(/\s/g, "-");
-  const compact2 = SIGNAL_REVERSE.get(compact);
+  const compact2 = reverse.get(compact);
   if (compact2) return compact2;
   // Substring match
-  for (const [alias, type] of SIGNAL_REVERSE) {
+  for (const [alias, type] of reverse) {
     if (normalized.includes(alias) && alias.length > 2) return type;
   }
   return "custom";

@@ -7,6 +7,7 @@ import { inventoryKeyFromDeviceData, inventoryKeyFromTemplate } from "../invento
 import DeviceCreatorPicker from "./DeviceCreatorPicker";
 import ImportDevicesDialog from "./ImportDevicesDialog";
 import { signalLabel } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 const APP_VERSION = __APP_VERSION__;
 const BUILD_HASH = __BUILD_HASH__;
@@ -1042,6 +1043,7 @@ function OwnedGearTab({ query }: { query: string }) {
 }
 
 export default function DeviceLibrary() {
+  const registryVersion = useTypeRegistryVersion(); // community signal labels in the filters
   const customTemplates = useSchematicStore((s) => s.customTemplates);
   const ownedGear = useSchematicStore((s) => s.ownedGear);
   const removeCustomTemplate = useSchematicStore((s) => s.removeCustomTemplate);
@@ -1103,8 +1105,9 @@ export default function DeviceLibrary() {
     if (selectedBrands.size > 0) source = source.filter((t) => t.manufacturer && selectedBrands.has(t.manufacturer));
     const types = new Set<string>();
     for (const t of source) for (const p of t.ports) types.add(p.signalType);
+    void registryVersion; // labels (the sort key) come from the registry
     return [...types].sort((a, b) => signalLabel(a).localeCompare(signalLabel(b)));
-  }, [libraryTemplates, selectedCategories, selectedBrands]);
+  }, [libraryTemplates, selectedCategories, selectedBrands, registryVersion]);
 
   const toggleCategory = useCallback((cat: string) => {
     setSelectedCategories((prev) => {

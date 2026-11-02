@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import type { LabelCaseMode } from "./types";
-import { allConnectors, allSignals, connectorLabel, signalLabel } from "./typeRegistry";
+import { allConnectors, allSignals, connectorLabel, perRegistryVersion, signalLabel } from "./typeRegistry";
 import { useSchematicStore } from "./store";
 
 /** Hand-curated acronyms the connector/signal tables don't cover: rack and trade
@@ -31,14 +31,15 @@ const HAS_DIGIT = /\p{N}/u;
 /** Acronyms that survive "Capitalize Words" as typed. Derived from the real
  *  vocabulary in the connector and signal labels — every ALL-UPPERCASE, digit-free
  *  word of those display names (HDMI, SDI, XLR, TRS, BNC, USB, IEC, MADI, …) —
- *  then topped up with EXTRA_ACRONYMS. */
-const ACRONYMS: ReadonlySet<string> = new Set([
+ *  then topped up with EXTRA_ACRONYMS. Rebuilt after a registration, so community
+ *  and user type labels count too. */
+const acronyms: () => ReadonlySet<string> = perRegistryVersion(() => new Set([
   ...allConnectors().map(connectorLabel)
     .concat(allSignals().map(signalLabel))
     .flatMap((label) => label.match(WORD_RE) ?? [])
     .filter((w) => w.length > 1 && !HAS_DIGIT.test(w) && isAllUpper(w)),
   ...EXTRA_ACRONYMS,
-]);
+]));
 
 /** True when the word has at least one cased letter and no lowercase ones. */
 function isAllUpper(word: string): boolean {
@@ -69,7 +70,7 @@ function titleCase(word: string): string {
 function capitalizeWords(text: string): string {
   return text.replace(WORD_RE, (word) => {
     if (HAS_DIGIT.test(word)) return word;
-    if (isAllUpper(word)) return ACRONYMS.has(word) ? word : titleCase(word);
+    if (isAllUpper(word)) return acronyms().has(word) ? word : titleCase(word);
     if (word.slice(1) !== word.slice(1).toLowerCase()) return word;
     return titleCase(word);
   });

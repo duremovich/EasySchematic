@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   allConnectors,
   allDeviceTypes,
@@ -14,15 +14,23 @@ import {
   defaultConnector,
   deviceTypeCategory,
   deviceTypeLabel,
+  connectorsByLabel,
   isBuiltinConnector,
   isBuiltinSignal,
+  isKnownConnector,
+  isKnownSignal,
+  registerTypes,
   signalCable,
   signalColor,
   signalCssColor,
   signalGroup,
   signalGroups,
   signalLabel,
+  signalsByLabel,
+  typeRegistryVersion,
 } from "../typeRegistry";
+import type { ConnectorTypeDef, CustomTypeRecord, SignalTypeDef } from "../customTypes/model";
+import { parseSignalType } from "../csvImport";
 import { CONNECTOR_LABELS, SIGNAL_LABELS } from "../types";
 import { areConnectorsCompatible, matesNatively, needsAdapter } from "../connectorTypes";
 
@@ -121,5 +129,121 @@ describe("typeRegistry: pickers", () => {
     const table: Partial<Record<string, number>> = { a: 1 };
     expect(builtinEntry(table, "a")).toBe(1);
     expect(builtinEntry(table, "hasOwnProperty")).toBeUndefined();
+  });
+});
+
+// P4: community types registered from GET /types (and the cache / bundled fallback).
+const COMMS: SignalTypeDef = {
+  id: "shadow-comms", label: "Shadow Comms", color: "#2f855a", group: "Control",
+  defaultConnector: "weco-3", cable: "Comms", cablePrefix: "SHC",
+};
+const WECO: ConnectorTypeDef = {
+  id: "weco-3", label: "WECO 3-pin", group: "Power", cable: "WECO", gender: "female", matesWith: [], adaptsTo: [],
+};
+const HDBNC: ConnectorTypeDef = {
+  id: "shadow-hdbnc", label: "Shadow HD-BNC", group: "Video", cable: "Mini coax", gender: "none",
+  matesWith: [], adaptsTo: ["bnc"],
+};
+
+describe("typeRegistry: community types", () => {
+  afterEach(() => registerTypes("community", {}));
+
+  it("registering community types makes the picker lists, labels and colours include them", () => {
+    const before = typeRegistryVersion();
+    registerTypes("community", { signals: [COMMS], connectors: [WECO, HDBNC] });
+    expect(typeRegistryVersion()).toBeGreaterThan(before);
+
+    // The lists that used to be frozen at module load now see the registration.
+    expect(allSignals()).toContain("shadow-comms");
+    expect(signalsByLabel()).toContain("shadow-comms");
+    expect(signalGroups().Control).toContain("shadow-comms");
+    expect(connectorsByLabel()).toContain("weco-3");
+    expect(connectorGroups().Video).toContain("shadow-hdbnc");
+    expect(parseSignalType("Shadow Comms")).toBe("shadow-comms");
+    expect(parseSignalType("shadow_comms")).toBe("shadow-comms");
+
+    expect(isKnownSignal("shadow-comms")).toBe(true);
+    expect(signalLabel("shadow-comms")).toBe("Shadow Comms");
+    expect(signalColor("shadow-comms")).toBe("#2f855a");
+    expect(signalCssColor("shadow-comms")).toBe("#2f855a"); // literal, no --color-* var
+    expect(cablePrefix("shadow-comms")).toBe("SHC");
+    expect(defaultConnector("shadow-comms")).toBe("weco-3");
+    expect(connectorLabel("weco-3")).toBe("WECO 3-pin");
+    expect(connectorGender("weco-3")).toBe("female");
+    expect(needsAdapter("shadow-hdbnc", "bnc")).toBe(true);
+    expect(needsAdapter("bnc", "shadow-hdbnc")).toBe(true);
+    expect(matesNatively("weco-3", "bnc")).toBe(false);
+  });
+
+  it("re-registering replaces the layer", () => {
+    registerTypes("community", { signals: [COMMS], connectors: [WECO] });
+    registerTypes("community", { connectors: [{ ...HDBNC, retired: true }] });
+    expect(isKnownSignal("shadow-comms")).toBe(false);
+    expect(signalLabel("shadow-comms")).toBe("shadow-comms");
+    expect(signalColor("shadow-comms")).toBe(GREY);
+    expect(signalsByLabel()).not.toContain("shadow-comms");
+    expect(parseSignalType("Shadow Comms")).toBe("custom");
+    expect(isKnownConnector("weco-3")).toBe(false);
+    // Retired: still resolves, but out of the pickers.
+    expect(connectorLabel("shadow-hdbnc")).toBe("Shadow HD-BNC");
+    expect(connectorsByLabel()).not.toContain("shadow-hdbnc");
+  });
+});
+
+describe("templateApi: community types cache", () => {
+  const record: CustomTypeRecord = {
+    kind: "signal", id: COMMS.id, label: COMMS.label, status: "active",
+    data: { color: COMMS.color, group: COMMS.group, defaultConnector: "bnc", cable: COMMS.cable, cablePrefix: COMMS.cablePrefix },
+  };
+
+  function stubStorage(initial: Record<string, string>) {
+    const store = new Map(Object.entries(initial));
+    vi.stubGlobal("localStorage", {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+      removeItem: (k: string) => void store.delete(k),
+    });
+    return store;
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.resetModules();
+  });
+
+  it("a 304 keeps the cached types", async () => {
+    stubStorage({ "easyschematic-community-types": JSON.stringify([record]) });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(null, { status: 304 })));
+    vi.resetModules();
+    const api = await import("../templateApi");
+    const registry = await import("../typeRegistry");
+    await api.loadCommunityTypes();
+    expect(registry.signalLabel("shadow-comms")).toBe("Shadow Comms");
+    expect(registry.cablePrefix("shadow-comms")).toBe("SHC");
+  });
+
+  it("a fresh answer replaces and caches them; a failed fetch keeps the last good copy", async () => {
+    const store = stubStorage({});
+    let fail = false;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      if (fail) throw new TypeError("Failed to fetch");
+      return new Response(JSON.stringify([record]), { status: 200 });
+    }));
+    vi.resetModules();
+    const api = await import("../templateApi");
+    const registry = await import("../typeRegistry");
+    api.initCommunityTypes(); // empty cache: the bundled fallback
+    expect(registry.isKnownSignal("shadow-comms")).toBe(false);
+    await api.loadCommunityTypes();
+    expect(registry.signalLabel("shadow-comms")).toBe("Shadow Comms");
+    expect(JSON.parse(store.get("easyschematic-community-types")!)).toEqual([record]);
+
+    vi.resetModules(); // next page load, API down
+    fail = true;
+    const api2 = await import("../templateApi");
+    const registry2 = await import("../typeRegistry");
+    api2.initCommunityTypes();
+    await api2.loadCommunityTypes();
+    expect(registry2.signalLabel("shadow-comms")).toBe("Shadow Comms");
   });
 });

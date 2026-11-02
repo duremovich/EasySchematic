@@ -1,6 +1,14 @@
 import type { DeviceTemplate } from "./types";
 import fallbackData from "./deviceLibrary.fallback.json";
-import { loadCachedTemplates, saveCachedTemplates } from "./templateCache";
+import communityTypesFallback from "./communityTypes.fallback.json";
+import {
+  loadCachedCommunityTypes,
+  loadCachedTemplates,
+  saveCachedCommunityTypes,
+  saveCachedTemplates,
+} from "./templateCache";
+import { registerTypes } from "./typeRegistry";
+import { isCustomTypeKind, typeDefsFromRecords, type CustomTypeRecord } from "./customTypes/model";
 
 const API_URL =
   import.meta.env?.VITE_TEMPLATE_API_URL ?? "https://api.easyschematic.live";
@@ -304,6 +312,7 @@ async function fetchTemplatesOnce(): Promise<DeviceTemplate[]> {
  * the user. The `degraded` flag tracks whether the result is fresh. (#181)
  */
 export async function fetchTemplates(): Promise<DeviceTemplate[]> {
+  void loadCommunityTypes(); // the types the library's ports use; once per page load
   if (cached && !degraded) return effectiveTemplates();
 
   let lastErr: unknown;
@@ -333,4 +342,68 @@ export async function fetchTemplates(): Promise<DeviceTemplate[]> {
   // Nothing cached either — caller keeps the bundled subset and surfaces a notice.
   degraded = true;
   throw lastErr instanceof Error ? lastErr : new Error("Failed to load device library");
+}
+
+// ==================== COMMUNITY TYPES ====================
+
+/** Community signals, connectors and device types baked in by `npm run generate-fallback`:
+ *  what an offline-first or self-hosted build knows before (or without) `GET /types`. */
+export function getBundledCommunityTypes(): CustomTypeRecord[] {
+  return communityTypesFallback as CustomTypeRecord[];
+}
+
+let registeredTypesJson: string | null = null;
+
+function registerCommunityTypes(records: readonly CustomTypeRecord[]): void {
+  const json = JSON.stringify(records);
+  if (json === registeredTypesJson) return; // unchanged: don't re-render every picker
+  registeredTypesJson = json;
+  registerTypes("community", typeDefsFromRecords(records));
+}
+
+/** Register the last-good community types, or the bundled ones. Synchronous, so the app
+ *  calls it before its first render and an open schematic never flashes grey. */
+export function initCommunityTypes(): void {
+  registerCommunityTypes(loadCachedCommunityTypes() ?? getBundledCommunityTypes());
+}
+
+let communityTypesPromise: Promise<void> | null = null;
+
+/**
+ * Fetch `GET /types` once per page load and register the answer as the registry's
+ * community layer. It rides the library's ETag (`no-cache` + `ETag` from `library_meta`),
+ * so the browser revalidates and an unchanged list costs one row read. A 304 or a
+ * failure keeps the last-good copy (cache, else bundled); a failure retries on the next
+ * call. Never throws.
+ */
+export function loadCommunityTypes(): Promise<void> {
+  communityTypesPromise ??= fetchCommunityTypesOnce().catch(() => {
+    communityTypesPromise = null;
+    initCommunityTypes();
+  });
+  return communityTypesPromise;
+}
+
+async function fetchCommunityTypesOnce(): Promise<void> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TEMPLATE_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${API_URL}/types`, { signal: ctrl.signal });
+    if (res.status === 304) {
+      initCommunityTypes();
+      return;
+    }
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const body: unknown = await res.json();
+    if (!Array.isArray(body)) throw new Error("Malformed /types response");
+    const records = (body as unknown[]).filter(
+      (r): r is CustomTypeRecord =>
+        !!r && typeof r === "object" && isCustomTypeKind((r as CustomTypeRecord).kind) &&
+        typeof (r as CustomTypeRecord).id === "string",
+    );
+    registerCommunityTypes(records);
+    saveCachedCommunityTypes(records);
+  } finally {
+    clearTimeout(timer);
+  }
 }

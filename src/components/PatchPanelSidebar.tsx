@@ -5,12 +5,14 @@ import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { getPanelOccupancy, segmentsForEdge } from "../patchCircuits";
 import { scoreTemplate } from "../templateSearch";
 import { signalCssColor } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 type CableFilter = "all" | "patched" | "direct";
 
 /** Left sidebar of the Patch Panels page: panel inventory + logical cable list with
  *  the patch/unpatch assignment flow. */
 export default function PatchPanelSidebar() {
+  useTypeRegistryVersion(); // community signal labels / colours resolve once registered
   const nodes = useSchematicStore((s) => s.nodes);
   const edges = useSchematicStore((s) => s.edges);
   const cableIdMap = useSchematicStore((s) => s.cableIdMap);

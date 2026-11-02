@@ -17,6 +17,7 @@ import { resolveDeviceLabel } from "../displayName";
 import { contrastingTextColor } from "../colorContrast";
 import { isPortConnected } from "../portVisibility";
 import { signalCssColor, signalLabel } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 type ColumnItem =
   | { type: "port"; port: Port }
@@ -52,6 +53,7 @@ function buildColumnItems(ports: Port[]): ColumnItem[] {
 }
 
 function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) {
+  useTypeRegistryVersion(); // community signal labels / colours resolve once registered
   const setEditingNodeId = useSchematicStore((s) => s.setEditingNodeId);
   const displayLabel = useDisplayLabel();
   const useShortNames = useSchematicStore((s) => s.useShortNames);

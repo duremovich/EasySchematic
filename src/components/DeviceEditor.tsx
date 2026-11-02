@@ -39,24 +39,18 @@ import { buildDeviceTemplate, buildTemplatePreset, type PortDraft } from "../dev
 import { carriesPowerCapacity } from "../deviceTypeCategories";
 import { visibleSaveActions, SAVE_ACTION_LABELS, SAVE_ACTION_TITLES, type SaveActionId } from "../deviceEditorActions";
 import { visiblePortRowControls, PORT_ROW_CONTROL_TITLES, type PortRowControlId } from "../portRowControls";
-import { allConnectors, allSignals, connectorGroups, connectorLabel, defaultConnector, signalCssColor, signalLabel } from "../typeRegistry";
-
-const ALL_SIGNAL_TYPES = allSignals().sort(
-  (a, b) => signalLabel(a).localeCompare(signalLabel(b)),
-);
-const ALL_CONNECTOR_TYPES = allConnectors().sort(
-  (a, b) => connectorLabel(a).localeCompare(connectorLabel(b)),
-);
+import { connectorGroups, connectorLabel, connectorsByLabel, defaultConnector, perRegistryVersion, signalCssColor, signalLabel, signalsByLabel } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 /** Grouped connector dropdown order — preserves `connectorGroups()` ordering, alphabetizes within each
  *  group, and sweeps any connector missing from its groups into "Other" so a new ConnectorType
  *  never silently disappears from the dropdown. */
-const CONNECTOR_GROUP_ENTRIES: Array<[string, ConnectorType[]]> = (() => {
+const connectorGroupEntries: () => Array<[string, ConnectorType[]]> = perRegistryVersion(() => {
   const groups = Object.entries(connectorGroups()).map(
     ([name, list]) => [name, [...list].sort((a, b) => connectorLabel(a).localeCompare(connectorLabel(b)))] as [string, ConnectorType[]],
   );
   const grouped = new Set<ConnectorType>(groups.flatMap(([, list]) => list));
-  const orphans = ALL_CONNECTOR_TYPES.filter((c) => !grouped.has(c));
+  const orphans = connectorsByLabel().filter((c) => !grouped.has(c));
   if (orphans.length > 0) {
     const otherIdx = groups.findIndex(([name]) => name === "Other");
     if (otherIdx >= 0) {
@@ -69,7 +63,7 @@ const CONNECTOR_GROUP_ENTRIES: Array<[string, ConnectorType[]]> = (() => {
     }
   }
   return groups;
-})();
+});
 
 function newPortDraft(direction: PortDirection): PortDraft {
   const signalType: SignalType = "sdi";
@@ -96,6 +90,7 @@ function newPortDraft(direction: PortDirection): PortDraft {
 const MIME = "application/easyschematic-port";
 
 export default function DeviceEditor() {
+  useTypeRegistryVersion(); // the signal / connector pickers list community types
   const editingNodeId = useSchematicStore((s) => s.editingNodeId);
   const nodes = useSchematicStore((s) => s.nodes);
   const updateDevice = useSchematicStore((s) => s.updateDevice);
@@ -1972,6 +1967,7 @@ function BulkAddForm({
   bulkRoom: number;
   onClose: () => void;
 }) {
+  useTypeRegistryVersion(); // the signal / connector pickers list community types
   const [prefix, setPrefix] = useState("Input");
   const [start, setStart] = useState(1);
   const [end, setEnd] = useState(8);
@@ -2030,7 +2026,7 @@ function BulkAddForm({
             setConnectorType(defaultConnector(next));
           }}
         >
-          {ALL_SIGNAL_TYPES.map((t) => (
+          {signalsByLabel().map((t) => (
             <option key={t} value={t}>{signalLabel(t)}</option>
           ))}
         </select>
@@ -2040,7 +2036,7 @@ function BulkAddForm({
           title="Connector type"
           onChange={(e) => setConnectorType(e.target.value as ConnectorType)}
         >
-          {CONNECTOR_GROUP_ENTRIES.map(([groupName, types]) => (
+          {connectorGroupEntries().map(([groupName, types]) => (
             <optgroup key={groupName} label={groupName}>
               {types.map((c) => (
                 <option key={c} value={c}>
@@ -2521,6 +2517,7 @@ function PortRow({
   isHidden: boolean;
   onToggleVisibility: () => void;
 }) {
+  useTypeRegistryVersion(); // the signal / connector pickers list community types
   const rowRef = useRef<HTMLDivElement>(null);
   const [showSection, setShowSection] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
@@ -2753,7 +2750,7 @@ function PortRow({
               }}
             >
               <option value="">(inherits from connection)</option>
-              {ALL_SIGNAL_TYPES.map((t) => (
+              {signalsByLabel().map((t) => (
                 <option key={t} value={t}>{signalLabel(t)}</option>
               ))}
             </select>
@@ -2769,7 +2766,7 @@ function PortRow({
                 });
               }}
             >
-              {ALL_SIGNAL_TYPES.map((t) => (
+              {signalsByLabel().map((t) => (
                 <option key={t} value={t}>
                   {signalLabel(t)}
                 </option>
@@ -2784,7 +2781,7 @@ function PortRow({
               onChange={(e) => onUpdate({ connectorType: e.target.value as ConnectorType })}
               title="Connector type"
             >
-              {CONNECTOR_GROUP_ENTRIES.map(([groupName, types]) => (
+              {connectorGroupEntries().map(([groupName, types]) => (
                 <optgroup key={groupName} label={groupName}>
                   {types.map((c) => (
                     <option key={c} value={c}>
@@ -2919,7 +2916,7 @@ function PortRow({
                 title="Rear connector type"
               >
                 <option value="">(unset)</option>
-                {CONNECTOR_GROUP_ENTRIES.map(([groupName, types]) => (
+                {connectorGroupEntries().map(([groupName, types]) => (
                   <optgroup key={groupName} label={groupName}>
                     {types.map((c) => (
                       <option key={c} value={c}>{connectorLabel(c)}</option>
@@ -2954,7 +2951,7 @@ function PortRow({
                 title="Front connector type"
               >
                 <option value="">(unset)</option>
-                {CONNECTOR_GROUP_ENTRIES.map(([groupName, types]) => (
+                {connectorGroupEntries().map(([groupName, types]) => (
                   <optgroup key={groupName} label={groupName}>
                     {types.map((c) => (
                       <option key={c} value={c}>{connectorLabel(c)}</option>

@@ -8,14 +8,9 @@ import {
   type DeviceTemplate,
 } from "../types";
 import { duplicatePortLabel } from "../portNaming";
-import { allConnectors, allSignals, connectorLabel, defaultConnector, signalLabel } from "../typeRegistry";
+import { connectorLabel, connectorsByLabel, defaultConnector, signalLabel, signalsByLabel } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
-const ALL_SIGNALS = allSignals().sort(
-  (a, b) => signalLabel(a).localeCompare(signalLabel(b)),
-);
-const ALL_CONNECTORS = allConnectors().sort(
-  (a, b) => connectorLabel(a).localeCompare(connectorLabel(b)),
-);
 
 interface PortRow {
   id: string;
@@ -50,6 +45,7 @@ export default function CardCreatorDialog({
   onClose,
   onCreated,
 }: Props) {
+  useTypeRegistryVersion(); // the signal / connector pickers list community types
   const addCustomTemplate = useSchematicStore((s) => s.addCustomTemplate);
 
   const [label, setLabel] = useState("");
@@ -152,7 +148,7 @@ export default function CardCreatorDialog({
         className="px-1 py-0.5 text-[10px] rounded border outline-none focus:border-blue-500"
         style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}
       >
-        {ALL_SIGNALS.map((s) => (
+        {signalsByLabel().map((s) => (
           <option key={s} value={s}>{signalLabel(s)}</option>
         ))}
       </select>
@@ -163,7 +159,7 @@ export default function CardCreatorDialog({
         style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}
       >
         <option value="">—</option>
-        {ALL_CONNECTORS.map((c) => (
+        {connectorsByLabel().map((c) => (
           <option key={c} value={c}>{connectorLabel(c)}</option>
         ))}
       </select>

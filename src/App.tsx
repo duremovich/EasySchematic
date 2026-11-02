@@ -72,10 +72,15 @@ import {
   type SnapHandle,
 } from "./connectSnap";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
-import { loadSharedSchematic, checkSession } from "./templateApi";
+import { loadSharedSchematic, checkSession, initCommunityTypes } from "./templateApi";
 import { loadTestSchematicFromUrl } from "./testSchematic/load";
 import { refreshCloudCache } from "./cloudSync";
 import { useTheme } from "./hooks/useTheme";
+
+// Community signals / connectors / device types the open schematic may use: register the
+// last-good copy (or the bundled one) before the first render; DeviceLibrary's
+// fetchTemplates() then refreshes them from GET /types.
+initCommunityTypes();
 
 /** Darkens the canvas area left of x=0 and above y=0, marking the printable origin. */
 function CanvasOriginOverlay() {

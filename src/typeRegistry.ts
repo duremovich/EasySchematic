@@ -96,6 +96,23 @@ export function subscribeTypeRegistry(fn: () => void): () => void {
   return () => listeners.delete(fn);
 }
 
+/**
+ * A value derived from the registry, recomputed only after a registration: for the
+ * module-level lists (sorted pickers, reverse lookups, the acronym set) that used to be
+ * built once at load and so never saw community or user types.
+ */
+export function perRegistryVersion<T>(compute: () => T): () => T {
+  let at = -1;
+  let value: T;
+  return () => {
+    if (at !== version) {
+      value = compute();
+      at = version;
+    }
+    return value;
+  };
+}
+
 /** Read a built-in-keyed table with any id. Own keys only, so an id like "constructor"
  *  can't pick up an Object.prototype member. */
 export function builtinEntry<V>(table: Partial<Record<string, V>>, id: string): V | undefined {
@@ -240,6 +257,16 @@ export function allConnectors(): ConnectorType[] {
 export function allDeviceTypes(): string[] {
   return [...Object.keys(DEVICE_TYPE_TO_CATEGORY), ...pickable(extraDeviceTypes)];
 }
+
+/** `allSignals()` sorted by label, for flat dropdowns. Shared and cached: don't mutate. */
+export const signalsByLabel: () => readonly SignalType[] = perRegistryVersion(() =>
+  allSignals().sort((a, b) => signalLabel(a).localeCompare(signalLabel(b))),
+);
+
+/** `allConnectors()` sorted by label. Shared and cached: don't mutate. */
+export const connectorsByLabel: () => readonly ConnectorType[] = perRegistryVersion(() =>
+  allConnectors().sort((a, b) => connectorLabel(a).localeCompare(connectorLabel(b))),
+);
 
 function mergeGroups<D extends { id: string; group: string; retired?: boolean }>(
   builtin: Record<string, readonly string[]>,

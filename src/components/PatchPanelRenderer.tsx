@@ -11,6 +11,7 @@ import {
 } from "../patchCircuits";
 import { exportPatchPanelStripsPdf } from "../patchPanelPdf";
 import { connectorLabel, signalCssColor } from "../typeRegistry";
+import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
 // Face geometry (px) — tuned to fit two-line port cards under each jack.
 const PITCH = 84;
@@ -26,6 +27,7 @@ const clampStrip = (s: string | undefined) => {
 /** Main area of the Patch Panels page: one block per panel — SVG face + per-port cards —
  *  plus the assign-mode banner and hover circuit tracing. */
 export default function PatchPanelRenderer() {
+  useTypeRegistryVersion(); // community signal labels / colours resolve once registered
   const nodes = useSchematicStore((s) => s.nodes);
   const edges = useSchematicStore((s) => s.edges);
   const cableIdMap = useSchematicStore((s) => s.cableIdMap);
