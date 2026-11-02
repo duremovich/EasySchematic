@@ -251,6 +251,8 @@ SIGNAL_REVERSE.set("aes/ebu", "aes");
 SIGNAL_REVERSE.set("aes3", "aes");
 SIGNAL_REVERSE.set("word clock", "wordclock");
 SIGNAL_REVERSE.set("dmx512", "dmx");
+SIGNAL_REVERSE.set("rs232", "serial");
+SIGNAL_REVERSE.set("rs 232", "serial");
 
 export function parseSignalType(raw: string): SignalType {
   if (!raw) return "custom";

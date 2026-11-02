@@ -74,6 +74,7 @@
   --color-blu-link: #0284c7;  /* sky blue — BSS BLU link audio bus */
   --color-cresnet: #a21caf;   /* magenta — Crestron Cresnet control bus */
   --color-nlight: #ca8a04;    /* golden amber — Acuity nLight lighting control bus */
+  --color-dcp: #14b8a6;       /* teal — Yamaha DCP wall-controller bus */
   --color-sensor: #71717a;    /* zinc gray — ambient sensor input */
   --color-custom: #64748b;    /* cool gray */
 }

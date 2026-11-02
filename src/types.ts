@@ -123,6 +123,7 @@ export type SignalType =
   | "blu-link"
   | "cresnet"
   | "nlight"
+  | "dcp"
   | "sensor"
   | "custom";
 
@@ -1106,6 +1107,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   "blu-link": "var(--color-blu-link)",
   cresnet: "var(--color-cresnet)",
   nlight: "var(--color-nlight)",
+  dcp: "var(--color-dcp)",
   sensor: "var(--color-sensor)",
   custom: "var(--color-custom)",
 };
@@ -1234,7 +1236,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   "contact-closure": "Contact Closure",
   rs422: "RS-422",
   rs485: "RS-485",
-  serial: "Serial",
+  serial: "RS-232 / Serial",
   thunderbolt: "Thunderbolt",
   composite: "Composite",
   "s-video": "S-Video",
@@ -1283,6 +1285,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
   "blu-link": "BLU link",
   cresnet: "Cresnet",
   nlight: "nLight",
+  dcp: "Yamaha DCP",
   sensor: "Sensor",
   custom: "Custom",
 };
@@ -1293,7 +1296,7 @@ export const SIGNAL_GROUPS: Record<string, SignalType[]> = {
   "Video over IP": ["ndi", "srt", "hdbaset", "st2110"],
   "Audio": ["analog-audio", "speaker-level", "bluetooth", "aes", "dante", "avb", "aes67", "madi", "spdif", "adat", "ultranet", "aes50", "stageconnect", "ydif", "soundgrid", "gigaace", "dx5", "dsnake", "slink", "fibreace", "digilink", "extron-exp", "pots", "blu-link"],
   "Network": ["ethernet", "fiber"],
-  "Control / Data": ["dmx", "artnet", "sacn", "rs422", "rs485", "serial", "gpio", "contact-closure", "ir", "midi", "tally", "usb", "thunderbolt", "dxlink", "ebus", "control-voltage", "cresnet", "nlight", "sensor"],
+  "Control / Data": ["dmx", "artnet", "sacn", "rs422", "rs485", "serial", "gpio", "contact-closure", "ir", "midi", "tally", "usb", "thunderbolt", "dxlink", "ebus", "control-voltage", "cresnet", "nlight", "dcp", "sensor"],
   "Sync / Clock": ["genlock", "wordclock", "timecode", "dars", "gps"],
   "Power": ["power", "power-l1", "power-l2", "power-l3", "power-neutral", "power-ground"],
   "Streaming": ["rtmp", "rtsp", "mpeg-ts", "rf"],

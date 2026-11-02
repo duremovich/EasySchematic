@@ -163,6 +163,10 @@ export const DEVICE_TYPE_TO_CATEGORY: Record<string, string> = {
   "power-supply": "Infrastructure",
   "fog-machine": "Lighting",
   "camera-tracker": "Sources",
+  // Standalone wireless DMX transceivers (LumenRadio CRMX, W-DMX). Fixtures
+  // with a built-in receiver stay led-fixture/moving-light; the wireless link
+  // itself is a "dmx" port on a "wireless" connector.
+  "wireless-dmx": "Lighting",
 };
 
 /**

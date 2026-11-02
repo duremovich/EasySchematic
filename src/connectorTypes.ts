@@ -73,6 +73,7 @@ export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
   "blu-link": "rj45",
   cresnet: "terminal-block",
   nlight: "rj45",
+  dcp: "rj45",
   sensor: "phoenix",
   custom: "other",
 };

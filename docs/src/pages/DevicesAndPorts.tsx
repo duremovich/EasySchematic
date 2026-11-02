@@ -88,7 +88,7 @@ export default function DevicesAndPortsPage() {
           <tr><td><strong>Control Voltage</strong></td><td>Amber</td><td>0–10 V control voltage (lighting dimmers, modular synths)</td></tr>
           <tr><td><strong>RS-422</strong></td><td>Deep Violet</td><td>Machine control</td></tr>
           <tr><td><strong>RS-485</strong></td><td>Violet</td><td>Multi-drop serial control</td></tr>
-          <tr><td><strong>Serial</strong></td><td>Gray</td><td>Generic serial</td></tr>
+          <tr><td><strong>RS-232 / Serial</strong></td><td>Gray</td><td>RS-232 serial control (DB9, captive screw); RS-422 and RS-485 have their own types</td></tr>
           <tr><td><strong>Tally</strong></td><td>Rose</td><td>Tally/status indicators</td></tr>
           <tr><td><strong>Art-Net</strong></td><td>Amber</td><td>Lighting network protocol (Ethernet)</td></tr>
           <tr><td><strong>sACN</strong></td><td>Yellow</td><td>Streaming ACN lighting protocol</td></tr>
@@ -97,6 +97,7 @@ export default function DevicesAndPortsPage() {
           <tr><td><strong>DX Link</strong></td><td>Blue</td><td>AMX/Harman control network</td></tr>
           <tr><td><strong>eBUS</strong></td><td>Slate</td><td>Crestron eBUS control bus</td></tr>
           <tr><td><strong>Cresnet</strong></td><td>Magenta</td><td>Crestron Cresnet control bus</td></tr>
+          <tr><td><strong>Yamaha DCP</strong></td><td>Teal</td><td>Yamaha DCP wall-controller link (MTX/MRX/DME7 to DCP panels, over Cat5/RJ45)</td></tr>
           <tr><td><strong>Extron Expansion</strong></td><td>Slate</td><td>Extron proprietary expansion bus</td></tr>
           <tr><td><strong>POTS</strong></td><td>Gray</td><td>Plain old telephone service / analog phone line</td></tr>
           <tr><td><strong>MIDI</strong></td><td>Fuchsia</td><td>Musical instrument digital interface</td></tr>

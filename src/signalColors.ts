@@ -73,6 +73,7 @@ export const DEFAULT_SIGNAL_COLORS: Record<SignalType, string> = {
   "blu-link": "#0284c7",
   cresnet: "#a21caf",
   nlight: "#ca8a04",
+  dcp: "#14b8a6",
   sensor: "#71717a",
   custom: "#64748b",
 };

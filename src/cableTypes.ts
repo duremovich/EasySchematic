@@ -86,6 +86,7 @@ export const SIGNAL_TO_CABLE: Record<SignalType, string> = {
   "blu-link": "BLU link",
   cresnet: "Cresnet",
   nlight: "Ethernet",
+  dcp: "Ethernet",
   sensor: "Sensor",
   custom: "Other",
 };
