@@ -414,6 +414,52 @@ export default function DevicesAndPortsPage() {
       </p>
       <CommunityTypes />
 
+      <h2>Your own custom types</h2>
+      <p>
+        When nothing built-in or community fits (a show-comms line, a WECO power connector, a vendor control bus), make
+        your own. Every signal, connector and device type picker in the device editor and the card creator ends with{" "}
+        <strong>+ New signal type…</strong>, <strong>+ New connector type…</strong> or <strong>+ New device type…</strong>.
+        Choosing it opens a small form; when you create the type, the picker you came from selects it.
+      </p>
+      <ul>
+        <li>
+          <strong>Check the suggestions first.</strong> As you type a name, the form lists existing types that look like
+          the same thing (built-in, community, yours, or ones the open file brought). <strong>Use this</strong> picks one
+          of those instead.
+        </li>
+        <li>
+          <strong>Signals</strong> need a color, a group and a default connector. The color has to read on both the light
+          and dark canvas and must not print as gray in DXF; if it doesn{"'"}t pass, the form offers the nearest color that
+          does (<strong>Use suggested</strong>). The cable name and cable ID prefix are filled in from the name unless you
+          change them.
+        </li>
+        <li>
+          <strong>Connectors</strong> list what they <em>mate with</em> directly and what they <em>adapt to</em> through an
+          adapter cable. A connector always mates with its own kind, so a WECO 3-pin with nothing listed connects only to
+          other WECO 3-pin ports. A run to a connector it adapts to shows in the cable schedule as an adapter run, like
+          {" "}<code>HD-BNC to BNC Adapter</code>.
+        </li>
+        <li><strong>Device types</strong> need a category.</li>
+      </ul>
+      <p>
+        <strong>Files carry their types.</strong> Your types are kept in this browser, and every file you save includes the
+        definitions of the custom types it uses. A coworker who opens the file sees the same names and colors without
+        having your types. If their library has a type with the same identity but a different definition, the file{"'"}s
+        version is used in that drawing and their library keeps its own. Device archives (File ▸ Save Device Archive)
+        include your types too, and devices imported into your library bring the types their ports use.
+      </p>
+      <p>
+        <strong>Managing them:</strong> <strong>Preferences ▸ Custom types</strong> lists your types. <strong>Edit</strong>{" "}
+        changes the name, color, group and the other fields, and the canvas updates right away. <strong>Delete</strong> works
+        only when no port, connection or device in the open drawing or your device library uses the type, and no other type
+        of yours names it; otherwise it tells you what still uses it. The same tab lists types the open file brought that
+        your library doesn{"'"}t have, with <strong>Add to my library</strong> so you can use them in other drawings.
+      </p>
+      <p>
+        Exports use your types like built-in ones: the PDF, the cable schedule and the reports show the name and color, and
+        the DXF puts each custom signal on its own colored layer named after it.
+      </p>
+
       <h2>Patch panels</h2>
       <p>
         Patch panels (RJ45 panels, BNC video bays, XLR audio bays, fiber panels, TT bantam patch bays) are bidirectional
