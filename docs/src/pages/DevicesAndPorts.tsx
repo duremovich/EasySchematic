@@ -182,6 +182,7 @@ export default function DevicesAndPortsPage() {
         <tbody>
           <tr><td colSpan={2}><strong>Video</strong></td></tr>
           <tr><td>BNC</td><td>Coaxial</td></tr>
+          <tr><td>HD-BNC</td><td>Coaxial (high-density; reaches BNC through an adapter cable)</td></tr>
           <tr><td>HDMI</td><td>HDMI</td></tr>
           <tr><td>DisplayPort</td><td>DisplayPort</td></tr>
           <tr><td>DVI</td><td>DVI</td></tr>
@@ -216,6 +217,7 @@ export default function DevicesAndPortsPage() {
           <tr><td>ST Fiber</td><td>ST Fiber</td></tr>
           <tr><td>opticalCON</td><td>opticalCON Fiber</td></tr>
           <tr><td>QSFP</td><td>QSFP Fiber</td></tr>
+          <tr><td>QSFP-DD</td><td>QSFP-DD Fiber</td></tr>
           <tr><td>MPO/MTP</td><td>MPO Fiber</td></tr>
           <tr><td>RJ11</td><td>RJ11</td></tr>
           <tr><td>RJ12</td><td>RJ12</td></tr>

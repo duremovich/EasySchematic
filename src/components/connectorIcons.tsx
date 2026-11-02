@@ -435,6 +435,8 @@ const CONNECTOR_SPECS: Partial<Record<ConnectorType, ConnectorSpec>> = {
   },
 
   // ── Circular audio ──
+  // HD-BNC: roughly half the shell of a full BNC, sized for dense SDI cards.
+  "hd-bnc": { widthMm: 8.0, heightMm: 8.0, render: (p) => renderBNC(8.0, p) },
   "bnc": {
     widthMm: 14.5, heightMm: 14.5,
     render: (p) => {
@@ -763,6 +765,8 @@ const CONNECTOR_SPECS: Partial<Record<ConnectorType, ConnectorSpec>> = {
   "toslink":        { widthMm: 7.2,   heightMm: 9.8,   render: renderToslink },
   "sfp":            { widthMm: 13.4,  heightMm: 8.5,   render: (p) => renderRectangle(13.4, 8.5, 0.5, p) },
   "qsfp":           { widthMm: 18.4,  heightMm: 8.5,   render: (p) => renderRectangle(18.4, 8.5, 0.5, p) },
+  // QSFP-DD keeps the QSFP cage footprint (it is backward compatible); the extra contact row is inside.
+  "qsfp-dd":        { widthMm: 18.4,  heightMm: 8.5,   render: (p) => renderRectangle(18.4, 8.5, 0.5, p) },
   "mpo":            { widthMm: 11.5,  heightMm: 9.5,   render: (p) => renderRectangle(11.5, 9.5, 1.5, p) },
   "opticalcon":     { widthMm: 27.7,  heightMm: 26.5,  render: (p) => renderNeutrikD(27.7, 2.5, 27.7, 26.5, p) },
 

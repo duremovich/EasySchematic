@@ -1,7 +1,7 @@
 import type { Node, Edge } from "@xyflow/react";
 
 export type ConnectorType =
-  | "bnc" | "hdmi" | "displayport" | "vga"
+  | "bnc" | "hd-bnc" | "hdmi" | "displayport" | "vga"
   | "xlr-3" | "xlr-4" | "xlr-5" | "trs-quarter" | "ts-quarter" | "trs-eighth" | "combo-xlr-trs"
   | "rj45" | "ethercon" | "sfp" | "lc" | "sc" | "st"
   | "usb-a" | "usb-b" | "usb-c"
@@ -10,7 +10,7 @@ export type ConnectorType =
   | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel"
   | "banana" | "binding-post" | "binding-post-banana" | "dvi" | "mini-xlr" | "opticalcon"
   | "l5-20" | "l6-20" | "l6-30" | "l21-30" | "cam-lok" | "powercon-true1"
-  | "qsfp" | "qsfp28" | "mpo" | "digilink" | "pcie-6pin"
+  | "qsfp" | "qsfp28" | "qsfp-dd" | "mpo" | "digilink" | "pcie-6pin"
   | "mini-din-4" | "mini-din-7" | "mini-din-8"
   | "mini-hdmi" | "micro-hdmi" | "mini-displayport"
   | "rj11" | "rj12" | "usb-mini" | "usb-micro" | "trs-2.5mm"
@@ -1114,6 +1114,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
 
 export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   bnc: "BNC",
+  "hd-bnc": "HD-BNC",
   hdmi: "HDMI",
   displayport: "DisplayPort",
   vga: "VGA (DB15)",
@@ -1179,6 +1180,7 @@ export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
   rj12: "RJ12",
   qsfp: "QSFP+",
   qsfp28: "QSFP28",
+  "qsfp-dd": "QSFP-DD",
   mpo: "Fiber - MPO/MTP",
   digilink: "DigiLink",
   "pcie-6pin": "PCIe 6-pin Aux",
@@ -1305,9 +1307,9 @@ export const SIGNAL_GROUPS: Record<string, SignalType[]> = {
 
 /** Connector types organized by functional group (for searchable dropdowns) */
 export const CONNECTOR_GROUPS: Record<string, ConnectorType[]> = {
-  "Video": ["bnc", "hdmi", "mini-hdmi", "micro-hdmi", "displayport", "mini-displayport", "dvi", "vga"],
+  "Video": ["bnc", "hd-bnc", "hdmi", "mini-hdmi", "micro-hdmi", "displayport", "mini-displayport", "dvi", "vga"],
   "Audio": ["xlr-3", "xlr-4", "xlr-5", "mini-xlr", "combo-xlr-trs", "trs-quarter", "ts-quarter", "trs-eighth", "trs-2.5mm", "rca", "din-5", "mini-din-4", "mini-din-7", "mini-din-8", "toslink"],
-  "Network / Data": ["rj45", "ethercon", "sfp", "lc", "sc", "st", "opticalcon", "qsfp", "qsfp28", "mpo", "rj11", "rj12"],
+  "Network / Data": ["rj45", "ethercon", "sfp", "lc", "sc", "st", "opticalcon", "qsfp", "qsfp28", "qsfp-dd", "mpo", "rj11", "rj12"],
   "USB": ["usb-a", "usb-b", "usb-c", "usb-mini", "usb-micro"],
   "D-Sub / Serial": ["db9", "db15", "db25", "db37", "db7w2", "lemo-5pin"],
   "Power": ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "powercon-true1", "edison", "schuko", "french-power", "europlug", "uk-power", "barrel", "l5-20", "l6-20", "l6-30", "l21-30", "cam-lok", "socapex", "pcie-6pin", "lemo-2pin", "lemo-4pin", "kycon-4pin", "d-tap", "v-mount"],

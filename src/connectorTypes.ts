@@ -87,6 +87,9 @@ export interface ConnectorAcceptance {
 export const CONNECTOR_ACCEPTS: Partial<Record<ConnectorType, ConnectorAcceptance>> = {
   "combo-xlr-trs": { native: ["xlr-3", "trs-quarter", "ts-quarter"] },
   "ethercon":      { native: ["rj45"] },
+  // HD-BNC is the high-density 75-ohm coax used on dense SDI cards. It reaches
+  // full-size BNC through an HD-BNC to BNC cable, never directly.
+  "hd-bnc":        { adapter: ["bnc"] },
   // Fiber terminations are treated as interchangeable. LC, SC and ST all land on
   // the same 1.25/2.5mm ferrule families and in the field you bridge whatever
   // mismatch you find with a hybrid patch cord, so warning on every mixed pair
@@ -234,6 +237,7 @@ export function needsAdapter(a: ConnectorType | undefined, b: ConnectorType | un
 /** Maps connector type to cable label for pack lists */
 export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   bnc: "BNC",
+  "hd-bnc": "HD-BNC",
   hdmi: "HDMI",
   displayport: "DisplayPort",
   vga: "VGA",
@@ -304,6 +308,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
   "powercon-true1": "powerCON TRUE1",
   qsfp: "QSFP Fiber",
   qsfp28: "QSFP28 Fiber",
+  "qsfp-dd": "QSFP-DD Fiber",
   mpo: "MPO Fiber",
   wireless: "Wireless",
   "usb-micro": "Micro USB",
@@ -599,6 +604,7 @@ export const CONNECTOR_GENDER: Partial<Record<ConnectorType, Gender | { input: G
   "xlr-5":            { input: "female", output: "male" },
   "mini-xlr":         { input: "female", output: "male" },
   bnc:                { input: "female", output: "female" }, // device side is female; cable BNCs are male
+  "hd-bnc":           { input: "female", output: "female" },
   speakon:            { input: "female", output: "female" }, // chassis-mount is typically female on both
   "powercon":         { input: "male",   output: "female" }, // input/inlet = male (NAC3MPA), output = female (NAC3FPB)
   "powercon-true1":   { input: "male",   output: "female" },
@@ -635,7 +641,7 @@ export const CONNECTORS_WITH_GENDER_VARIATION: Set<ConnectorType> = new Set([
   "edison", "schuko", "french-power", "europlug", "uk-power", "l5-20", "l6-20", "l6-30", "l21-30",
   "cam-lok", "socapex", "multipin",
   "speakon", "banana", "binding-post", "binding-post-banana",
-  "bnc",
+  "bnc", "hd-bnc",
   "trs-quarter", "ts-quarter", "trs-eighth", "trs-2.5mm",
 ]);
 
