@@ -8,6 +8,7 @@
  * best field per candidate. Shown inline as suggestions — never a blocker.
  */
 import { DEVICE_TYPE_ALIASES, DEVICE_TYPE_LABELS, DEVICE_TYPE_TO_CATEGORY } from "../deviceTypeCategories";
+import { builtinConnectors, builtinSignals, connectorGroup, connectorLabel, signalAliases, signalGroup, signalLabel } from "../typeRegistry";
 import type { CustomTypeKind, CustomTypeRecord } from "./model";
 
 export type TypeSource = "built-in" | "community";
@@ -22,6 +23,8 @@ export interface TypeCandidate {
   retired?: boolean;
   /** Device types: the category, for display. */
   category?: string;
+  /** Signals and connectors: the group, for display. */
+  group?: string;
 }
 
 export interface TypeSuggestion extends TypeCandidate {
@@ -153,4 +156,56 @@ export function deviceTypeCandidates(community: readonly CustomTypeRecord[]): Ty
     out.push({ kind: "device", id: r.id, label: r.label, source: "community", category, retired: r.status === "retired" });
   }
   return out;
+}
+
+function aliasIndex(aliases: Record<string, string>): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const [alias, target] of Object.entries(aliases)) out.set(target, [...(out.get(target) ?? []), alias]);
+  return out;
+}
+
+function communityOf(kind: "signal" | "connector", community: readonly CustomTypeRecord[]): TypeCandidate[] {
+  return community
+    .filter((r) => r.kind === kind)
+    .map((r) => ({
+      kind,
+      id: r.id,
+      label: r.label,
+      source: "community" as const,
+      group: typeof r.data?.group === "string" ? r.data.group : undefined,
+      retired: r.status === "retired",
+    }));
+}
+
+/** Every signal a moderator could mean: built-ins (with alias spellings like "rs232") + community. */
+export function signalTypeCandidates(community: readonly CustomTypeRecord[]): TypeCandidate[] {
+  const aliases = aliasIndex(signalAliases());
+  const builtins = builtinSignals().map((id) => ({
+    kind: "signal" as const,
+    id,
+    label: signalLabel(id),
+    source: "built-in" as const,
+    group: signalGroup(id),
+    aliases: aliases.get(id),
+  }));
+  return [...builtins, ...communityOf("signal", community)];
+}
+
+/** Every connector a moderator could mean: built-ins + community. Connectors have no alias table. */
+export function connectorTypeCandidates(community: readonly CustomTypeRecord[]): TypeCandidate[] {
+  const builtins = builtinConnectors().map((id) => ({
+    kind: "connector" as const,
+    id,
+    label: connectorLabel(id),
+    source: "built-in" as const,
+    group: connectorGroup(id),
+  }));
+  return [...builtins, ...communityOf("connector", community)];
+}
+
+/** The did-you-mean candidate list for any kind. */
+export function typeCandidates(kind: CustomTypeKind, community: readonly CustomTypeRecord[]): TypeCandidate[] {
+  if (kind === "signal") return signalTypeCandidates(community);
+  if (kind === "connector") return connectorTypeCandidates(community);
+  return deviceTypeCandidates(community);
 }

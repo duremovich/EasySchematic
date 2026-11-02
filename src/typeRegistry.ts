@@ -2,9 +2,9 @@
  * The one lookup layer for signal, connector and device types.
  *
  * Built-ins come from code (`types.ts`, `builtinTypeTables.ts`, `deviceTypeCategories.ts`).
- * Community types (P4, fetched from `GET /types`) and user types (P5, the user's library and
- * the open file) are registered into the `extra*` maps below; built-ins always win, because
- * community and user ids are unique against them. See .claude/plans/custom-types.md.
+ * Community types (fetched from `GET /types`: the devices site since P3, the app in P4) and
+ * user types (P5, the user's library and the open file) are registered with `registerTypes`;
+ * built-ins always win, because community and user ids are unique against them. See .claude/plans/custom-types.md.
  *
  * Every getter takes any id and never throws: an id nobody defined — an old, offline or
  * self-hosted client meeting a newer type — degrades to a grey, raw-id, "Other" fallback
@@ -27,12 +27,14 @@ import {
   CONNECTOR_TO_CABLE,
   DEFAULT_CONNECTOR,
   DEFAULT_SIGNAL_COLORS,
+  SIGNAL_ALIASES,
   SIGNAL_PREFIX,
   SIGNAL_TO_CABLE,
   type ConnectorAcceptance,
   type ConnectorGenderRule,
 } from "./builtinTypeTables";
 import { DEVICE_TYPE_LABELS, DEVICE_TYPE_TO_CATEGORY } from "./deviceTypeCategories";
+import type { ConnectorTypeDef, DeviceTypeDef, SignalTypeDef } from "./customTypes/model";
 
 export type { ConnectorAcceptance, ConnectorGenderRule };
 
@@ -43,40 +45,56 @@ export const UNKNOWN_CONNECTOR: ConnectorType = "other";
 /** Cable-ID prefix for a signal with none (the type-prefix naming scheme's catch-all). */
 export const UNKNOWN_CABLE_PREFIX = "X";
 
-/** A non-built-in signal, as P4/P5 will register it. Colors are literal hex: there is no
- *  `--color-<id>` CSS variable for anything but built-ins. */
-export interface SignalTypeDef {
-  id: string;
-  label: string;
-  color: string;
-  group: string;
-  defaultConnector: ConnectorType;
-  cable: string;
-  cablePrefix: string;
+export type { SignalTypeDef, ConnectorTypeDef, DeviceTypeDef };
+
+/** Where a registered definition came from. Each source is one replaceable layer. */
+export type TypeSource = "community" | "user";
+
+export interface TypeDefs {
+  signals?: readonly SignalTypeDef[];
+  connectors?: readonly ConnectorTypeDef[];
+  deviceTypes?: readonly DeviceTypeDef[];
 }
 
-/** A non-built-in connector. `matesWith` / `adaptsTo` mirror CONNECTOR_ACCEPTS' native /
- *  adapter lists; mating checks read both ends, so naming a built-in here is enough. */
-export interface ConnectorTypeDef {
-  id: string;
-  label: string;
-  group: string;
-  cable: string;
-  gender?: ConnectorGenderRule;
-  matesWith?: ConnectorType[];
-  adaptsTo?: ConnectorType[];
-}
-
-export interface DeviceTypeDef {
-  id: string;
-  label: string;
-  category: string;
-}
-
-// The merge point for community (P4) and user (P5) definitions. Empty until then.
+// The merge point for community (`GET /types`) and user (P5) definitions: one layer per
+// source, flattened into the extra* maps the getters read. Built-ins never enter here.
+const layers = new Map<TypeSource, TypeDefs>();
 const extraSignals = new Map<string, SignalTypeDef>();
 const extraConnectors = new Map<string, ConnectorTypeDef>();
 const extraDeviceTypes = new Map<string, DeviceTypeDef>();
+let version = 0;
+const listeners = new Set<() => void>();
+
+/**
+ * Replace one source's definitions (pass `{}` to clear it). A definition whose id is a
+ * built-in is ignored: built-ins win, and a type graduated into code keeps its built-in
+ * entry. Bumps `typeRegistryVersion()` and notifies subscribers, so pickers re-render.
+ */
+export function registerTypes(source: TypeSource, defs: TypeDefs): void {
+  layers.set(source, defs);
+  extraSignals.clear();
+  extraConnectors.clear();
+  extraDeviceTypes.clear();
+  for (const src of ["community", "user"] as const) {
+    const l = layers.get(src);
+    if (!l) continue;
+    for (const d of l.signals ?? []) if (!isBuiltinSignal(d.id)) extraSignals.set(d.id, d);
+    for (const d of l.connectors ?? []) if (!isBuiltinConnector(d.id)) extraConnectors.set(d.id, d);
+    for (const d of l.deviceTypes ?? []) if (!hasOwn(DEVICE_TYPE_TO_CATEGORY, d.id)) extraDeviceTypes.set(d.id, d);
+  }
+  version++;
+  for (const fn of listeners) fn();
+}
+
+/** Increments on every registration; a cheap snapshot for `useSyncExternalStore`. */
+export function typeRegistryVersion(): number {
+  return version;
+}
+
+export function subscribeTypeRegistry(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
 
 /** Read a built-in-keyed table with any id. Own keys only, so an id like "constructor"
  *  can't pick up an Object.prototype member. */
@@ -173,7 +191,10 @@ export function connectorCable(id: ConnectorType): string {
 
 /** Device-side gender convention; undefined when genderless or unknown. */
 export function connectorGender(id: ConnectorType): ConnectorGenderRule | undefined {
-  return builtinEntry(CONNECTOR_GENDER, id) ?? extraConnectors.get(id)?.gender;
+  const builtin = builtinEntry(CONNECTOR_GENDER, id);
+  if (builtin) return builtin;
+  const g = extraConnectors.get(id)?.gender;
+  return g === "male" || g === "female" ? g : undefined;
 }
 
 const NO_ACCEPTANCE: Readonly<ConnectorAcceptance> = Object.freeze({});
@@ -200,26 +221,33 @@ export function deviceTypeCategory(id: string): string {
 
 // ── Pickers ─────────────────────────────────────────────────────────
 
-/** Every signal id, built-ins first in declaration order. */
+// Picker lists leave retired types out; the getters above still resolve them.
+function pickable<D extends { id: string; retired?: boolean }>(extra: Map<string, D>): string[] {
+  const out: string[] = [];
+  for (const d of extra.values()) if (!d.retired) out.push(d.id);
+  return out;
+}
+
+/** Every pickable signal id, built-ins first in declaration order. */
 export function allSignals(): SignalType[] {
-  return [...Object.keys(SIGNAL_LABELS), ...extraSignals.keys()];
+  return [...Object.keys(SIGNAL_LABELS), ...pickable(extraSignals)];
 }
 
 export function allConnectors(): ConnectorType[] {
-  return [...Object.keys(CONNECTOR_LABELS), ...extraConnectors.keys()];
+  return [...Object.keys(CONNECTOR_LABELS), ...pickable(extraConnectors)];
 }
 
 export function allDeviceTypes(): string[] {
-  return [...Object.keys(DEVICE_TYPE_TO_CATEGORY), ...extraDeviceTypes.keys()];
+  return [...Object.keys(DEVICE_TYPE_TO_CATEGORY), ...pickable(extraDeviceTypes)];
 }
 
-function mergeGroups<D extends { id: string; group: string }>(
+function mergeGroups<D extends { id: string; group: string; retired?: boolean }>(
   builtin: Record<string, readonly string[]>,
   extra: Map<string, D>,
 ): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const [group, ids] of Object.entries(builtin)) out[group] = [...ids];
-  for (const def of extra.values()) (out[def.group] ??= []).push(def.id);
+  for (const def of extra.values()) if (!def.retired) (out[def.group] ??= []).push(def.id);
   return out;
 }
 
@@ -231,4 +259,24 @@ export function signalGroups(): Record<string, SignalType[]> {
 /** Connector ids by functional group, in CONNECTOR_GROUPS order. */
 export function connectorGroups(): Record<string, ConnectorType[]> {
   return mergeGroups(CONNECTOR_GROUPS, extraConnectors);
+}
+
+// ── Built-in sets (validating new community / user types) ───────────
+
+/** Built-in signal ids only, whatever is registered. */
+export function builtinSignals(): BuiltinSignalType[] {
+  return Object.keys(SIGNAL_LABELS) as BuiltinSignalType[];
+}
+
+export function builtinConnectors(): BuiltinConnectorType[] {
+  return Object.keys(CONNECTOR_LABELS) as BuiltinConnectorType[];
+}
+
+/** The fixed group names a custom signal / connector may join, in picker order. */
+export const SIGNAL_GROUP_NAMES: readonly string[] = Object.keys(SIGNAL_GROUPS);
+export const CONNECTOR_GROUP_NAMES: readonly string[] = Object.keys(CONNECTOR_GROUPS);
+
+/** Other spellings of built-in signals ("rs232" → serial). Lower case; may hold spaces. */
+export function signalAliases(): Readonly<Record<string, BuiltinSignalType>> {
+  return SIGNAL_ALIASES;
 }

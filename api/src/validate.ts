@@ -1,4 +1,6 @@
 import { DEVICE_TYPE_TO_CATEGORY, DEVICE_TYPE_ALIASES } from "../../src/deviceTypeCategories";
+import { isBuiltinConnector, isBuiltinSignal } from "../../src/typeRegistry";
+import { unknownPortTypes, type PortTypeIds } from "../../src/customTypes";
 
 interface SlotInput {
   id: string;
@@ -125,6 +127,15 @@ export function needsCommunityDeviceTypeLookup(deviceType: unknown): deviceType 
   return typeof deviceType === "string"
     && !Object.hasOwn(DEVICE_TYPE_TO_CATEGORY, deviceType)
     && !Object.hasOwn(DEVICE_TYPE_ALIASES, deviceType);
+}
+
+/**
+ * Port signal / connector ids that aren't built in (custom-types P3). The
+ * approval route looks these few up in D1 `custom_types`; whatever is still
+ * unknown becomes a warning, never a refusal — port strings stay lenient.
+ */
+export function nonBuiltinPortTypes(ports: unknown): PortTypeIds {
+  return unknownPortTypes(ports, { signal: isBuiltinSignal, connector: isBuiltinConnector });
 }
 
 export function validateTemplate(body: unknown): ValidationResult {

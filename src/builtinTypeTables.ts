@@ -480,6 +480,36 @@ export const SIGNAL_TO_CABLE: Record<BuiltinSignalType, string> = {
   custom: "Other",
 };
 
+/**
+ * Other spellings of built-in signals: the CSV import's fuzzy parser and the custom-type
+ * "did you mean" / reserved-id checks read these. Keys are lower case and may hold spaces;
+ * order matters to the CSV parser's substring pass.
+ */
+export const SIGNAL_ALIASES: Record<string, BuiltinSignalType> = {
+  audio: "analog-audio",
+  analog: "analog-audio",
+  network: "ethernet",
+  cat6: "ethernet",
+  cat5e: "ethernet",
+  cat5: "ethernet",
+  cat6a: "ethernet",
+  optical: "fiber",
+  fibre: "fiber",
+  "3g-sdi": "sdi",
+  "12g-sdi": "sdi",
+  "hd-sdi": "sdi",
+  dp: "displayport",
+  tb: "thunderbolt",
+  "usb-c": "usb",
+  "digital audio": "aes",
+  "aes/ebu": "aes",
+  aes3: "aes",
+  "word clock": "wordclock",
+  dmx512: "dmx",
+  rs232: "serial",
+  "rs 232": "serial",
+};
+
 /** Prefix letter for each signal type when using type-prefix cable naming */
 export const SIGNAL_PREFIX: Record<BuiltinSignalType, string> = {
   sdi: "S",

@@ -4,10 +4,10 @@ import { createMiddleware } from "hono/factory";
 import { rowToTemplate, rowToSummary, templateToRow } from "./db";
 import { authMiddleware, sessionMiddleware, requireSession, requireModerator, requireModeratorOrToken, requireAdmin, requireAdminOrToken } from "./auth";
 import type { Env } from "./auth";
-import { validateTemplate, checkApprovalDeviceType, needsCommunityDeviceTypeLookup } from "./validate";
+import { validateTemplate, checkApprovalDeviceType, needsCommunityDeviceTypeLookup, nonBuiltinPortTypes } from "./validate";
 import type { CommunityDeviceTypes } from "./validate";
-import { validateNewCustomType, validateCustomTypeUpdate, isCustomTypeKind } from "../../src/customTypes";
-import type { CustomTypeKind, CustomTypeRecord, CustomTypeStatus } from "../../src/customTypes";
+import { validateNewCustomType, validateCustomTypeUpdate, isCustomTypeKind, unknownPortTypeWarnings } from "../../src/customTypes";
+import type { CustomTypeKind, CustomTypeRecord, CustomTypeStatus, ExistingCustomType } from "../../src/customTypes";
 import { checkRateLimit, cleanupExpiredRateLimits } from "./rateLimiter";
 
 const app = new Hono<Env>();
@@ -1082,6 +1082,25 @@ app.post("/submissions/:id/approve", async (c) => {
   );
   if (typeErr) return c.json({ error: typeErr }, 400);
 
+  // custom-types P3: port signal / connector strings stay lenient, but ids that
+  // are neither built in nor community types come back as warnings for the
+  // review UI. Only the non-built-in ids (usually none) cost a lookup.
+  const portTypes = nonBuiltinPortTypes((data as { ports?: unknown }).ports);
+  if (portTypes.signals.length || portTypes.connectors.length) {
+    const asked = [
+      ...portTypes.signals.map((id) => ["signal", id]),
+      ...portTypes.connectors.map((id) => ["connector", id]),
+    ].slice(0, 45); // D1 caps bound parameters at 100; past that they simply stay warnings
+    const { results } = await db
+      .prepare(`SELECT kind, id FROM custom_types WHERE (kind, id) IN (VALUES ${asked.map(() => "(?, ?)").join(", ")})`)
+      .bind(...asked.flat())
+      .all<{ kind: string; id: string }>();
+    const found = new Set(results.map((r) => `${r.kind}:${r.id}`));
+    portTypes.signals = portTypes.signals.filter((id) => !found.has(`signal:${id}`));
+    portTypes.connectors = portTypes.connectors.filter((id) => !found.has(`connector:${id}`));
+  }
+  const warnings = unknownPortTypeWarnings(portTypes);
+
   let templateId: string | null = null;
   if (submission.action === "create") {
     // Create new template with attribution
@@ -1200,7 +1219,13 @@ app.post("/submissions/:id/approve", async (c) => {
     }
   }
 
-  return c.json({ ok: true, status: "approved" }, 200, NO_CACHE_HEADERS);
+  return c.json(
+    warnings.length
+      ? { ok: true, status: "approved", warnings, unknownTypes: portTypes }
+      : { ok: true, status: "approved" },
+    200,
+    NO_CACHE_HEADERS,
+  );
 });
 
 app.post("/submissions/:id/reject", async (c) => {
@@ -2294,6 +2319,79 @@ async function loadCustomType(db: D1Database, kind: string, id: string): Promise
   return row ? rowToCustomType(row) : null;
 }
 
+/** Every stored signal and connector type, for the cross-checks. Mod-only write paths. */
+async function loadSignalAndConnectorTypes(db: D1Database): Promise<ExistingCustomType[]> {
+  const { results } = await db
+    .prepare("SELECT kind, id, status, data FROM custom_types WHERE kind IN ('signal', 'connector')")
+    .all<{ kind: CustomTypeKind; id: string; status: CustomTypeStatus; data: string }>();
+  return results.map((r) => {
+    let data: Record<string, unknown> = {};
+    try {
+      const parsed = JSON.parse(r.data);
+      if (parsed && typeof parsed === "object") data = parsed;
+    } catch {
+      // a malformed row still holds its id
+    }
+    return { kind: r.kind, id: r.id, status: r.status, data };
+  });
+}
+
+/**
+ * How many templates (flagged ones included) and open submissions use a type,
+ * plus — for a connector — the community types that name it. Port-level for
+ * signals and connectors: `instr` skips rows that can't mention the id before
+ * any JSON is parsed. Mod-only (DELETE), so the scan is acceptable.
+ */
+async function countTypeReferences(
+  db: D1Database,
+  kind: CustomTypeKind,
+  id: string,
+): Promise<{ templates: number; submissions: number; types: string[] }> {
+  if (kind === "device") {
+    const refs = await db
+      .prepare(
+        `SELECT
+           (SELECT COUNT(*) FROM templates WHERE device_type = ?1) AS templates,
+           (SELECT COUNT(*) FROM submissions
+              WHERE status IN ('pending', 'deferred')
+                AND (CASE WHEN json_valid(data) THEN json_extract(data, '$.deviceType') END) = ?1) AS submissions`,
+      )
+      .bind(id)
+      .first<{ templates: number; submissions: number }>();
+    return { templates: refs?.templates ?? 0, submissions: refs?.submissions ?? 0, types: [] };
+  }
+  // CASE guards keep json_each / json_extract off malformed JSON and non-object ports.
+  const field = (f: string) => `(CASE WHEN p.type = 'object' THEN json_extract(p.value, '$.${f}') END)`;
+  const portMatch = kind === "signal"
+    ? `${field("signalType")} = ?1`
+    : `?1 IN (${field("connectorType")}, ${field("rearConnectorType")}, ${field("frontConnectorType")})`;
+  const refs = await db
+    .prepare(
+      `SELECT
+         (SELECT COUNT(*) FROM templates t
+            WHERE instr(t.ports, ?2) > 0
+              AND EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(t.ports) THEN t.ports ELSE '[]' END) p
+                          WHERE ${portMatch})) AS templates,
+         (SELECT COUNT(*) FROM submissions s
+            WHERE s.status IN ('pending', 'deferred')
+              AND instr(s.data, ?2) > 0
+              AND EXISTS (SELECT 1 FROM json_each(CASE WHEN json_valid(s.data) THEN s.data ELSE '{}' END, '$.ports') p
+                          WHERE ${portMatch})) AS submissions`,
+    )
+    .bind(id, JSON.stringify(id))
+    .first<{ templates: number; submissions: number }>();
+  const types: string[] = [];
+  if (kind === "connector") {
+    for (const r of await loadSignalAndConnectorTypes(db)) {
+      const d = r.data ?? {};
+      const names = (v: unknown) => Array.isArray(v) && v.includes(id);
+      if (r.kind === "connector" && r.id !== id && (names(d.matesWith) || names(d.adaptsTo))) types.push(`connector ${r.id}`);
+      if (r.kind === "signal" && d.defaultConnector === id) types.push(`signal ${r.id}`);
+    }
+  }
+  return { templates: refs?.templates ?? 0, submissions: refs?.submissions ?? 0, types };
+}
+
 app.get("/types", async (c) => {
   const kindParam = c.req.query("kind");
   if (kindParam !== undefined && !isCustomTypeKind(kindParam)) {
@@ -2327,14 +2425,23 @@ app.post("/types", async (c) => {
 
   const body = await c.req.json().catch(() => null);
   const b = (body ?? {}) as { kind?: unknown; id?: unknown };
-  const existing = isCustomTypeKind(b.kind) && typeof b.id === "string"
-    ? (await db
-        .prepare("SELECT kind, id, status FROM custom_types WHERE kind = ? AND id = ?")
-        .bind(b.kind, b.id.toLowerCase())
-        .all<{ kind: CustomTypeKind; id: string; status: CustomTypeStatus }>()).results
-    : [];
+  // Device types only need their own id checked. Signals and connectors are
+  // cross-checked against the stored ones (cable-ID prefix, mating lists,
+  // default connector): a small, mod-only read of those two kinds.
+  let existing: ExistingCustomType[] = [];
+  if (b.kind === "signal" || b.kind === "connector") {
+    existing = await loadSignalAndConnectorTypes(db);
+  } else if (isCustomTypeKind(b.kind) && typeof b.id === "string") {
+    existing = (await db
+      .prepare("SELECT kind, id, status FROM custom_types WHERE kind = ? AND id = ?")
+      .bind(b.kind, b.id.toLowerCase())
+      .all<{ kind: CustomTypeKind; id: string; status: CustomTypeStatus }>()).results;
+  }
   const v = validateNewCustomType(body, existing);
-  if (!v.ok) return c.json({ error: v.error }, existing.length ? 409 : 400);
+  if (!v.ok) {
+    const taken = typeof b.id === "string" && existing.some((r) => r.kind === b.kind && r.id === (b.id as string).toLowerCase());
+    return c.json({ error: v.error, ...(v.suggestedColor ? { suggestedColor: v.suggestedColor } : {}) }, taken ? 409 : 400);
+  }
 
   const t = v.value;
   try {
@@ -2363,8 +2470,9 @@ app.put("/types/:kind/:id", async (c) => {
   if (!current) return c.json({ error: "Type not found" }, 404);
 
   const body = await c.req.json().catch(() => null);
-  const v = validateCustomTypeUpdate(current, body);
-  if (!v.ok) return c.json({ error: v.error }, 400);
+  const existing = current.kind === "device" ? [] : await loadSignalAndConnectorTypes(db);
+  const v = validateCustomTypeUpdate(current, body, existing);
+  if (!v.ok) return c.json({ error: v.error, ...(v.suggestedColor ? { suggestedColor: v.suggestedColor } : {}) }, 400);
   const u = v.value;
 
   await db
@@ -2391,30 +2499,21 @@ app.delete("/types/:kind/:id", async (c) => {
   if (!current) return c.json({ error: "Type not found" }, 404);
 
   // Guardrail 3: ids are permanent once used. Anything still pointing at the
-  // type (templates, including ones flagged for deletion, and open
-  // submissions) means retire, not delete. P3 adds port-level counts for the
-  // signal and connector kinds.
-  if (current.kind !== "device") {
-    return c.json({ error: `Deleting community ${current.kind} types is not supported yet. Retire it instead.` }, 409);
-  }
-  const refs = await db
-    .prepare(
-      `SELECT
-         (SELECT COUNT(*) FROM templates WHERE device_type = ?1) AS templates,
-         (SELECT COUNT(*) FROM submissions
-            WHERE status IN ('pending', 'deferred')
-              AND (CASE WHEN json_valid(data) THEN json_extract(data, '$.deviceType') END) = ?1) AS submissions`,
-    )
-    .bind(current.id)
-    .first<{ templates: number; submissions: number }>();
-  const templates = refs?.templates ?? 0;
-  const submissions = refs?.submissions ?? 0;
-  if (templates > 0 || submissions > 0) {
+  // type (templates, including ones flagged for deletion; open submissions; for
+  // a connector, other community types naming it) means retire, not delete.
+  const { templates, submissions, types } = await countTypeReferences(db, current.kind, current.id);
+  if (templates > 0 || submissions > 0 || types.length > 0) {
+    const parts = [
+      `${templates} device${templates === 1 ? "" : "s"}`,
+      `${submissions} open submission${submissions === 1 ? "" : "s"}`,
+      ...(types.length ? [`${types.length} community type${types.length === 1 ? "" : "s"} (${types.join(", ")})`] : []),
+    ];
     return c.json(
       {
-        error: `"${current.id}" is used by ${templates} device${templates === 1 ? "" : "s"} and ${submissions} open submission${submissions === 1 ? "" : "s"}. Retire it instead: it leaves the pickers but existing devices keep rendering.`,
+        error: `"${current.id}" is used by ${parts.join(" and ")}. Retire it instead: it leaves the pickers but existing devices keep rendering.`,
         templates,
         submissions,
+        types,
       },
       409,
     );

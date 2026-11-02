@@ -6,7 +6,7 @@
 import type { SignalType, Port, DeviceTemplate, SchematicNode, DeviceNode, ConnectionEdge } from "./types";
 import { normalizeHeaderColor } from "./deviceHeaderColor";
 import { scoreTemplate } from "./templateSearch";
-import { allSignals, defaultConnector, signalCssColor, signalLabel } from "./typeRegistry";
+import { allSignals, defaultConnector, signalAliases, signalCssColor, signalLabel } from "./typeRegistry";
 
 // ---------- Types ----------
 
@@ -230,28 +230,7 @@ for (const key of allSignals()) {
   SIGNAL_REVERSE.set(key.toLowerCase(), key);
 }
 // Common aliases
-SIGNAL_REVERSE.set("audio", "analog-audio");
-SIGNAL_REVERSE.set("analog", "analog-audio");
-SIGNAL_REVERSE.set("network", "ethernet");
-SIGNAL_REVERSE.set("cat6", "ethernet");
-SIGNAL_REVERSE.set("cat5e", "ethernet");
-SIGNAL_REVERSE.set("cat5", "ethernet");
-SIGNAL_REVERSE.set("cat6a", "ethernet");
-SIGNAL_REVERSE.set("optical", "fiber");
-SIGNAL_REVERSE.set("fibre", "fiber");
-SIGNAL_REVERSE.set("3g-sdi", "sdi");
-SIGNAL_REVERSE.set("12g-sdi", "sdi");
-SIGNAL_REVERSE.set("hd-sdi", "sdi");
-SIGNAL_REVERSE.set("dp", "displayport");
-SIGNAL_REVERSE.set("tb", "thunderbolt");
-SIGNAL_REVERSE.set("usb-c", "usb");
-SIGNAL_REVERSE.set("digital audio", "aes");
-SIGNAL_REVERSE.set("aes/ebu", "aes");
-SIGNAL_REVERSE.set("aes3", "aes");
-SIGNAL_REVERSE.set("word clock", "wordclock");
-SIGNAL_REVERSE.set("dmx512", "dmx");
-SIGNAL_REVERSE.set("rs232", "serial");
-SIGNAL_REVERSE.set("rs 232", "serial");
+for (const [alias, type] of Object.entries(signalAliases())) SIGNAL_REVERSE.set(alias, type);
 
 export function parseSignalType(raw: string): SignalType {
   if (!raw) return "custom";
