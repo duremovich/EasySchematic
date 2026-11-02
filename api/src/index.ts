@@ -2510,7 +2510,7 @@ app.delete("/types/:kind/:id", async (c) => {
     ];
     return c.json(
       {
-        error: `"${current.id}" is used by ${parts.join(" and ")}. Retire it instead: it leaves the pickers but existing devices keep rendering.`,
+        error: `"${current.id}" is used by ${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}. Retire it instead: it leaves the pickers but existing devices keep rendering.`,
         templates,
         submissions,
         types,
