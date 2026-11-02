@@ -262,7 +262,12 @@ export default function DeviceTemplateSchemaPage() {
       <hr />
 
       <h2>Valid <code>signalType</code> values</h2>
-      <p>The <code>signalType</code> describes what travels through a port — video format, audio protocol, network, control, or power.</p>
+      <p>
+        The <code>signalType</code> describes what travels through a port — video format, audio protocol, network,
+        control, or power. The tables below are the built-in set; moderators can also add community signals on the
+        devices site (listed by the <code>GET /types</code> API endpoint), and they work as a <code>signalType</code>
+        {" "}like any other. An id nobody defined still imports: it shows grey with its raw id.
+      </p>
       {Object.entries(signalGroups()).map(([group, types]) => (
         <div key={group}>
           <h3>{group}</h3>
@@ -283,7 +288,11 @@ export default function DeviceTemplateSchemaPage() {
       ))}
 
       <h2>Valid <code>connectorType</code> values</h2>
-      <p>The <code>connectorType</code> is the physical connector on the port (XLR, HDMI, RJ45, etc.).</p>
+      <p>
+        The <code>connectorType</code> is the physical connector on the port (XLR, HDMI, RJ45, etc.). As with signals,
+        community connectors from <code>GET /types</code> are valid here too, and so are a passthrough port's
+        {" "}<code>rearConnectorType</code> / <code>frontConnectorType</code>.
+      </p>
       {Object.entries(connectorGroups()).map(([group, types]) => (
         <div key={group}>
           <h3>{group}</h3>

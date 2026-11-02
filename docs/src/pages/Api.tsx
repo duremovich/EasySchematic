@@ -65,14 +65,32 @@ export default function ApiPage() {
 
       <h3>GET /types</h3>
       <p>
-        Returns the community device types that moderators have added on the devices site, on top of the built-in
-        list. Each entry has <code>kind</code> (<code>device</code>), <code>id</code> (the <code>deviceType</code>
-        value templates use), <code>label</code>, <code>data.category</code>, and <code>status</code>
+        Returns the community types that moderators have added on the devices site, on top of the built-in lists:
+        device types, signals and connectors. Each entry has <code>kind</code> (<code>device</code>,
+        {" "}<code>signal</code> or <code>connector</code>), <code>id</code> (the value templates use in
+        {" "}<code>deviceType</code>, a port's <code>signalType</code>, or a port's <code>connectorType</code>),
+        {" "}<code>label</code>, a kind-specific <code>data</code> object, and <code>status</code>
         {" "}(<code>active</code>, or <code>retired</code> for types no longer offered for new devices but still used by
-        existing ones). Optional <code>?kind=device</code> filter. Supports <code>ETag</code> /
+        existing ones). Optional <code>?kind=</code> filter. Supports <code>ETag</code> /
         {" "}<code>If-None-Match</code>.
       </p>
-      <pre><code>GET https://api.easyschematic.live/types?kind=device</code></pre>
+      <ul>
+        <li><strong>device</strong>: <code>data.category</code>, optional <code>data.description</code>.</li>
+        <li><strong>signal</strong>: <code>data.color</code> (hex), <code>data.group</code> (one of the signal groups
+          below), <code>data.defaultConnector</code>, <code>data.cable</code> (cable name),
+          {" "}<code>data.cablePrefix</code> (cable-ID prefix, 2–4 capitals), optional <code>data.description</code>.</li>
+        <li><strong>connector</strong>: <code>data.group</code>, <code>data.cable</code>, <code>data.gender</code>
+          {" "}(<code>male</code>, <code>female</code> or <code>none</code>, device side), <code>data.matesWith</code>
+          {" "}(connectors it mates with directly) and <code>data.adaptsTo</code> (connectors it reaches through an
+          adapter cable), optional <code>data.description</code>.</li>
+      </ul>
+      <p>
+        Community signals and connectors are plain types: a community signal connects only to the same signal, and a
+        community connector mates with itself plus whatever its two lists name. Approving a submission whose ports use
+        a signal or connector id that is neither built in nor a community type still succeeds; the response then
+        carries a <code>warnings</code> array naming the unknown ids.
+      </p>
+      <pre><code>GET https://api.easyschematic.live/types?kind=signal</code></pre>
 
       <h3>GET /templates/search-terms</h3>
       <p>Returns a sorted array of all search terms across all templates (lowercase, deduplicated).</p>

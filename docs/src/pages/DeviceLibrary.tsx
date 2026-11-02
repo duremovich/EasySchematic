@@ -144,6 +144,11 @@ export default function DeviceLibraryPage() {
           device type picker. A moderator either matches it to an existing type or adds it to the community list of
           device types, and approves your device without waiting for an app update. Types moderators add show up in
           the picker for everyone straight away</li>
+        <li><strong>New signals and connectors</strong> — if a port's signal or connector isn't listed (a vendor
+          control bus, WECO 3-pin, a proprietary power connector), pick the closest match or <em>Custom</em> / <em>Other</em>
+          {" "}and say what it really is in <em>Notes to Moderators</em>. A moderator can add it as a community signal or
+          connector and approve your device with it, again without an app update. Community connectors list what they
+          mate with directly and what they reach through an adapter cable</li>
         <li><strong>Moderation</strong> — submissions are reviewed by moderators before going live to ensure accuracy</li>
         <li><strong>Reference URLs</strong> — branded devices link directly to the manufacturer's product page so
           moderators (and you) can verify specs</li>
