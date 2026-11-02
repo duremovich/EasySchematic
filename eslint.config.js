@@ -28,6 +28,29 @@ export default defineConfig([
     },
   },
   {
+    // Signal / connector lookups go through src/typeRegistry, which knows community and
+    // user types and falls back for unknown ids. Indexing the built-in tables directly
+    // silently drops every non-built-in type.
+    files: ['**/*.{ts,tsx}'],
+    // devApi.ts is the TypeDoc surface: it re-exports the tables on purpose.
+    ignores: ['src/typeRegistry.ts', 'src/signalColors.ts', 'src/devApi.ts', '**/__tests__/**', 'e2e/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        patterns: [
+          {
+            regex: '(^|/)builtinTypeTables$',
+            message: 'Read built-in type tables through the src/typeRegistry getters.',
+          },
+          {
+            regex: '(^|/)types$',
+            importNames: ['SIGNAL_LABELS', 'SIGNAL_COLORS', 'CONNECTOR_LABELS', 'SIGNAL_GROUPS', 'CONNECTOR_GROUPS'],
+            message: 'Use the src/typeRegistry getters (signalLabel, signalCssColor, signalGroups, …).',
+          },
+        ],
+      }],
+    },
+  },
+  {
     files: ['**/main.tsx'],
     rules: {
       'react-refresh/only-export-components': 'off',

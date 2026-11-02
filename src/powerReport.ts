@@ -3,6 +3,8 @@ import type {
   ConnectionEdge,
   DeviceData,
 } from "./types";
+// Power semantics are built-in behaviour, so this reads the built-in group directly.
+// eslint-disable-next-line no-restricted-imports
 import { SIGNAL_GROUPS } from "./types";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";

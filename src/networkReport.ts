@@ -1,4 +1,6 @@
 import type { SchematicNode, DeviceData, ConnectionEdge } from "./types";
+// Power semantics are built-in behaviour, so this reads the built-in group directly.
+// eslint-disable-next-line no-restricted-imports
 import { SIGNAL_GROUPS } from "./types";
 import { NETWORK_SIGNAL_TYPES } from "./connectorTypes";
 import { collapseStubEdges, findReachableDhcpServers } from "./networkValidation";

@@ -27,6 +27,8 @@ export * as CloudSync from "./cloudSync";
 export * as Migrations from "./migrations";
 
 // Connector / signal / device taxonomies
+export * as TypeRegistry from "./typeRegistry";
+export * as BuiltinTypeTables from "./builtinTypeTables";
 export * as ConnectorTypes from "./connectorTypes";
 export * as CableTypes from "./cableTypes";
 export * as DeviceTypeCategories from "./deviceTypeCategories";
