@@ -77,7 +77,7 @@ export default function DeviceTemplateSchemaPage() {
           <tr><td><code>deviceType</code></td><td>string</td><td>Must be a valid type — see table below</td></tr>
           <tr><td><code>manufacturer</code></td><td>string</td><td>Vendor name; use "Generic" for vendor-agnostic templates</td></tr>
           <tr><td><code>modelNumber</code></td><td>string</td><td>Required unless manufacturer is "Generic"</td></tr>
-          <tr><td><code>referenceUrl</code></td><td>string</td><td>Recommended; must start with http:// or https://</td></tr>
+          <tr><td><code>referenceUrl</code></td><td>string</td><td>Required unless manufacturer is "Generic"; must start with http:// or https://</td></tr>
           <tr><td><code>ports</code></td><td>array</td><td>Each port needs <code>label</code>, <code>signalType</code>, <code>direction</code>; <code>connectorType</code> recommended</td></tr>
         </tbody>
       </table>
@@ -89,6 +89,8 @@ export default function DeviceTemplateSchemaPage() {
         </thead>
         <tbody>
           <tr><td><code>category</code></td><td>string</td><td>Auto-derived from <code>deviceType</code> if omitted</td></tr>
+          <tr><td><code>shortName</code></td><td>string</td><td>Short label (e.g. the model number without the manufacturer prefix), shown when the schematic's "use short names" setting is on</td></tr>
+          <tr><td><code>hostname</code></td><td>string</td><td>Network hostname for the device</td></tr>
           <tr><td><code>heightMm</code> / <code>widthMm</code> / <code>depthMm</code></td><td>number</td><td>Physical dimensions in millimeters. Drive rack auto-classification, side-view depth conflicts, and rack stats — see <a href="/racks">Rack Builder</a></td></tr>
           <tr><td><code>weightKg</code></td><td>number</td><td>Weight in kilograms; rolls up into per-rack total weight stats</td></tr>
           <tr><td><code>rackForm</code></td><td>string</td><td>Rack-form override — <code>"full"</code>, <code>"half"</code>, or <code>"shelf-only"</code>. Bypasses the size heuristic for edge cases like desktop units with optional rack ears</td></tr>
@@ -96,6 +98,7 @@ export default function DeviceTemplateSchemaPage() {
           <tr><td><code>powerDrawW</code></td><td>number</td><td>Max power consumption in watts</td></tr>
           <tr><td><code>powerCapacityW</code></td><td>number</td><td>For power distribution, company switches and power supplies: total supply/output capacity in watts</td></tr>
           <tr><td><code>poeBudgetW</code></td><td>number</td><td>For PoE switches: total PoE budget in watts</td></tr>
+          <tr><td><code>poeDrawW</code></td><td>number</td><td>For PoE-powered devices (cameras, access points): PoE draw in watts</td></tr>
           <tr><td><code>voltage</code></td><td>string</td><td>e.g. "100-240V" or "12V DC"</td></tr>
           <tr><td><code>thermalBtuh</code></td><td>number</td><td>Thermal load in BTU/h for HVAC sizing. Auto-derived from <code>powerDrawW × 3.412</code> if omitted; specify only when the measured value differs (e.g. devices with low standby dissipation).</td></tr>
           <tr><td><code>unitCost</code></td><td>number</td><td>MSRP / typical unit cost in USD</td></tr>
@@ -104,6 +107,51 @@ export default function DeviceTemplateSchemaPage() {
           <tr><td><code>headerColor</code></td><td>string</td><td>Hex color for the device's header bar. Set on a user template by saving a device whose header color you picked yourself; devices placed from the template take it ahead of the project and app default header color settings. Omit to leave those defaults in charge.</td></tr>
         </tbody>
       </table>
+
+      <h2 id="modular-chassis">Modular chassis &amp; expansion cards</h2>
+      <p>
+        A modular frame (matrix chassis, LED processor, console with I/O cards) is a
+        <strong>chassis template</strong> that lists its card <code>slots</code>, plus one
+        <strong>card template</strong> per card. The two are linked by a single string, the
+        <code>slotFamily</code>: a card can be installed into any slot with the same family.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Field</th><th>On</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>slots</code></td><td>chassis</td><td>Array of slots (the community library accepts up to 128). Each takes a <code>slotFamily</code>; <code>id</code> and <code>label</code> are filled in if omitted. Optional <code>defaultCardId</code> (the id of a library card to pre-install) and <code>hideWhenEmpty</code>.</td></tr>
+          <tr><td><code>slotFamily</code></td><td>card</td><td>On a template with <code>deviceType: "expansion-card"</code>: the slot family the card fits.</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Use separate families where a frame has dedicated input and output slots, so an input card
+        can't be placed in an output slot. A chassis and its cards can be imported together in one array:
+      </p>
+      <pre><code>{`[
+  {
+    "label": "Acme Modular Matrix",
+    "deviceType": "switcher",
+    "manufacturer": "Acme",
+    "modelNumber": "AMM-1600",
+    "referenceUrl": "https://acme.example/amm-1600",
+    "slots": [
+      { "label": "Input Slot 1",  "slotFamily": "acme-frame-input" },
+      { "label": "Output Slot 1", "slotFamily": "acme-frame-output" }
+    ],
+    "ports": [ { "label": "AC Power", "signalType": "power", "direction": "input" } ]
+  },
+  {
+    "label": "Acme 4-Input HDMI Card",
+    "deviceType": "expansion-card",
+    "manufacturer": "Acme",
+    "modelNumber": "AMM-4I-HDMI",
+    "referenceUrl": "https://acme.example/amm-4i-hdmi",
+    "slotFamily": "acme-frame-input",
+    "ports": [ { "label": "Input 1", "signalType": "hdmi", "direction": "input", "connectorType": "hdmi" } ]
+  }
+]`}</code></pre>
+      <p>The CSV format has no column for slots — use JSON for a modular chassis.</p>
 
       <h2>Port-level fields</h2>
       <p>
@@ -198,6 +246,7 @@ export default function DeviceTemplateSchemaPage() {
         <li><code>input</code> — accepts signal flowing in</li>
         <li><code>output</code> — sends signal out</li>
         <li><code>bidirectional</code> — both (e.g. Ethernet, USB, RS-232)</li>
+        <li><code>passthrough</code> — a tie line or patch point with a rear and a front connector (<code>rearConnectorType</code> / <code>frontConnectorType</code>). Leave <code>signalType</code> off and the port takes the signal of whatever is connected to it</li>
       </ul>
 
       <h2>CSV format (alternative)</h2>
