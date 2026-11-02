@@ -16,7 +16,6 @@
 import { hopHiddenAdapters } from "./adapterVisibility";
 import type { PageRect } from "./printPageGrid";
 import type { RoutedEdge } from "./edgeRouter";
-import { DEFAULT_SIGNAL_COLORS } from "./signalColors";
 import type { PillLimit } from "./continuationPill";
 import type {
   ConnectionEdge,
@@ -25,6 +24,7 @@ import type {
   SignalType,
   StubLabelData,
 } from "./types";
+import { signalColor } from "./typeRegistry";
 
 /** What a pill says: the device on the far side of the boundary, and its room. */
 export interface CrossingLabelInfo {
@@ -190,8 +190,8 @@ export function computeCrossingLabels(
   // Resolve signal colors
   const resolveColor = (edge: ConnectionEdge): string => {
     const st = edge.data?.signalType;
-    if (!st) return DEFAULT_SIGNAL_COLORS.custom;
-    return signalColorOverrides?.[st] ?? DEFAULT_SIGNAL_COLORS[st];
+    if (!st) return signalColor("custom");
+    return signalColorOverrides?.[st] ?? signalColor(st);
   };
 
   for (const [edgeId, route] of Object.entries(routedEdges)) {

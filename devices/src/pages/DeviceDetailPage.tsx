@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import type { DeviceTemplate, SlotDefinition } from "../../../src/types";
-import { CONNECTOR_LABELS } from "../../../src/types";
 import { rackUnitLabel } from "../../../src/rackUtils";
 import {
   loadDeviceTemplate,
@@ -21,6 +20,7 @@ import OfflineBanner from "../components/OfflineBanner";
 import { linkClick, navigateTo } from "../navigate";
 import { effectiveThermalBtuh } from "../thermal";
 import { formatDateTime as formatDate } from "../format";
+import { connectorLabel } from "../../../src/typeRegistry";
 
 type TemplateWithAttribution = DeviceTemplate & {
   submittedBy?: { name: string };
@@ -91,7 +91,7 @@ export default function DeviceDetailPage({ id, currentUser }: { id: string; curr
               <tr key={port.id} className="border-b border-slate-100 dark:border-slate-800">
                 <td className="py-2 px-2 sm:px-3">{port.label}</td>
                 <td className="py-2 px-2 sm:px-3"><SignalBadge signalType={port.signalType} /></td>
-                <td className="py-2 px-2 sm:px-3 text-slate-600 dark:text-slate-400">{port.connectorType ? CONNECTOR_LABELS[port.connectorType] ?? port.connectorType : "\u2014"}</td>
+                <td className="py-2 px-2 sm:px-3 text-slate-600 dark:text-slate-400">{port.connectorType ? connectorLabel(port.connectorType) : "\u2014"}</td>
                 <td className="py-2 px-2 sm:px-3 text-slate-600 dark:text-slate-400">{port.section ?? "\u2014"}</td>
               </tr>
             ))}

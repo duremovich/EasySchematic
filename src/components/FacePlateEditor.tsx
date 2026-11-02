@@ -3,7 +3,7 @@ import type { DeviceData, FacePlateLayout, FacePlateLabel } from "../types";
 import { autoLayoutPorts, inferRackHeightU, PX_PER_U, DEVICE_WIDTH_PX, PX_PER_MM } from "../rackUtils";
 import { normalizeShortcutKey } from "../keyUtils";
 import { ConnectorIcon, getConnectorSpec } from "./connectorIcons";
-import { SIGNAL_COLORS } from "../types";
+import { signalCssColor } from "../typeRegistry";
 import { contrastingTextColor, CONTRAST_BLACK } from "../colorContrast";
 
 interface FacePlateEditorProps {
@@ -703,7 +703,7 @@ export default function FacePlateEditor({ deviceData, onSave, onClose }: FacePla
               if (!port) return null;
               const cx = PAD + (lp.x / 100) * canonW;
               const cy = PAD + (lp.y / 100) * canonH;
-              const sigColor = (SIGNAL_COLORS as Record<string, string>)[lp.signalType] ?? "#fff";
+              const sigColor = signalCssColor(lp.signalType);
               const isSel = selectedIds.has(lp.id);
 
               return (

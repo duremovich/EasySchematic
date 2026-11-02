@@ -1,5 +1,5 @@
-import { SIGNAL_LABELS, CONNECTOR_LABELS, SIGNAL_GROUPS, CONNECTOR_GROUPS } from "../../../src/types";
 import { DEVICE_TYPE_TO_CATEGORY } from "../../../src/deviceTypeCategories";
+import { connectorGroups, connectorLabel, signalGroups, signalLabel } from "../../../src/typeRegistry";
 
 const SAMPLE_JSON = `{
   "label": "Extron DTP2 T 212",
@@ -263,7 +263,7 @@ export default function DeviceTemplateSchemaPage() {
 
       <h2>Valid <code>signalType</code> values</h2>
       <p>The <code>signalType</code> describes what travels through a port — video format, audio protocol, network, control, or power.</p>
-      {Object.entries(SIGNAL_GROUPS).map(([group, types]) => (
+      {Object.entries(signalGroups()).map(([group, types]) => (
         <div key={group}>
           <h3>{group}</h3>
           <table>
@@ -274,7 +274,7 @@ export default function DeviceTemplateSchemaPage() {
               {types.map((t) => (
                 <tr key={t}>
                   <td><code>{t}</code></td>
-                  <td>{SIGNAL_LABELS[t]}</td>
+                  <td>{signalLabel(t)}</td>
                 </tr>
               ))}
             </tbody>
@@ -284,7 +284,7 @@ export default function DeviceTemplateSchemaPage() {
 
       <h2>Valid <code>connectorType</code> values</h2>
       <p>The <code>connectorType</code> is the physical connector on the port (XLR, HDMI, RJ45, etc.).</p>
-      {Object.entries(CONNECTOR_GROUPS).map(([group, types]) => (
+      {Object.entries(connectorGroups()).map(([group, types]) => (
         <div key={group}>
           <h3>{group}</h3>
           <table>
@@ -295,7 +295,7 @@ export default function DeviceTemplateSchemaPage() {
               {types.map((t) => (
                 <tr key={t}>
                   <td><code>{t}</code></td>
-                  <td>{CONNECTOR_LABELS[t]}</td>
+                  <td>{connectorLabel(t)}</td>
                 </tr>
               ))}
             </tbody>

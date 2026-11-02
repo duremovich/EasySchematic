@@ -13,7 +13,8 @@
  */
 
 import type React from "react";
-import type { ConnectorType } from "../types";
+import type { BuiltinConnectorType, ConnectorType } from "../types";
+import { builtinEntry } from "../typeRegistry";
 
 // Re-export ConnectorSpec for external use
 export type { ConnectorType };
@@ -353,7 +354,7 @@ function renderToslink({ color, detail, strokeWidth }: RenderProps) {
 
 const xlrOutline = (p: RenderProps) => <path d={dShapePath(19.0, 2.2)} fill="none" stroke={p.color} strokeWidth={p.strokeWidth} />;
 
-const CONNECTOR_SPECS: Partial<Record<ConnectorType, ConnectorSpec>> = {
+const CONNECTOR_SPECS: Partial<Record<BuiltinConnectorType, ConnectorSpec>> = {
   // ── XLR family ──
   "xlr-3": {
     widthMm: 19.0, heightMm: 17.5,
@@ -917,7 +918,7 @@ const GENERIC_SPEC: ConnectorSpec = {
 // eslint-disable-next-line react-refresh/only-export-components
 export function getConnectorSpec(connectorType?: ConnectorType): ConnectorSpec {
   if (!connectorType || connectorType === "none") return GENERIC_SPEC;
-  return CONNECTOR_SPECS[connectorType] ?? GENERIC_SPEC;
+  return builtinEntry(CONNECTOR_SPECS, connectorType) ?? GENERIC_SPEC;
 }
 
 /** Default stroke width in mm for connector outlines */

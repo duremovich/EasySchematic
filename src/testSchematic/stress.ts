@@ -21,6 +21,7 @@ import type {
   SchematicNode,
   SignalType,
 } from "../types";
+import { signalCssColor } from "../typeRegistry";
 
 export const STRESS_FIXTURE_NAME = "EasySchematic Stress Fixture";
 
@@ -73,7 +74,7 @@ export function buildStressSchematic(): SchematicFile {
       sourceHandle: `s${i}-out`,
       target: `stress-${j}`,
       targetHandle: `s${j}-in`,
-      style: { stroke: `var(--color-${signal})`, strokeWidth: 2 },
+      style: { stroke: signalCssColor(signal), strokeWidth: 2 },
       data: { signalType: signal },
     } as ConnectionEdge);
   }

@@ -11,8 +11,8 @@ import {
 } from "../deviceSwap";
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { scoreTemplate } from "../templateSearch";
-import { SIGNAL_LABELS, CONNECTOR_LABELS } from "../types";
 import type { DeviceTemplate, DeviceNode, Port } from "../types";
+import { connectorLabel, signalLabel } from "../typeRegistry";
 
 export default function DeviceSwapDialog() {
   const target = useSchematicStore((s) => s.deviceSwapTarget);
@@ -378,8 +378,8 @@ function MappingRow({
           )}
         </div>
         <div className="text-[10px] text-[var(--color-text-muted)] truncate">
-          {DirChip(oldPort.direction)} · {SIGNAL_LABELS[oldPort.signalType] ?? oldPort.signalType}
-          {oldPort.connectorType ? ` · ${CONNECTOR_LABELS[oldPort.connectorType] ?? oldPort.connectorType}` : ""}
+          {DirChip(oldPort.direction)} · {signalLabel(oldPort.signalType)}
+          {oldPort.connectorType ? ` · ${connectorLabel(oldPort.connectorType)}` : ""}
           {edges.length > 1 ? ` · ${edges.length} edges` : ""}
         </div>
       </div>
@@ -403,8 +403,8 @@ function MappingRow({
               <optgroup key={dir} label={dir}>
                 {grouped[dir].map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.label} ({SIGNAL_LABELS[p.signalType] ?? p.signalType}
-                    {p.connectorType ? `, ${CONNECTOR_LABELS[p.connectorType] ?? p.connectorType}` : ""})
+                    {p.label} ({signalLabel(p.signalType)}
+                    {p.connectorType ? `, ${connectorLabel(p.connectorType)}` : ""})
                   </option>
                 ))}
               </optgroup>
@@ -446,9 +446,9 @@ function conflictLabel(c: PortConflict): string {
   switch (c.kind) {
     case "directionMismatch": return `direction: ${c.old} → ${c.nw}`;
     case "signalMismatch":
-      return `signal: ${SIGNAL_LABELS[c.old] ?? c.old} → ${SIGNAL_LABELS[c.nw] ?? c.nw}`;
+      return `signal: ${signalLabel(c.old)} → ${signalLabel(c.nw)}`;
     case "connectorMismatch":
-      return `connector: ${c.old ? (CONNECTOR_LABELS[c.old] ?? c.old) : "?"} → ${c.nw ? (CONNECTOR_LABELS[c.nw] ?? c.nw) : "?"}`;
+      return `connector: ${c.old ? connectorLabel(c.old) : "?"} → ${c.nw ? connectorLabel(c.nw) : "?"}`;
     case "capacityExceeded": return "target port doesn't accept multiple connections";
   }
 }

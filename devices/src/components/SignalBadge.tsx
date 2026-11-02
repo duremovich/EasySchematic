@@ -1,4 +1,6 @@
-import { SIGNAL_LABELS, type SignalType } from "../../../src/types";
+import { type SignalType } from "../../../src/types";
+import { signalLabel } from "../../../src/typeRegistry";
+import { signalCssColor } from "../../../src/typeRegistry";
 
 export default function SignalBadge({ signalType }: { signalType: SignalType }) {
   return (
@@ -7,9 +9,9 @@ export default function SignalBadge({ signalType }: { signalType: SignalType }) 
     >
       <span
         className="w-2 h-2 rounded-full shrink-0"
-        style={{ backgroundColor: `var(--color-${signalType})` }}
+        style={{ backgroundColor: signalCssColor(signalType) }}
       />
-      {SIGNAL_LABELS[signalType] ?? signalType}
+      {signalLabel(signalType)}
     </span>
   );
 }

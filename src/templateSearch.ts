@@ -1,5 +1,5 @@
-import { SIGNAL_LABELS } from "./types";
 import type { DeviceTemplate } from "./types";
+import { signalLabel } from "./typeRegistry";
 
 /** Score how well a template matches a search query. 0 = no match. Higher = better. */
 export function scoreTemplate(template: DeviceTemplate, query: string): number {
@@ -12,7 +12,7 @@ export function scoreTemplate(template: DeviceTemplate, query: string): number {
   const manufacturer = template.manufacturer?.toLowerCase() ?? "";
   const modelNumber = template.modelNumber?.toLowerCase() ?? "";
   const searchTerms = template.searchTerms?.map((t) => t.toLowerCase()) ?? [];
-  const signalLabels = [...new Set(template.ports.map((p) => (SIGNAL_LABELS[p.signalType] ?? p.signalType).toLowerCase()))];
+  const signalLabels = [...new Set(template.ports.map((p) => signalLabel(p.signalType).toLowerCase()))];
   const signalTypes = [...new Set(template.ports.map((p) => p.signalType.toLowerCase().replace(/-/g, " ")))];
   const portLabels = template.ports.map((p) => p.label.toLowerCase());
 

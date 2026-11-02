@@ -11,10 +11,10 @@
  */
 
 import { createDefaultLayout } from "./titleBlockLayout";
-import { DEFAULT_CONNECTOR } from "./connectorTypes";
 import { defaultStubPlacement } from "./stubPlacement";
 import { getPortAbsolutePositions } from "./snapUtils";
 import type { SchematicNode } from "./types";
+import { defaultConnector } from "./typeRegistry";
 
 export const CURRENT_SCHEMA_VERSION = 43;
 
@@ -100,13 +100,13 @@ const migrations: Record<number, Migration> = {
     return data;
   },
   10: (data) => {
-    // v10 → v11: add connectorType to all ports using DEFAULT_CONNECTOR[signalType]
+    // v10 → v11: add connectorType to all ports using defaultConnector(signalType)
     if (data.nodes) {
       for (const node of data.nodes) {
         if (node.type === "device" && node.data?.ports) {
           for (const port of node.data.ports) {
             if (!port.connectorType && port.signalType) {
-              port.connectorType = DEFAULT_CONNECTOR[port.signalType as keyof typeof DEFAULT_CONNECTOR] ?? "other";
+              port.connectorType = defaultConnector(port.signalType);
             }
           }
         }
@@ -118,7 +118,7 @@ const migrations: Record<number, Migration> = {
         if (tmpl.ports) {
           for (const port of tmpl.ports) {
             if (!port.connectorType && port.signalType) {
-              port.connectorType = DEFAULT_CONNECTOR[port.signalType as keyof typeof DEFAULT_CONNECTOR] ?? "other";
+              port.connectorType = defaultConnector(port.signalType);
             }
           }
         }

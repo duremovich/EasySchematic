@@ -5,7 +5,6 @@ import type {
   DistanceSettings,
   BundleMeta,
 } from "./types";
-import { SIGNAL_LABELS, CONNECTOR_LABELS } from "./types";
 import { getCableType } from "./cableTypes";
 import { resolvePort, resolvePortLabel, getRoomLabel, escapeCsv, csvRow, groupBy } from "./packList";
 import { transformLabelNow, withRawLabels } from "./labelCaseUtils";
@@ -16,6 +15,7 @@ import { getPatchSegments, resolvableHops, type PatchPointInfo } from "./patchCi
 // Room-distance estimation moved behind this shared helper (#100) — it backs both the
 // schedule's computedLength column and the on-canvas cable-length badge.
 import { computeEdgeLengthEstimate } from "./cableLengthLabel";
+import { cablePrefix, connectorLabel, signalLabel } from "./typeRegistry";
 
 export interface CableScheduleDistanceContext {
   roomDistances?: Record<string, number>;
@@ -56,84 +56,6 @@ export interface CableScheduleRow {
    *  recomputeCableIds persists THIS (not the suffixed id) onto edge.data.cableId. */
   baseCableId?: string;
 }
-
-/** Prefix letter for each signal type when using type-prefix cable naming */
-const SIGNAL_PREFIX: Record<SignalType, string> = {
-  sdi: "S",
-  hdmi: "H",
-  ndi: "N",
-  dante: "D",
-  avb: "AV",
-  "analog-audio": "A",
-  "speaker-level": "SPK",
-  bluetooth: "BT",
-  digilink: "DGL",
-  aes: "AE",
-  dmx: "DX",
-  madi: "MA",
-  usb: "U",
-  ethernet: "E",
-  fiber: "F",
-  displayport: "DP",
-  hdbaset: "HB",
-  srt: "SR",
-  genlock: "G",
-  gpio: "GP",
-  "contact-closure": "CC",
-  rs422: "RS",
-  rs485: "RS5",
-  serial: "SL",
-  thunderbolt: "TB",
-  composite: "CO",
-  "component-video": "CV",
-  "s-video": "SV",
-  vga: "V",
-  dvi: "D",
-  power: "P",
-  "power-l1": "PL1",
-  "power-l2": "PL2",
-  "power-l3": "PL3",
-  "power-neutral": "PN",
-  "power-ground": "PG",
-  midi: "MI",
-  tally: "TL",
-  spdif: "SP",
-  adat: "AD",
-  ultranet: "UN",
-  aes50: "A5",
-  stageconnect: "SC",
-  wordclock: "WC",
-  aes67: "A7",
-  ydif: "YD",
-  rf: "RF",
-  st2110: "21",
-  artnet: "AN",
-  sacn: "SC",
-  ir: "IR",
-  timecode: "TC",
-  gigaace: "GA",
-  dx5: "DX",
-  slink: "SL",
-  soundgrid: "SG",
-  fibreace: "FA",
-  dsnake: "DS",
-  dxlink: "DL",
-  gps: "GPS",
-  dars: "DA",
-  rtmp: "RM",
-  rtsp: "RP",
-  "mpeg-ts": "MT",
-  ebus: "EB",
-  "control-voltage": "VC",
-  "extron-exp": "EX",
-  pots: "PT",
-  "blu-link": "BL",
-  cresnet: "CN",
-  nlight: "NL",
-  dcp: "DCP",
-  sensor: "SNS",
-  custom: "X",
-};
 
 export function computeCableSchedule(
   nodes: SchematicNode[],
@@ -200,14 +122,14 @@ export function computeCableSchedule(
         : "Unknown";
       const sourcePort = srcNode ? resolvePortLabel(srcNode, e.sourceHandle) : "";
       const sourceConnector = srcPort?.connectorType
-        ? (CONNECTOR_LABELS[srcPort.connectorType] ?? "—")
+        ? connectorLabel(srcPort.connectorType)
         : "—";
       const targetDevice = tgtNode?.type === "device"
         ? transformLabelNow((tgtNode.data as DeviceData).label)
         : "Unknown";
       const targetPort = tgtNode ? resolvePortLabel(tgtNode, effectiveTargetEdge.targetHandle) : "";
       const targetConnector = tgtPort?.connectorType
-        ? (CONNECTOR_LABELS[tgtPort.connectorType] ?? "—")
+        ? connectorLabel(tgtPort.connectorType)
         : "—";
       const sourceRoom = srcNode ? getRoomLabel(nodes, srcNode.parentId) : "Unknown";
       const targetRoom = tgtNode ? getRoomLabel(nodes, tgtNode.parentId) : "Unknown";
@@ -232,7 +154,7 @@ export function computeCableSchedule(
         targetPort,
         targetConnector,
         cableType: getCableType(srcPort, tgtPort, signalType),
-        signalType: SIGNAL_LABELS[signalType],
+        signalType: signalLabel(signalType),
         sourceRoom,
         targetRoom,
         computedLength,
@@ -264,7 +186,7 @@ export function computeCableSchedule(
   if (namingScheme === "type-prefix") {
     // Per-type counters for type-prefix naming (e.g. S001, S002, E001)
     rows = connections.map((c) => {
-      const prefix = SIGNAL_PREFIX[c.rawSignalType] ?? "X";
+      const prefix = cablePrefix(c.rawSignalType);
       return {
         edgeId: c.edgeId,
         cableId: c.storedCableId || nextId(prefix),
@@ -355,11 +277,11 @@ function expandPatchedRows(
         sourceDevice: seg.from.label,
         sourcePort: seg.from.portLabel,
         sourceConnector: seg.from.port?.connectorType
-          ? (CONNECTOR_LABELS[seg.from.port.connectorType] ?? "—") : "—",
+          ? connectorLabel(seg.from.port.connectorType) : "—",
         targetDevice: seg.to.label,
         targetPort: seg.to.portLabel,
         targetConnector: seg.to.port?.connectorType
-          ? (CONNECTOR_LABELS[seg.to.port.connectorType] ?? "—") : "—",
+          ? connectorLabel(seg.to.port.connectorType) : "—",
         cableType: getCableType(seg.from.port, seg.to.port, signalType),
         // The connection's whole-run length can't be attributed to any single physical
         // segment — lengths are per-segment overrides here. The edge-level value is

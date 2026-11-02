@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import type { LabelCaseMode } from "./types";
-import { CONNECTOR_LABELS, SIGNAL_LABELS } from "./types";
+import { allConnectors, allSignals, connectorLabel, signalLabel } from "./typeRegistry";
 import { useSchematicStore } from "./store";
 
 /** Hand-curated acronyms the connector/signal tables don't cover: rack and trade
@@ -29,12 +29,12 @@ const WORD_RE = /[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu;
 const HAS_DIGIT = /\p{N}/u;
 
 /** Acronyms that survive "Capitalize Words" as typed. Derived from the real
- *  vocabulary in CONNECTOR_LABELS/SIGNAL_LABELS — every ALL-UPPERCASE, digit-free
+ *  vocabulary in the connector and signal labels — every ALL-UPPERCASE, digit-free
  *  word of those display names (HDMI, SDI, XLR, TRS, BNC, USB, IEC, MADI, …) —
  *  then topped up with EXTRA_ACRONYMS. */
 const ACRONYMS: ReadonlySet<string> = new Set([
-  ...Object.values(CONNECTOR_LABELS)
-    .concat(Object.values(SIGNAL_LABELS))
+  ...allConnectors().map(connectorLabel)
+    .concat(allSignals().map(signalLabel))
     .flatMap((label) => label.match(WORD_RE) ?? [])
     .filter((w) => w.length > 1 && !HAS_DIGIT.test(w) && isAllUpper(w)),
   ...EXTRA_ACRONYMS,

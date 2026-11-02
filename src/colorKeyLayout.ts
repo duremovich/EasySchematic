@@ -1,6 +1,6 @@
 import type { SignalType, LineStyle, ConnectionEdge } from "./types";
-import { SIGNAL_LABELS, LINE_STYLE_DASHARRAY } from "./types";
-import { DEFAULT_SIGNAL_COLORS } from "./signalColors";
+import { LINE_STYLE_DASHARRAY } from "./types";
+import { signalColor, signalLabel } from "./typeRegistry";
 
 export interface ColorKeyEntry {
   signalType: SignalType;
@@ -39,11 +39,11 @@ export function collectColorKeyEntries(
   // Build entries sorted by label
   const entries: ColorKeyEntry[] = [];
   for (const type of used) {
-    const color = signalColors?.[type] ?? DEFAULT_SIGNAL_COLORS[type];
+    const color = signalColors?.[type] ?? signalColor(type);
     const lineStyle = signalLineStyles?.[type] ?? "solid";
     entries.push({
       signalType: type,
-      label: SIGNAL_LABELS[type],
+      label: signalLabel(type),
       color,
       lineStyle,
       dashArray: LINE_STYLE_DASHARRAY[lineStyle],

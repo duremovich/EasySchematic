@@ -1,8 +1,7 @@
 import type { LineStyle, SignalType } from "../types";
-import { SIGNAL_LABELS } from "../types";
-import { DEFAULT_SIGNAL_COLORS } from "../signalColors";
 import type { LayerDef, LtypeDef } from "./writer";
 import { ACI_NEAR_BLACK, hexToRgb, rgbToAci, rgbToTrueColor, sanitizeName } from "./units";
+import { signalColor } from "../typeRegistry";
 
 export const CANONICAL_LAYERS = {
   DEFAULT: "0",
@@ -70,7 +69,7 @@ export function buildLayerDefs(
   ];
 
   for (const sig of usedSignalTypes) {
-    const hex = signalColors?.[sig] ?? DEFAULT_SIGNAL_COLORS[sig];
+    const hex = signalColors?.[sig] ?? signalColor(sig);
     const [r, g, b] = hexToRgb(hex);
     layers.push({
       name: signalLayerName(sig),
@@ -86,12 +85,7 @@ export function resolveSignalColor(
   sig: SignalType,
   overrides: Partial<Record<SignalType, string>> | undefined,
 ): string {
-  return overrides?.[sig] ?? DEFAULT_SIGNAL_COLORS[sig];
-}
-
-/** Human-readable name for a signal type, matching app conventions. */
-export function signalLabel(sig: SignalType): string {
-  return SIGNAL_LABELS[sig] ?? sig;
+  return overrides?.[sig] ?? signalColor(sig);
 }
 
 /** Convert a hex color to a DXF true-color integer (group 420). */

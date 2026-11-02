@@ -5,10 +5,6 @@ import { buildBulkPorts, type BulkPortSpec } from "../portBulk";
 import { MAX_PORTS } from "../import/validate";
 import { autoNamePorts, duplicatePortLabel } from "../portNaming";
 import {
-  SIGNAL_LABELS,
-  SIGNAL_COLORS,
-  CONNECTOR_LABELS,
-  CONNECTOR_GROUPS,
   type SignalType,
   type ConnectorType,
   type Gender,
@@ -23,7 +19,7 @@ import {
   type DhcpServerConfig,
   type SlotDefinition,
 } from "../types";
-import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES, resolvePortGender, shouldDefaultMultiConnect } from "../connectorTypes";
+import { CONNECTORS_WITH_GENDER_VARIATION, NETWORK_SIGNAL_TYPES, VIDEO_SIGNAL_TYPES, resolvePortGender, shouldDefaultMultiConnect } from "../connectorTypes";
 import { rackUnitLabel } from "../rackUtils";
 import { getBundledTemplates, getTemplateById, getCardsByFamily, fetchTemplates, checkSession, createDraft, createHandoff } from "../templateApi";
 import { getTemplateDrift } from "../templateSync";
@@ -43,20 +39,21 @@ import { buildDeviceTemplate, buildTemplatePreset, type PortDraft } from "../dev
 import { carriesPowerCapacity } from "../deviceTypeCategories";
 import { visibleSaveActions, SAVE_ACTION_LABELS, SAVE_ACTION_TITLES, type SaveActionId } from "../deviceEditorActions";
 import { visiblePortRowControls, PORT_ROW_CONTROL_TITLES, type PortRowControlId } from "../portRowControls";
+import { allConnectors, allSignals, connectorGroups, connectorLabel, defaultConnector, signalCssColor, signalLabel } from "../typeRegistry";
 
-const ALL_SIGNAL_TYPES = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
-  (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
+const ALL_SIGNAL_TYPES = allSignals().sort(
+  (a, b) => signalLabel(a).localeCompare(signalLabel(b)),
 );
-const ALL_CONNECTOR_TYPES = (Object.keys(CONNECTOR_LABELS) as ConnectorType[]).sort(
-  (a, b) => CONNECTOR_LABELS[a].localeCompare(CONNECTOR_LABELS[b]),
+const ALL_CONNECTOR_TYPES = allConnectors().sort(
+  (a, b) => connectorLabel(a).localeCompare(connectorLabel(b)),
 );
 
-/** Grouped connector dropdown order — preserves CONNECTOR_GROUPS ordering, alphabetizes within each
- *  group, and sweeps any connector missing from CONNECTOR_GROUPS into "Other" so a new ConnectorType
+/** Grouped connector dropdown order — preserves `connectorGroups()` ordering, alphabetizes within each
+ *  group, and sweeps any connector missing from its groups into "Other" so a new ConnectorType
  *  never silently disappears from the dropdown. */
 const CONNECTOR_GROUP_ENTRIES: Array<[string, ConnectorType[]]> = (() => {
-  const groups = Object.entries(CONNECTOR_GROUPS).map(
-    ([name, list]) => [name, [...list].sort((a, b) => CONNECTOR_LABELS[a].localeCompare(CONNECTOR_LABELS[b]))] as [string, ConnectorType[]],
+  const groups = Object.entries(connectorGroups()).map(
+    ([name, list]) => [name, [...list].sort((a, b) => connectorLabel(a).localeCompare(connectorLabel(b)))] as [string, ConnectorType[]],
   );
   const grouped = new Set<ConnectorType>(groups.flatMap(([, list]) => list));
   const orphans = ALL_CONNECTOR_TYPES.filter((c) => !grouped.has(c));
@@ -65,10 +62,10 @@ const CONNECTOR_GROUP_ENTRIES: Array<[string, ConnectorType[]]> = (() => {
     if (otherIdx >= 0) {
       groups[otherIdx] = [
         "Other",
-        [...groups[otherIdx][1], ...orphans].sort((a, b) => CONNECTOR_LABELS[a].localeCompare(CONNECTOR_LABELS[b])),
+        [...groups[otherIdx][1], ...orphans].sort((a, b) => connectorLabel(a).localeCompare(connectorLabel(b))),
       ];
     } else {
-      groups.push(["Other", orphans.sort((a, b) => CONNECTOR_LABELS[a].localeCompare(CONNECTOR_LABELS[b]))]);
+      groups.push(["Other", orphans.sort((a, b) => connectorLabel(a).localeCompare(connectorLabel(b)))]);
     }
   }
   return groups;
@@ -76,7 +73,7 @@ const CONNECTOR_GROUP_ENTRIES: Array<[string, ConnectorType[]]> = (() => {
 
 function newPortDraft(direction: PortDirection): PortDraft {
   const signalType: SignalType = "sdi";
-  const connectorType = DEFAULT_CONNECTOR[signalType];
+  const connectorType = defaultConnector(signalType);
   if (direction === "passthrough") {
     return {
       id: `draft-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -1979,7 +1976,7 @@ function BulkAddForm({
   const [start, setStart] = useState(1);
   const [end, setEnd] = useState(8);
   const [signalType, setSignalType] = useState<SignalType>("sdi");
-  const [connectorType, setConnectorType] = useState<ConnectorType>(DEFAULT_CONNECTOR["sdi"]);
+  const [connectorType, setConnectorType] = useState<ConnectorType>(defaultConnector("sdi"));
   const [spaceBeforeNumber, setSpaceBeforeNumber] = useState(true);
   const [section, setSection] = useState("");
 
@@ -2030,11 +2027,11 @@ function BulkAddForm({
           onChange={(e) => {
             const next = e.target.value as SignalType;
             setSignalType(next);
-            setConnectorType(DEFAULT_CONNECTOR[next]);
+            setConnectorType(defaultConnector(next));
           }}
         >
           {ALL_SIGNAL_TYPES.map((t) => (
-            <option key={t} value={t}>{SIGNAL_LABELS[t]}</option>
+            <option key={t} value={t}>{signalLabel(t)}</option>
           ))}
         </select>
         <select
@@ -2047,7 +2044,7 @@ function BulkAddForm({
             <optgroup key={groupName} label={groupName}>
               {types.map((c) => (
                 <option key={c} value={c}>
-                  {CONNECTOR_LABELS[c]}{c === DEFAULT_CONNECTOR[signalType] ? " (default)" : ""}
+                  {connectorLabel(c)}{c === defaultConnector(signalType) ? " (default)" : ""}
                 </option>
               ))}
             </optgroup>
@@ -2300,9 +2297,9 @@ function PortVisibilitySection({
                     />
                     <span
                       className="w-2 h-2 rounded-full shrink-0"
-                      style={{ background: SIGNAL_COLORS[st] }}
+                      style={{ background: signalCssColor(st) }}
                     />
-                    <span className="text-[10px] text-[var(--color-text)]">{SIGNAL_LABELS[st]}</span>
+                    <span className="text-[10px] text-[var(--color-text)]">{signalLabel(st)}</span>
                   </label>
                 ))}
               </div>
@@ -2728,7 +2725,7 @@ function PortRow({
 
           <div
             className="w-2.5 h-2.5 rounded-full shrink-0"
-            style={{ background: SIGNAL_COLORS[port.signalType] }}
+            style={{ background: signalCssColor(port.signalType) }}
           />
 
           {/* min-w floor, not min-w-0: flex-1 with no minimum let every other
@@ -2757,7 +2754,7 @@ function PortRow({
             >
               <option value="">(inherits from connection)</option>
               {ALL_SIGNAL_TYPES.map((t) => (
-                <option key={t} value={t}>{SIGNAL_LABELS[t]}</option>
+                <option key={t} value={t}>{signalLabel(t)}</option>
               ))}
             </select>
           ) : (
@@ -2768,13 +2765,13 @@ function PortRow({
                 const newSignal = e.target.value as SignalType;
                 onUpdate({
                   signalType: newSignal,
-                  connectorType: DEFAULT_CONNECTOR[newSignal],
+                  connectorType: defaultConnector(newSignal),
                 });
               }}
             >
               {ALL_SIGNAL_TYPES.map((t) => (
                 <option key={t} value={t}>
-                  {SIGNAL_LABELS[t]}
+                  {signalLabel(t)}
                 </option>
               ))}
             </select>
@@ -2783,7 +2780,7 @@ function PortRow({
           {direction !== "passthrough" && (
             <select
               className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1 py-1 text-[10px] text-[var(--color-text-heading)] outline-none focus:border-blue-500 cursor-pointer max-w-[80px]"
-              value={port.connectorType ?? DEFAULT_CONNECTOR[port.signalType]}
+              value={port.connectorType ?? defaultConnector(port.signalType)}
               onChange={(e) => onUpdate({ connectorType: e.target.value as ConnectorType })}
               title="Connector type"
             >
@@ -2791,7 +2788,7 @@ function PortRow({
                 <optgroup key={groupName} label={groupName}>
                   {types.map((c) => (
                     <option key={c} value={c}>
-                      {CONNECTOR_LABELS[c]}
+                      {connectorLabel(c)}
                     </option>
                   ))}
                 </optgroup>
@@ -2801,7 +2798,7 @@ function PortRow({
 
           {/* Connector gender — only shown for connectors where M/F genuinely varies */}
           {direction !== "passthrough" && (() => {
-            const ct = port.connectorType ?? DEFAULT_CONNECTOR[port.signalType];
+            const ct = port.connectorType ?? defaultConnector(port.signalType);
             if (!CONNECTORS_WITH_GENDER_VARIATION.has(ct)) return null;
             const resolved = resolvePortGender({
               id: port.id,
@@ -2925,7 +2922,7 @@ function PortRow({
                 {CONNECTOR_GROUP_ENTRIES.map(([groupName, types]) => (
                   <optgroup key={groupName} label={groupName}>
                     {types.map((c) => (
-                      <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>
+                      <option key={c} value={c}>{connectorLabel(c)}</option>
                     ))}
                   </optgroup>
                 ))}
@@ -2960,7 +2957,7 @@ function PortRow({
                 {CONNECTOR_GROUP_ENTRIES.map(([groupName, types]) => (
                   <optgroup key={groupName} label={groupName}>
                     {types.map((c) => (
-                      <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>
+                      <option key={c} value={c}>{connectorLabel(c)}</option>
                     ))}
                   </optgroup>
                 ))}

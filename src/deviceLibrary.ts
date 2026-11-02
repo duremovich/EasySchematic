@@ -24,6 +24,7 @@ import { templates as expansionCards } from "./devices/expansion-cards";
 import { templates as storageMedia } from "./devices/storage-media";
 
 import { DEVICE_TYPE_TO_CATEGORY } from "./deviceTypeCategories";
+import { deviceTypeCategory } from "./typeRegistry";
 export { DEVICE_TYPE_TO_CATEGORY };
 
 export const DEVICE_TEMPLATES: DeviceTemplate[] = [
@@ -53,5 +54,5 @@ export const DEVICE_TEMPLATES: DeviceTemplate[] = [
 export const CARD_TEMPLATES: DeviceTemplate[] = [...expansionCards, ...storageMedia];
 
 for (const t of [...DEVICE_TEMPLATES, ...CARD_TEMPLATES]) {
-  (t as { category?: string }).category = DEVICE_TYPE_TO_CATEGORY[t.deviceType] ?? "Other";
+  (t as { category?: string }).category = deviceTypeCategory(t.deviceType);
 }

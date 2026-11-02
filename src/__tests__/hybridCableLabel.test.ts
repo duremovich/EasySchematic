@@ -112,7 +112,7 @@ describe("pairs that must NOT get a combined label", () => {
   it("refuses a combined label for family members that do not actually mate", () => {
     // MPO/QSFP ribbon and SFP cages are outside the family on purpose — nothing bridges
     // them to a simplex LC/SC/ST, so no hybrid cord should ever be named.
-    for (const outsider of ["mpo", "qsfp", "qsfp28", "sfp"] as ConnectorType[]) {
+    for (const outsider of ["mpo", "qsfp", "qsfp28", "sfp"] as const) {
       for (const f of FIBER) {
         expect(hybridCableLabel(f, outsider), `${f} ↔ ${outsider}`).toBeUndefined();
         expect(HYBRID_CABLE_FAMILY[outsider], outsider).toBeUndefined();

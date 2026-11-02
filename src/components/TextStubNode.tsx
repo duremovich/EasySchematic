@@ -1,7 +1,6 @@
 import { memo, useEffect, useRef, useState, useCallback } from "react";
 import { type NodeProps } from "@xyflow/react";
 import type { TextStubNode as TextStubNodeType, TextStubData, SchematicNode } from "../types";
-import { SIGNAL_COLORS } from "../types";
 import { useSchematicStore, GRID_SIZE } from "../store";
 import { getPortAbsolutePositions } from "../snapUtils";
 import {
@@ -12,6 +11,7 @@ import {
   pointsToSvg,
 } from "../textStub";
 import { STUB_H_EST } from "../stubPlacement";
+import { signalCssColor } from "../typeRegistry";
 
 /** Walk parent chain to compute absolute position. */
 function absolutePos(node: SchematicNode | undefined, nodeMap: Map<string, SchematicNode>): { x: number; y: number } {
@@ -117,7 +117,7 @@ function TextStubNodeComponent({ id, data, selected }: NodeProps<TextStubNodeTyp
     };
   }, [id, placed, anchorNodeId, anchorPortId, side]);
 
-  const color = SIGNAL_COLORS[data.signalType] ?? "#999";
+  const color = signalCssColor(data.signalType);
 
   // ---- Inline text editing (double-click or the "Edit Text" context-menu action) ----
   const [draft, setDraft] = useState(data.text);

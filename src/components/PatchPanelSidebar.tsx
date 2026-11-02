@@ -4,6 +4,7 @@ import { useSchematicStore } from "../store";
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
 import { getPanelOccupancy, segmentsForEdge } from "../patchCircuits";
 import { scoreTemplate } from "../templateSearch";
+import { signalCssColor } from "../typeRegistry";
 
 type CableFilter = "all" | "patched" | "direct";
 
@@ -255,7 +256,7 @@ export default function PatchPanelSidebar() {
             <div className="flex items-center gap-2">
               <span
                 className="inline-block w-2 h-2 rounded-full shrink-0"
-                style={{ background: `var(--color-${e.data?.signalType ?? "custom"})` }}
+                style={{ background: signalCssColor(e.data?.signalType ?? "custom") }}
               />
               <span className="font-bold font-mono text-[11px]">{baseIdFor(e)}</span>
               <span className="text-neutral-500 truncate flex-1" title={`${fromLabel} → ${toLabel}`}>

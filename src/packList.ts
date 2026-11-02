@@ -6,12 +6,13 @@ import type {
   SignalType,
   SchematicPage,
 } from "./types";
-import { SIGNAL_LABELS, RACK_TYPE_LABELS } from "./types";
+import { RACK_TYPE_LABELS } from "./types";
 import { getCableType } from "./cableTypes";
 import { transformLabelNow, labelsAreRaw } from "./labelCaseUtils";
 import { findPortByHandle } from "./portHandles";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
+import { signalLabel } from "./typeRegistry";
 
 export type CableCategory = "Video" | "Audio" | "Control" | "Data" | "Power" | "Custom";
 
@@ -424,7 +425,7 @@ export function computePackList(
         : "Unknown";
       return {
         cableType: getCableType(srcPort, tgtPort, signalType),
-        signalType: SIGNAL_LABELS[signalType],
+        signalType: signalLabel(signalType),
         cableLength: (e.data?.cableLength as string) ?? "",
         sourceDevice: srcNode?.type === "device"
           ? (srcNode.data as DeviceData).label

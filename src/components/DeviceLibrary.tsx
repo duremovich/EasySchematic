@@ -1,12 +1,12 @@
 import { type DragEvent, type ChangeEvent, useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { getBundledTemplates, fetchTemplates, isLibraryDegraded } from "../templateApi";
-import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate, CustomTemplateGroup, OwnedGearFile, OwnedGearItem, SchematicNode, DeviceData } from "../types";
 import { useSchematicStore, CATEGORY_ORDER_DEFAULT } from "../store";
 import { scoreTemplate } from "../templateSearch";
 import { inventoryKeyFromDeviceData, inventoryKeyFromTemplate } from "../inventoryKey";
 import DeviceCreatorPicker from "./DeviceCreatorPicker";
 import ImportDevicesDialog from "./ImportDevicesDialog";
+import { signalLabel } from "../typeRegistry";
 
 const APP_VERSION = __APP_VERSION__;
 const BUILD_HASH = __BUILD_HASH__;
@@ -68,7 +68,7 @@ function TemplateItem({
   onAddToOwned?: () => void;
 }) {
   const signalText = getUniqueSignalTypes(template)
-    .map((t) => SIGNAL_LABELS[t as keyof typeof SIGNAL_LABELS])
+    .map((t) => signalLabel(t))
     .join(" / ");
 
   return (
@@ -276,7 +276,7 @@ function DraggableTemplateItem({
   const rowRef = useRef<HTMLDivElement>(null);
 
   const signalText = getUniqueSignalTypes(template)
-    .map((t) => SIGNAL_LABELS[t as keyof typeof SIGNAL_LABELS])
+    .map((t) => signalLabel(t))
     .join(" / ");
 
   return (
@@ -1103,7 +1103,7 @@ export default function DeviceLibrary() {
     if (selectedBrands.size > 0) source = source.filter((t) => t.manufacturer && selectedBrands.has(t.manufacturer));
     const types = new Set<string>();
     for (const t of source) for (const p of t.ports) types.add(p.signalType);
-    return [...types].sort((a, b) => (SIGNAL_LABELS[a as keyof typeof SIGNAL_LABELS] ?? a).localeCompare(SIGNAL_LABELS[b as keyof typeof SIGNAL_LABELS] ?? b));
+    return [...types].sort((a, b) => signalLabel(a).localeCompare(signalLabel(b)));
   }, [libraryTemplates, selectedCategories, selectedBrands]);
 
   const toggleCategory = useCallback((cat: string) => {
@@ -1474,7 +1474,7 @@ export default function DeviceLibrary() {
                     : "bg-white text-[var(--color-text)] hover:bg-[var(--color-surface-hover)]"
                 }`}
               >
-                {SIGNAL_LABELS[st as keyof typeof SIGNAL_LABELS] ?? st}
+                {signalLabel(st)}
               </button>
             ))}
           </div>

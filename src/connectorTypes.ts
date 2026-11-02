@@ -1,150 +1,18 @@
-import type { ConnectorType, ConnectionEdge, DeviceTemplate, Gender, Port, SignalType } from "./types";
-
-/** Default connector type inferred from signal type — used for migration and new ports */
-export const DEFAULT_CONNECTOR: Record<SignalType, ConnectorType> = {
-  sdi: "bnc",
-  hdmi: "hdmi",
-  ndi: "rj45",
-  dante: "rj45",
-  avb: "rj45",
-  "analog-audio": "xlr-3",
-  "speaker-level": "speakon",
-  bluetooth: "wireless",
-  aes: "xlr-3",
-  dmx: "xlr-5",
-  madi: "bnc",
-  usb: "usb-a",
-  ethernet: "rj45",
-  fiber: "lc",
-  displayport: "displayport",
-  hdbaset: "rj45",
-  srt: "rj45",
-  genlock: "bnc",
-  gpio: "phoenix",
-  "contact-closure": "phoenix",
-  rs422: "db9",
-  rs485: "phoenix",
-  serial: "db9",
-  thunderbolt: "usb-c",
-  composite: "bnc",
-  "s-video": "mini-din-4",
-  vga: "vga",
-  dvi: "dvi",
-  power: "iec",
-  "power-l1": "cam-lok",
-  "power-l2": "cam-lok",
-  "power-l3": "cam-lok",
-  "power-neutral": "cam-lok",
-  "power-ground": "cam-lok",
-  midi: "din-5",
-  tally: "db9",
-  spdif: "rca",
-  adat: "toslink",
-  ultranet: "rj45",
-  aes50: "ethercon",
-  stageconnect: "xlr-3",
-  wordclock: "bnc",
-  aes67: "rj45",
-  ydif: "rj45",
-  rf: "bnc",
-  st2110: "rj45",
-  artnet: "rj45",
-  sacn: "rj45",
-  ir: "terminal-block",
-  timecode: "bnc",
-  gigaace: "ethercon",
-  dx5: "ethercon",
-  slink: "ethercon",
-  soundgrid: "ethercon",
-  fibreace: "opticalcon",
-  dsnake: "ethercon",
-  dxlink: "ethercon",
-  gps: "db9",
-  dars: "bnc",
-  rtmp: "rj45",
-  rtsp: "rj45",
-  "mpeg-ts": "rj45",
-  "component-video": "bnc",
-  digilink: "digilink",
-  ebus: "phoenix",
-  "control-voltage": "phoenix",
-  "extron-exp": "rj45",
-  pots: "rj11",
-  "blu-link": "rj45",
-  cresnet: "terminal-block",
-  nlight: "rj45",
-  dcp: "rj45",
-  sensor: "phoenix",
-  custom: "other",
-};
-
-/** Directional acceptance: which other connector types a connector can physically accept */
-export interface ConnectorAcceptance {
-  native?: ConnectorType[];   // direct physical acceptance, no adapter needed
-  adapter?: ConnectorType[];  // physically compatible but needs an adapter cable
-}
-
-export const CONNECTOR_ACCEPTS: Partial<Record<ConnectorType, ConnectorAcceptance>> = {
-  "combo-xlr-trs": { native: ["xlr-3", "trs-quarter", "ts-quarter"] },
-  "ethercon":      { native: ["rj45"] },
-  // HD-BNC is the high-density 75-ohm coax used on dense SDI cards. It reaches
-  // full-size BNC through an HD-BNC to BNC cable, never directly.
-  "hd-bnc":        { adapter: ["bnc"] },
-  // Fiber terminations are treated as interchangeable. LC, SC and ST all land on
-  // the same 1.25/2.5mm ferrule families and in the field you bridge whatever
-  // mismatch you find with a hybrid patch cord, so warning on every mixed pair
-  // was noise. opticalCON breaks out to that same family, so it accepts all three
-  // rather than just LC. MPO/QSFP ribbon and SFP cages are deliberately excluded —
-  // no patch cord bridges those.
-  "opticalcon":    { native: ["lc", "sc", "st"] },
-  "lc":            { native: ["sc", "st", "opticalcon"] },
-  "sc":            { native: ["lc", "st", "opticalcon"] },
-  "st":            { native: ["lc", "sc", "opticalcon"] },
-  "binding-post-banana": { native: ["binding-post", "banana"] },
-  "usb-c":         { adapter: ["usb-a", "usb-b"] },
-  // USB host (Type-A) to peripheral (Type-B / mini-B / micro-B) is the standard
-  // USB cable, not an adapter — e.g. computer to printer or audio interface.
-  "usb-a":         { native: ["usb-b", "usb-mini", "usb-micro"] },
-  "mini-xlr":      { adapter: ["xlr-3"] },
-  "dvi":           { adapter: ["hdmi"] },
-  "mini-hdmi":     { adapter: ["hdmi"] },
-  "mini-displayport": { adapter: ["displayport"] },
-  "iec":           { adapter: ["edison", "powercon", "iec-c5", "iec-c7", "iec-c15", "iec-c20"] },
-  "iec-c5":        { adapter: ["iec", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon"] },
-  "iec-c7":        { adapter: ["iec", "iec-c5", "iec-c15", "iec-c20", "edison", "powercon"] },
-  "iec-c15":       { adapter: ["iec", "iec-c5", "iec-c7", "iec-c20", "edison", "powercon"] },
-  "iec-c20":       { adapter: ["iec", "iec-c5", "iec-c7", "iec-c15", "edison", "powercon"] },
-  "powercon":      { adapter: ["edison", "iec-c5", "iec-c7", "iec-c15", "iec-c20"] },
-  "l5-20":         { adapter: ["edison", "powercon"] },
-  "l6-20":         { adapter: ["edison", "powercon"] },
-  "l6-30":         { adapter: ["edison", "powercon"] },
-  "l21-30":        { adapter: ["edison", "powercon"] },
-  "xlr-3":         { adapter: ["xlr-4", "trs-quarter", "rca"] },
-  "xlr-4":         { adapter: ["xlr-3"] },
-  "trs-quarter":   { native: ["ts-quarter"], adapter: ["xlr-3", "trs-eighth"] },
-  // 1/4" TS is the same physical barrel as TRS — they mate without an adapter
-  // (a TS plug just ties ring to sleeve). Electrically mono/unbalanced.
-  "ts-quarter":    { native: ["trs-quarter"], adapter: ["xlr-3", "trs-eighth"] },
-  "trs-eighth":    { adapter: ["trs-quarter", "ts-quarter"] },
-  "rca":           { adapter: ["xlr-3"] },
-  "edison":        { adapter: ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
-  "schuko":        { native: ["europlug"], adapter: ["french-power", "iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
-  "french-power":  { native: ["europlug"], adapter: ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
-  "uk-power":      { adapter: ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon", "l5-20", "l6-20", "l6-30", "l21-30", "schuko", "french-power", "europlug"] },
-};
+import type { BuiltinConnectorType, BuiltinSignalType, ConnectorType, ConnectionEdge, DeviceTemplate, Gender, Port, SignalType } from "./types";
+import { connectorAccepts, connectorGender } from "./typeRegistry";
 
 /** Bare-wire connectors that are still a REAL termination — a screw-terminal block the
  *  stripped conductors land in. One cable can carry a moulded plug on one end and a
  *  screw-terminal tail on the other (DSP euroblock out → amplifier XLR in), so these may
  *  headline a combined pack-list label. */
-export const TERMINABLE_BARE_WIRE_CONNECTORS: Set<ConnectorType> = new Set([
+export const TERMINABLE_BARE_WIRE_CONNECTORS: Set<ConnectorType> = new Set<BuiltinConnectorType>([
   "phoenix", "terminal-block",
 ]);
 
 /** Bare-wire terminations with NO connector at all — the cable is cut from a spool and
  *  soldered or punched down in the field. Whatever the far end is, the part packed is
  *  bulk cable, so these must never appear in a combined label. */
-export const FIELD_TERMINATED_CONNECTORS: Set<ConnectorType> = new Set([
+export const FIELD_TERMINATED_CONNECTORS: Set<ConnectorType> = new Set<BuiltinConnectorType>([
   "solder-cup", "punch-down-110", "punch-down-66", "krone-idc",
 ]);
 
@@ -160,13 +28,13 @@ export const BARE_WIRE_CONNECTORS: Set<ConnectorType> = new Set([
  *  analog/speaker audio runs like XLR↔Phoenix. hdmi↔phoenix passes the compatibility
  *  check yet no such cable exists, so pairings outside this set keep the far end's own
  *  cable label instead of inventing a hybrid. */
-export const BARE_WIRE_HYBRID_PARTNERS: Set<ConnectorType> = new Set([
+export const BARE_WIRE_HYBRID_PARTNERS: Set<ConnectorType> = new Set<BuiltinConnectorType>([
   "xlr-3", "mini-xlr", "combo-xlr-trs", "trs-quarter", "ts-quarter", "trs-eighth", "rca", "speakon",
 ]);
 
 /** Signal pairs that physically share a connector and are interchangeable when both ports use it.
  *  Thunderbolt ports are USB-C and carry USB; a plain USB-C cable works between them. */
-export const SIGNAL_COMPAT_VIA_CONNECTOR: ReadonlyArray<readonly [SignalType, SignalType, ConnectorType]> = [
+export const SIGNAL_COMPAT_VIA_CONNECTOR: ReadonlyArray<readonly [BuiltinSignalType, BuiltinSignalType, BuiltinConnectorType]> = [
   ["thunderbolt", "usb", "usb-c"],
 ];
 
@@ -188,7 +56,7 @@ export function areSignalsCompatibleViaConnector(
  *  An Allen & Heath SLink port auto-senses dSNAKE, DX and gigaACE, so an SLink jack mates
  *  directly with any of those stageboxes/consoles. These all ride ethercon/rj45, which
  *  areConnectorsCompatible already treats as interchangeable. */
-export const SIGNAL_COMPAT_PAIRS: ReadonlyArray<readonly [SignalType, SignalType]> = [
+export const SIGNAL_COMPAT_PAIRS: ReadonlyArray<readonly [BuiltinSignalType, BuiltinSignalType]> = [
   ["slink", "dsnake"],
   ["slink", "dx5"],
   ["slink", "gigaace"],
@@ -210,18 +78,18 @@ export function areConnectorsCompatible(a: ConnectorType | undefined, b: Connect
   // warning on a valid run is worse than a missing one on a questionable run.
   if (a === b) return true;
   if (BARE_WIRE_CONNECTORS.has(a) || BARE_WIRE_CONNECTORS.has(b)) return true;
-  const aAccepts = CONNECTOR_ACCEPTS[a];
-  if (aAccepts?.native?.includes(b) || aAccepts?.adapter?.includes(b)) return true;
-  const bAccepts = CONNECTOR_ACCEPTS[b];
-  if (bAccepts?.native?.includes(a) || bAccepts?.adapter?.includes(a)) return true;
+  const aAccepts = connectorAccepts(a);
+  if (aAccepts.native?.includes(b) || aAccepts.adapter?.includes(b)) return true;
+  const bAccepts = connectorAccepts(b);
+  if (bAccepts.native?.includes(a) || bAccepts.adapter?.includes(a)) return true;
   return false;
 }
 
 /** Check if two DIFFERENT connector types mate directly, with nothing in between. */
 export function matesNatively(a: ConnectorType, b: ConnectorType): boolean {
   return (
-    CONNECTOR_ACCEPTS[a]?.native?.includes(b) === true ||
-    CONNECTOR_ACCEPTS[b]?.native?.includes(a) === true
+    connectorAccepts(a).native?.includes(b) === true ||
+    connectorAccepts(b).native?.includes(a) === true
   );
 }
 
@@ -229,106 +97,10 @@ export function matesNatively(a: ConnectorType, b: ConnectorType): boolean {
 export function needsAdapter(a: ConnectorType | undefined, b: ConnectorType | undefined): boolean {
   if (!a || !b || a === b) return false;
   if (BARE_WIRE_CONNECTORS.has(a) || BARE_WIRE_CONNECTORS.has(b)) return false;
-  if (CONNECTOR_ACCEPTS[a]?.adapter?.includes(b)) return true;
-  if (CONNECTOR_ACCEPTS[b]?.adapter?.includes(a)) return true;
+  if (connectorAccepts(a).adapter?.includes(b)) return true;
+  if (connectorAccepts(b).adapter?.includes(a)) return true;
   return false;
 }
-
-/** Maps connector type to cable label for pack lists */
-export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
-  bnc: "BNC",
-  "hd-bnc": "HD-BNC",
-  hdmi: "HDMI",
-  displayport: "DisplayPort",
-  vga: "VGA",
-  "xlr-3": "XLR",
-  "xlr-4": "XLR-4",
-  "xlr-5": "XLR-5",
-  "trs-quarter": '1/4" TRS',
-  "ts-quarter": '1/4" TS',
-  "trs-eighth": "3.5mm TRS",
-  "combo-xlr-trs": "XLR",
-  rj45: "Cat6",
-  ethercon: "Cat6 (EtherCon)",
-  sfp: "SFP Fiber",
-  lc: "LC Fiber",
-  sc: "SC Fiber",
-  st: "ST Fiber",
-  "usb-a": "USB",
-  "usb-b": "USB",
-  "usb-c": "USB-C",
-  "usb-mini": "Mini USB",
-  "trs-2.5mm": "2.5mm TRS",
-  db7w2: "D-Sub 7W2",
-  db9: "DB9",
-  db15: "DB15",
-  db25: "DB25",
-  "din-5": "DIN-5",
-  "mini-din-4": "Mini-DIN 4-pin",
-  "mini-din-7": "Mini-DIN 7-pin",
-  "mini-din-8": "Mini-DIN 8-pin",
-  phoenix: "Phoenix",
-  "terminal-block": "Terminal Block",
-  powercon: "powerCON",
-  edison: "Edison",
-  iec: "IEC",
-  "iec-c5": "IEC C5",
-  "iec-c7": "IEC C7",
-  "iec-c15": "IEC C15",
-  "iec-c20": "IEC C20",
-  schuko: "Schuko",
-  "french-power": "French Power",
-  europlug: "Europlug",
-  "uk-power": "UK Power",
-  speakon: "speakON",
-  socapex: "Socapex",
-  multipin: "Multi-pin",
-  rca: "RCA",
-  rj11: "RJ11",
-  rj12: "RJ12",
-  toslink: "TOSLINK",
-  barrel: "DC Barrel",
-  "d-tap": "D-Tap",
-  "v-mount": "V-Mount",
-  "f-connector": "F-Conn",
-  banana: "Speaker Wire",
-  "binding-post": "Speaker Wire",
-  "binding-post-banana": "Speaker Wire",
-  dvi: "DVI",
-  "mini-hdmi": "Mini HDMI",
-  "micro-hdmi": "Micro HDMI",
-  "mini-displayport": "Mini DisplayPort",
-  "mini-xlr": "Mini XLR",
-  opticalcon: "opticalCON Fiber",
-  "l5-20": "L5-20",
-  "l6-20": "L6-20",
-  "l6-30": "L6-30",
-  "l21-30": "L21-30",
-  "cam-lok": "Cam-Lok",
-  "powercon-true1": "powerCON TRUE1",
-  qsfp: "QSFP Fiber",
-  qsfp28: "QSFP28 Fiber",
-  "qsfp-dd": "QSFP-DD Fiber",
-  mpo: "MPO Fiber",
-  wireless: "Wireless",
-  "usb-micro": "Micro USB",
-  "reverse-tnc": "Reverse TNC",
-  sma: "SMA",
-  db37: "DB37",
-  digilink: "DigiLink",
-  "pcie-6pin": "PCIe 6-pin Aux",
-  "lemo-2pin": "LEMO 2-pin",
-  "lemo-4pin": "LEMO 4-pin",
-  "lemo-5pin": "LEMO 5-pin",
-  "kycon-4pin": "Kycon 4-pin",
-  "solder-cup": "Bare Wire",
-  "punch-down-110": "Bulk Cable",
-  "punch-down-66": "Bulk Cable",
-  "krone-idc": "Bulk Cable",
-  "d-hole-insert": "",
-  none: "",
-  other: "Other",
-};
 
 /**
  * Connector families whose members mate natively but terminate a cable DIFFERENTLY.
@@ -347,7 +119,7 @@ export const CONNECTOR_TO_CABLE: Record<ConnectorType, string> = {
  * The value is the cable-family word that every member's CONNECTOR_TO_CABLE entry
  * ends with, so "LC Fiber" + "SC Fiber" reads back out as "LC to SC Fiber".
  */
-export const HYBRID_CABLE_FAMILY: Partial<Record<ConnectorType, string>> = {
+export const HYBRID_CABLE_FAMILY: Partial<Record<BuiltinConnectorType, string>> = {
   lc: "Fiber",
   sc: "Fiber",
   st: "Fiber",
@@ -548,93 +320,10 @@ export function findAdaptersForConnectorBridge(
 }
 
 /**
- * Connector gender convention table.
- * - Fixed entry: gender is the same regardless of port direction (e.g., RJ45 jacks are always female on a device).
- * - Direction map: gender depends on whether the port is an input or output (e.g., XLR input = female, output = male).
- * - Omitted entries: connector is genderless or doesn't have a meaningful M/F distinction (fiber, terminal blocks, etc.).
- */
-export const CONNECTOR_GENDER: Partial<Record<ConnectorType, Gender | { input: Gender; output: Gender }>> = {
-  // Fixed gender — device side is always this regardless of direction
-  hdmi: "female",
-  "mini-hdmi": "female",
-  displayport: "female",
-  "mini-displayport": "female",
-  vga: "female",
-  dvi: "female",
-  rj45: "female",
-  ethercon: "female",
-  rj11: "female",
-  rj12: "female",
-  "usb-a": "female",
-  "usb-b": "female",
-  "usb-c": "female",
-  "usb-mini": "female",
-  "usb-micro": "female",
-  rca: "female",
-  toslink: "female",
-  "din-5": "female",
-  "mini-din-4": "female",
-  "mini-din-7": "female",
-  "mini-din-8": "female",
-  digilink: "female",
-  db7w2: "female",
-  db9: "female",
-  db15: "female",
-  db25: "female",
-  db37: "female",
-  "trs-quarter": "female",
-  "ts-quarter": "female",
-  "trs-eighth": "female",
-  "trs-2.5mm": "female",
-  "combo-xlr-trs": "female",
-  "f-connector": "female",
-  "reverse-tnc": "female",
-  sma: "female",
-  barrel: "female",
-  "pcie-6pin": "male",
-  "d-tap": "female",
-  "v-mount": "female",
-  "lemo-2pin": "female",
-  "lemo-4pin": "female",
-  "lemo-5pin": "female",
-
-  // Direction-conditional — gender flips based on signal flow
-  "xlr-3":            { input: "female", output: "male" },
-  "xlr-4":            { input: "female", output: "male" },
-  "xlr-5":            { input: "female", output: "male" },
-  "mini-xlr":         { input: "female", output: "male" },
-  bnc:                { input: "female", output: "female" }, // device side is female; cable BNCs are male
-  "hd-bnc":           { input: "female", output: "female" },
-  speakon:            { input: "female", output: "female" }, // chassis-mount is typically female on both
-  "powercon":         { input: "male",   output: "female" }, // input/inlet = male (NAC3MPA), output = female (NAC3FPB)
-  "powercon-true1":   { input: "male",   output: "female" },
-  iec:                { input: "male",   output: "female" }, // C14 inlet = male, C13 outlet = female
-  "iec-c5":           { input: "male",   output: "female" },
-  "iec-c7":           { input: "male",   output: "female" },
-  "iec-c15":          { input: "male",   output: "female" },
-  "iec-c20":          { input: "male",   output: "female" },
-  edison:             { input: "male",   output: "female" },
-  schuko:             { input: "male",   output: "female" },
-  "french-power":     { input: "male",   output: "female" },
-  europlug:           { input: "male",   output: "female" },
-  "uk-power":         { input: "male",   output: "female" },
-  "l5-20":            { input: "male",   output: "female" },
-  "l6-20":            { input: "male",   output: "female" },
-  "l6-30":            { input: "male",   output: "female" },
-  "l21-30":           { input: "male",   output: "female" },
-  "cam-lok":          { input: "female", output: "male"   },
-  socapex:            { input: "female", output: "female" },
-  multipin:           { input: "female", output: "female" },
-  banana:             { input: "female", output: "female" }, // binding posts on both sides
-  "binding-post":     { input: "female", output: "female" },
-  "binding-post-banana": { input: "female", output: "female" },
-};
-
-/**
  * Connectors where gender genuinely varies in real gear (and thus where the editor should expose
- * a manual override). Connectors not listed here use whatever CONNECTOR_GENDER says without prompting.
+ * a manual override). Connectors not listed here use whatever `connectorGender` says without prompting.
  */
-export const CONNECTORS_WITH_GENDER_VARIATION: Set<ConnectorType> = new Set([
+export const CONNECTORS_WITH_GENDER_VARIATION: Set<ConnectorType> = new Set<BuiltinConnectorType>([
   "xlr-3", "xlr-4", "xlr-5", "mini-xlr",
   "powercon", "powercon-true1",
   "iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20",
@@ -650,7 +339,7 @@ export function resolvePortGender(port: Port | undefined): Gender | undefined {
   if (!port) return undefined;
   if (port.gender) return port.gender;
   if (!port.connectorType) return undefined;
-  const entry = CONNECTOR_GENDER[port.connectorType];
+  const entry = connectorGender(port.connectorType);
   if (!entry) return undefined;
   if (typeof entry === "string") return entry;
   // Bidirectional ports fall back to the input convention.
@@ -731,22 +420,22 @@ export function usbcPowerShortfallW(
 }
 
 /** Signal types that can have network configuration */
-export const NETWORK_SIGNAL_TYPES: Set<SignalType> = new Set([
+export const NETWORK_SIGNAL_TYPES: Set<SignalType> = new Set<BuiltinSignalType>([
   "ethernet", "ndi", "dante", "avb", "srt", "hdbaset", "aes67", "st2110",
 ]);
 
 /** Signal types that can have video capabilities */
-export const VIDEO_SIGNAL_TYPES: Set<SignalType> = new Set([
+export const VIDEO_SIGNAL_TYPES: Set<SignalType> = new Set<BuiltinSignalType>([
   "sdi", "hdmi", "ndi", "displayport", "hdbaset", "fiber", "thunderbolt", "composite", "vga", "dvi", "srt", "st2110",
 ]);
 
 /** Signal types whose new ports default to multi-connect — logical/streaming signals where fan-in is the norm. */
-export const MULTI_CONNECT_DEFAULT_SIGNALS: Set<SignalType> = new Set([
+export const MULTI_CONNECT_DEFAULT_SIGNALS: Set<SignalType> = new Set<BuiltinSignalType>([
   "srt", "custom",
 ]);
 
 /** Connector types whose new ports default to multi-connect — wireless/RF carriers where many TX → one RX. */
-export const MULTI_CONNECT_DEFAULT_CONNECTORS: Set<ConnectorType> = new Set([
+export const MULTI_CONNECT_DEFAULT_CONNECTORS: Set<ConnectorType> = new Set<BuiltinConnectorType>([
   "wireless",
 ]);
 

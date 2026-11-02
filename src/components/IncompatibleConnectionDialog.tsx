@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { useSchematicStore } from "../store";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge } from "../connectorTypes";
-import { SIGNAL_LABELS, CONNECTOR_LABELS } from "../types";
 import type { DeviceTemplate } from "../types";
 import { DEVICE_TEMPLATES } from "../deviceLibrary";
+import { connectorLabel, signalLabel } from "../typeRegistry";
 
 export default function IncompatibleConnectionDialog() {
   const pending = useSchematicStore((s) => s.pendingIncompatibleConnection);
@@ -40,10 +40,10 @@ export default function IncompatibleConnectionDialog() {
   if (!pending) return null;
 
   const isConnectorMismatch = pending.reason === "connector-mismatch";
-  const srcSignal = SIGNAL_LABELS[pending.sourcePort.signalType];
-  const tgtSignal = SIGNAL_LABELS[pending.targetPort.signalType];
-  const srcConn = pending.sourcePort.connectorType ? CONNECTOR_LABELS[pending.sourcePort.connectorType] : "";
-  const tgtConn = pending.targetPort.connectorType ? CONNECTOR_LABELS[pending.targetPort.connectorType] : "";
+  const srcSignal = signalLabel(pending.sourcePort.signalType);
+  const tgtSignal = signalLabel(pending.targetPort.signalType);
+  const srcConn = pending.sourcePort.connectorType ? connectorLabel(pending.sourcePort.connectorType) : "";
+  const tgtConn = pending.targetPort.connectorType ? connectorLabel(pending.targetPort.connectorType) : "";
 
   // insertAdapterBetween clears the pending state even when it refuses (e.g. a
   // preset reshaped the adapter's ports out from under the matched template);

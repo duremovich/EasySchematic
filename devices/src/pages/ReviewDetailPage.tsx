@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { fetchSubmission, fetchTemplate, approveSubmission, rejectSubmission, deferSubmission, claimSubmission } from "../api";
 import type { Submission } from "../api";
 import type { DeviceTemplate, Port, SlotDefinition } from "../../../src/types";
-import { CONNECTOR_LABELS } from "../../../src/types";
 import { DEVICE_TYPE_TO_CATEGORY, DEVICE_TYPE_ALIASES, ALL_CATEGORIES, carriesPowerCapacity } from "../../../src/deviceTypeCategories";
 import { slugifyTypeId } from "../../../src/customTypes";
 import { useDeviceTypeCatalog } from "../hooks/useDeviceTypeCatalog";
@@ -11,6 +10,7 @@ import StatusBadge from "../components/StatusBadge";
 import SignalBadge from "../components/SignalBadge";
 import ReviewGuidelines from "../components/ReviewGuidelines";
 import PortEditor from "../components/PortEditor";
+import { connectorLabel } from "../../../src/typeRegistry";
 
 export default function ReviewDetailPage({ id, currentUserId }: { id: string; currentUserId?: string }) {
   const [submission, setSubmission] = useState<Submission | null>(null);
@@ -777,7 +777,7 @@ function PortTable({ ports, comparePorts, side }: { ports: Port[]; comparePorts?
               <td className="py-1 pl-1">{p.label}</td>
               <td className="py-1">{p.direction}</td>
               <td className="py-1"><SignalBadge signalType={p.signalType} /></td>
-              <td className="py-1 text-slate-500">{p.connectorType ? (CONNECTOR_LABELS[p.connectorType] ?? p.connectorType) : "—"}</td>
+              <td className="py-1 text-slate-500">{p.connectorType ? connectorLabel(p.connectorType) : "—"}</td>
               {hasGender && <td className="py-1 text-slate-500">{p.gender ? (p.gender === "male" ? "M" : "F") : "—"}</td>}
               {hasSections && <td className="py-1 text-slate-500">{p.section ?? "—"}</td>}
             </tr>

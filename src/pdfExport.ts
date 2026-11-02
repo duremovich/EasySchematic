@@ -16,7 +16,6 @@ import type { RoutedEdge } from "./edgeRouter";
 import { computeCellRects, normalizeSizes, getFieldValue } from "./titleBlockLayout";
 import { useSchematicStore } from "./store";
 import { buildCrossingLabelInfo, crossingLabelText } from "./crossingLabels";
-import { DEFAULT_SIGNAL_COLORS } from "./signalColors";
 import { transformLabelNow } from "./labelCaseUtils";
 import { collectColorKeyEntries, layoutColorKey, type ColorKeyEntry } from "./colorKeyLayout";
 import {
@@ -29,6 +28,7 @@ import {
   PILL_PAD_PT,
   type TitleBlockBand,
 } from "./continuationPill";
+import { signalColor } from "./typeRegistry";
 
 const DPI = 96;
 // 5 × 96 = 480 DPI — well above the 300 DPI print standard, sharp even at high
@@ -420,8 +420,8 @@ export function computePdfCrossingLabels(
   const storeColors = useSchematicStore.getState().signalColors;
   const resolveColor = (edge: ConnectionEdge): string => {
     const st = edge.data?.signalType;
-    if (!st) return DEFAULT_SIGNAL_COLORS.custom;
-    return storeColors?.[st] ?? DEFAULT_SIGNAL_COLORS[st];
+    if (!st) return signalColor("custom");
+    return storeColors?.[st] ?? signalColor(st);
   };
 
   // Convert canvas px to inches relative to this page's content area

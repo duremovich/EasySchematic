@@ -4,10 +4,9 @@
  */
 
 import type { SignalType, Port, DeviceTemplate, SchematicNode, DeviceNode, ConnectionEdge } from "./types";
-import { SIGNAL_LABELS, SIGNAL_COLORS } from "./types";
-import { DEFAULT_CONNECTOR } from "./connectorTypes";
 import { normalizeHeaderColor } from "./deviceHeaderColor";
 import { scoreTemplate } from "./templateSearch";
+import { allSignals, defaultConnector, signalCssColor, signalLabel } from "./typeRegistry";
 
 // ---------- Types ----------
 
@@ -226,9 +225,9 @@ export function detectColumns(headers: string[]): ColumnMapping {
 // ---------- Signal Type Parsing ----------
 
 const SIGNAL_REVERSE = new Map<string, SignalType>();
-for (const [key, label] of Object.entries(SIGNAL_LABELS)) {
-  SIGNAL_REVERSE.set(label.toLowerCase(), key as SignalType);
-  SIGNAL_REVERSE.set(key.toLowerCase(), key as SignalType);
+for (const key of allSignals()) {
+  SIGNAL_REVERSE.set(signalLabel(key).toLowerCase(), key);
+  SIGNAL_REVERSE.set(key.toLowerCase(), key);
 }
 // Common aliases
 SIGNAL_REVERSE.set("audio", "analog-audio");
@@ -350,7 +349,7 @@ function inferPorts(deviceName: string, connections: ParsedConnection[]): Port[]
       label,
       signalType: sig,
       direction: "output",
-      connectorType: DEFAULT_CONNECTOR[sig],
+      connectorType: defaultConnector(sig),
     });
   }
 
@@ -367,7 +366,7 @@ function inferPorts(deviceName: string, connections: ParsedConnection[]): Port[]
       label,
       signalType: sig,
       direction: "input",
-      connectorType: DEFAULT_CONNECTOR[sig],
+      connectorType: defaultConnector(sig),
     });
   }
 
@@ -861,7 +860,7 @@ export function buildImportResult(
       targetHandle,
       data: { signalType: sig },
       style: {
-        stroke: SIGNAL_COLORS[sig] ?? "var(--color-custom)",
+        stroke: signalCssColor(sig),
         strokeWidth: 2,
       },
     } as ConnectionEdge);

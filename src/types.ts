@@ -1,6 +1,8 @@
 import type { Node, Edge } from "@xyflow/react";
 
-export type ConnectorType =
+/** Connector types defined in code. Tables keyed by this stay exhaustive, so adding a
+ *  built-in forces every entry; everything else uses the wide `ConnectorType`. */
+export type BuiltinConnectorType =
   | "bnc" | "hd-bnc" | "hdmi" | "displayport" | "vga"
   | "xlr-3" | "xlr-4" | "xlr-5" | "trs-quarter" | "ts-quarter" | "trs-eighth" | "combo-xlr-trs"
   | "rj45" | "ethercon" | "sfp" | "lc" | "sc" | "st"
@@ -20,6 +22,10 @@ export type ConnectorType =
   | "wireless"
   | "solder-cup" | "punch-down-110" | "punch-down-66" | "krone-idc" | "d-hole-insert"
   | "none" | "other";
+
+/** Any connector id: a built-in, or a community / user type the registry knows (or not).
+ *  Look its label, cable, gender and mating up through `typeRegistry`. */
+export type ConnectorType = BuiltinConnectorType | (string & {});
 
 export interface PortNetworkConfig {
   ip?: string;
@@ -51,7 +57,9 @@ export interface PortActiveConfig {
   colorSpace?: string;
 }
 
-export type SignalType =
+/** Signal types defined in code. Tables keyed by this stay exhaustive, so adding a
+ *  built-in forces every entry; everything else uses the wide `SignalType`. */
+export type BuiltinSignalType =
   | "sdi"
   | "hdmi"
   | "ndi"
@@ -126,6 +134,10 @@ export type SignalType =
   | "dcp"
   | "sensor"
   | "custom";
+
+/** Any signal id: a built-in, or a community / user type the registry knows (or not).
+ *  Look its label, color, group and cable up through `typeRegistry`. */
+export type SignalType = BuiltinSignalType | (string & {});
 
 export type LineStyle = "solid" | "dashed" | "dotted" | "dash-dot";
 
@@ -1035,7 +1047,7 @@ export const DEFAULT_SCROLL_CONFIG: ScrollConfig = {
   trackpadEnabled: true,
 };
 
-export const SIGNAL_COLORS: Record<SignalType, string> = {
+export const SIGNAL_COLORS: Record<BuiltinSignalType, string> = {
   sdi: "var(--color-sdi)",
   hdmi: "var(--color-hdmi)",
   ndi: "var(--color-ndi)",
@@ -1112,7 +1124,7 @@ export const SIGNAL_COLORS: Record<SignalType, string> = {
   custom: "var(--color-custom)",
 };
 
-export const CONNECTOR_LABELS: Record<ConnectorType, string> = {
+export const CONNECTOR_LABELS: Record<BuiltinConnectorType, string> = {
   bnc: "BNC",
   "hd-bnc": "HD-BNC",
   hdmi: "HDMI",
@@ -1215,7 +1227,7 @@ export function portSide(p: Port): "left" | "right" {
   return p.flipped ? "right" : "left";
 }
 
-export const SIGNAL_LABELS: Record<SignalType, string> = {
+export const SIGNAL_LABELS: Record<BuiltinSignalType, string> = {
   sdi: "SDI",
   hdmi: "HDMI",
   ndi: "NDI",
@@ -1293,7 +1305,7 @@ export const SIGNAL_LABELS: Record<SignalType, string> = {
 };
 
 /** Signal types organized by functional group (for searchable dropdowns) */
-export const SIGNAL_GROUPS: Record<string, SignalType[]> = {
+export const SIGNAL_GROUPS: Record<string, BuiltinSignalType[]> = {
   "Video": ["sdi", "hdmi", "displayport", "dvi", "composite", "component-video", "s-video", "vga"],
   "Video over IP": ["ndi", "srt", "hdbaset", "st2110"],
   "Audio": ["analog-audio", "speaker-level", "bluetooth", "aes", "dante", "avb", "aes67", "madi", "spdif", "adat", "ultranet", "aes50", "stageconnect", "ydif", "soundgrid", "gigaace", "dx5", "dsnake", "slink", "fibreace", "digilink", "extron-exp", "pots", "blu-link"],
@@ -1306,7 +1318,7 @@ export const SIGNAL_GROUPS: Record<string, SignalType[]> = {
 };
 
 /** Connector types organized by functional group (for searchable dropdowns) */
-export const CONNECTOR_GROUPS: Record<string, ConnectorType[]> = {
+export const CONNECTOR_GROUPS: Record<string, BuiltinConnectorType[]> = {
   "Video": ["bnc", "hd-bnc", "hdmi", "mini-hdmi", "micro-hdmi", "displayport", "mini-displayport", "dvi", "vga"],
   "Audio": ["xlr-3", "xlr-4", "xlr-5", "mini-xlr", "combo-xlr-trs", "trs-quarter", "ts-quarter", "trs-eighth", "trs-2.5mm", "rca", "din-5", "mini-din-4", "mini-din-7", "mini-din-8", "toslink"],
   "Network / Data": ["rj45", "ethercon", "sfp", "lc", "sc", "st", "opticalcon", "qsfp", "qsfp28", "qsfp-dd", "mpo", "rj11", "rj12"],

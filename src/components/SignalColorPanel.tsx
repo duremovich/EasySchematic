@@ -1,18 +1,20 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { SIGNAL_LABELS, type SignalType } from "../types";
+import type { BuiltinSignalType, SignalType } from "../types";
 import {
   DEFAULT_SIGNAL_COLORS,
   applySignalColors,
   loadSignalColors,
   saveSignalColors,
+  type SignalColorMap,
 } from "../signalColors";
 import { useSchematicStore } from "../store";
+import { signalColor, signalLabel } from "../typeRegistry";
 
-const SIGNAL_TYPES = Object.keys(DEFAULT_SIGNAL_COLORS) as SignalType[];
+const SIGNAL_TYPES = Object.keys(DEFAULT_SIGNAL_COLORS) as BuiltinSignalType[];
 
 export default function SignalColorPanel({ mobile, onClose }: { mobile?: boolean; onClose?: () => void } = {}) {
   const [collapsed, setCollapsed] = useState(true);
-  const [colors, setColors] = useState<Record<SignalType, string>>(loadSignalColors);
+  const [colors, setColors] = useState<SignalColorMap>(loadSignalColors);
 
   // Sync colors when schematic is loaded/imported
   // Serialize to string so the effect fires even when signalColors goes from object → undefined
@@ -99,12 +101,12 @@ export default function SignalColorPanel({ mobile, onClose }: { mobile?: boolean
               onChange={(e) => updateColor(type, e.target.value)}
               className="w-5 h-5 rounded cursor-pointer border border-[var(--color-border)] p-0 bg-transparent [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded [&::-webkit-color-swatch]:border-none"
             />
-            <span className="text-xs text-[var(--color-text)] flex-1">{SIGNAL_LABELS[type]}</span>
-            {colors[type] !== DEFAULT_SIGNAL_COLORS[type] && (
+            <span className="text-xs text-[var(--color-text)] flex-1">{signalLabel(type)}</span>
+            {colors[type] !== signalColor(type) && (
               <button
                 onClick={(e) => {
                   e.preventDefault();
-                  updateColor(type, DEFAULT_SIGNAL_COLORS[type]);
+                  updateColor(type, signalColor(type));
                 }}
                 className="opacity-0 group-hover:opacity-100 text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-[10px] transition-opacity"
                 title="Reset to default"

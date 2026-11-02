@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { useSchematicStore, type PortEditConflict } from "../store";
 import { findAdaptersForSignalBridge, findAdaptersForConnectorBridge } from "../connectorTypes";
-import { SIGNAL_LABELS, CONNECTOR_LABELS } from "../types";
 import type { DeviceData, DeviceTemplate } from "../types";
 import { DEVICE_TEMPLATES } from "../deviceLibrary";
+import { connectorLabel, signalLabel } from "../typeRegistry";
 
 /** After a port edit invalidates live connections (#306): one dialog listing every
  *  affected cable, each resolvable as disconnect, insert adapter, or keep-with-flag. */
@@ -49,14 +49,14 @@ export default function PortEditConflictDialog() {
   };
 
   const portSummary = (c: PortEditConflict) => {
-    const srcConn = c.sourceConnector ? CONNECTOR_LABELS[c.sourceConnector] : "";
-    const tgtConn = c.targetConnector ? CONNECTOR_LABELS[c.targetConnector] : "";
+    const srcConn = c.sourceConnector ? connectorLabel(c.sourceConnector) : "";
+    const tgtConn = c.targetConnector ? connectorLabel(c.targetConnector) : "";
     if (c.reason === "incompatible") {
-      return `${SIGNAL_LABELS[c.sourceSignal]} — the edited port's direction or connection rules no longer allow this cable`;
+      return `${signalLabel(c.sourceSignal)} — the edited port's direction or connection rules no longer allow this cable`;
     }
     return c.reason === "connector-mismatch"
-      ? `${srcConn || "?"} → ${tgtConn || "?"} (${SIGNAL_LABELS[c.sourceSignal]})`
-      : `${SIGNAL_LABELS[c.sourceSignal]}${srcConn ? ` (${srcConn})` : ""} → ${SIGNAL_LABELS[c.targetSignal]}${tgtConn ? ` (${tgtConn})` : ""}`;
+      ? `${srcConn || "?"} → ${tgtConn || "?"} (${signalLabel(c.sourceSignal)})`
+      : `${signalLabel(c.sourceSignal)}${srcConn ? ` (${srcConn})` : ""} → ${signalLabel(c.targetSignal)}${tgtConn ? ` (${tgtConn})` : ""}`;
   };
 
   return (

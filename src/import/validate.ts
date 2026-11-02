@@ -1,9 +1,7 @@
 import type { DeviceTemplate, Port, SlotDefinition } from "../types";
-import { SIGNAL_LABELS, CONNECTOR_LABELS } from "../types";
 import { DEVICE_TYPE_TO_CATEGORY, DEVICE_TYPE_ALIASES } from "../deviceTypeCategories";
+import { isKnownConnector, isKnownSignal } from "../typeRegistry";
 
-const VALID_SIGNAL_TYPES = new Set(Object.keys(SIGNAL_LABELS));
-const VALID_CONNECTOR_TYPES = new Set(Object.keys(CONNECTOR_LABELS));
 const VALID_DEVICE_TYPES = new Set(Object.keys(DEVICE_TYPE_TO_CATEGORY));
 const VALID_DIRECTIONS = new Set(["input", "output", "bidirectional", "passthrough"]);
 const VALID_GENDERS = new Set(["male", "female"]);
@@ -94,7 +92,7 @@ export function validateTemplate(t: Partial<DeviceTemplate>): TemplateValidation
       if (!isStr(port.label)) errors.push(`${prefix}.label is required`);
       if (!isStr(port.signalType)) {
         errors.push(`${prefix}.signalType is required`);
-      } else if (!VALID_SIGNAL_TYPES.has(port.signalType)) {
+      } else if (!isKnownSignal(port.signalType)) {
         errors.push(`${prefix} unknown signalType "${port.signalType}"`);
       }
       if (!isStr(port.direction)) {
@@ -103,7 +101,7 @@ export function validateTemplate(t: Partial<DeviceTemplate>): TemplateValidation
         errors.push(`${prefix}.direction must be input, output, bidirectional, or passthrough`);
       }
       for (const field of ["connectorType", "rearConnectorType", "frontConnectorType"] as const) {
-        if (port[field] != null && !VALID_CONNECTOR_TYPES.has(port[field] as string)) {
+        if (port[field] != null && !isKnownConnector(port[field] as string)) {
           errors.push(`${prefix} unknown ${field} "${port[field]}"`);
         }
       }

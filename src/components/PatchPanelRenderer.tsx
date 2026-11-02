@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import type { DeviceData } from "../types";
-import { CONNECTOR_LABELS } from "../types";
 import { useSchematicStore } from "../store";
 import {
   getPanelOccupancy,
@@ -11,6 +10,7 @@ import {
   type PortFaceDisplay,
 } from "../patchCircuits";
 import { exportPatchPanelStripsPdf } from "../patchPanelPdf";
+import { connectorLabel, signalCssColor } from "../typeRegistry";
 
 // Face geometry (px) — tuned to fit two-line port cards under each jack.
 const PITCH = 84;
@@ -98,8 +98,8 @@ export default function PatchPanelRenderer() {
     if (mismatch) {
       const faceLabel = mismatch.face === "rear" ? "rear" : "front";
       addToast(
-        `Won't fit — this port's ${faceLabel} is ${CONNECTOR_LABELS[mismatch.panelConnector]}, ` +
-          `but ${mismatch.otherLabel} is ${CONNECTOR_LABELS[mismatch.otherConnector]}.`,
+        `Won't fit — this port's ${faceLabel} is ${connectorLabel(mismatch.panelConnector)}, ` +
+          `but ${mismatch.otherLabel} is ${connectorLabel(mismatch.otherConnector)}.`,
         "error",
       );
       return;
@@ -133,7 +133,7 @@ export default function PatchPanelRenderer() {
         className={`border rounded px-1 py-0.5 bg-white shadow-sm cursor-default ${
           traced ? "border-amber-400 ring-2 ring-amber-200" : "border-neutral-300"
         }`}
-        style={{ borderLeftWidth: 3, borderLeftColor: `var(--color-${display.signalType ?? "custom"})` }}
+        style={{ borderLeftWidth: 3, borderLeftColor: signalCssColor(display.signalType ?? "custom") }}
         onMouseEnter={() => setPatchTracedEdge(display.edgeId)}
         onMouseLeave={() => setPatchTracedEdge(null)}
         onDoubleClick={() => {
@@ -270,7 +270,7 @@ export default function PatchPanelRenderer() {
                     const open = !display;
                     const traced = display && patchTracedEdgeId === display.edgeId;
                     const conn = port.frontConnectorType ?? port.connectorType;
-                    const connLabel = conn ? (CONNECTOR_LABELS[conn] ?? conn) : "";
+                    const connLabel = conn ? connectorLabel(conn) : "";
                     return (
                       <g
                         key={port.id}

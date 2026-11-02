@@ -1,22 +1,20 @@
 import { useState } from "react";
 import { useSchematicStore } from "../store";
 import {
-  SIGNAL_LABELS,
-  CONNECTOR_LABELS,
   type SignalType,
   type ConnectorType,
   type Port,
   type PortDirection,
   type DeviceTemplate,
 } from "../types";
-import { DEFAULT_CONNECTOR } from "../connectorTypes";
 import { duplicatePortLabel } from "../portNaming";
+import { allConnectors, allSignals, connectorLabel, defaultConnector, signalLabel } from "../typeRegistry";
 
-const ALL_SIGNALS = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
-  (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
+const ALL_SIGNALS = allSignals().sort(
+  (a, b) => signalLabel(a).localeCompare(signalLabel(b)),
 );
-const ALL_CONNECTORS = (Object.keys(CONNECTOR_LABELS) as ConnectorType[]).sort(
-  (a, b) => CONNECTOR_LABELS[a].localeCompare(CONNECTOR_LABELS[b]),
+const ALL_CONNECTORS = allConnectors().sort(
+  (a, b) => connectorLabel(a).localeCompare(connectorLabel(b)),
 );
 
 interface PortRow {
@@ -33,7 +31,7 @@ function newPortRow(direction: PortDirection): PortRow {
     label: "",
     signalType: "sdi",
     direction,
-    connectorType: DEFAULT_CONNECTOR["sdi"],
+    connectorType: defaultConnector("sdi"),
   };
 }
 
@@ -149,13 +147,13 @@ export default function CardCreatorDialog({
         value={p.signalType}
         onChange={(e) => {
           const sig = e.target.value as SignalType;
-          updatePort(p.id, { signalType: sig, connectorType: DEFAULT_CONNECTOR[sig] });
+          updatePort(p.id, { signalType: sig, connectorType: defaultConnector(sig) });
         }}
         className="px-1 py-0.5 text-[10px] rounded border outline-none focus:border-blue-500"
         style={{ backgroundColor: "var(--color-bg)", borderColor: "var(--color-border)" }}
       >
         {ALL_SIGNALS.map((s) => (
-          <option key={s} value={s}>{SIGNAL_LABELS[s]}</option>
+          <option key={s} value={s}>{signalLabel(s)}</option>
         ))}
       </select>
       <select
@@ -166,7 +164,7 @@ export default function CardCreatorDialog({
       >
         <option value="">—</option>
         {ALL_CONNECTORS.map((c) => (
-          <option key={c} value={c}>{CONNECTOR_LABELS[c]}</option>
+          <option key={c} value={c}>{connectorLabel(c)}</option>
         ))}
       </select>
       <button

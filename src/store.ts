@@ -72,6 +72,7 @@ import { reconcileWaypointNodes, syncEdgesFromWaypointNodes, spliceWaypointsForR
 import { orthogonalize, extractSegments, segmentsCross, type RoutedEdge, type CrossingPoint } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath, waypointsToSvgPathWithHops } from "./pathfinding";
 import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, resolveSignalBridgePorts, resolveConnectorBridgePorts, NETWORK_SIGNAL_TYPES, BARE_WIRE_CONNECTORS, areSignalsCompatibleViaConnector, areSignalPairsCompatible, effectiveSignalType } from "./connectorTypes";
+import { signalCssColor } from "./typeRegistry";
 import { inferRackHeightU, inferRackForm, shelfFootprintMm, shelfInnerWidthMm } from "./rackUtils";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
@@ -106,12 +107,12 @@ function repairMojibake(obj: unknown): unknown {
 }
 
 /** Resolve the rendered stroke color for a connection. Direct-attach always wins as gray;
- *  otherwise per-connection `color` override beats the signal-type CSS variable. */
+ *  otherwise per-connection `color` override beats the signal color (`signalCssColor`). */
 function resolveEdgeStroke(data: ConnectionData | undefined): string {
-  if (!data) return "var(--color-custom)";
+  if (!data) return signalCssColor("custom");
   if (data.directAttach) return "#9ca3af";
   if (data.color) return data.color;
-  return `var(--color-${data.signalType ?? "custom"})`;
+  return signalCssColor(data.signalType ?? "custom");
 }
 
 const STORAGE_KEY = "easyschematic-autosave";
@@ -666,7 +667,7 @@ interface SchematicState {
 
   // Signal colors & line styles
   signalColors: Partial<Record<SignalType, string>> | undefined;
-  setSignalColors: (colors: Record<SignalType, string>) => void;
+  setSignalColors: (colors: Partial<Record<SignalType, string>>) => void;
   signalLineStyles: Partial<Record<SignalType, LineStyle>> | undefined;
   setSignalLineStyles: (styles: Partial<Record<SignalType, LineStyle>>) => void;
 
@@ -7783,8 +7784,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
           // If signal types differ, store gradient info for the primary edge
           if (srcSignalType !== tgtSignalType) {
             virtualEdgeGradients[inboundEdge.id] = {
-              sourceColor: `var(--color-${srcSignalType})`,
-              targetColor: `var(--color-${tgtSignalType})`,
+              sourceColor: signalCssColor(srcSignalType),
+              targetColor: signalCssColor(tgtSignalType),
             };
           }
         }

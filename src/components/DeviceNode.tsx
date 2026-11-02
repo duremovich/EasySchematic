@@ -1,7 +1,7 @@
 import { memo, useMemo, useCallback } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { DeviceNode as DeviceNodeType, Port } from "../types";
-import { SIGNAL_COLORS, SIGNAL_LABELS, portSide } from "../types";
+import { portSide } from "../types";
 import { useSchematicStore } from "../store";
 import {
   resolveAuxiliaryLine,
@@ -16,6 +16,7 @@ import { useDisplayLabel } from "../labelCaseUtils";
 import { resolveDeviceLabel } from "../displayName";
 import { contrastingTextColor } from "../colorContrast";
 import { isPortConnected } from "../portVisibility";
+import { signalCssColor, signalLabel } from "../typeRegistry";
 
 type ColumnItem =
   | { type: "port"; port: Port }
@@ -283,13 +284,13 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             data-connected={connectedHandles.has(h.handleId) || undefined}
             data-multi-connect={port.multiConnect || undefined}
             className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
-            style={{ background: SIGNAL_COLORS[port.signalType], top: "50%" }}
+            style={{ background: signalCssColor(port.signalType), top: "50%" }}
           />
         )}
         <span
           className="text-[10px] leading-4 truncate"
-          style={{ color: SIGNAL_COLORS[port.signalType] }}
-          title={`${displayLabel(port.label)} (${SIGNAL_LABELS[port.signalType]})${usbcPowerSuffix(port)}`}
+          style={{ color: signalCssColor(port.signalType) }}
+          title={`${displayLabel(port.label)} (${signalLabel(port.signalType)})${usbcPowerSuffix(port)}`}
         >
           {displayLabel(port.label)}
         </span>
@@ -301,7 +302,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             data-connected={connectedHandles.has(h.handleId) || undefined}
             data-multi-connect={port.multiConnect || undefined}
             className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
-            style={{ background: SIGNAL_COLORS[port.signalType], top: "50%" }}
+            style={{ background: signalCssColor(port.signalType), top: "50%" }}
           />
         )}
       </div>
@@ -320,8 +321,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     const resolvedSignal: string = port.inheritsSignal
       ? (signalByHandle.get(rearId) ?? signalByHandle.get(frontId) ?? port.signalType)
       : port.signalType;
-    const signalColor = SIGNAL_COLORS[resolvedSignal as keyof typeof SIGNAL_COLORS] ?? SIGNAL_COLORS.custom;
-    const signalLabel = SIGNAL_LABELS[resolvedSignal as keyof typeof SIGNAL_LABELS] ?? resolvedSignal;
+    const passColor = signalCssColor(resolvedSignal);
+    const passLabel = signalLabel(resolvedSignal);
     return (
       <div
         key={port.id}
@@ -335,12 +336,12 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           id={rearId}
           data-connected={rearConnected || undefined}
           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
-          style={{ background: signalColor, top: "50%" }}
+          style={{ background: passColor, top: "50%" }}
         />
         <span
           className="text-[10px] leading-4 truncate px-3 flex-1 text-center"
-          style={{ color: signalColor }}
-          title={`${displayLabel(port.label)} (${signalLabel}) — passthrough`}
+          style={{ color: passColor }}
+          title={`${displayLabel(port.label)} (${passLabel}) — passthrough`}
         >
           ⇔ {displayLabel(port.label)}
         </span>
@@ -351,7 +352,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           id={frontId}
           data-connected={frontConnected || undefined}
           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
-          style={{ background: signalColor, top: "50%" }}
+          style={{ background: passColor, top: "50%" }}
         />
       </div>
     );
@@ -562,12 +563,12 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           data-connected={connectedHandles.has(lh.handleId) || undefined}
                           data-multi-connect={left.multiConnect || undefined}
                           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
-                          style={{ background: SIGNAL_COLORS[left.signalType], top: "50%" }}
+                          style={{ background: signalCssColor(left.signalType), top: "50%" }}
                         />
                         <span
                           className="text-[10px] leading-4 truncate"
-                          style={{ color: SIGNAL_COLORS[left.signalType] }}
-                          title={`${displayLabel(left.label)} (${SIGNAL_LABELS[left.signalType]})${usbcPowerSuffix(left)}`}
+                          style={{ color: signalCssColor(left.signalType) }}
+                          title={`${displayLabel(left.label)} (${signalLabel(left.signalType)})${usbcPowerSuffix(left)}`}
                         >
                           {displayLabel(left.label)}
                         </span>
@@ -579,8 +580,8 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                       <>
                         <span
                           className="text-[10px] leading-4 truncate"
-                          style={{ color: SIGNAL_COLORS[right.signalType] }}
-                          title={`${displayLabel(right.label)} (${SIGNAL_LABELS[right.signalType]})${usbcPowerSuffix(right)}`}
+                          style={{ color: signalCssColor(right.signalType) }}
+                          title={`${displayLabel(right.label)} (${signalLabel(right.signalType)})${usbcPowerSuffix(right)}`}
                         >
                           {displayLabel(right.label)}
                         </span>
@@ -591,7 +592,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           data-connected={connectedHandles.has(rh.handleId) || undefined}
                           data-multi-connect={right.multiConnect || undefined}
                           className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
-                          style={{ background: SIGNAL_COLORS[right.signalType], top: "50%" }}
+                          style={{ background: signalCssColor(right.signalType), top: "50%" }}
                         />
                       </>
                     )}
@@ -681,15 +682,15 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   data-multi-connect={port.multiConnect || undefined}
                   className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-left-[5px]"
                   style={{
-                    background: inDisabled ? "#d1d5db" : SIGNAL_COLORS[port.signalType],
+                    background: inDisabled ? "#d1d5db" : signalCssColor(port.signalType),
                     opacity: inDisabled ? 0.4 : 1,
                     top: "50%",
                   }}
                 />
                 <span
                   className="text-[10px] leading-4 truncate"
-                  style={{ color: SIGNAL_COLORS[port.signalType] }}
-                  title={`${displayLabel(port.label)} (${SIGNAL_LABELS[port.signalType]}) — bidirectional${usbcPowerSuffix(port)}`}
+                  style={{ color: signalCssColor(port.signalType) }}
+                  title={`${displayLabel(port.label)} (${signalLabel(port.signalType)}) — bidirectional${usbcPowerSuffix(port)}`}
                 >
                   ↔ {displayLabel(port.label)}
                 </span>
@@ -701,7 +702,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   data-multi-connect={port.multiConnect || undefined}
                   className="!w-2.5 !h-2.5 !border-2 !border-[var(--color-border)] !-right-[5px]"
                   style={{
-                    background: outDisabled ? "#d1d5db" : SIGNAL_COLORS[port.signalType],
+                    background: outDisabled ? "#d1d5db" : signalCssColor(port.signalType),
                     opacity: outDisabled ? 0.4 : 1,
                     top: "50%",
                   }}

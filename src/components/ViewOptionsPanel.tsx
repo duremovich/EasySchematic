@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef, useCallback } from "react";
-import { SIGNAL_LABELS, SIGNAL_COLORS, LINE_STYLE_DASHARRAY, SIGNAL_GROUPS, type SignalType, type LineStyle, type Port } from "../types";
+import { LINE_STYLE_DASHARRAY, type SignalType, type LineStyle, type Port } from "../types";
 import { useSchematicStore } from "../store";
 import { DEFAULT_SIGNAL_COLORS, loadSignalColors } from "../signalColors";
+import { allSignals, signalColor, signalCssColor, signalGroups, signalLabel } from "../typeRegistry";
 
-const ALL_SIGNAL_TYPES = (Object.keys(SIGNAL_LABELS) as SignalType[]).sort(
-  (a, b) => SIGNAL_LABELS[a].localeCompare(SIGNAL_LABELS[b]),
+const ALL_SIGNAL_TYPES = allSignals().sort(
+  (a, b) => signalLabel(a).localeCompare(signalLabel(b)),
 );
 const LINE_STYLES: LineStyle[] = ["solid", "dashed", "dotted", "dash-dot"];
 const LINE_STYLE_TIPS: Record<LineStyle, string> = {
@@ -94,9 +95,9 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
   // Discipline group toggles — each group scoped to the currently displayed
   // signal types so the buttons match the list shown below.
   const displayedSet = useMemo(() => new Set(displayedSignalTypes), [displayedSignalTypes]);
-  const signalGroups = useMemo(
+  const groupToggles = useMemo(
     () =>
-      (Object.entries(SIGNAL_GROUPS) as [string, SignalType[]][])
+      Object.entries(signalGroups())
         .map(([label, types]) => ({
           label,
           types: types.filter((t) => displayedSet.has(t)),
@@ -138,7 +139,7 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
     colorTargetRef.current = type;
     // Get current computed color for this signal type
     const computed = getComputedStyle(document.documentElement).getPropertyValue(`--color-${type}`).trim();
-    colorInputRef.current.value = computed || DEFAULT_SIGNAL_COLORS[type];
+    colorInputRef.current.value = computed || signalColor(type);
     colorInputRef.current.click();
   }, []);
 
@@ -268,9 +269,9 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
             )}
           </div>
         </div>
-        {signalGroups.length > 0 && (
+        {groupToggles.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-1.5 px-0.5">
-            {signalGroups.map((g) => (
+            {groupToggles.map((g) => (
               <button
                 key={g.label}
                 onClick={() => toggleSignalGroup(g.types)}
@@ -316,7 +317,7 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
                     <path
                       d="M1 5 L5 5 L9 5 L13 5"
                       fill="none"
-                      stroke={wireHidden ? "var(--color-text-muted)" : SIGNAL_COLORS[type]}
+                      stroke={wireHidden ? "var(--color-text-muted)" : signalCssColor(type)}
                       strokeWidth="2"
                       strokeLinecap="round"
                       opacity={wireHidden ? 0.3 : 1}
@@ -332,8 +333,8 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
                   <svg width="12" height="12" viewBox="0 0 12 12" className="block">
                     <rect
                       x="2" y="2" width="8" height="8" rx="1.5"
-                      fill={pinHidden ? "none" : SIGNAL_COLORS[type]}
-                      stroke={pinHidden ? "var(--color-text-muted)" : SIGNAL_COLORS[type]}
+                      fill={pinHidden ? "none" : signalCssColor(type)}
+                      stroke={pinHidden ? "var(--color-text-muted)" : signalCssColor(type)}
                       strokeWidth="1.5"
                       opacity={pinHidden ? 0.3 : 1}
                     />
@@ -341,12 +342,12 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
                 </button>
                 <button
                   className="w-2.5 h-2.5 rounded-full shrink-0 cursor-pointer border border-transparent hover:border-[var(--color-text-muted)] transition-colors"
-                  style={{ background: SIGNAL_COLORS[type] }}
+                  style={{ background: signalCssColor(type) }}
                   onClick={(e) => handleColorClick(type, e)}
                   title="Change color"
                 />
                 <span className="text-xs text-[var(--color-text)] flex-1 truncate">
-                  {SIGNAL_LABELS[type]}
+                  {signalLabel(type)}
                 </span>
                 <button
                   className="shrink-0 cursor-pointer rounded hover:bg-[var(--color-surface)] p-0.5 transition-colors"
@@ -356,7 +357,7 @@ export default function ViewOptionsPanel({ mobile, onClose }: { mobile?: boolean
                   <svg width="16" height="6" className="block">
                     <line
                       x1="0" y1="3" x2="16" y2="3"
-                      stroke={SIGNAL_COLORS[type]}
+                      stroke={signalCssColor(type)}
                       strokeWidth="2"
                       strokeDasharray={LINE_STYLE_DASHARRAY[ls] ?? "none"}
                     />

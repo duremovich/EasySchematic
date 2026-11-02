@@ -1,9 +1,9 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
-import { SIGNAL_LABELS } from "../types";
 import type { DeviceTemplate } from "../types";
 import { useSchematicStore, GRID_SIZE } from "../store";
 import { scoreTemplate } from "../templateSearch";
+import { signalLabel } from "../typeRegistry";
 
 const MAX_RESULTS = 12;
 
@@ -362,7 +362,7 @@ export default function QuickAddDevice({
             }
             const template = result.template;
             const signals = [...new Set(template.ports.map((p) => p.signalType))]
-              .map((t) => SIGNAL_LABELS[t])
+              .map((t) => signalLabel(t))
               .join(" / ");
             const isFav = favoriteSet.has(template.id ?? template.deviceType);
             return (

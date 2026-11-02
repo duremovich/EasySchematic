@@ -7,8 +7,8 @@
 
 import type { SchematicNode, ConnectionEdge } from "../types";
 import { waypointsToSvgPath } from "../pathfinding";
-import { DEFAULT_SIGNAL_COLORS } from "../signalColors";
 import type { RuleReport } from "./metrics";
+import { signalColor } from "../typeRegistry";
 
 function absPos(node: SchematicNode, map: Map<string, SchematicNode>) {
   let x = node.position.x;
@@ -154,7 +154,7 @@ export function renderFixtureSvg(
     const isFallback = typeof route.turns === "string" && /fallback/i.test(route.turns);
     const color = isBad
       ? "#ef4444"
-      : DEFAULT_SIGNAL_COLORS[e.data?.signalType as keyof typeof DEFAULT_SIGNAL_COLORS] ?? "#64748b";
+      : e.data?.signalType ? signalColor(e.data.signalType) : "#64748b";
     const width = isBad ? 3 : 1.5;
     const dash = isFallback ? ` stroke-dasharray="6 4"` : "";
     const d = waypointsToSvgPath(route.waypoints);

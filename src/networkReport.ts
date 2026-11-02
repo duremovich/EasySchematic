@@ -1,5 +1,5 @@
 import type { SchematicNode, DeviceData, ConnectionEdge } from "./types";
-import { SIGNAL_GROUPS, SIGNAL_LABELS } from "./types";
+import { SIGNAL_GROUPS } from "./types";
 import { NETWORK_SIGNAL_TYPES } from "./connectorTypes";
 import { collapseStubEdges, findReachableDhcpServers } from "./networkValidation";
 import { getRoomLabel, escapeCsv } from "./packList";
@@ -7,6 +7,7 @@ import { findPortByHandle } from "./portHandles";
 import { transformLabelNow } from "./labelCaseUtils";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
+import { signalLabel } from "./typeRegistry";
 
 export interface NetworkReportRow {
   nodeId: string;
@@ -56,7 +57,7 @@ export function computeNetworkReport(nodes: SchematicNode[], edges: ConnectionEd
         deviceLabel: transformLabelNow(data.label),
         portLabel: transformLabelNow(port.label),
         room,
-        signalType: SIGNAL_LABELS[port.signalType] ?? port.signalType,
+        signalType: signalLabel(port.signalType),
         hostname: data.hostname ?? "",
         ip: nc?.ip ?? "",
         subnetMask: nc?.subnetMask ?? "",

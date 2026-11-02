@@ -3,7 +3,6 @@ import type {
   ConnectionEdge,
   DeviceData,
 } from "./types";
-import { SIGNAL_LABELS, CONNECTOR_LABELS } from "./types";
 import { computeCableSchedule, type CableScheduleDistanceContext } from "./cableSchedule";
 import { resolvePort, resolvePortLabel, getRoomLabel, escapeCsv, csvRow } from "./packList";
 import { PATCH_PANEL_SCHEDULE_COLUMNS } from "./patchPanelColumns";
@@ -14,6 +13,7 @@ import type { SignalType } from "./types";
 import { transformLabelNow } from "./labelCaseUtils";
 import type { ReportLayout } from "./reportLayout";
 import type { ReportTableData } from "./reportPdf";
+import { connectorLabel, signalLabel } from "./typeRegistry";
 
 export interface PatchPanelScheduleRow {
   /** Device node id, for stable secondary sort only. */
@@ -261,8 +261,8 @@ export function computePatchPanelSchedule(
 
         const rearConnectorType = port.rearConnectorType ?? port.connectorType;
         const frontConnectorType = port.frontConnectorType ?? port.connectorType;
-        const rearConnector = rearConnectorType ? (CONNECTOR_LABELS[rearConnectorType] ?? rearConnectorType) : EMPTY;
-        const frontConnector = frontConnectorType ? (CONNECTOR_LABELS[frontConnectorType] ?? frontConnectorType) : EMPTY;
+        const rearConnector = rearConnectorType ? connectorLabel(rearConnectorType) : EMPTY;
+        const frontConnector = frontConnectorType ? connectorLabel(frontConnectorType) : EMPTY;
 
         // Gender: passthrough ports have per-face overrides
         const rearG = port.rearGender ?? resolvePortGender({ ...port, connectorType: rearConnectorType, direction: "input" });
@@ -273,7 +273,7 @@ export function computePatchPanelSchedule(
         // effectiveSignalType resolves from WIRED edges only; a hop-only port inherits
         // its signal from the hop edge instead.
         const resolvedSignal = hopSignal ?? effectiveSignalType(port, node.id, edges);
-        const signalType = SIGNAL_LABELS[resolvedSignal] ?? resolvedSignal;
+        const signalType = signalLabel(resolvedSignal);
 
         const edgeId = rear.edgeId || front.edgeId;
 
@@ -330,7 +330,7 @@ export function computePatchPanelSchedule(
       const facePri = face === "Rear" ? 0 : face === "Front" ? 1 : 2;
 
       const connector = port.connectorType
-        ? (CONNECTOR_LABELS[port.connectorType] ?? port.connectorType)
+        ? connectorLabel(port.connectorType)
         : EMPTY;
       const g = resolvePortGender(port);
       const gender = g === "male" ? "M" : g === "female" ? "F" : EMPTY;
@@ -371,14 +371,14 @@ export function computePatchPanelSchedule(
           multicableLabel = cableRow.multicableLabel;
         } else {
           signalType = edge.data?.signalType
-            ? (SIGNAL_LABELS[edge.data.signalType as keyof typeof SIGNAL_LABELS] ?? (edge.data.signalType as string))
+            ? signalLabel(edge.data.signalType)
             : "";
           cableLength = (edge.data?.cableLength as string | undefined) ?? "";
         }
 
         void resolvePort; // (kept to avoid unused import if gender computation moves)
       } else if (port.signalType) {
-        signalType = SIGNAL_LABELS[port.signalType] ?? port.signalType;
+        signalType = signalLabel(port.signalType);
       }
 
       rows.push({

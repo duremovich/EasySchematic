@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { SIGNAL_LABELS } from "../../../src/types";
-import type { SignalType } from "../../../src/types";
 import { loadTemplateSummaries } from "../api";
 import type { TemplateSummary } from "../api";
 import SearchBar from "../components/SearchBar";
 import CategoryFilter from "../components/CategoryFilter";
 import DeviceCard from "../components/DeviceCard";
 import OfflineBanner from "../components/OfflineBanner";
+import { signalLabel } from "../../../src/typeRegistry";
 
 function SkeletonCard() {
   return (
@@ -80,19 +79,19 @@ export default function BrowsePage() {
     if (selectedBrands.size > 0) source = source.filter((t) => t.manufacturer && selectedBrands.has(t.manufacturer));
     const types = new Set<string>();
     for (const t of source) for (const st of t.signalTypes) types.add(st);
-    return [...types].sort((a, b) => (SIGNAL_LABELS[a as SignalType] ?? a).localeCompare(SIGNAL_LABELS[b as SignalType] ?? b));
+    return [...types].sort((a, b) => signalLabel(a).localeCompare(signalLabel(b)));
   }, [templates, selectedCategories, selectedBrands]);
 
   // Map signal type values to labels for CategoryFilter display
   const signalLabelMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const st of signalTypeList) map.set(SIGNAL_LABELS[st as SignalType] ?? st, st);
+    for (const st of signalTypeList) map.set(signalLabel(st), st);
     return map;
   }, [signalTypeList]);
-  const signalLabels = useMemo(() => signalTypeList.map((st) => SIGNAL_LABELS[st as SignalType] ?? st), [signalTypeList]);
+  const signalLabels = useMemo(() => signalTypeList.map((st) => signalLabel(st)), [signalTypeList]);
   const selectedSignalLabels = useMemo(() => {
     const labels = new Set<string>();
-    for (const st of selectedSignalTypes) labels.add(SIGNAL_LABELS[st as SignalType] ?? st);
+    for (const st of selectedSignalTypes) labels.add(signalLabel(st));
     return labels;
   }, [selectedSignalTypes]);
   const onSignalLabelChange = (labels: Set<string>) => {
@@ -123,7 +122,7 @@ export default function BrowsePage() {
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((t) => {
-        const signalLabels = t.signalTypes.map((s) => SIGNAL_LABELS[s]?.toLowerCase() ?? "");
+        const signalLabels = t.signalTypes.map((s) => signalLabel(s).toLowerCase());
         return (
           t.label.toLowerCase().includes(q) ||
           t.deviceType.toLowerCase().includes(q) ||

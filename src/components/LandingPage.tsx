@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { sponsors } from "../sponsors";
-import { DEFAULT_SIGNAL_COLORS } from "../signalColors";
-import { SIGNAL_LABELS, type SignalType } from "../types";
+import { type SignalType } from "../types";
+import { allSignals, signalColor, signalLabel } from "../typeRegistry";
 
 const features = [
   {
@@ -73,12 +73,12 @@ const SAMPLE_SIGNALS: SignalType[] = [
 ];
 
 const signalSamples = SAMPLE_SIGNALS.map((id) => ({
-  name: SIGNAL_LABELS[id],
-  color: DEFAULT_SIGNAL_COLORS[id],
+  name: signalLabel(id),
+  color: signalColor(id),
 }));
 
 const moreSignals =
-  Object.keys(DEFAULT_SIGNAL_COLORS).length - SAMPLE_SIGNALS.length;
+  allSignals().length - SAMPLE_SIGNALS.length;
 
 function openEditor() {
   localStorage.setItem("easyschematic-skip-landing", "1");

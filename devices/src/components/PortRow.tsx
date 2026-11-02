@@ -1,8 +1,12 @@
 import { useRef } from "react";
 import type { Gender, Port, PortDirection, SignalType, ConnectorType } from "../../../src/types";
-import { SIGNAL_LABELS, CONNECTOR_LABELS, SIGNAL_GROUPS, CONNECTOR_GROUPS } from "../../../src/types";
-import { CONNECTORS_WITH_GENDER_VARIATION, DEFAULT_CONNECTOR, resolvePortGender } from "../../../src/connectorTypes";
+import { CONNECTORS_WITH_GENDER_VARIATION, resolvePortGender } from "../../../src/connectorTypes";
 import SearchableSelect from "./SearchableSelect";
+import { connectorGroups, connectorLabel, defaultConnector, signalGroups, signalLabel } from "../../../src/typeRegistry";
+import { signalCssColor } from "../../../src/typeRegistry";
+
+const SIGNAL_GROUP_OPTIONS = signalGroups();
+const CONNECTOR_GROUP_OPTIONS = connectorGroups();
 
 const NETWORK_SIGNAL_TYPES = new Set(["ethernet", "ndi", "dante", "avb", "srt", "hdbaset"]);
 
@@ -82,10 +86,10 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
 
   const handleSignalChange = (newSignal: SignalType) => {
     const updates: Partial<Port> = { signalType: newSignal, inheritsSignal: false };
-    const currentDefault = DEFAULT_CONNECTOR[port.signalType];
+    const currentDefault = defaultConnector(port.signalType);
     const isConnectorDefault = !port.connectorType || port.connectorType === "none" || port.connectorType === currentDefault;
     if (isConnectorDefault) {
-      updates.connectorType = DEFAULT_CONNECTOR[newSignal];
+      updates.connectorType = defaultConnector(newSignal);
     }
     if (!NETWORK_SIGNAL_TYPES.has(newSignal)) {
       updates.addressable = undefined;
@@ -130,7 +134,7 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
       </span>
       <span
         className="w-3 h-3 rounded-full shrink-0"
-        style={{ backgroundColor: `var(--color-${port.signalType})` }}
+        style={{ backgroundColor: signalCssColor(port.signalType) }}
       />
       <div className="flex flex-wrap items-center gap-2 flex-1 min-w-0" onClick={(e) => e.stopPropagation()}>
         <input
@@ -157,8 +161,8 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
               <SearchableSelect<SignalType>
                 value={port.signalType}
                 onChange={handleSignalChange}
-                groups={SIGNAL_GROUPS}
-                labels={SIGNAL_LABELS}
+                groups={SIGNAL_GROUP_OPTIONS}
+                labels={signalLabel}
                 className={selectClass}
               />
             )}
@@ -169,8 +173,8 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
               <SearchableSelect<ConnectorType>
                 value={(port.rearConnectorType ?? "none") as ConnectorType}
                 onChange={(v) => onChange({ rearConnectorType: v === "none" ? undefined : v })}
-                groups={CONNECTOR_GROUPS}
-                labels={CONNECTOR_LABELS}
+                groups={CONNECTOR_GROUP_OPTIONS}
+                labels={connectorLabel}
                 className={selectClass}
               />
               <GenderSelect
@@ -185,8 +189,8 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
               <SearchableSelect<ConnectorType>
                 value={(port.frontConnectorType ?? "none") as ConnectorType}
                 onChange={(v) => onChange({ frontConnectorType: v === "none" ? undefined : v })}
-                groups={CONNECTOR_GROUPS}
-                labels={CONNECTOR_LABELS}
+                groups={CONNECTOR_GROUP_OPTIONS}
+                labels={connectorLabel}
                 className={selectClass}
               />
               <GenderSelect
@@ -201,17 +205,17 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
             <SearchableSelect<SignalType>
               value={port.signalType}
               onChange={handleSignalChange}
-              groups={SIGNAL_GROUPS}
-              labels={SIGNAL_LABELS}
+              groups={SIGNAL_GROUP_OPTIONS}
+              labels={signalLabel}
               className={selectClass}
             />
             <SearchableSelect<ConnectorType>
               value={(port.connectorType ?? "none") as ConnectorType}
               onChange={(v) => onChange({ connectorType: v })}
-              groups={CONNECTOR_GROUPS}
-              labels={CONNECTOR_LABELS}
-              recommended={DEFAULT_CONNECTOR[port.signalType]}
-              recommendedLabel={`Default for ${SIGNAL_LABELS[port.signalType]}`}
+              groups={CONNECTOR_GROUP_OPTIONS}
+              labels={connectorLabel}
+              recommended={defaultConnector(port.signalType)}
+              recommendedLabel={`Default for ${signalLabel(port.signalType)}`}
               className={selectClass}
             />
             {port.connectorType && CONNECTORS_WITH_GENDER_VARIATION.has(port.connectorType) && (() => {

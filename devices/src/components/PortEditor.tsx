@@ -1,11 +1,14 @@
 import { useState, useCallback, useMemo } from "react";
 import type { Port, SignalType, PortDirection, ConnectorType } from "../../../src/types";
-import { SIGNAL_LABELS, CONNECTOR_LABELS, SIGNAL_GROUPS, CONNECTOR_GROUPS } from "../../../src/types";
-import { DEFAULT_CONNECTOR, shouldDefaultMultiConnect } from "../../../src/connectorTypes";
+import { shouldDefaultMultiConnect } from "../../../src/connectorTypes";
 
 const NETWORK_SIGNAL_TYPES = new Set(["ethernet", "ndi", "dante", "avb", "srt", "hdbaset"]);
 import PortRow from "./PortRow";
 import SearchableSelect from "./SearchableSelect";
+import { connectorGroups, connectorLabel, defaultConnector, signalGroups, signalLabel } from "../../../src/typeRegistry";
+
+const SIGNAL_GROUP_OPTIONS = signalGroups();
+const CONNECTOR_GROUP_OPTIONS = connectorGroups();
 
 const MIME = "application/easyschematic-port";
 
@@ -142,7 +145,7 @@ export default function PortEditor({ ports, onChange, deviceType }: PortEditorPr
       return;
     }
     const signalType: SignalType = "sdi";
-    const connectorType = DEFAULT_CONNECTOR[signalType];
+    const connectorType = defaultConnector(signalType);
     insertAtTop(direction, [{
       id,
       label: `${dirLabel} ${count}`,
@@ -290,9 +293,9 @@ export default function PortEditor({ ports, onChange, deviceType }: PortEditorPr
             <span className="block text-slate-500 dark:text-slate-400 mb-1">Signal</span>
             <SearchableSelect<SignalType>
               value={bulkSignal}
-              onChange={(v) => { setBulkSignal(v); setBulkConnector(DEFAULT_CONNECTOR[v]); }}
-              groups={SIGNAL_GROUPS}
-              labels={SIGNAL_LABELS}
+              onChange={(v) => { setBulkSignal(v); setBulkConnector(defaultConnector(v)); }}
+              groups={SIGNAL_GROUP_OPTIONS}
+              labels={signalLabel}
               className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm min-w-[120px]"
             />
           </label>
@@ -301,10 +304,10 @@ export default function PortEditor({ ports, onChange, deviceType }: PortEditorPr
             <SearchableSelect<ConnectorType>
               value={bulkConnector}
               onChange={setBulkConnector}
-              groups={CONNECTOR_GROUPS}
-              labels={CONNECTOR_LABELS}
-              recommended={DEFAULT_CONNECTOR[bulkSignal]}
-              recommendedLabel={`Default for ${SIGNAL_LABELS[bulkSignal]}`}
+              groups={CONNECTOR_GROUP_OPTIONS}
+              labels={connectorLabel}
+              recommended={defaultConnector(bulkSignal)}
+              recommendedLabel={`Default for ${signalLabel(bulkSignal)}`}
               className="px-2 py-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm min-w-[120px]"
             />
           </label>
@@ -377,9 +380,9 @@ export default function PortEditor({ ports, onChange, deviceType }: PortEditorPr
               <span className="block text-indigo-600 dark:text-indigo-300 mb-1">Signal</span>
               <SearchableSelect<SignalType>
                 value={"" as SignalType}
-                onChange={(st) => { const updates: Partial<Port> = { signalType: st, connectorType: DEFAULT_CONNECTOR[st] }; if (!NETWORK_SIGNAL_TYPES.has(st)) updates.addressable = undefined; applyToSelected(updates); }}
-                groups={SIGNAL_GROUPS}
-                labels={SIGNAL_LABELS}
+                onChange={(st) => { const updates: Partial<Port> = { signalType: st, connectorType: defaultConnector(st) }; if (!NETWORK_SIGNAL_TYPES.has(st)) updates.addressable = undefined; applyToSelected(updates); }}
+                groups={SIGNAL_GROUP_OPTIONS}
+                labels={signalLabel}
                 placeholder="Change..."
                 className="px-2 py-1 rounded border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm min-w-[100px]"
               />
@@ -389,8 +392,8 @@ export default function PortEditor({ ports, onChange, deviceType }: PortEditorPr
               <SearchableSelect<ConnectorType>
                 value={"" as ConnectorType}
                 onChange={(ct) => applyToSelected({ connectorType: ct })}
-                groups={CONNECTOR_GROUPS}
-                labels={CONNECTOR_LABELS}
+                groups={CONNECTOR_GROUP_OPTIONS}
+                labels={connectorLabel}
                 placeholder="Change..."
                 className="px-2 py-1 rounded border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm min-w-[100px]"
               />

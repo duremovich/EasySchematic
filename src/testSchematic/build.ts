@@ -59,6 +59,7 @@ import type {
   SchematicNode,
   SignalType,
 } from "../types";
+import { signalCssColor } from "../typeRegistry";
 
 // ─── Layout constants ────────────────────────────────────────────────
 
@@ -214,7 +215,7 @@ function edge(id: string, ends: { source: string; sourceHandle: string } & { tar
     id,
     ...ends,
     data,
-    style: { stroke: `var(--color-${signalType})`, strokeWidth: 2 },
+    style: { stroke: signalCssColor(signalType), strokeWidth: 2 },
   } as unknown as ConnectionEdge;
 }
 

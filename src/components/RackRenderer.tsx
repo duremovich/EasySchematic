@@ -22,12 +22,12 @@ import {
 } from "../rackUtils";
 import type { ShelfSnapGuides } from "../rackUtils";
 import { computeRackStats, formatStatsLine } from "../rackStats";
-import { SIGNAL_COLORS } from "../types";
 import { ConnectorIcon, getConnectorSpec } from "./connectorIcons";
 import { draggedDeviceHeightU, draggedDeviceNodeId } from "./RackSidebar";
 import FacePlateEditor from "./FacePlateEditor";
 import type { FacePlateLayout } from "../types";
 import { getDevicesInRoom, proposeRackPlacements } from "../rackLink";
+import { signalCssColor } from "../typeRegistry";
 
 // ── Constants ──────────────────────────────────────────────────────
 
@@ -343,7 +343,7 @@ function DeviceBlock({ placement, rack, deviceData, isSelected, isDragging, zoom
       {showConnectors && layoutPorts.map((lp) => {
         const cx = x + (lp.x / 100) * w;
         const cy = y + (lp.y / 100) * h;
-        const sigColor = SIGNAL_COLORS[lp.signalType as keyof typeof SIGNAL_COLORS] ?? "#fff";
+        const sigColor = signalCssColor(lp.signalType);
         return (
           <g key={lp.id} style={{ pointerEvents: "none" }}>
             <ConnectorIcon

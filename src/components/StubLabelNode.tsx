@@ -1,13 +1,14 @@
 import { memo, useMemo, useEffect } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { StubLabelNode as StubLabelNodeType, StubLabelData, ConnectionEdge, SchematicNode } from "../types";
-import { DEFAULT_STUB_LABEL_MODE, SIGNAL_COLORS } from "../types";
+import { DEFAULT_STUB_LABEL_MODE } from "../types";
 import { useSchematicStore, GRID_SIZE } from "../store";
 import { STUB_GAP } from "../stubPlacement";
 import { getPortAbsolutePositions } from "../snapUtils";
 import { buildStubLabelText, UNRESOLVED_STUB_LABEL_TEXT } from "../stubLabelText";
 import { buildPrintPageLookup, resolveStubLabelPartsForMode } from "../stubLabelResolve";
 import { useDisplayLabel } from "../labelCaseUtils";
+import { signalCssColor } from "../typeRegistry";
 
 /** Find the connecting edge: source-side stub is the TARGET of an edge from a device;
  *  target-side stub is the SOURCE of an edge to a device. */
@@ -207,7 +208,7 @@ function StubLabelNodeComponent({ id, data, selected }: NodeProps<StubLabelNodeT
   // leg drew in the custom one (and the DXF pill, which honors the override, disagreed
   // with the canvas).
   const colorOverride = useSchematicStore((s) => s.signalColors?.[data.signalType]);
-  const color = colorOverride ?? SIGNAL_COLORS[data.signalType] ?? "#999";
+  const color = colorOverride ?? signalCssColor(data.signalType);
   // Source-side stubs receive an incoming line (they're the TARGET of the edge);
   // target-side stubs originate the line (they're the SOURCE).
   const handleType = data.side === "source" ? "target" : "source";

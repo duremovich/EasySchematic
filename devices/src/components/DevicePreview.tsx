@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Port } from "../../../src/types";
-import { SIGNAL_LABELS, portSide } from "../../../src/types";
+import { portSide } from "../../../src/types";
+import { signalCssColor, signalLabel } from "../../../src/typeRegistry";
 
 /**
  * Standalone, presentational replica of the main app's DeviceNode (src/components/DeviceNode.tsx).
@@ -22,8 +23,7 @@ const HEADING = "#111827"; // --color-text-heading (light)
 const MUTED = "#6b7280"; // --color-text-muted (light)
 const SURFACE = "#f8f8f8"; // --color-surface (light)
 
-const signalColorVar = (t: string) => `var(--color-${t || "custom"})`;
-const signalLabel = (t: string) => SIGNAL_LABELS[t as keyof typeof SIGNAL_LABELS] ?? t;
+const signalColorVar = (t: string) => signalCssColor(t || "custom");
 
 /** Pretty-print a kebab-case device type, matching auxiliaryData.ts prettyDeviceType. */
 const prettyDeviceType = (v: string): string =>

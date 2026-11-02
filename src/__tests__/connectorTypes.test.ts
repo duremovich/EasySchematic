@@ -3,12 +3,11 @@ import {
   areConnectorsCompatible,
   needsAdapter,
   usbcPowerShortfallW,
-  CONNECTOR_TO_CABLE,
-  CONNECTOR_GENDER,
   CONNECTORS_WITH_GENDER_VARIATION,
   shouldDefaultMultiConnect,
 } from "../connectorTypes";
 import { CONNECTOR_LABELS, CONNECTOR_GROUPS } from "../types";
+import { CONNECTOR_TO_CABLE, CONNECTOR_GENDER } from "../builtinTypeTables";
 
 describe("1/4\" TS connector (#208)", () => {
   it("has a dropdown label, cable name, and the 6.35mm naming on TRS", () => {

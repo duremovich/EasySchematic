@@ -1,5 +1,5 @@
 import type { ConnectorType, Gender, Port, SignalType } from "../types";
-import { DEFAULT_CONNECTOR } from "../connectorTypes";
+import { defaultConnector } from "../typeRegistry";
 
 let portIdCounter = 0;
 export function port(
@@ -14,7 +14,7 @@ export function port(
     label,
     signalType,
     direction,
-    connectorType: connectorType ?? DEFAULT_CONNECTOR[signalType],
+    connectorType: connectorType ?? defaultConnector(signalType),
   };
   if (addressable !== undefined) p.addressable = addressable;
   return p;

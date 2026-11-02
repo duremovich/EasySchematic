@@ -7,8 +7,8 @@ interface SearchableSelectProps<T extends string> {
   options?: T[];
   /** Grouped options: group label → values */
   groups?: Record<string, T[]>;
-  /** Display labels for values */
-  labels: Record<string, string>;
+  /** Display labels for values: a map, or a lookup such as `signalLabel` */
+  labels: Record<string, string> | ((value: T) => string);
   className?: string;
   /** Placeholder when no value selected */
   placeholder?: string;
@@ -21,6 +21,10 @@ interface SearchableSelectProps<T extends string> {
     label: string;
     onSelect: (searchQuery: string) => void;
   };
+}
+
+function labelFor<T extends string>(labels: SearchableSelectProps<T>["labels"], v: T): string {
+  return typeof labels === "function" ? labels(v) : (labels[v] ?? v);
 }
 
 interface FlatOption<T> {
@@ -55,12 +59,12 @@ export default function SearchableSelect<T extends string>({
     if (groups) {
       for (const [group, vals] of Object.entries(groups)) {
         for (const v of vals) {
-          result.push({ value: v as T, label: labels[v] ?? v, group });
+          result.push({ value: v as T, label: labelFor(labels, v as T), group });
         }
       }
     } else if (options) {
       for (const v of options) {
-        result.push({ value: v as T, label: labels[v] ?? v });
+        result.push({ value: v as T, label: labelFor(labels, v) });
       }
     }
     return result;
@@ -195,7 +199,7 @@ export default function SearchableSelect<T extends string>({
     }
   };
 
-  const displayLabel = value ? (labels[value] ?? value) : "";
+  const displayLabel = value ? labelFor(labels, value) : "";
 
   return (
     <div ref={wrapperRef} className="relative">
