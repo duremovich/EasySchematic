@@ -61,3 +61,23 @@ describe("v39→v40 bundles migration", () => {
     expect(out.bundles.b1.label).toBe("Snake A");
   });
 });
+
+describe("v43→v44 custom types migration", () => {
+  it("is a no-op that bumps the version and keeps customTypes", () => {
+    const customTypes = {
+      signals: [{ id: "x-show-comms-k3f9", label: "Show Comms", color: "#008848", group: "Control", defaultConnector: "xlr-3", cable: "Comms", cablePrefix: "SC" }],
+    };
+    const nodes = [{ id: "d1", type: "device", position: { x: 0, y: 0 }, data: { ports: [{ id: "p1", signalType: "x-show-comms-k3f9" }] } }];
+    const out = migrateSchematic({ version: 43, nodes, edges: [], customTypes });
+    expect(CURRENT_SCHEMA_VERSION).toBe(44);
+    expect(out.version).toBe(44);
+    expect(out.customTypes).toEqual(customTypes);
+    expect(out.nodes).toBe(nodes);
+  });
+
+  it("leaves a v43 file without customTypes without one", () => {
+    const out = migrateSchematic({ version: 43, nodes: [], edges: [] });
+    expect(out.version).toBe(44);
+    expect("customTypes" in out).toBe(false);
+  });
+});

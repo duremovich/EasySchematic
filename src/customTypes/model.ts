@@ -160,3 +160,76 @@ export function typeDefsFromRecords(records: readonly CustomTypeRecord[]): {
   }
   return { signals, connectors, deviceTypes };
 }
+
+/** The three kinds of definitions together: a registry layer, the user's library, or
+ *  `SchematicFile.customTypes`. Every list is optional on the wire. */
+export interface CustomTypeDefs {
+  signals?: SignalTypeDef[];
+  connectors?: ConnectorTypeDef[];
+  deviceTypes?: DeviceTypeDef[];
+}
+
+// Same format as validate.ts CUSTOM_TYPE_ID_RE (kept local: validate.ts imports the registry).
+const DEF_ID_RE = /^[a-z0-9][a-z0-9-]{1,30}$/;
+const DEF_HEX_RE = /^#[0-9a-f]{6}$/;
+const clip = (v: unknown, max: number, fallback: string): string =>
+  typeof v === "string" && v.trim() ? v.trim().slice(0, max) : fallback;
+
+/**
+ * Definitions from somewhere untrusted (a schematic file, a device archive, another tab's
+ * localStorage) → the registry shapes. Drops entries without a well-formed id or a label,
+ * a duplicate id, and anything that isn't an object; coerces the rest the way
+ * `typeDefsFromRecords` does. A colour that isn't a literal `#rrggbb` becomes grey, so a
+ * file can never put arbitrary text into a stroke.
+ */
+export function normalizeTypeDefs(raw: unknown): Required<CustomTypeDefs> {
+  const out: Required<CustomTypeDefs> = { signals: [], connectors: [], deviceTypes: [] };
+  if (!raw || typeof raw !== "object") return out;
+  const obj = raw as Record<string, unknown>;
+  const each = (list: unknown, fn: (d: Record<string, unknown>, base: { id: string; label: string; retired?: boolean; description?: string }) => void) => {
+    if (!Array.isArray(list)) return;
+    const seen = new Set<string>();
+    for (const item of list) {
+      if (!item || typeof item !== "object") continue;
+      const d = item as Record<string, unknown>;
+      if (typeof d.id !== "string" || !DEF_ID_RE.test(d.id) || seen.has(d.id)) continue;
+      const label = clip(d.label, 60, "");
+      if (!label) continue;
+      seen.add(d.id);
+      const description = clip(d.description, 500, "");
+      fn(d, { id: d.id, label, ...(d.retired === true ? { retired: true } : {}), ...(description ? { description } : {}) });
+    }
+  };
+  each(obj.signals, (d, base) => {
+    const color = typeof d.color === "string" ? d.color.trim().toLowerCase() : "";
+    out.signals.push({
+      ...base,
+      color: DEF_HEX_RE.test(color) ? color : "#71717a",
+      group: clip(d.group, 60, "Other"),
+      defaultConnector: typeof d.defaultConnector === "string" && DEF_ID_RE.test(d.defaultConnector) ? d.defaultConnector : "other",
+      cable: clip(d.cable, 60, base.label),
+      cablePrefix: typeof d.cablePrefix === "string" && /^[A-Z]{1,4}$/.test(d.cablePrefix) ? d.cablePrefix : "X",
+    });
+  });
+  each(obj.connectors, (d, base) => {
+    const ids = (v: unknown) => [...new Set(strList(v).filter((id) => DEF_ID_RE.test(id) && id !== base.id))].slice(0, 30);
+    const matesWith = ids(d.matesWith);
+    out.connectors.push({
+      ...base,
+      group: clip(d.group, 60, "Other"),
+      cable: clip(d.cable, 60, base.label),
+      gender: d.gender === "male" || d.gender === "female" ? d.gender : "none",
+      matesWith,
+      adaptsTo: ids(d.adaptsTo).filter((id) => !matesWith.includes(id)),
+    });
+  });
+  each(obj.deviceTypes, (d, base) => {
+    out.deviceTypes.push({ ...base, category: clip(d.category, 60, "Other") });
+  });
+  return out;
+}
+
+/** True when the three lists hold nothing. */
+export function isEmptyTypeDefs(defs: CustomTypeDefs | undefined): boolean {
+  return !defs || (!defs.signals?.length && !defs.connectors?.length && !defs.deviceTypes?.length);
+}

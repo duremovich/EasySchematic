@@ -1,15 +1,20 @@
 import type { DeviceTemplate } from "./types";
+import { isEmptyTypeDefs, normalizeTypeDefs, type CustomTypeDefs } from "./customTypes/model";
 
 export interface TemplateExportFile {
   version: 1;
   templates: DeviceTemplate[];
+  /** The user's own signal / connector / device types (custom-types P5). Optional: older
+   *  archives have none, and older clients ignore it. */
+  customTypes?: CustomTypeDefs;
 }
 
-/** Export custom templates as a standalone JSON file download */
-export function exportTemplatesToFile(templates: DeviceTemplate[]): void {
+/** Export custom templates (and the user's custom types) as a standalone JSON file download */
+export function exportTemplatesToFile(templates: DeviceTemplate[], customTypes?: CustomTypeDefs): void {
   const data: TemplateExportFile = {
     version: 1,
     templates,
+    ...(isEmptyTypeDefs(customTypes) ? {} : { customTypes }),
   };
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: "application/json; charset=utf-8" });
@@ -23,6 +28,11 @@ export function exportTemplatesToFile(templates: DeviceTemplate[]): void {
 
 /** Parse and validate a template export file. Returns templates or throws on invalid input. */
 export function parseTemplateFile(json: string): DeviceTemplate[] {
+  return parseTemplateArchive(json).templates;
+}
+
+/** Templates plus the archive's custom types (empty lists when it carries none). */
+export function parseTemplateArchive(json: string): { templates: DeviceTemplate[]; customTypes: CustomTypeDefs } {
   const data = JSON.parse(json);
   if (
     typeof data !== "object" ||
@@ -45,13 +55,18 @@ export function parseTemplateFile(json: string): DeviceTemplate[] {
     }
     templates.push(t as DeviceTemplate);
   }
-  return templates;
+  return { templates, customTypes: normalizeTypeDefs(data.customTypes) };
 }
 
 /** Read a File object and parse it as a template export file */
 export async function readTemplateFile(file: File): Promise<DeviceTemplate[]> {
   const text = await file.text();
   return parseTemplateFile(text);
+}
+
+/** Read a File object as a device archive: templates and custom types. */
+export async function readTemplateArchive(file: File): Promise<{ templates: DeviceTemplate[]; customTypes: CustomTypeDefs }> {
+  return parseTemplateArchive(await file.text());
 }
 
 /** Import templates from multiple files, merging into the store via the provided callback */

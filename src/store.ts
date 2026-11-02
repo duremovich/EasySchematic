@@ -72,7 +72,10 @@ import { reconcileWaypointNodes, syncEdgesFromWaypointNodes, spliceWaypointsForR
 import { orthogonalize, extractSegments, segmentsCross, type RoutedEdge, type CrossingPoint } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath, waypointsToSvgPathWithHops } from "./pathfinding";
 import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, resolveSignalBridgePorts, resolveConnectorBridgePorts, NETWORK_SIGNAL_TYPES, BARE_WIRE_CONNECTORS, areSignalsCompatibleViaConnector, areSignalPairsCompatible, effectiveSignalType } from "./connectorTypes";
-import { signalCssColor } from "./typeRegistry";
+import { registerTypes, signalCssColor } from "./typeRegistry";
+import { normalizeTypeDefs, type CustomTypeDefs, type CustomTypeKind } from "./customTypes/model";
+import { embeddedTypesFor, libraryTypesFor } from "./documentTypes";
+import { importUserTypes } from "./userTypes";
 import { inferRackHeightU, inferRackForm, shelfFootprintMm, shelfInnerWidthMm } from "./rackUtils";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
@@ -671,6 +674,13 @@ interface SchematicState {
   signalLineStyles: Partial<Record<SignalType, LineStyle>> | undefined;
   setSignalLineStyles: (styles: Partial<Record<SignalType, LineStyle>>) => void;
 
+  /** The open file's own custom types (`SchematicFile.customTypes` as loaded): the type
+   *  registry's `document` layer. Saves write what the drawing uses, not this verbatim. */
+  documentTypes: CustomTypeDefs;
+  /** Replace the open document's copy of a type (Preferences ▸ Custom types edits the
+   *  library and, when the file carries the same id, this copy too). No-op when absent. */
+  updateDocumentType: (kind: CustomTypeKind, def: { id: string }) => void;
+
   // Report layouts (pack list PDF settings, etc.)
   reportLayouts: Record<string, unknown>;
   setReportLayout: (key: string, layout: unknown) => void;
@@ -868,7 +878,8 @@ interface SchematicState {
 
   // Template import/export (#12/#26)
   exportCustomTemplates: () => DeviceTemplate[];
-  importCustomTemplates: (templates: DeviceTemplate[]) => void;
+  /** Additive. `customTypes`: the archive's user types (a device archive carries the library). */
+  importCustomTemplates: (templates: DeviceTemplate[], customTypes?: CustomTypeDefs) => void;
 
   // Cloud storage
   cloudSchematicId: string | null;
@@ -2165,6 +2176,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   titleBlockLayout: createDefaultLayout(),
   signalColors: undefined,
   signalLineStyles: undefined,
+  documentTypes: {},
   reportLayouts: {},
   reportHiddenColumns: {},
   globalReportHeaderLayout: null,
@@ -5103,6 +5115,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  updateDocumentType: (kind, def) => {
+    const key = kind === "signal" ? "signals" : kind === "connector" ? "connectors" : "deviceTypes";
+    const docTypes = get().documentTypes;
+    const list = (docTypes[key] ?? []) as { id: string }[];
+    if (!list.some((d) => d.id === def.id)) return;
+    const next = normalizeTypeDefs({ ...docTypes, [key]: list.map((d) => (d.id === def.id ? def : d)) });
+    set({ documentTypes: next });
+    get().saveToLocalStorage();
+  },
+
   setReportHiddenColumns: (tableId, columnIds) => {
     const next = { ...get().reportHiddenColumns };
     if (columnIds) next[tableId] = columnIds;
@@ -5509,7 +5531,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     return structuredClone(get().customTemplates);
   },
 
-  importCustomTemplates: (templates) => {
+  importCustomTemplates: (templates, customTypes) => {
+    // An archive's own types join the library first, so its templates render right away.
+    if (customTypes) importUserTypes(customTypes);
     const existing = withStoredCustomTemplates(get().customTemplates);
     const existingKeys = new Set(existing.map((t) => templateKey(t)));
     const newTemplates = templates.filter((t) => !existingKeys.has(templateKey(t)));
@@ -6266,6 +6290,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       nodes: state.nodes.map(({ selected: _s, ...rest }) => rest) as SchematicNode[],
       edges: state.edges.map(({ zIndex: _, selected: _s, ...rest }) => rest) as ConnectionEdge[],
       ownedGear: state.ownedGear.length > 0 ? state.ownedGear : undefined,
+      customTypes: embeddedTypesFor(state.nodes, state.edges, state.pages),
       signalColors: state.signalColors,
       signalLineStyles: state.signalLineStyles,
       printPaperId: state.printPaperId,
@@ -6369,6 +6394,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
             isDemo: true,
             schematicName: data.name ?? "Demo Schematic",
             ownedGear: data.ownedGear ?? [],
+            documentTypes: normalizeTypeDefs(data.customTypes),
             signalColors: data.signalColors,
             signalLineStyles: data.signalLineStyles,
             printPaperId: data.printPaperId ?? "arch-d",
@@ -6472,6 +6498,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         edges: data.edges,
         schematicName: data.name ?? "Untitled Schematic",
         ownedGear: data.ownedGear ?? [],
+        documentTypes: normalizeTypeDefs(data.customTypes),
         signalColors: data.signalColors,
         signalLineStyles: data.signalLineStyles,
         printPaperId: data.printPaperId ?? "arch-d",
@@ -6573,6 +6600,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       nodes: state.nodes.map(({ selected: _s, ...rest }) => rest) as SchematicNode[],
       edges: state.edges.map(({ zIndex: _, selected: _s, ...rest }) => rest) as ConnectionEdge[],
       customTemplates: state.customTemplates.length > 0 ? state.customTemplates : undefined,
+      // The embedded library templates' ports count too, so they open with their types.
+      customTypes: embeddedTypesFor(state.nodes, state.edges, state.customTemplates, state.pages),
       ownedGear: state.ownedGear.length > 0 ? state.ownedGear : undefined,
       signalColors: state.signalColors,
       signalLineStyles: state.signalLineStyles,
@@ -6667,6 +6696,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         const merged = [...existing, ...newTemplates];
         set({ customTemplates: merged });
         saveCustomTemplates(merged);
+        // Templates joining the library bring the user types their ports use with them.
+        importUserTypes(libraryTypesFor(normalizeTypeDefs(data.customTypes), newTemplates));
       }
     }
     // Always apply colors — if file has none, reset to defaults
@@ -6679,6 +6710,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       schematicName: data.name ?? "Imported Schematic",
       isDemo: false,
       ownedGear: data.ownedGear ?? [],
+      documentTypes: normalizeTypeDefs(data.customTypes),
       signalColors: data.signalColors,
       signalLineStyles: data.signalLineStyles,
       printPaperId: data.printPaperId ?? "arch-d",
@@ -6831,6 +6863,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         templateHiddenSignals: {},
         templatePresets: {},
         favoriteTemplates: [],
+        documentTypes: {},
         reportLayouts: {},
         reportHiddenColumns: {},
         globalReportHeaderLayout: null,
@@ -7996,6 +8029,12 @@ export function reloadCustomTemplatesFromStorage(): void {
     customTemplateGroupAssignments: meta.groupAssignments,
   });
 }
+
+// The open file's own types are the type registry's `document` layer: every load path sets
+// `documentTypes`, and this keeps the registry in step (synchronously, before the render).
+useSchematicStore.subscribe((s, prev) => {
+  if (s.documentTypes !== prev.documentTypes) registerTypes("document", s.documentTypes);
+});
 
 // Keep every open tab's device library in step with the shared localStorage (#251). The
 // "storage" event fires in the OTHER tabs of this origin whenever one tab writes a key. A

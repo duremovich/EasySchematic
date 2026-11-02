@@ -2,9 +2,10 @@
  * The one lookup layer for signal, connector and device types.
  *
  * Built-ins come from code (`types.ts`, `builtinTypeTables.ts`, `deviceTypeCategories.ts`).
- * Community types (fetched from `GET /types`: the devices site since P3, the app in P4) and
- * user types (P5, the user's library and the open file) are registered with `registerTypes`;
- * built-ins always win, because community and user ids are unique against them. See .claude/plans/custom-types.md.
+ * Community types (fetched from `GET /types`: the devices site since P3, the app in P4),
+ * user types (P5, `userTypes.ts`) and the open file's embedded types (P5) are registered
+ * with `registerTypes`, one layer each (see LAYER_ORDER for who wins a clash); built-ins
+ * always win, because community and user ids are unique against them. See .claude/plans/custom-types.md.
  *
  * Every getter takes any id and never throws: an id nobody defined — an old, offline or
  * self-hosted client meeting a newer type — degrades to a grey, raw-id, "Other" fallback
@@ -47,8 +48,21 @@ export const UNKNOWN_CABLE_PREFIX = "X";
 
 export type { SignalTypeDef, ConnectorTypeDef, DeviceTypeDef };
 
-/** Where a registered definition came from. Each source is one replaceable layer. */
-export type TypeSource = "community" | "user";
+/**
+ * Where a registered definition came from. Each source is one replaceable layer:
+ * `user` is the user's own library (localStorage), `document` the types the open file
+ * carries, `community` the moderated list from `GET /types`.
+ */
+export type TypeSource = "community" | "user" | "document";
+
+/**
+ * Lowest to highest: a later layer wins an id clash. The open file's copy of a type beats
+ * the user's library (same id, different definition: the file wins for that document, the
+ * library keeps its own). The live community definition beats the file's snapshot, so a
+ * moderator's recolour reaches old files; the snapshot only covers a client that doesn't
+ * have the community type.
+ */
+const LAYER_ORDER: readonly TypeSource[] = ["user", "document", "community"];
 
 export interface TypeDefs {
   signals?: readonly SignalTypeDef[];
@@ -75,7 +89,7 @@ export function registerTypes(source: TypeSource, defs: TypeDefs): void {
   extraSignals.clear();
   extraConnectors.clear();
   extraDeviceTypes.clear();
-  for (const src of ["community", "user"] as const) {
+  for (const src of LAYER_ORDER) {
     const l = layers.get(src);
     if (!l) continue;
     for (const d of l.signals ?? []) if (!isBuiltinSignal(d.id)) extraSignals.set(d.id, d);
@@ -84,6 +98,29 @@ export function registerTypes(source: TypeSource, defs: TypeDefs): void {
   }
   version++;
   for (const fn of listeners) fn();
+}
+
+/** One source's definitions as last registered (empty when never registered). */
+export function typeLayer(source: TypeSource): TypeDefs {
+  return layers.get(source) ?? {};
+}
+
+/** The registered (non-built-in) definition an id resolves to, whichever layer won. */
+export function registeredSignal(id: string): SignalTypeDef | undefined {
+  return extraSignals.get(id);
+}
+
+export function registeredConnector(id: string): ConnectorTypeDef | undefined {
+  return extraConnectors.get(id);
+}
+
+export function registeredDeviceType(id: string): DeviceTypeDef | undefined {
+  return extraDeviceTypes.get(id);
+}
+
+/** Every registered definition (all layers merged, retired included). */
+export function registeredTypes(): { signals: SignalTypeDef[]; connectors: ConnectorTypeDef[]; deviceTypes: DeviceTypeDef[] } {
+  return { signals: [...extraSignals.values()], connectors: [...extraConnectors.values()], deviceTypes: [...extraDeviceTypes.values()] };
 }
 
 /** Increments on every registration; a cheap snapshot for `useSyncExternalStore`. */

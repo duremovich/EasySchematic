@@ -20,6 +20,7 @@ import {
   isKnownConnector,
   isKnownSignal,
   registerTypes,
+  registeredSignal,
   signalCable,
   signalColor,
   signalCssColor,
@@ -27,6 +28,7 @@ import {
   signalGroups,
   signalLabel,
   signalsByLabel,
+  typeLayer,
   typeRegistryVersion,
 } from "../typeRegistry";
 import type { ConnectorTypeDef, CustomTypeRecord, SignalTypeDef } from "../customTypes/model";
@@ -187,6 +189,58 @@ describe("typeRegistry: community types", () => {
     // Retired: still resolves, but out of the pickers.
     expect(connectorLabel("shadow-hdbnc")).toBe("Shadow HD-BNC");
     expect(connectorsByLabel()).not.toContain("shadow-hdbnc");
+  });
+});
+
+// P5: the user's own types and the open file's embedded ones, as layers.
+describe("typeRegistry: user and document layers", () => {
+  afterEach(() => {
+    registerTypes("user", {});
+    registerTypes("document", {});
+    registerTypes("community", {});
+  });
+  const MINE: SignalTypeDef = {
+    id: "x-show-comms-k3f9", label: "Show Comms", color: "#008848", group: "Control",
+    defaultConnector: "x-weco-3-pin-a1b2", cable: "Comms", cablePrefix: "SC",
+  };
+  const MY_WECO: ConnectorTypeDef = {
+    id: "x-weco-3-pin-a1b2", label: "WECO 3-pin", group: "Power", cable: "WECO", gender: "female", matesWith: [], adaptsTo: [],
+  };
+
+  it("the user layer feeds the getters and pickers like community types", () => {
+    registerTypes("user", { signals: [MINE], connectors: [MY_WECO] });
+    expect(signalLabel(MINE.id)).toBe("Show Comms");
+    expect(signalCssColor(MINE.id)).toBe("#008848");
+    expect(defaultConnector(MINE.id)).toBe(MY_WECO.id);
+    expect(signalsByLabel()).toContain(MINE.id);
+    expect(connectorLabel(MY_WECO.id)).toBe("WECO 3-pin");
+    expect(typeLayer("user").signals).toEqual([MINE]);
+  });
+
+  it("the document's copy beats the user's library; clearing the document restores the library's", () => {
+    registerTypes("user", { signals: [MINE] });
+    registerTypes("document", { signals: [{ ...MINE, label: "Their Comms", color: "#2563eb" }] });
+    expect(signalLabel(MINE.id)).toBe("Their Comms");
+    expect(signalColor(MINE.id)).toBe("#2563eb");
+    expect(registeredSignal(MINE.id)?.label).toBe("Their Comms");
+    // The library layer itself is untouched.
+    expect(typeLayer("user").signals?.[0].label).toBe("Show Comms");
+    registerTypes("document", {});
+    expect(signalLabel(MINE.id)).toBe("Show Comms");
+  });
+
+  it("the live community definition beats a file's snapshot of it; the snapshot covers its absence", () => {
+    registerTypes("document", { connectors: [{ ...WECO, label: "WECO (old)" }] });
+    expect(connectorLabel("weco-3")).toBe("WECO (old)");
+    registerTypes("community", { connectors: [WECO] });
+    expect(connectorLabel("weco-3")).toBe("WECO 3-pin");
+  });
+
+  it("no layer can redefine a built-in", () => {
+    registerTypes("document", { signals: [{ ...MINE, id: "sdi", label: "Not SDI" }] });
+    registerTypes("user", { signals: [{ ...MINE, id: "sdi", label: "Not SDI" }] });
+    expect(signalLabel("sdi")).toBe("SDI");
+    expect(signalCssColor("sdi")).toBe("var(--color-sdi)");
   });
 });
 

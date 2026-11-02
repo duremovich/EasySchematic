@@ -4,7 +4,9 @@ import { useSchematicStore } from "../store";
 import { exportImage } from "../exportUtils";
 import { exportDxf } from "../dxfExport";
 import { exportPdf } from "../pdfExport";
-import { exportTemplatesToFile, readTemplateFile } from "../templateExport";
+import { exportTemplatesToFile, readTemplateArchive } from "../templateExport";
+import { userTypeLibrary } from "../userTypes";
+import { isEmptyTypeDefs } from "../customTypes/model";
 import { loadSchematicTemplate } from "../templateApi";
 import { getPaperSize } from "../printConfig";
 import type { SchematicFile, SchematicNode, AnnotationData } from "../types";
@@ -424,11 +426,12 @@ export default function MenuBar() {
 
   const handleSaveArchive = useCallback(() => {
     const templates = useSchematicStore.getState().exportCustomTemplates();
-    if (templates.length === 0) {
-      alert("No custom device templates to export.");
+    const customTypes = userTypeLibrary();
+    if (templates.length === 0 && isEmptyTypeDefs(customTypes)) {
+      alert("No custom device templates or custom types to export.");
       return;
     }
-    exportTemplatesToFile(templates);
+    exportTemplatesToFile(templates, customTypes);
   }, []);
 
   const handleOpenArchive = useCallback(() => {
@@ -440,9 +443,10 @@ export default function MenuBar() {
       const file = e.target.files?.[0];
       if (!file) return;
       try {
-        const templates = await readTemplateFile(file);
-        useSchematicStore.getState().importCustomTemplates(templates);
-        alert(`Imported ${templates.length} device template${templates.length === 1 ? "" : "s"}.`);
+        const { templates, customTypes } = await readTemplateArchive(file);
+        useSchematicStore.getState().importCustomTemplates(templates, customTypes);
+        const typeCount = (customTypes.signals?.length ?? 0) + (customTypes.connectors?.length ?? 0) + (customTypes.deviceTypes?.length ?? 0);
+        alert(`Imported ${templates.length} device template${templates.length === 1 ? "" : "s"}${typeCount ? ` and ${typeCount} custom type${typeCount === 1 ? "" : "s"}` : ""}.`);
       } catch (err) {
         alert(err instanceof Error ? err.message : "Invalid device archive file.");
       }

@@ -73,14 +73,17 @@ import {
 } from "./connectSnap";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { loadSharedSchematic, checkSession, initCommunityTypes } from "./templateApi";
+import { initUserTypes } from "./userTypes";
 import { loadTestSchematicFromUrl } from "./testSchematic/load";
 import { refreshCloudCache } from "./cloudSync";
 import { useTheme } from "./hooks/useTheme";
 
 // Community signals / connectors / device types the open schematic may use: register the
 // last-good copy (or the bundled one) before the first render; DeviceLibrary's
-// fetchTemplates() then refreshes them from GET /types.
+// fetchTemplates() then refreshes them from GET /types. The user's own types (localStorage)
+// register alongside; the open file's types follow when the store loads it.
 initCommunityTypes();
+initUserTypes();
 
 /** Darkens the canvas area left of x=0 and above y=0, marking the printable origin. */
 function CanvasOriginOverlay() {

@@ -6,7 +6,7 @@
 // page refresh (or a second tab) would.
 
 import { describe, it, expect, vi } from "vitest";
-import { parseTemplateFile, type TemplateExportFile } from "../templateExport";
+import { parseTemplateArchive, parseTemplateFile, type TemplateExportFile } from "../templateExport";
 import type { DeviceTemplate } from "../types";
 
 const TEMPLATES_KEY = "easyschematic-custom-templates";
@@ -193,5 +193,109 @@ describe("custom device archive import is additive (#251)", () => {
       delete g.window;
       delete g.document;
     }
+  }, RELOAD_TIMEOUT);
+});
+
+// Custom types P5: a file carries the definitions of the non-built-in types it uses, so it
+// opens with the right labels and colours on a client (a fresh profile) that never saw them.
+describe("custom types travel with files and archives (custom-types P5)", () => {
+  const SIG = "x-show-comms-k3f9";
+  const CON = "x-weco-3-pin-a1b2";
+  const signalDef = { id: SIG, label: "Show Comms", color: "#008848", group: "Control", defaultConnector: CON, cable: "Comms", cablePrefix: "SC" };
+  const connectorDef = { id: CON, label: "WECO 3-pin", group: "Power", cable: "WECO", gender: "female" as const, matesWith: [], adaptsTo: ["bnc"] };
+  const device = {
+    id: "d1", type: "device", position: { x: 0, y: 0 },
+    data: { label: "Comms Box", deviceType: "converter", ports: [{ id: "p1", label: "COMMS", signalType: SIG, connectorType: CON, direction: "output" }] },
+  };
+
+  /** A fresh page load: store, user-type library and registry over `storage`. */
+  async function loadApp(storage: MemStorage) {
+    const store = await loadStore(storage);
+    const userTypes = await import("../userTypes");
+    const registry = await import("../typeRegistry");
+    const { needsAdapter } = await import("../connectorTypes");
+    userTypes.initUserTypes();
+    return { store, userTypes, registry, needsAdapter };
+  }
+
+  it("customTypes survives save → open in a fresh profile, and the reload after", async () => {
+    const mine = await loadApp(new MemStorage());
+    mine.userTypes.saveUserType("connector", connectorDef);
+    mine.userTypes.saveUserType("signal", signalDef);
+    const file = mine.store.getState().exportToJSON();
+    file.nodes = [device as unknown as (typeof file.nodes)[number]];
+    const saved = JSON.parse(JSON.stringify({ ...file, customTypes: undefined }));
+    // What File → Save writes for that drawing:
+    mine.store.getState().importFromJSON(saved);
+    const written = JSON.parse(JSON.stringify(mine.store.getState().exportToJSON()));
+    expect(written.version).toBe(44);
+    expect(written.customTypes).toEqual({ signals: [signalDef], connectors: [connectorDef] });
+
+    const freshStorage = new MemStorage();
+    const fresh = await loadApp(freshStorage);
+    expect(fresh.registry.signalLabel(SIG)).toBe(SIG); // never seen: raw id
+    fresh.store.getState().importFromJSON(written);
+    expect(fresh.registry.signalLabel(SIG)).toBe("Show Comms");
+    expect(fresh.registry.signalColor(SIG)).toBe("#008848");
+    expect(fresh.registry.connectorLabel(CON)).toBe("WECO 3-pin");
+    expect(fresh.needsAdapter(CON, "bnc")).toBe(true);
+    // Opening a file registers its types for the document; it doesn't join the library.
+    expect(fresh.userTypes.userTypeLibrary().signals).toEqual([]);
+    expect(fresh.store.getState().exportToJSON().customTypes).toEqual(written.customTypes);
+
+    // Reload: the autosave carries the document's types too.
+    const reloaded = await loadApp(freshStorage);
+    expect(reloaded.registry.signalLabel(SIG)).toBe(SIG);
+    reloaded.store.getState().loadFromLocalStorage();
+    expect(reloaded.registry.signalLabel(SIG)).toBe("Show Comms");
+    reloaded.store.getState().newSchematic();
+    expect(reloaded.registry.signalLabel(SIG)).toBe(SIG);
+  }, RELOAD_TIMEOUT);
+
+  it("a colliding id: the file's definition wins in that document, the library keeps its own", async () => {
+    const storage = new MemStorage();
+    const app = await loadApp(storage);
+    app.userTypes.saveUserType("signal", signalDef);
+    const file = app.store.getState().exportToJSON();
+    file.nodes = [device as unknown as (typeof file.nodes)[number]];
+    file.customTypes = { signals: [{ ...signalDef, label: "Their Comms", color: "#2563eb" }] };
+    app.store.getState().importFromJSON(JSON.parse(JSON.stringify(file)));
+    expect(app.registry.signalLabel(SIG)).toBe("Their Comms");
+    expect(app.registry.signalColor(SIG)).toBe("#2563eb");
+    expect(app.userTypes.findUserType("signal", SIG)?.label).toBe("Show Comms");
+    expect(JSON.parse(storage.getItem("easyschematic-custom-types")!).signals[0].color).toBe("#008848");
+    app.store.getState().newSchematic();
+    expect(app.registry.signalLabel(SIG)).toBe("Show Comms");
+  }, RELOAD_TIMEOUT);
+
+  it("a file's junk definitions are dropped or defanged, never registered as-is", async () => {
+    const app = await loadApp(new MemStorage());
+    const file = app.store.getState().exportToJSON();
+    file.customTypes = JSON.parse(JSON.stringify({
+      signals: [
+        { id: "x-ok-aaaa", label: "OK", color: "url(javascript:alert(1))", group: "Control" },
+        { id: "Not An Id", label: "Bad id" },
+        { id: "x-nolabel-bbbb" },
+      ],
+    }));
+    app.store.getState().importFromJSON(file);
+    expect(app.registry.signalLabel("x-ok-aaaa")).toBe("OK");
+    expect(app.registry.signalColor("x-ok-aaaa")).toBe("#71717a");
+    expect(app.registry.isKnownSignal("Not An Id")).toBe(false);
+    expect(app.registry.isKnownSignal("x-nolabel-bbbb")).toBe(false);
+  }, RELOAD_TIMEOUT);
+
+  it("a device archive carries the library's types; a stale tab doesn't drop another tab's types", async () => {
+    const storage = new MemStorage();
+    const tab1 = await loadApp(storage);
+    const tab2 = await loadApp(storage);
+    tab2.userTypes.saveUserType("signal", signalDef);
+    // tab1 never heard about it, then imports an archive with a connector type.
+    const parsed = parseTemplateArchive(JSON.stringify({ version: 1, templates: [tpl("custom-1", "Box")], customTypes: { connectors: [connectorDef] } }));
+    tab1.store.getState().importCustomTemplates(parsed.templates, parsed.customTypes);
+    const lib = JSON.parse(storage.getItem("easyschematic-custom-types")!);
+    expect(lib.signals.map((d: { id: string }) => d.id)).toEqual([SIG]);
+    expect(lib.connectors.map((d: { id: string }) => d.id)).toEqual([CON]);
+    expect(tab1.registry.connectorLabel(CON)).toBe("WECO 3-pin");
   }, RELOAD_TIMEOUT);
 });

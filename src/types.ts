@@ -1,4 +1,5 @@
 import type { Node, Edge } from "@xyflow/react";
+import type { CustomTypeDefs } from "./customTypes/model";
 
 /** Connector types defined in code. Tables keyed by this stay exhaustive, so adding a
  *  built-in forces every entry; everything else uses the wide `ConnectorType`. */
@@ -848,6 +849,10 @@ export interface SchematicFile {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
   customTemplates?: DeviceTemplate[];
+  /** Definitions of every non-built-in (community or user) signal, connector and device
+   *  type the drawing uses (schema v44), so the file opens with the right labels and
+   *  colours on a client that has never seen them. Registered as the document's own layer. */
+  customTypes?: CustomTypeDefs;
   ownedGear?: OwnedGearItem[];
   signalColors?: Partial<Record<SignalType, string>>;
   signalLineStyles?: Partial<Record<SignalType, LineStyle>>;
