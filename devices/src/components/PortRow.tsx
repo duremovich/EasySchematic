@@ -2,11 +2,9 @@ import { useRef } from "react";
 import type { Gender, Port, PortDirection, SignalType, ConnectorType } from "../../../src/types";
 import { CONNECTORS_WITH_GENDER_VARIATION, resolvePortGender } from "../../../src/connectorTypes";
 import SearchableSelect from "./SearchableSelect";
-import { connectorGroups, connectorLabel, defaultConnector, signalGroups, signalLabel } from "../../../src/typeRegistry";
+import { connectorLabel, defaultConnector, signalLabel } from "../../../src/typeRegistry";
 import { signalCssColor } from "../../../src/typeRegistry";
-
-const SIGNAL_GROUP_OPTIONS = signalGroups();
-const CONNECTOR_GROUP_OPTIONS = connectorGroups();
+import { usePortPickerGroups } from "../hooks/useCommunityTypes";
 
 const NETWORK_SIGNAL_TYPES = new Set(["ethernet", "ndi", "dante", "avb", "srt", "hdbaset"]);
 
@@ -53,6 +51,8 @@ function GenderSelect({ connectorType, value, onChange }: {
 }
 
 export default function PortRow({ port, index, direction, isLast, mime, isDragging, dropTarget, setDropTarget, setDraggedPortId, onDragEnd, selected, onSelect, onChange, onRemove, onMoveUp, onMoveDown }: PortRowProps) {
+  // Built-in + community signals / connectors; re-renders when /types lands.
+  const { signals: signalGroupOptions, connectors: connectorGroupOptions } = usePortPickerGroups();
   const isPassthrough = port.direction === "passthrough";
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -161,7 +161,7 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
               <SearchableSelect<SignalType>
                 value={port.signalType}
                 onChange={handleSignalChange}
-                groups={SIGNAL_GROUP_OPTIONS}
+                groups={signalGroupOptions}
                 labels={signalLabel}
                 className={selectClass}
               />
@@ -173,7 +173,7 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
               <SearchableSelect<ConnectorType>
                 value={(port.rearConnectorType ?? "none") as ConnectorType}
                 onChange={(v) => onChange({ rearConnectorType: v === "none" ? undefined : v })}
-                groups={CONNECTOR_GROUP_OPTIONS}
+                groups={connectorGroupOptions}
                 labels={connectorLabel}
                 className={selectClass}
               />
@@ -189,7 +189,7 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
               <SearchableSelect<ConnectorType>
                 value={(port.frontConnectorType ?? "none") as ConnectorType}
                 onChange={(v) => onChange({ frontConnectorType: v === "none" ? undefined : v })}
-                groups={CONNECTOR_GROUP_OPTIONS}
+                groups={connectorGroupOptions}
                 labels={connectorLabel}
                 className={selectClass}
               />
@@ -205,14 +205,14 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
             <SearchableSelect<SignalType>
               value={port.signalType}
               onChange={handleSignalChange}
-              groups={SIGNAL_GROUP_OPTIONS}
+              groups={signalGroupOptions}
               labels={signalLabel}
               className={selectClass}
             />
             <SearchableSelect<ConnectorType>
               value={(port.connectorType ?? "none") as ConnectorType}
               onChange={(v) => onChange({ connectorType: v })}
-              groups={CONNECTOR_GROUP_OPTIONS}
+              groups={connectorGroupOptions}
               labels={connectorLabel}
               recommended={defaultConnector(port.signalType)}
               recommendedLabel={`Default for ${signalLabel(port.signalType)}`}

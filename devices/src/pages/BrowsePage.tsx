@@ -6,6 +6,7 @@ import CategoryFilter from "../components/CategoryFilter";
 import DeviceCard from "../components/DeviceCard";
 import OfflineBanner from "../components/OfflineBanner";
 import { signalLabel } from "../../../src/typeRegistry";
+import { useCommunityTypes } from "../hooks/useCommunityTypes";
 
 function SkeletonCard() {
   return (
@@ -31,6 +32,7 @@ export default function BrowsePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [offline, setOffline] = useState(false);
+  const typesVersion = useCommunityTypes(); // community signal labels resolve once /types lands
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
@@ -74,13 +76,14 @@ export default function BrowsePage() {
 
   // Cross-filtered: signals narrowed by selected categories + brands
   const signalTypeList = useMemo(() => {
+    void typesVersion; // labels below come from the registry, which /types updates
     let source = templates;
     if (selectedCategories.size > 0) source = source.filter((t) => t.category && selectedCategories.has(t.category));
     if (selectedBrands.size > 0) source = source.filter((t) => t.manufacturer && selectedBrands.has(t.manufacturer));
     const types = new Set<string>();
     for (const t of source) for (const st of t.signalTypes) types.add(st);
     return [...types].sort((a, b) => signalLabel(a).localeCompare(signalLabel(b)));
-  }, [templates, selectedCategories, selectedBrands]);
+  }, [templates, selectedCategories, selectedBrands, typesVersion]);
 
   // Map signal type values to labels for CategoryFilter display
   const signalLabelMap = useMemo(() => {

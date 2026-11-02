@@ -1,5 +1,7 @@
 import type { DeviceTemplate, SignalType } from "../../src/types";
 import type { CustomTypeKind, CustomTypeRecord } from "../../src/customTypes";
+import { typeDefsFromRecords } from "../../src/customTypes/model";
+import { registerTypes } from "../../src/typeRegistry";
 import {
   saveSummaries,
   loadSummaries,
@@ -489,7 +491,15 @@ export async function fetchSubmission(id: string): Promise<Submission> {
   return res.json();
 }
 
-export async function approveSubmission(id: string, data?: Omit<DeviceTemplate, "id" | "version">): Promise<void> {
+/** Approval result. `warnings` names port signal / connector ids no built-in or community type defines. */
+export interface ApproveResult {
+  ok: true;
+  status: "approved";
+  warnings?: string[];
+  unknownTypes?: { signals: string[]; connectors: string[] };
+}
+
+export async function approveSubmission(id: string, data?: Omit<DeviceTemplate, "id" | "version">): Promise<ApproveResult> {
   const res = await fetch(`${API_URL}/submissions/${id}/approve`, {
     method: "POST",
     headers: data ? { "Content-Type": "application/json" } : {},
@@ -502,6 +512,7 @@ export async function approveSubmission(id: string, data?: Omit<DeviceTemplate, 
     const err = await res.json().catch(() => ({})) as { error?: string };
     throw new Error(err.error || `Failed to approve: ${res.status}`);
   }
+  return res.json();
 }
 
 export async function rejectSubmission(id: string, note?: string): Promise<void> {
@@ -784,9 +795,16 @@ function typeWriteInit(method: string, body?: unknown): RequestInit {
   };
 }
 
+/** A refused type write. `suggestedColor` is the API's nearest passing colour (guardrail 2). */
+export class TypeWriteError extends Error {
+  constructor(message: string, readonly suggestedColor?: string) {
+    super(message);
+  }
+}
+
 async function typeError(res: Response, what: string): Promise<Error> {
-  const err = (await res.json().catch(() => ({}))) as { error?: string };
-  return new Error(err.error || `Failed to ${what}: ${res.status}`);
+  const err = (await res.json().catch(() => ({}))) as { error?: string; suggestedColor?: string };
+  return new TypeWriteError(err.error || `Failed to ${what}: ${res.status}`, err.suggestedColor);
 }
 
 export async function fetchCustomTypes(kind?: CustomTypeKind): Promise<CustomTypeRecord[]> {
@@ -795,20 +813,32 @@ export async function fetchCustomTypes(kind?: CustomTypeKind): Promise<CustomTyp
   return res.json();
 }
 
-let communityDeviceTypesPromise: Promise<CustomTypeRecord[]> | null = null;
+let communityTypesPromise: Promise<CustomTypeRecord[]> | null = null;
 
 /**
- * Community device types, fetched once per page load and shared by every
- * picker. Resolves to [] when the API is unreachable so built-ins keep working.
+ * Every community type (all kinds), fetched once per page load and shared by
+ * every picker. Each answer is registered into the type registry, so signal and
+ * connector labels, colours and mating resolve through the same getters the app
+ * uses. Resolves to [] when the API is unreachable so built-ins keep working.
  */
-export function loadCommunityDeviceTypes(refresh = false): Promise<CustomTypeRecord[]> {
-  if (!communityDeviceTypesPromise || refresh) {
-    communityDeviceTypesPromise = fetchCustomTypes("device").catch(() => {
-      communityDeviceTypesPromise = null; // retry on next call
-      return [];
-    });
+export function loadCommunityTypes(refresh = false): Promise<CustomTypeRecord[]> {
+  if (!communityTypesPromise || refresh) {
+    communityTypesPromise = fetchCustomTypes()
+      .then((records) => {
+        registerTypes("community", typeDefsFromRecords(records));
+        return records;
+      })
+      .catch(() => {
+        communityTypesPromise = null; // retry on next call
+        return [];
+      });
   }
-  return communityDeviceTypesPromise;
+  return communityTypesPromise;
+}
+
+/** Community device types (from the shared all-kinds fetch). */
+export function loadCommunityDeviceTypes(refresh = false): Promise<CustomTypeRecord[]> {
+  return loadCommunityTypes(refresh).then((records) => records.filter((r) => r.kind === "device"));
 }
 
 export async function createCustomType(input: {
@@ -820,7 +850,7 @@ export async function createCustomType(input: {
 }): Promise<CustomTypeRecord> {
   const res = await fetch(`${API_URL}/types`, typeWriteInit("POST", input));
   if (!res.ok) throw await typeError(res, "create type");
-  void loadCommunityDeviceTypes(true);
+  void loadCommunityTypes(true);
   return res.json();
 }
 
@@ -831,12 +861,12 @@ export async function updateCustomType(
 ): Promise<CustomTypeRecord> {
   const res = await fetch(`${API_URL}/types/${kind}/${encodeURIComponent(id)}`, typeWriteInit("PUT", patch));
   if (!res.ok) throw await typeError(res, "update type");
-  void loadCommunityDeviceTypes(true);
+  void loadCommunityTypes(true);
   return res.json();
 }
 
 export async function deleteCustomType(kind: CustomTypeKind, id: string): Promise<void> {
   const res = await fetch(`${API_URL}/types/${kind}/${encodeURIComponent(id)}`, typeWriteInit("DELETE"));
   if (!res.ok) throw await typeError(res, "delete type");
-  void loadCommunityDeviceTypes(true);
+  void loadCommunityTypes(true);
 }

@@ -1,16 +1,18 @@
 import { useState, useEffect } from "react";
-import { fetchSubmission, fetchTemplate, approveSubmission, rejectSubmission, deferSubmission, claimSubmission } from "../api";
+import { fetchSubmission, fetchTemplate, approveSubmission, rejectSubmission, deferSubmission, claimSubmission, loadCommunityTypes } from "../api";
 import type { Submission } from "../api";
 import type { DeviceTemplate, Port, SlotDefinition } from "../../../src/types";
 import { DEVICE_TYPE_TO_CATEGORY, DEVICE_TYPE_ALIASES, ALL_CATEGORIES, carriesPowerCapacity } from "../../../src/deviceTypeCategories";
-import { slugifyTypeId } from "../../../src/customTypes";
+import { slugifyTypeId, suggestSimilarTypes, typeCandidates, unknownPortTypes } from "../../../src/customTypes";
+import type { CustomTypeRecord } from "../../../src/customTypes";
 import { useDeviceTypeCatalog } from "../hooks/useDeviceTypeCatalog";
+import { useCommunityTypes } from "../hooks/useCommunityTypes";
 import { linkClick } from "../navigate";
 import StatusBadge from "../components/StatusBadge";
 import SignalBadge from "../components/SignalBadge";
 import ReviewGuidelines from "../components/ReviewGuidelines";
 import PortEditor from "../components/PortEditor";
-import { connectorLabel } from "../../../src/typeRegistry";
+import { connectorLabel, isKnownConnector, isKnownSignal } from "../../../src/typeRegistry";
 
 export default function ReviewDetailPage({ id, currentUserId }: { id: string; currentUserId?: string }) {
   const [submission, setSubmission] = useState<Submission | null>(null);
@@ -52,6 +54,12 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
   const [editIsVenueProvided, setEditIsVenueProvided] = useState(false);
   // Built-in + community device types, to spot a submission whose type doesn't exist yet.
   const { catalog: deviceTypes, loaded: deviceTypesLoaded } = useDeviceTypeCatalog();
+  // Community signals / connectors: registered for labels and colours (version 0 =
+  // not loaded yet, so no false "unknown" banner), and the records for did-you-mean.
+  const typesVersion = useCommunityTypes();
+  const [communityTypes, setCommunityTypes] = useState<CustomTypeRecord[]>([]);
+  useEffect(() => { void loadCommunityTypes().then(setCommunityTypes); }, [typesVersion]);
+  const [approveWarnings, setApproveWarnings] = useState<string[]>([]);
 
   useEffect(() => {
     fetchSubmission(id)
@@ -135,7 +143,8 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
           ...(editIsVenueProvided && { isVenueProvided: true }),
         };
       }
-      await approveSubmission(id, editedData);
+      const result = await approveSubmission(id, editedData);
+      setApproveWarnings(result.warnings ?? []);
       setDone("approved");
     } catch (e) {
       setActionError(e instanceof Error ? e.message : "Failed to approve");
@@ -194,6 +203,11 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
           )}
         </div>
         <h2 className="text-xl font-semibold mb-2">Submission {done}</h2>
+        {approveWarnings.length > 0 && (
+          <div className="max-w-xl mx-auto mb-4 text-left border border-amber-200 rounded-lg p-3 bg-amber-50 text-sm text-amber-900" data-testid="approve-warnings">
+            {approveWarnings.map((w) => <p key={w}>{w}</p>)}
+          </div>
+        )}
         <a href="/review" onClick={linkClick} className="text-sm text-blue-600 hover:text-blue-800">Back to review queue</a>
       </div>
     );
@@ -519,6 +533,42 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
         );
       })()}
 
+      {(submission.status === "pending" || submission.status === "deferred") && typesVersion > 0 && (() => {
+        // custom-types P3: port signal / connector ids nobody defined. Approval
+        // still goes through (the API only warns), but they render grey with a
+        // raw id, so offer the fix: create the type, or correct a typo.
+        const unknown = unknownPortTypes(editing ? editPorts : proposed.ports, { signal: isKnownSignal, connector: isKnownConnector });
+        const items = [
+          ...unknown.signals.map((tid) => ({ kind: "signal" as const, tid })),
+          ...unknown.connectors.map((tid) => ({ kind: "connector" as const, tid })),
+        ];
+        if (!items.length) return null;
+        return (
+          <div className="mb-6 border border-amber-200 rounded-lg p-4 bg-amber-50" data-testid="unknown-port-types">
+            <div className="text-xs font-semibold text-amber-800 mb-1">Unknown signal / connector types</div>
+            <p className="text-sm text-amber-900 mb-2">
+              These ports use ids that are neither built in nor community types. You can still approve, but they show
+              grey with the raw id and mate with nothing. Create the type, or use Edit &amp; Approve to fix a typo.
+            </p>
+            <ul className="space-y-2">
+              {items.map(({ kind, tid }) => {
+                const [near] = suggestSimilarTypes(tid, typeCandidates(kind, communityTypes), { includeRetired: false, limit: 1 });
+                const href = `/admin/types?${new URLSearchParams({ kind, create: slugifyTypeId(tid), from: id }).toString()}`;
+                return (
+                  <li key={`${kind}:${tid}`} className="flex flex-wrap items-center gap-2 text-sm text-amber-900">
+                    <span>{kind === "signal" ? "Signal" : "Connector"} <code className="text-xs bg-white px-1 rounded">{tid}</code></span>
+                    {near && <span className="text-xs text-amber-700">did you mean <code>{near.id}</code> ({near.label})?</span>}
+                    <a href={href} onClick={linkClick} className="px-3 py-1 rounded-lg bg-amber-600 text-white text-xs font-medium hover:bg-amber-700">
+                      Create this {kind} type
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
+
       {actionError && (
         <div className="mt-4 border border-red-200 rounded-lg p-4 bg-red-50 text-sm text-red-700">
           {actionError}
@@ -566,7 +616,7 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
                 <textarea
                   value={deferNote}
                   onChange={(e) => setDeferNote(e.target.value)}
-                  placeholder="e.g. Needs new connector type &quot;speakon-nl4&quot; or signal type &quot;nlight&quot;. (Missing device types: create them on the Types page instead.)"
+                  placeholder="e.g. Needs dante ↔ aes67 compatibility, or PoE semantics for a new signal. (Missing device, signal or connector types: create them on the Types page instead.)"
                   className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   rows={3}
                 />

@@ -21,6 +21,7 @@ import { linkClick, navigateTo } from "../navigate";
 import { effectiveThermalBtuh } from "../thermal";
 import { formatDateTime as formatDate } from "../format";
 import { connectorLabel } from "../../../src/typeRegistry";
+import { useCommunityTypes } from "../hooks/useCommunityTypes";
 
 type TemplateWithAttribution = DeviceTemplate & {
   submittedBy?: { name: string };
@@ -35,6 +36,7 @@ export default function DeviceDetailPage({ id, currentUser }: { id: string; curr
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [offline, setOffline] = useState(false);
+  useCommunityTypes(); // community connector labels resolve once /types lands
 
   const isMod = currentUser?.role === "moderator" || currentUser?.role === "admin";
 

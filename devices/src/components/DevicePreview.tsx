@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { Port } from "../../../src/types";
 import { portSide } from "../../../src/types";
 import { signalCssColor, signalLabel } from "../../../src/typeRegistry";
+import { useCommunityTypes } from "../hooks/useCommunityTypes";
 
 /**
  * Standalone, presentational replica of the main app's DeviceNode (src/components/DeviceNode.tsx).
@@ -110,6 +111,7 @@ interface DevicePreviewProps {
 }
 
 export default function DevicePreview({ label, deviceType, ports }: DevicePreviewProps) {
+  useCommunityTypes(); // community signal colours resolve once /types lands
   const { leftPorts, rightPorts, bidirectional, passthroughPorts } = useMemo(() => {
     const leftPorts: Port[] = [];
     const rightPorts: Port[] = [];
