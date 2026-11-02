@@ -8,7 +8,8 @@ import DevicePreview from "./DevicePreview";
 import AutocompleteInput from "./AutocompleteInput";
 import SearchableSelect from "./SearchableSelect";
 import TagInput from "./TagInput";
-import { DEVICE_TYPE_TO_CATEGORY, DEVICE_TYPE_LABELS, ALL_CATEGORIES, DEVICE_TYPES_BY_CATEGORY, carriesPowerCapacity } from "../../../src/deviceTypeCategories";
+import { ALL_CATEGORIES, carriesPowerCapacity } from "../../../src/deviceTypeCategories";
+import { useDeviceTypeCatalog } from "../hooks/useDeviceTypeCatalog";
 
 const toKebab = (s: string) => s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
@@ -95,6 +96,8 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
   const [knownManufacturers, setKnownManufacturers] = useState<string[]>([]);
   const [allTemplates, setAllTemplates] = useState<DeviceTemplate[]>([]);
   const categoryAutoRef = useRef(true);
+  // Built-in + community device types (custom-types P1); built-ins only until /types answers.
+  const { catalog: deviceTypes } = useDeviceTypeCatalog();
 
   useEffect(() => {
     fetchSearchTerms().then(setKnownSearchTerms);
@@ -105,9 +108,9 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
   // Auto-populate category from device type
   useEffect(() => {
     if (!categoryAutoRef.current) return;
-    const mapped = DEVICE_TYPE_TO_CATEGORY[deviceType];
+    const mapped = deviceTypes.toCategory[deviceType];
     if (mapped) setCategory(mapped);
-  }, [deviceType]);
+  }, [deviceType, deviceTypes]);
 
   useEffect(() => {
     if (!id) return;
@@ -396,8 +399,8 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
             <SearchableSelect
               value={deviceType}
               onChange={(v) => { setDeviceType(v); categoryAutoRef.current = true; }}
-              groups={DEVICE_TYPES_BY_CATEGORY}
-              labels={DEVICE_TYPE_LABELS}
+              groups={deviceTypes.byCategory}
+              labels={deviceTypes.labels}
               placeholder="Search device types..."
               allowOther={{ label: "Other \u2014 suggest new type", onSelect: (q) => { setCustomDeviceType(true); setCustomDeviceTypeText(q); } }}
               className="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -406,7 +409,7 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
         </div>
         <div>
           <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category *</span>
-          {!customDeviceType && DEVICE_TYPE_TO_CATEGORY[deviceType] ? (
+          {!customDeviceType && deviceTypes.toCategory[deviceType] ? (
             <div className="flex items-center gap-2">
               <input value={category} readOnly className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 cursor-default" />
               <span className="text-xs text-slate-400 dark:text-slate-500 whitespace-nowrap">Auto-filled</span>
@@ -446,7 +449,7 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
               if (manufacturer.trim() && manufacturer.trim().toLowerCase() !== "generic") auto.push(manufacturer.trim().toLowerCase());
               if (modelNumber.trim()) auto.push(modelNumber.trim().toLowerCase());
               // Add words from device type label
-              const dtLabel = DEVICE_TYPE_LABELS[deviceType];
+              const dtLabel = deviceTypes.labels[deviceType];
               if (dtLabel) dtLabel.split(" ").forEach((w) => { if (w.length > 2) auto.push(w.toLowerCase()); });
               return [...new Set(auto)];
             })()}

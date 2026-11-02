@@ -15,6 +15,12 @@ const ACTION_COLORS: Record<string, string> = {
   note_added: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
   note_edited: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
   note_deleted: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  // Community types (custom-types P1)
+  type_create: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300",
+  type_edit: "bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300",
+  type_retire: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300",
+  type_unretire: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
+  type_delete: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300",
 };
 
 const ACTION_HEADERS: Record<string, string> = {
@@ -29,7 +35,14 @@ const ACTION_HEADERS: Record<string, string> = {
   note_added: "Note added",
   note_edited: "Note edited",
   note_deleted: "Note deleted",
+  type_create: "Created community type",
+  type_edit: "Edited community type",
+  type_retire: "Retired community type",
+  type_unretire: "Unretired community type",
+  type_delete: "Deleted community type",
 };
+
+const isTypeAction = (action: string) => action.startsWith("type_");
 
 const COLUMN_COUNT = 6;
 
@@ -126,6 +139,11 @@ export default function AdminActivityPage({ currentUser }: { currentUser?: User 
           <option value="flag-delete">Flagged for deletion</option>
           <option value="unflag-delete">Restored from deletion</option>
           <option value="confirm-delete">Hard-deleted</option>
+          <option value="type_create">Types created</option>
+          <option value="type_edit">Types edited</option>
+          <option value="type_retire">Types retired</option>
+          <option value="type_unretire">Types unretired</option>
+          <option value="type_delete">Types deleted</option>
         </select>
 
         {(selectedMod || selectedAction) && (
@@ -258,6 +276,16 @@ function DetailPanel({ action, onClose }: { action: ModAction; onClose: () => vo
   const submission = tryParse(action.submission_data);
 
   const body = (() => {
+    // Community type writes carry type records, not templates.
+    if (isTypeAction(action.action)) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {before && <LabeledBlock label="Before"><TypeRecordBlock data={before} /></LabeledBlock>}
+          {after && <LabeledBlock label={before ? "After" : "Created"}><TypeRecordBlock data={after} /></LabeledBlock>}
+        </div>
+      );
+    }
+
     // Explicit update diff: both sides present
     if (before && after) {
       return <DiffSummary before={before} after={after} />;
@@ -321,6 +349,29 @@ function DetailPanel({ action, onClose }: { action: ModAction; onClose: () => vo
 
       {body}
     </div>
+  );
+}
+
+function TypeRecordBlock({ data }: { data: TemplateLike }) {
+  const d = data as Record<string, unknown>;
+  const inner = (d.data && typeof d.data === "object" ? d.data : {}) as Record<string, unknown>;
+  const rows: [string, unknown][] = [
+    ["Id", `${d.kind ?? ""} · ${d.id ?? ""}`],
+    ["Label", d.label],
+    ["Category", inner.category],
+    ["Description", inner.description],
+    ["Status", d.status],
+    ["Reason / URL", d.reasonOrUrl],
+  ];
+  return (
+    <dl className="text-xs grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 bg-white dark:bg-slate-900 p-2 rounded text-slate-700 dark:text-slate-300">
+      {rows.filter(([, v]) => v != null && v !== "").map(([k, v]) => (
+        <Fragment key={k}>
+          <dt className="text-slate-400 dark:text-slate-500">{k}</dt>
+          <dd className="break-words">{String(v)}</dd>
+        </Fragment>
+      ))}
+    </dl>
   );
 }
 
@@ -721,6 +772,11 @@ function tryParse(s: string | null): TemplateLike | null {
 }
 
 function getDeviceLabel(a: ModAction): string {
+  if (isTypeAction(a.action)) {
+    const t = tryParse(a.after_data) ?? tryParse(a.before_data);
+    const label = t && typeof t.label === "string" ? t.label : null;
+    return label ? `Type: ${label}` : (a.note ?? "—");
+  }
   const sources = [a.after_data, a.before_data, a.submission_data];
   for (const src of sources) {
     const parsed = tryParse(src);

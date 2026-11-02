@@ -1,4 +1,5 @@
 import type { DeviceTemplate, SignalType } from "../../src/types";
+import type { CustomTypeKind, CustomTypeRecord } from "../../src/customTypes";
 import {
   saveSummaries,
   loadSummaries,
@@ -581,7 +582,8 @@ export interface ModAction {
   // Action taxonomy (string, not narrowed union — taxonomy grows over time):
   //   approve, reject, defer, edit, send_back,
   //   flag-delete, unflag-delete, confirm-delete,
-  //   note_added, note_edited, note_deleted
+  //   note_added, note_edited, note_deleted,
+  //   type_create, type_edit, type_retire, type_unretire, type_delete (custom-types P1)
   action: string;
   submission_id: string | null;
   template_id: string | null;
@@ -764,4 +766,77 @@ export async function fetchPendingDeletions(): Promise<PendingDeletion[]> {
   if (res.status === 403) throw new Error("Admin access required");
   if (!res.ok) throw new Error(`Failed to fetch pending deletions: ${res.status}`);
   return res.json();
+}
+
+// ==================== COMMUNITY TYPES (custom-types P1) ====================
+
+/** Mods use their session; the legacy admin token, when set, rides along too. */
+function typeWriteInit(method: string, body?: unknown): RequestInit {
+  const token = getAdminToken();
+  return {
+    method,
+    credentials: "include",
+    headers: {
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  };
+}
+
+async function typeError(res: Response, what: string): Promise<Error> {
+  const err = (await res.json().catch(() => ({}))) as { error?: string };
+  return new Error(err.error || `Failed to ${what}: ${res.status}`);
+}
+
+export async function fetchCustomTypes(kind?: CustomTypeKind): Promise<CustomTypeRecord[]> {
+  const res = await fetch(`${API_URL}/types${kind ? `?kind=${kind}` : ""}`);
+  if (!res.ok) throw new ApiError(res.status, `Failed to fetch types: ${res.status}`);
+  return res.json();
+}
+
+let communityDeviceTypesPromise: Promise<CustomTypeRecord[]> | null = null;
+
+/**
+ * Community device types, fetched once per page load and shared by every
+ * picker. Resolves to [] when the API is unreachable so built-ins keep working.
+ */
+export function loadCommunityDeviceTypes(refresh = false): Promise<CustomTypeRecord[]> {
+  if (!communityDeviceTypesPromise || refresh) {
+    communityDeviceTypesPromise = fetchCustomTypes("device").catch(() => {
+      communityDeviceTypesPromise = null; // retry on next call
+      return [];
+    });
+  }
+  return communityDeviceTypesPromise;
+}
+
+export async function createCustomType(input: {
+  kind: CustomTypeKind;
+  id: string;
+  label: string;
+  data: Record<string, unknown>;
+  reasonOrUrl: string;
+}): Promise<CustomTypeRecord> {
+  const res = await fetch(`${API_URL}/types`, typeWriteInit("POST", input));
+  if (!res.ok) throw await typeError(res, "create type");
+  void loadCommunityDeviceTypes(true);
+  return res.json();
+}
+
+export async function updateCustomType(
+  kind: CustomTypeKind,
+  id: string,
+  patch: { label?: string; data?: Record<string, unknown>; status?: "active" | "retired"; reasonOrUrl?: string },
+): Promise<CustomTypeRecord> {
+  const res = await fetch(`${API_URL}/types/${kind}/${encodeURIComponent(id)}`, typeWriteInit("PUT", patch));
+  if (!res.ok) throw await typeError(res, "update type");
+  void loadCommunityDeviceTypes(true);
+  return res.json();
+}
+
+export async function deleteCustomType(kind: CustomTypeKind, id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/types/${kind}/${encodeURIComponent(id)}`, typeWriteInit("DELETE"));
+  if (!res.ok) throw await typeError(res, "delete type");
+  void loadCommunityDeviceTypes(true);
 }

@@ -3,7 +3,9 @@ import { fetchSubmission, fetchTemplate, approveSubmission, rejectSubmission, de
 import type { Submission } from "../api";
 import type { DeviceTemplate, Port, SlotDefinition } from "../../../src/types";
 import { CONNECTOR_LABELS } from "../../../src/types";
-import { DEVICE_TYPE_TO_CATEGORY, ALL_CATEGORIES, carriesPowerCapacity } from "../../../src/deviceTypeCategories";
+import { DEVICE_TYPE_TO_CATEGORY, DEVICE_TYPE_ALIASES, ALL_CATEGORIES, carriesPowerCapacity } from "../../../src/deviceTypeCategories";
+import { slugifyTypeId } from "../../../src/customTypes";
+import { useDeviceTypeCatalog } from "../hooks/useDeviceTypeCatalog";
 import { linkClick } from "../navigate";
 import StatusBadge from "../components/StatusBadge";
 import SignalBadge from "../components/SignalBadge";
@@ -48,6 +50,8 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
   const [editDepthMm, setEditDepthMm] = useState("");
   const [editWeightKg, setEditWeightKg] = useState("");
   const [editIsVenueProvided, setEditIsVenueProvided] = useState(false);
+  // Built-in + community device types, to spot a submission whose type doesn't exist yet.
+  const { catalog: deviceTypes, loaded: deviceTypesLoaded } = useDeviceTypeCatalog();
 
   useEffect(() => {
     fetchSubmission(id)
@@ -479,6 +483,42 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
         </div>
       )}
 
+      {(submission.status === "pending" || submission.status === "deferred") && deviceTypesLoaded && (() => {
+        // custom-types P1: a device type that is neither built in nor a community
+        // type no longer means "defer" — the moderator creates it on the Types
+        // page and comes back to approve.
+        const dt = (editing ? editDeviceType : proposed.deviceType)?.trim() ?? "";
+        if (!dt || Object.prototype.hasOwnProperty.call(DEVICE_TYPE_ALIASES, dt)) return null;
+        if (submission.action !== "create" && existing && existing.deviceType === dt) return null;
+        const status = deviceTypes.community.get(dt);
+        if (Object.prototype.hasOwnProperty.call(deviceTypes.toCategory, dt) && status !== "retired") return null;
+        const slug = slugifyTypeId(dt);
+        const cat = (editing ? editCategory : (proposed as { category?: string }).category) ?? "";
+        const href = `/admin/types?${new URLSearchParams({ create: slug, ...(cat ? { category: cat } : {}), from: id }).toString()}`;
+        return (
+          <div className="mb-6 border border-indigo-200 rounded-lg p-4 bg-indigo-50" data-testid="unknown-device-type">
+            <div className="text-xs font-semibold text-indigo-700 mb-1">
+              {status === "retired" ? "Retired device type" : "New device type"}
+            </div>
+            <p className="text-sm text-indigo-900">
+              {status === "retired" ? (
+                <>The device type <code className="text-xs bg-white px-1 rounded">{dt}</code> was retired. Unretire it on the Types page, or edit the submission to use another type.</>
+              ) : (
+                <>The device type <code className="text-xs bg-white px-1 rounded">{dt}</code> doesn't exist yet. Check the suggestions on the Types page first; if nothing fits, create it there and come back to approve. No need to defer.</>
+              )}
+            </p>
+            <a href={status === "retired" ? "/admin/types" : href} onClick={linkClick} className="inline-block mt-2 px-4 py-1.5 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700">
+              {status === "retired" ? "Open the Types page" : "Create this device type"}
+            </a>
+            {slug !== dt && status !== "retired" && (
+              <p className="text-xs text-indigo-700 mt-2">
+                It will be created as <code>{slug}</code>; use Edit &amp; Approve to set the submission's device type to match.
+              </p>
+            )}
+          </div>
+        );
+      })()}
+
       {actionError && (
         <div className="mt-4 border border-red-200 rounded-lg p-4 bg-red-50 text-sm text-red-700">
           {actionError}
@@ -526,7 +566,7 @@ export default function ReviewDetailPage({ id, currentUserId }: { id: string; cu
                 <textarea
                   value={deferNote}
                   onChange={(e) => setDeferNote(e.target.value)}
-                  placeholder="e.g. Needs new device type &quot;audio-delay&quot; added to DEVICE_TYPE_TO_CATEGORY, or needs new connector type &quot;speakon-nl4&quot;..."
+                  placeholder="e.g. Needs new connector type &quot;speakon-nl4&quot; or signal type &quot;nlight&quot;. (Missing device types: create them on the Types page instead.)"
                   className="mt-1 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   rows={3}
                 />

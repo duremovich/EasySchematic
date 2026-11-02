@@ -304,7 +304,11 @@ export default function DeviceTemplateSchemaPage() {
       ))}
 
       <h2>Valid <code>deviceType</code> values</h2>
-      <p>Each device type maps to a category in the library sidebar. The category is auto-derived if you don't specify one.</p>
+      <p>
+        Each device type maps to a category in the library sidebar. The category is auto-derived if you don't specify one.
+        The list below is the built-in set; moderators can also add community device types on the devices site,
+        and those are listed by the <code>GET /types</code> API endpoint.
+      </p>
       {sortedCategories.map((cat) => (
         <div key={cat}>
           <h3>{cat}</h3>

@@ -140,6 +140,10 @@ export default function DeviceLibraryPage() {
           so you can check the layout before submitting. Ports can be reordered by dragging their grip handle
           (or with the up/down buttons), and dragging a port into another group changes its direction</li>
         <li><strong>Suggest edits</strong> — see a mistake or missing port? Propose changes to any existing template</li>
+        <li><strong>New device types</strong> — if no device type fits, choose <em>Other — suggest new type</em> in the
+          device type picker. A moderator either matches it to an existing type or adds it to the community list of
+          device types, and approves your device without waiting for an app update. Types moderators add show up in
+          the picker for everyone straight away</li>
         <li><strong>Moderation</strong> — submissions are reviewed by moderators before going live to ensure accuracy</li>
         <li><strong>Reference URLs</strong> — branded devices link directly to the manufacturer's product page so
           moderators (and you) can verify specs</li>

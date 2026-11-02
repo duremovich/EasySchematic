@@ -11,6 +11,7 @@ import ReviewQueuePage from "./pages/ReviewQueuePage";
 import ReviewDetailPage from "./pages/ReviewDetailPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminActivityPage from "./pages/AdminActivityPage";
+import AdminTypesPage from "./pages/AdminTypesPage";
 import PendingDeletionsPage from "./pages/PendingDeletionsPage";
 import ProfilePage from "./pages/ProfilePage";
 import ContributorsPage from "./pages/ContributorsPage";
@@ -30,6 +31,7 @@ function parseRoute(): { page: string; id?: string; pendingId?: string; draft?: 
   if (path === "/admin/edit") return { page: "admin-edit", auth };
   if (path === "/admin/users") return { page: "admin-users", auth };
   if (path === "/admin/activity") return { page: "admin-activity", auth };
+  if (path === "/admin/types") return { page: "admin-types", auth };
   if (path === "/admin/pending-deletions") return { page: "admin-pending-deletions", auth };
   if (path === "/admin") return { page: "admin-activity", auth };
   if (path.startsWith("/device/")) return { page: "device", id: path.slice(8), auth };
@@ -194,6 +196,11 @@ export default function App() {
           Mod Activity
         </a>
       )}
+      {!authLoading && user && isMod && (
+        <a href="/admin/types" onClick={linkClick} className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 transition-colors">
+          Types
+        </a>
+      )}
       {!authLoading && user && isAdmin && (
         <a href="/admin/pending-deletions" onClick={linkClick} className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors">
           Pending Deletion
@@ -274,6 +281,9 @@ export default function App() {
         )}
         {route.page === "admin-activity" && (
           authOffline ? <NeedsConnection /> : isMod ? <AdminActivityPage currentUser={user} /> : <NoAccess />
+        )}
+        {route.page === "admin-types" && (
+          authOffline ? <NeedsConnection /> : isMod ? <AdminTypesPage /> : <NoAccess />
         )}
         {route.page === "admin-pending-deletions" && (
           authOffline ? <NeedsConnection /> : isAdmin ? <PendingDeletionsPage /> : <NoAccess />

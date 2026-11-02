@@ -63,6 +63,17 @@ export default function ApiPage() {
       <pre><code>GET https://api.easyschematic.live/templates/device-types</code></pre>
       <pre><code>["adapter", "audio-embedder", "audio-interface", "av-over-ip", "camera", ...]</code></pre>
 
+      <h3>GET /types</h3>
+      <p>
+        Returns the community device types that moderators have added on the devices site, on top of the built-in
+        list. Each entry has <code>kind</code> (<code>device</code>), <code>id</code> (the <code>deviceType</code>
+        value templates use), <code>label</code>, <code>data.category</code>, and <code>status</code>
+        {" "}(<code>active</code>, or <code>retired</code> for types no longer offered for new devices but still used by
+        existing ones). Optional <code>?kind=device</code> filter. Supports <code>ETag</code> /
+        {" "}<code>If-None-Match</code>.
+      </p>
+      <pre><code>GET https://api.easyschematic.live/types?kind=device</code></pre>
+
       <h3>GET /templates/search-terms</h3>
       <p>Returns a sorted array of all search terms across all templates (lowercase, deduplicated).</p>
       <pre><code>GET https://api.easyschematic.live/templates/search-terms</code></pre>

@@ -12,7 +12,8 @@ export default function ReviewGuidelines() {
           <ul className="list-disc list-inside space-y-0.5 text-slate-600">
             <li>Must be <strong>kebab-case</strong> and match an existing type (e.g., <code className="text-xs bg-slate-100 px-1 rounded">audio-dsp</code>, <code className="text-xs bg-slate-100 px-1 rounded">switcher</code>).</li>
             <li>Many submitted types map to existing ones: crossovers, compressors, delays, and EQs are all <code className="text-xs bg-slate-100 px-1 rounded">audio-dsp</code>. Headphone DAs are <code className="text-xs bg-slate-100 px-1 rounded">headphone-amplifier</code>. Rasterizers/waveform monitors are <code className="text-xs bg-slate-100 px-1 rounded">video-scope</code>.</li>
-            <li>If a genuinely new type is needed, use the <strong>Defer</strong> button — new types require a codebase change before approval.</li>
+            <li>If a genuinely new type is needed, <strong>don't defer</strong>: create it on the <a href="/admin/types" className="text-blue-700 underline">Types page</a> (the review page offers a "Create this device type" shortcut), then approve. Check the page's "did you mean" suggestions first; a near-duplicate is worse than editing the submission to an existing type.</li>
+            <li>Type ids are permanent once created. Labels, category and description stay editable; a type in use can be retired but not deleted.</li>
           </ul>
         </div>
 
@@ -20,7 +21,7 @@ export default function ReviewGuidelines() {
           <h3 className="font-semibold text-slate-900 mb-1">Signal & Connector Types</h3>
           <ul className="list-disc list-inside space-y-0.5 text-slate-600">
             <li><strong>Avoid accepting <code className="text-xs bg-amber-50 text-amber-700 px-1 rounded">custom</code> signal types or <code className="text-xs bg-amber-50 text-amber-700 px-1 rounded">other</code> connector types</strong> when a specific type exists. Edit the submission to use the correct type.</li>
-            <li>If the correct type doesn't exist in the codebase yet, use the <strong>Defer</strong> button — adding new types requires a code change.</li>
+            <li>If the correct signal or connector type doesn't exist in the codebase yet, use the <strong>Defer</strong> button. New signal and connector types still need a code change (device types no longer do).</li>
             <li>Common mistakes: <code className="text-xs bg-slate-100 px-1 rounded">serial</code> should be <code className="text-xs bg-slate-100 px-1 rounded">rs422</code>, <code className="text-xs bg-slate-100 px-1 rounded">sdi</code> used for analog audio, power connectors set to "other" when <code className="text-xs bg-slate-100 px-1 rounded">iec</code> or <code className="text-xs bg-slate-100 px-1 rounded">barrel</code> is correct.</li>
           </ul>
         </div>
@@ -54,7 +55,7 @@ export default function ReviewGuidelines() {
         <div>
           <h3 className="font-semibold text-slate-900 mb-1">When to Defer vs. Reject</h3>
           <ul className="list-disc list-inside space-y-0.5 text-slate-600">
-            <li><strong>Defer</strong> when the submission is correct but needs a codebase change first (new device type, signal type, or connector type).</li>
+            <li><strong>Defer</strong> when the submission is correct but needs a codebase change first (a new signal type or connector type). A missing <em>device</em> type is not a reason to defer: add it on the Types page and approve.</li>
             <li><strong>Edit & Approve</strong> when fixes are straightforward (wrong device type, missing connector, etc.).</li>
             <li><strong>Reject</strong> when the submission has fundamental accuracy issues (wrong device specs, mixed-up products). Always include a note explaining what's wrong.</li>
           </ul>
