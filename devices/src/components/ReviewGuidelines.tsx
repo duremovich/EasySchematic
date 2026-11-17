@@ -21,9 +21,10 @@ export default function ReviewGuidelines() {
           <h3 className="font-semibold text-slate-900 mb-1">Signal & Connector Types</h3>
           <ul className="list-disc list-inside space-y-0.5 text-slate-600">
             <li><strong>Avoid accepting <code className="text-xs bg-amber-50 text-amber-700 px-1 rounded">custom</code> signal types or <code className="text-xs bg-amber-50 text-amber-700 px-1 rounded">other</code> connector types</strong> when a specific type exists. Edit the submission to use the correct type.</li>
+            <li><strong>Check the library first.</strong> A type that looks missing often exists under another name: RS-232 is <code className="text-xs bg-slate-100 px-1 rounded">serial</code> ("RS-232 / Serial"), and CRMX is a <code className="text-xs bg-slate-100 px-1 rounded">dmx</code> port on a <code className="text-xs bg-slate-100 px-1 rounded">wireless</code> connector. The Types page's "did you mean" suggestions catch most of these.</li>
             <li>If the correct signal or connector type doesn't exist yet, <strong>don't defer</strong>: create it on the <a href="/admin/types?kind=signal" className="text-blue-700 underline">Types page</a> (the review page lists unknown port types with a "Create this … type" shortcut), then approve. Give a new connector its <em>Mates with</em> / <em>Adapts to</em> lists; a new signal connects only to itself.</li>
             <li>Defer only when the type needs <em>behaviour</em> a community type can't have: a compatibility pair with another signal, PoE or power semantics, or an adapter that should be inserted automatically.</li>
-            <li>Common mistakes: <code className="text-xs bg-slate-100 px-1 rounded">serial</code> should be <code className="text-xs bg-slate-100 px-1 rounded">rs422</code>, <code className="text-xs bg-slate-100 px-1 rounded">sdi</code> used for analog audio, power connectors set to "other" when <code className="text-xs bg-slate-100 px-1 rounded">iec</code> or <code className="text-xs bg-slate-100 px-1 rounded">barrel</code> is correct.</li>
+            <li>Common mistakes: RS-422 ports entered as <code className="text-xs bg-slate-100 px-1 rounded">serial</code> (that's RS-232) should be <code className="text-xs bg-slate-100 px-1 rounded">rs422</code>, <code className="text-xs bg-slate-100 px-1 rounded">sdi</code> used for analog audio, power connectors set to "other" when <code className="text-xs bg-slate-100 px-1 rounded">iec</code> or <code className="text-xs bg-slate-100 px-1 rounded">barrel</code> is correct.</li>
           </ul>
         </div>
 
@@ -40,7 +41,7 @@ export default function ReviewGuidelines() {
           <h3 className="font-semibold text-slate-900 mb-1">Port Verification</h3>
           <ul className="list-disc list-inside space-y-0.5 text-slate-600">
             <li>Cross-reference submitted ports against manufacturer specs when possible.</li>
-            <li>If a submission has ports you can't verify, try to understand the submitter's intent rather than assuming an error — it may be a <strong>Defer</strong> case rather than a rejection.</li>
+            <li>If a submission has ports you can't verify, try to understand the submitter's intent rather than assuming an error. It may need a new type from the Types page, or, rarely, a <strong>Defer</strong>, rather than a rejection.</li>
           </ul>
         </div>
 
