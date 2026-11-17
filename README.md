@@ -16,7 +16,7 @@
   </a>
 </p>
 
-<p align="center"><sub><b>Individual supporters</b><br/>Sean Curtis · HI-T3C · Brandon Meyers</sub></p>
+<p align="center"><sub><b>Individual supporters</b><br/>Sean Curtis · HI-T3C · Brandon Meyers · Srdjan T</sub></p>
 
 ---
 
