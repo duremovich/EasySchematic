@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useSchematicStore } from "../store";
 import { selectedConnectionEdges, stubbedLinkIdsOf } from "../stubSelection";
 import { LINE_STYLE_LABELS, LINE_STYLE_DASHARRAY, type LineStyle } from "../types";
+import { DEFAULT_LINE_WIDTH, LINE_WIDTHS, effectiveLineWidth, lineWidthPatchValue } from "../lineWidth";
 
 const LINE_STYLES: LineStyle[] = ["solid", "dashed", "dotted", "dash-dot"];
 
@@ -20,7 +21,7 @@ export default function BulkConnectionEditPanel({ onClose }: Props) {
       .filter((e) => e.selected)
       .map(
         (e) =>
-          `${e.id}:${e.data?.lineStyle ?? ""}:${e.data?.directAttach ? "1" : "0"}:${e.data?.hideCableId ? "1" : "0"}:${String(e.data?.sourceLabel ?? "")}:${String(e.data?.label ?? "")}:${String(e.data?.targetLabel ?? "")}:${String(e.data?.color ?? "")}:${e.data?.bundleId ?? ""}:${e.data?.signalType ?? ""}:${e.data?.linkedConnectionId ?? ""}`,
+          `${e.id}:${e.data?.lineStyle ?? ""}:${String(e.data?.strokeWidth ?? "")}:${e.data?.directAttach ? "1" : "0"}:${e.data?.hideCableId ? "1" : "0"}:${String(e.data?.sourceLabel ?? "")}:${String(e.data?.label ?? "")}:${String(e.data?.targetLabel ?? "")}:${String(e.data?.color ?? "")}:${e.data?.bundleId ?? ""}:${e.data?.signalType ?? ""}:${e.data?.linkedConnectionId ?? ""}`,
       )
       .join("|")
       + "#"
@@ -69,6 +70,10 @@ export default function BulkConnectionEditPanel({ onClose }: Props) {
   const allSameStyle = lineStyles.every((s) => s === lineStyles[0]);
   const consensusStyle: LineStyle | null = allSameStyle ? lineStyles[0] : null;
 
+  const lineWidths = selectedEdges.map((e) => effectiveLineWidth(e.data));
+  const allSameWidth = lineWidths.every((w) => w === lineWidths[0]);
+  const consensusWidth: number | null = allSameWidth ? lineWidths[0] : null;
+
   function boolState(field: "directAttach" | "hideCableId") {
     const vals = selectedEdges.map((e) => e.data?.[field] === true);
     const allOn = vals.every(Boolean);
@@ -82,6 +87,13 @@ export default function BulkConnectionEditPanel({ onClose }: Props) {
   const applyLineStyle = (ls: LineStyle) => {
     useSchematicStore.getState().batchPatchEdgeData(
       selectedEdges.map((e) => ({ edgeId: e.id, patch: { lineStyle: ls === "solid" ? undefined : ls } })),
+    );
+  };
+
+  const applyLineWidth = (w: number) => {
+    const value = lineWidthPatchValue(w);
+    useSchematicStore.getState().batchPatchEdgeData(
+      selectedEdges.map((e) => ({ edgeId: e.id, patch: { strokeWidth: value } })),
     );
   };
 
@@ -321,6 +333,34 @@ export default function BulkConnectionEditPanel({ onClose }: Props) {
           ))}
         </div>
       </section>
+
+      {/* Line width (#415) — hidden like Color when any selection is direct-attach (fixed hairline) */}
+      {!anyDirectAttach && (
+        <section className="mb-3">
+          <div className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] mb-1.5">
+            Line Width{!allSameWidth && <span className="ml-1 normal-case text-[var(--color-text-muted)]">(mixed)</span>}
+          </div>
+          <div className="flex gap-1">
+            {LINE_WIDTHS.map((w) => (
+              <button
+                key={w}
+                title={`${w} px${w === DEFAULT_LINE_WIDTH ? " (default)" : ""}`}
+                onClick={() => applyLineWidth(w)}
+                className={`flex-1 py-1 rounded border flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer ${
+                  consensusWidth === w
+                    ? "border-blue-500 bg-blue-50 text-blue-600"
+                    : "border-[var(--color-border)] text-[var(--color-text-muted)] hover:border-blue-400 hover:bg-blue-50 hover:text-blue-600"
+                }`}
+              >
+                <svg width="16" height="10" className="block">
+                  <line x1="1" y1="5" x2="15" y2="5" stroke="currentColor" strokeWidth={w} />
+                </svg>
+                <span className="text-[9px] leading-none">{w}</span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Color override */}
       {!anyDirectAttach && (

@@ -1864,3 +1864,65 @@ describe("buildDxf — Print View title block toggle (#388)", () => {
     expect(titleBlockEntities(false).length).toBe(0);
   });
 });
+
+// Per-connection line width (#415): a widened connection carries a heavier DXF
+// lineweight (group 370); the default width keeps the 0.25mm every connection
+// exported with before the feature existed.
+describe("buildDxf — per-connection line width (#415)", () => {
+  const devices: SchematicNode[] = [
+    {
+      id: "dev-router", type: "device", position: { x: 0, y: 0 }, measured: { width: 144, height: 80 },
+      data: { label: "SDI Router", ports: [{ id: "sdi-out-1", label: "Out 1", direction: "output", signalType: "sdi" }] },
+    },
+    {
+      id: "dev-monitor", type: "device", position: { x: 600, y: 0 }, measured: { width: 144, height: 80 },
+      data: { label: "Monitor", ports: [{ id: "sdi-in-1", label: "In 1", direction: "input", signalType: "sdi" }] },
+    },
+    {
+      id: "dev-camera", type: "device", position: { x: 0, y: 300 }, measured: { width: 144, height: 80 },
+      data: { label: "Camera", ports: [{ id: "sdi-out-1", label: "SDI Out", direction: "output", signalType: "sdi" }] },
+    },
+    {
+      id: "dev-ccu", type: "device", position: { x: 600, y: 300 }, measured: { width: 144, height: 80 },
+      data: { label: "CCU", ports: [{ id: "sdi-in-1", label: "SDI In", direction: "input", signalType: "sdi" }] },
+    },
+  ] as unknown as SchematicNode[];
+
+  afterEach(resetExportStore);
+
+  function connectionLineweights(strokeWidth: number | undefined): Record<string, string[]> {
+    const edges = [
+      { id: "e-bus", source: "dev-router", target: "dev-monitor", sourceHandle: "sdi-out-1", targetHandle: "sdi-in-1",
+        data: { signalType: "sdi", ...(strokeWidth !== undefined ? { strokeWidth } : {}) } },
+      { id: "e-plain", source: "dev-camera", target: "dev-ccu", sourceHandle: "sdi-out-1", targetHandle: "sdi-in-1",
+        data: { signalType: "sdi" } },
+    ] as unknown as ConnectionEdge[];
+    useSchematicStore.setState({
+      nodes: devices, edges,
+      routedEdges: { "e-bus": straightRoute(144, 40, 600), "e-plain": straightRoute(144, 340, 600) },
+      colorKeyEnabled: false, printView: false,
+    });
+    const dxf = buildDxf(instanceFor(devices));
+    expect(dxf).not.toBeNull();
+    const byY: Record<string, string[]> = {};
+    for (const e of rawEntityStream(dxf!)) {
+      if (e.type !== "LINE" || !e.layer.startsWith("EasySchematic-Connections-")) continue;
+      const y = e.pairs.find(([c]) => c === "20")?.[1] ?? "?";
+      const lw = e.pairs.find(([c]) => c === "370")?.[1] ?? "none";
+      (byY[y] ??= []).push(lw);
+    }
+    return byY;
+  }
+
+  it("keeps 0.25mm for connections without an override", () => {
+    const lws = Object.values(connectionLineweights(undefined)).flat();
+    expect(lws.length).toBeGreaterThanOrEqual(2);
+    expect(new Set(lws)).toEqual(new Set(["25"]));
+  });
+
+  it("exports a widened connection heavier, leaving the other at 0.25mm", () => {
+    const lws = Object.values(connectionLineweights(6)).flat();
+    expect(lws).toContain("70");
+    expect(lws).toContain("25");
+  });
+});

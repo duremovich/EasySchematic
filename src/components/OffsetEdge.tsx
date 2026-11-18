@@ -13,6 +13,7 @@ import { computeEdgeLengthEstimate, resolveCableLengthLabel } from "../cableLeng
 import { showPathEditHint, soleSelectedCableId } from "../pathEditHint";
 import { isBuiltinSignal, isKnownSignal, signalCssColor } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
+import { DEFAULT_LINE_WIDTH, effectiveLineWidth } from "../lineWidth";
 
 function OffsetEdgeComponent({
   id,
@@ -212,6 +213,11 @@ function OffsetEdgeComponent({
     return "solid" as LineStyle;
   });
 
+  // Per-connection line width override (#415); direct attach keeps its hairline.
+  const lineWidth = useSchematicStore((s) =>
+    effectiveLineWidth(s.edges.find((e) => e.id === id)?.data),
+  );
+
   // Read routed waypoints (serialized for stability)
   const routeWpStr = useSchematicStore((s) => {
     const r = s.routedEdges[id];
@@ -300,8 +306,8 @@ function OffsetEdgeComponent({
     ? {
         ...style,
         ...(directAttach
-          ? { stroke: "#9ca3af", strokeWidth: selected ? 2 : 1 }
-          : { strokeWidth: selected ? 3 : 2 }),
+          ? { stroke: "#9ca3af", strokeWidth: selected ? lineWidth + 1 : lineWidth }
+          : { strokeWidth: selected ? lineWidth + 1 : lineWidth }),
         ...(connectorMismatch && !allowIncompatible
           ? { strokeDasharray: "6 3" }
           : LINE_STYLE_DASHARRAY[lineStyle]
@@ -756,7 +762,13 @@ function OffsetEdgeComponent({
         labelY={ly}
         style={edgeStyle}
         markerEnd={markerEnd}
-        interactionWidth={interactionWidth}
+        // A widened line (#415) keeps a hit target at least its own width plus a margin;
+        // at the default width the user's hitbox preference applies exactly as before.
+        interactionWidth={
+          lineWidth > DEFAULT_LINE_WIDTH
+            ? Math.max(interactionWidth ?? 20, lineWidth + 4)
+            : interactionWidth
+        }
       />
       {edgeLabelsPortal}
       {debugLabel}

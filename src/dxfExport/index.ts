@@ -5,6 +5,7 @@ import type { RoutedEdge } from "../edgeRouter";
 import { buildPrintPageLookup } from "../stubLabelResolve";
 import { DxfWriter, type EntityStyle } from "./writer";
 import { pxToIn } from "./units";
+import { effectiveLineWidth, lineWidthToDxfLineweight } from "../lineWidth";
 import {
   buildLayerDefs,
   CANONICAL_LAYERS,
@@ -114,7 +115,9 @@ export function buildDxf(rfInstance: ReactFlowInstance): string | null {
     const entityStyle: EntityStyle = {
       trueColor,
       linetype,
-      lineWeight: 25,
+      // Per-connection line width (#415) → nearest standard DXF lineweight; the default
+      // 2px stays 0.25mm. Direct attach keeps 0.25mm as before (it has no width override).
+      lineWeight: edge.data?.directAttach ? 25 : lineWidthToDxfLineweight(effectiveLineWidth(edge.data)),
     };
 
     emitEdgeGeometry(writer, routed, layer, entityStyle, allArcCrossings);

@@ -13,6 +13,7 @@
 import { createDefaultLayout } from "./titleBlockLayout";
 import { defaultStubPlacement } from "./stubPlacement";
 import { getPortAbsolutePositions } from "./snapUtils";
+import { adoptLegacyStrokeWidth } from "./lineWidth";
 import type { SchematicNode } from "./types";
 import { defaultConnector } from "./typeRegistry";
 
@@ -993,6 +994,15 @@ export function migrateSchematic(data: any): any {
       return n;
     });
     if (changed) data = { ...data, nodes };
+  }
+
+  // Version-independent: adopt a hand-edited legacy connection width (top-level
+  // `edge.strokeWidth`, or a non-default `edge.style.strokeWidth`) into
+  // `data.strokeWidth`, which is what the canvas and exports read (#415).
+  if (Array.isArray(data.edges)) {
+    const edges = data.edges.map(adoptLegacyStrokeWidth);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- loosely-typed migration edge
+    if (edges.some((e: any, i: number) => e !== data.edges[i])) data = { ...data, edges };
   }
 
   // Version-independent invariant: `selected` is transient UI state. Saves now

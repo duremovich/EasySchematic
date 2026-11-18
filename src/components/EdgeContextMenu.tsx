@@ -7,6 +7,7 @@ import { isAdapterHidden, toggleAdapterVisibility as nextAdapterVisibility } fro
 import { selectedConnectionEdges, stubbedLinkIdsOf } from "../stubSelection";
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
 import MenuSubmenu from "./MenuSubmenu";
+import { DEFAULT_LINE_WIDTH, LINE_WIDTHS, effectiveLineWidth, lineWidthPatchValue } from "../lineWidth";
 
 /** Project a point onto the nearest segment and return the projected point. */
 function projectOntoSegments(
@@ -399,6 +400,12 @@ export default function EdgeContextMenu() {
     useSchematicStore.setState({ edgeContextMenu: null });
   }, [menu]);
 
+  const setLineWidth = useCallback((w: number) => {
+    if (!menu) return;
+    useSchematicStore.getState().patchEdgeData(menu.edgeId, { strokeWidth: lineWidthPatchValue(w) });
+    useSchematicStore.setState({ edgeContextMenu: null });
+  }, [menu]);
+
   const goToNode = useCallback((nodeId: string | undefined) => {
     if (!menu || !nodeId) return;
     const internal = getInternalNode(nodeId);
@@ -455,6 +462,7 @@ export default function EdgeContextMenu() {
   const allowIncompatible = edge?.data?.allowIncompatible === true;
   const isDirectAttach = edge?.data?.directAttach === true;
   const customColor = (edge?.data?.color as string | undefined) ?? "";
+  const currentLineWidth = effectiveLineWidth(edge?.data);
 
   // Patch panel routing (#232): hops live on the source-side leg of a stubbed pair —
   // right-clicking the target leg redirects to the partner so the assignment lands right.
@@ -741,6 +749,27 @@ export default function EdgeContextMenu() {
           </button>
         ))}
       </MenuSubmenu>
+      {/* Direct attach is a fixed hairline (like its fixed grey), so no width override there. */}
+      {!isDirectAttach && (
+        <MenuSubmenu label={`Line Width: ${currentLineWidth} px`} minWidth={150}>
+          {LINE_WIDTHS.map((w) => (
+            <button
+              key={w}
+              className={`w-full text-left px-3 py-1.5 text-xs flex items-center gap-2 cursor-pointer ${
+                currentLineWidth === w
+                  ? "text-blue-700 bg-blue-50"
+                  : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+              }`}
+              onClick={() => setLineWidth(w)}
+            >
+              <svg width="24" height="10" className="shrink-0">
+                <line x1="0" y1="5" x2="24" y2="5" stroke="currentColor" strokeWidth={w} />
+              </svg>
+              <span>{w} px{w === DEFAULT_LINE_WIDTH ? " (default)" : ""}</span>
+            </button>
+          ))}
+        </MenuSubmenu>
+      )}
       <div className="h-px bg-gray-200 my-1" />
       <MenuItem label="Go to Source" onClick={() => goToNode(edge?.source)} />
       <MenuItem label="Go to Destination" onClick={() => goToNode(edge?.target)} />

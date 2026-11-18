@@ -98,6 +98,19 @@ export default function ConnectionsPage() {
         <strong>Signal Colors</strong> panel.
       </p>
 
+      <h2>Line width</h2>
+      <p>
+        Connections draw at <strong>2 px</strong> by default. To make one heavier — a bus carrying many feeds, say —
+        right-click it and pick from the <strong>Line Width</strong> submenu (1–8 px). With several connections
+        selected, the <strong>Edit connections</strong> panel has a <strong>Line Width</strong> row that sets them all
+        at once. A selected connection draws 1 px wider. The width carries into PNG, SVG and PDF exports, and DXF
+        exports map it onto the nearest standard lineweight. Direct-attach connections stay a thin grey line.
+      </p>
+      <p>
+        On a <strong>bundle</strong>, every member runs along the same trunk, so the trunk shows as wide as its
+        widest member — select the bundle's connections and set a width to make the whole bundle heavier.
+      </p>
+
       <h2>Multicable connections</h2>
       <p>
         EasySchematic supports <strong>multicable accessories</strong> — cable snakes, socapex, and similar bundled
@@ -384,6 +397,7 @@ export default function ConnectionsPage() {
       <ul>
         <li><strong>Label</strong> — overwrite all labels with new text, or append text to each existing label. Use the Clear button to remove labels from all selected connections.</li>
         <li><strong>Line style</strong> — set solid, dashed, dotted, or dash-dot across the whole selection. A highlighted button shows the current style when all connections match; shows "(mixed)" when they differ.</li>
+        <li><strong>Line width</strong> — set 1–8 px across the whole selection, with the same highlight / "(mixed)" behaviour. Hidden when the selection includes a direct-attach connection.</li>
         <li><strong>Direct Attach</strong> — toggle the direct-attach flag (thin gray line, excluded from cable schedule).</li>
         <li><strong>Hide Cable ID</strong> — hide or show the auto-generated cable ID label.</li>
         <li><strong>Hide Custom Label</strong> — hide or show the custom label independently of the cable ID.</li>

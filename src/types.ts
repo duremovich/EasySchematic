@@ -558,6 +558,9 @@ export interface ConnectionData {
   directAttach?: boolean;
   /** Visual line style — solid (default), dashed, dotted, or dash-dot */
   lineStyle?: LineStyle;
+  /** Per-connection drawn line width in px, 1–8 (#415). Absent = the default 2px. Purely
+   *  visual — routing never reads it. Ignored for direct-attach. See src/lineWidth.ts. */
+  strokeWidth?: number;
   /** Per-connection color override (CSS color). Falls back to signal-type color. Ignored for direct-attach. */
   color?: string;
   /** Whether this cable is a patch lead or part of the fixed field / infrastructure install (#P2-019) */
