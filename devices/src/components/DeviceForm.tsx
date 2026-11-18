@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
 import type { Port, SlotDefinition, DeviceTemplate } from "../../../src/types";
 import { buildBulkSlots } from "../../../src/slotBulk";
+import { repairSlotDefinitions } from "../../../src/slotDefinitions";
 import { fetchTemplate, fetchSearchTerms, loadAllTemplates, fetchDraft, fetchManufacturers, fetchSubmission } from "../api";
 import { linkClick } from "../navigate";
 import PortEditor from "./PortEditor";
@@ -127,7 +128,7 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
         setSearchTerms(t.searchTerms ?? []);
         setColor(t.color ?? "");
         setPorts(t.ports);
-        setSlots(t.slots ?? []);
+        setSlots(repairSlotDefinitions(t.slots) ?? []);
         setSlotFamily(t.slotFamily ?? "");
         setPowerDrawW(t.powerDrawW != null ? String(t.powerDrawW) : "");
         setPowerCapacityW(t.powerCapacityW != null ? String(t.powerCapacityW) : "");
@@ -161,7 +162,7 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
         setSearchTerms(t.searchTerms ?? []);
         setColor(t.color ?? "");
         setPorts(t.ports ?? []);
-        setSlots(t.slots ?? []);
+        setSlots(repairSlotDefinitions(t.slots) ?? []);
         setSlotFamily(t.slotFamily ?? "");
         setPowerDrawW(t.powerDrawW != null ? String(t.powerDrawW) : "");
         setPowerCapacityW(t.powerCapacityW != null ? String(t.powerCapacityW) : "");
@@ -199,7 +200,7 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
         setSearchTerms(t.searchTerms ?? []);
         setColor(t.color ?? "");
         setPorts(t.ports);
-        setSlots(t.slots ?? []);
+        setSlots(repairSlotDefinitions(t.slots) ?? []);
         setSlotFamily(t.slotFamily ?? "");
         setPowerDrawW(t.powerDrawW != null ? String(t.powerDrawW) : "");
         setPowerCapacityW(t.powerCapacityW != null ? String(t.powerCapacityW) : "");
@@ -231,7 +232,9 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
         setReferenceUrl((t.referenceUrl as string) ?? "");
         setColor((t.color as string) ?? "");
         setPorts((t.ports as Port[]) ?? []);
-        setSlots((t.slots as SlotDefinition[]) ?? []);
+        // Drafts from older app builds carry installed slots ({ slotId, … }) with no `id`,
+        // which the API rejects (#427) — normalize to slot definitions on load.
+        setSlots(repairSlotDefinitions(t.slots) ?? []);
         setSlotFamily((t.slotFamily as string) ?? "");
         setPowerDrawW(t.powerDrawW != null ? String(t.powerDrawW) : "");
         setPowerCapacityW(t.powerCapacityW != null ? String(t.powerCapacityW) : "");
@@ -255,7 +258,8 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
     const customSignals = ports.filter((p) => p.signalType === "custom").length;
     if (customSignals > 0) w.push(`${customSignals} port${customSignals > 1 ? "s" : ""} use "Custom" signal type. Is there a standard type that fits?`);
     if (customDeviceType) w.push("You're suggesting a new device type. A moderator will need to review and add it.");
-    if (ports.length === 0) w.push("This device has no ports defined.");
+    // A modular frame can legitimately have no ports of its own — its cards bring them.
+    if (ports.length === 0 && slots.length === 0) w.push("This device has no ports defined.");
     return w;
   };
 
@@ -269,6 +273,8 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
     setShowWarnings(false);
 
     const cleanModel = modelNumber.trim();
+    // Belt and braces for #427: every slot leaves with a string id unique within the device.
+    const submitSlots = repairSlotDefinitions(slots) ?? [];
 
     try {
       await onSubmit({
@@ -281,7 +287,7 @@ export default function DeviceForm({ id, draftId, cloneId, pendingSubmissionId, 
         ...(referenceUrl.trim() && { referenceUrl: referenceUrl.trim() }),
         ...(color.trim() && { color: color.trim() }),
         ...(searchTerms.length > 0 && { searchTerms }),
-        ...(slots.length > 0 && { slots }),
+        ...(submitSlots.length > 0 && { slots: submitSlots }),
         ...(slotFamily.trim() && { slotFamily: slotFamily.trim() }),
         ...(powerDrawW.trim() && { powerDrawW: Number(powerDrawW) }),
         ...(powerCapacityW.trim() && carriesPowerCapacity(effectiveDeviceType) && { powerCapacityW: Number(powerCapacityW) }),

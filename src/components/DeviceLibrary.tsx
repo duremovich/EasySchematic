@@ -8,6 +8,7 @@ import DeviceCreatorPicker from "./DeviceCreatorPicker";
 import ImportDevicesDialog from "./ImportDevicesDialog";
 import { signalLabel } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
+import { topLevelSlotCount } from "../slotDefinitions";
 
 const APP_VERSION = __APP_VERSION__;
 const BUILD_HASH = __BUILD_HASH__;
@@ -71,6 +72,8 @@ function TemplateItem({
   const signalText = getUniqueSignalTypes(template)
     .map((t) => signalLabel(t))
     .join(" / ");
+  // Nested-slot overrides saved with a user template aren't extra slots on the chassis (#422).
+  const slotCount = topLevelSlotCount(template.slots);
 
   return (
     <div
@@ -123,9 +126,9 @@ function TemplateItem({
         <span className="text-[10px] text-[var(--color-text-muted)]">
           <HighlightedText text={signalText} query={query} />
         </span>
-        {template.slots && template.slots.length > 0 && (
+        {slotCount > 0 && (
           <span className="text-[9px] text-[var(--color-text-muted)] opacity-60">
-            {template.slots.length} slot{template.slots.length !== 1 ? "s" : ""}
+            {slotCount} slot{slotCount !== 1 ? "s" : ""}
           </span>
         )}
       </div>

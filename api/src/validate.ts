@@ -72,6 +72,21 @@ function checkString(value: unknown, field: string, maxLen = MAX_STRING): string
   return null;
 }
 
+/** How a slot is named in an error: `Expansion slot 2 ("VFC Slot B")`, 1-based like the form. */
+function describeSlot(index: number, label: unknown): string {
+  const n = `Expansion slot ${index + 1}`;
+  if (typeof label !== "string" || !label.trim()) return n;
+  const shown = label.trim();
+  return `${n} ("${shown.length > 60 ? `${shown.slice(0, 60)}…` : shown}")`;
+}
+
+/** What's wrong with one string field of a slot, phrased to follow the slot's name. */
+function slotFieldError(value: unknown, what: string, maxLen = 100): string | null {
+  if (typeof value !== "string" || value.trim() === "") return `is missing ${/^[aeiou]/i.test(what) ? "an" : "a"} ${what}`;
+  if (value.length > maxLen) return `has a ${what} longer than ${maxLen} characters`;
+  return null;
+}
+
 /**
  * Community device types the approval gate accepts, keyed by id → status.
  * Loaded from D1 `custom_types` by the approval route (see index.ts); a plain
@@ -325,20 +340,31 @@ export function validateTemplate(body: unknown): ValidationResult {
     if (obj.slots.length > MAX_SLOTS) {
       return { ok: false, error: `slots must have ${MAX_SLOTS} or fewer entries` };
     }
+    // Errors name the slot the way the submitter sees it — `Expansion slot 2 ("VFC Slot B")` —
+    // not as a JSON path like `slots[1].id`, which means nothing in the form (#427).
+    const seenIds = new Map<string, string>();
     for (let i = 0; i < obj.slots.length; i++) {
       const slot = obj.slots[i] as Record<string, unknown> | null;
       if (!slot || typeof slot !== "object") {
-        return { ok: false, error: `slots[${i}] must be an object` };
+        return { ok: false, error: `Expansion slot ${i + 1} is not a valid slot` };
       }
-      for (const field of ["id", "label"] as const) {
-        const err = checkString(slot[field], `slots[${i}].${field}`, 100);
-        if (err) return { ok: false, error: err };
-      }
-      const familyErr = checkString(slot.slotFamily, `slots[${i}].slotFamily`, 100);
-      if (familyErr) return { ok: false, error: familyErr };
+      const name = describeSlot(i, slot.label);
+      const labelErr = slotFieldError(slot.label, "name");
+      if (labelErr) return { ok: false, error: `${name} ${labelErr}` };
+      const idErr = slotFieldError(slot.id, "id");
+      if (idErr) return { ok: false, error: `${name} ${idErr}` };
+      // "/" separates a card's sub-slot path ("parent/child"); a chassis slot id with one could
+      // be mistaken for a sub-slot and disappear on placement (#422).
+      if ((slot.id as string).includes("/")) return { ok: false, error: `${name} has an id containing "/", which is reserved for sub-slots` };
+      const familyErr = slotFieldError(slot.slotFamily, "slot family");
+      if (familyErr) return { ok: false, error: `${name} ${familyErr}` };
       if (slot.defaultCardId != null && typeof slot.defaultCardId !== "string") {
-        return { ok: false, error: `slots[${i}].defaultCardId must be a string` };
+        return { ok: false, error: `${name} has an invalid default card` };
       }
+      const id = slot.id as string;
+      const clash = seenIds.get(id);
+      if (clash) return { ok: false, error: `${name} has the same id as ${clash} ("${id}") — slot ids must be unique` };
+      seenIds.set(id, name);
     }
   }
 

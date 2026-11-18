@@ -94,7 +94,7 @@ export default function DeviceTemplateSchemaPage() {
           <tr><td><code>heightMm</code> / <code>widthMm</code> / <code>depthMm</code></td><td>number</td><td>Physical dimensions in millimeters. Drive rack auto-classification, side-view depth conflicts, and rack stats — see <a href="/racks">Rack Builder</a></td></tr>
           <tr><td><code>weightKg</code></td><td>number</td><td>Weight in kilograms; rolls up into per-rack total weight stats</td></tr>
           <tr><td><code>rackForm</code></td><td>string</td><td>Rack-form override — <code>"full"</code>, <code>"half"</code>, or <code>"shelf-only"</code>. Bypasses the size heuristic for edge cases like desktop units with optional rack ears</td></tr>
-          <tr><td><code>facePlateLayout</code></td><td>object</td><td>Custom face-plate connector layout (set via the Face-Plate Editor in-app); persists with the template so future placements inherit it</td></tr>
+          <tr><td><code>facePlateLayout</code></td><td>object</td><td>Not carried by templates. The connector layout you arrange in the Face-Plate Editor belongs to that one placed device: it isn't saved into a template, devices placed from a template start with the default layout, and the field is ignored on import</td></tr>
           <tr><td><code>powerDrawW</code></td><td>number</td><td>Max power consumption in watts</td></tr>
           <tr><td><code>powerCapacityW</code></td><td>number</td><td>For power distribution, company switches and power supplies: total supply/output capacity in watts</td></tr>
           <tr><td><code>poeBudgetW</code></td><td>number</td><td>For PoE switches: total PoE budget in watts</td></tr>
@@ -120,7 +120,7 @@ export default function DeviceTemplateSchemaPage() {
           <tr><th>Field</th><th>On</th><th>Notes</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>slots</code></td><td>chassis</td><td>Array of slots (the community library accepts up to 128). Each takes a <code>slotFamily</code>; <code>id</code> and <code>label</code> are filled in if omitted. Optional <code>defaultCardId</code> (the id of a library card to pre-install) and <code>hideWhenEmpty</code>.</td></tr>
+          <tr><td><code>slots</code></td><td>chassis</td><td>Array of slots (the community library accepts up to 128). Each takes a <code>slotFamily</code>; <code>id</code> and <code>label</code> are filled in if omitted, and ids must be unique within the chassis and can't contain <code>/</code> (on import it becomes <code>-</code>). Optional <code>defaultCardId</code> (the id of a card to pre-install — a library card or one of your own) and <code>hideWhenEmpty</code>. A user template saved from a device whose card has its own sub-slots also lists those, as <code>"parent/child"</code> ids marked <code>"nestedOverride": true</code>, recording the card each held; they refine the parent card's sub-slots rather than adding slots.</td></tr>
           <tr><td><code>slotFamily</code></td><td>card</td><td>On a template with <code>deviceType: "expansion-card"</code>: the slot family the card fits.</td></tr>
         </tbody>
       </table>

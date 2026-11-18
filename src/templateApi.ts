@@ -8,6 +8,7 @@ import {
   saveCachedTemplates,
 } from "./templateCache";
 import { registerTypes } from "./typeRegistry";
+import { withRepairedSlots } from "./slotDefinitions";
 import { isCustomTypeKind, typeDefsFromRecords, type CustomTypeRecord } from "./customTypes/model";
 
 const API_URL =
@@ -77,11 +78,14 @@ export async function requestLogin(email: string, returnTo?: string): Promise<vo
 }
 
 export async function createDraft(data: unknown): Promise<string> {
+  // A draft may come from an older build's localStorage (the pending-submission banner) with
+  // slots in the installed-slot shape that the submit form can't submit (#427) — repair them.
+  const repaired = data && typeof data === "object" ? withRepairedSlots(data) : data;
   const res = await fetch(`${API_URL}/drafts`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ data }),
+    body: JSON.stringify({ data: repaired }),
   });
   if (!res.ok) {
     const err = (await res.json()) as { error: string };
@@ -266,7 +270,8 @@ export async function createSubmission(
     credentials: "include",
     body: JSON.stringify({
       action,
-      data,
+      // Every slot needs a string id unique within the template, or the API rejects it (#427).
+      data: withRepairedSlots(data),
       templateId,
       ...(submitterNote && { submitterNote }),
       ...(source && { source }),

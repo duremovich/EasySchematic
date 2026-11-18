@@ -226,6 +226,10 @@ export interface SlotDefinition {
    *  Default false — preserves the existing "(empty)" rendering for active expansion slots.
    *  Set true on storage-media slots (SD card bays etc.) where empty rows would be visual noise. */
   hideWhenEmpty?: boolean;
+  /** Set on the entries Save as Template writes for a card's sub-slot (id `parent/child`):
+   *  not a chassis slot, but the card that sub-slot held when the device was saved (#422).
+   *  Only user templates carry these — see slotDefinitions.ts. */
+  nestedOverride?: boolean;
 }
 
 export interface InstalledSlot {

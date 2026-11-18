@@ -85,6 +85,7 @@ import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
 import { sanitizeNoteHtml } from "./sanitizeHtml";
 import { getTemplateById } from "./templateApi";
+import { applySlotOverride, dropBakedCardPorts, splitSlotOverrides } from "./slotDefinitions";
 import { DEFAULT_BRIDGE_PORT } from "./mcp/protocol";
 import { syncDeviceWithTemplate, type SyncResult } from "./templateSync";
 import { chooseNewHandleSuffix, type SwapPlan, type NewPortRef } from "./deviceSwap";
@@ -1535,19 +1536,44 @@ function cloneCardPorts(ports: Port[], slotId: string, slotLabel: string): Port[
  * Recursively process template slots, including sub-slots on expansion cards.
  * Returns a flat list of InstalledSlots (with parentSlotId for nesting) and
  * all ports from installed cards.
+ *
+ * Default cards resolve through the library AND `customTemplates`, so a user's own card
+ * named as a slot's default is installed just like a library one (#421).
+ *
+ * At the top level, `templateSlots` may carry nested-slot overrides (`parent/child` ids,
+ * written by Save as Template) — they are split off and applied when the walk reaches that
+ * path, instead of being placed as extra top-level slots that collide with the sub-slots the
+ * parent card re-creates (#422). Nested calls pass the overrides down explicitly.
+ *
+ * `missingCards` lists default cards that didn't resolve (their slot is left empty);
+ * `fromTemplate` is true when the template being placed named that card itself (a chassis
+ * slot or a saved override), false when it came from a card's own built-in sub-slot default.
  */
+interface MissingSlotCard { slotLabel: string; cardId: string; fromTemplate: boolean }
 function processTemplateSlots(
   templateSlots: SlotDefinition[],
+  customTemplates: DeviceTemplate[],
   parentSlotId?: string,
   parentLabel?: string,
-): { installedSlots: InstalledSlot[]; ports: Port[] } {
+  inheritedOverrides?: ReadonlyMap<string, SlotDefinition>,
+): { installedSlots: InstalledSlot[]; ports: Port[]; missingCards: MissingSlotCard[] } {
   const installedSlots: InstalledSlot[] = [];
   const ports: Port[] = [];
+  const missingCards: MissingSlotCard[] = [];
 
-  for (const slotDef of templateSlots) {
-    const fullSlotId = parentSlotId ? `${parentSlotId}/${slotDef.id}` : slotDef.id;
+  let slotDefs = templateSlots;
+  let overrides = inheritedOverrides;
+  if (!parentSlotId) {
+    const split = splitSlotOverrides(templateSlots);
+    slotDefs = split.topLevel;
+    overrides = split.overrides;
+  }
+
+  for (const rawDef of slotDefs) {
+    const fullSlotId = parentSlotId ? `${parentSlotId}/${rawDef.id}` : rawDef.id;
+    const slotDef = parentSlotId ? applySlotOverride(rawDef, fullSlotId, overrides) : rawDef;
     const displayLabel = parentLabel ? `${parentLabel} > ${slotDef.label}` : slotDef.label;
-    const cardTpl = slotDef.defaultCardId ? getTemplateById(slotDef.defaultCardId) : undefined;
+    const cardTpl = slotDef.defaultCardId ? getTemplateById(slotDef.defaultCardId, customTemplates) : undefined;
 
     if (cardTpl) {
       const cardPorts = cloneCardPorts(cardTpl.ports, fullSlotId, displayLabel);
@@ -1570,11 +1596,19 @@ function processTemplateSlots(
 
       // Recurse into card's sub-slots (e.g. SFP cages on a network module)
       if (cardTpl.slots && cardTpl.slots.length > 0) {
-        const nested = processTemplateSlots(cardTpl.slots, fullSlotId, displayLabel);
+        const nested = processTemplateSlots(cardTpl.slots, customTemplates, fullSlotId, displayLabel, overrides);
         installedSlots.push(...nested.installedSlots);
         ports.push(...nested.ports);
+        missingCards.push(...nested.missingCards);
       }
     } else {
+      if (slotDef.defaultCardId) {
+        missingCards.push({
+          slotLabel: displayLabel,
+          cardId: slotDef.defaultCardId,
+          fromTemplate: !parentSlotId || slotDef !== rawDef,
+        });
+      }
       installedSlots.push({
         slotId: fullSlotId,
         label: slotDef.label,
@@ -1586,7 +1620,7 @@ function processTemplateSlots(
     }
   }
 
-  return { installedSlots, ports };
+  return { installedSlots, ports, missingCards };
 }
 
 /** Auto-number devices that share a baseLabel. Returns a new array if anything changed. */
@@ -2716,10 +2750,19 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     // Initialize expansion slots from template (recursively handles sub-slots)
     let installedSlots: InstalledSlot[] | undefined;
+    let missingCards: MissingSlotCard[] = [];
     if (template.slots && template.slots.length > 0) {
-      const result = processTemplateSlots(template.slots);
+      const result = processTemplateSlots(template.slots, state.customTemplates);
       installedSlots = result.installedSlots;
-      ports = [...ports, ...result.ports];
+      missingCards = result.missingCards;
+      // A template saved by an older build (or a preset saved from a fitted chassis) also lists
+      // the installed cards' ports as its own; the cards just brought them again. Drop those
+      // copies, keeping any whose card didn't resolve (#422).
+      const { kept, replacedBy } = dropBakedCardPorts(ports, result.ports);
+      if (replacedBy.size > 0 && hiddenPorts) {
+        hiddenPorts = hiddenPorts.map((id) => replacedBy.get(id)?.id ?? id);
+      }
+      ports = [...kept, ...result.ports];
     }
 
     const newNode: DeviceNode = {
@@ -2774,6 +2817,20 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     };
     set({ nodes: renumberNodes([...get().nodes, newNode]) });
     get().saveToLocalStorage();
+
+    // A card the template itself names (a slot's default, or one saved into a sub-slot) that
+    // isn't in the library or your templates any more — a deleted custom card, or a template
+    // from a newer library. Say so rather than leave an unexplained empty slot. Library
+    // templates are skipped: their dangling defaults are a library data problem, not yours.
+    const named = missingCards.filter((m) => m.fromTemplate);
+    if (named.length > 0 && !(template.id && getTemplateById(template.id))) {
+      const list = named.slice(0, 3).map((m) => `"${m.cardId}" for ${m.slotLabel}`).join(", ");
+      const more = named.length > 3 ? ` and ${named.length - 3} more` : "";
+      get().addToast(
+        `${template.label}: couldn't find card ${list}${more} — slot${named.length === 1 ? "" : "s"} left empty`,
+        "info",
+      );
+    }
   },
 
   removeSelected: () => {
@@ -3906,9 +3963,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const cardPorts: Port[] = [];
     const cardByRef = new Map<string, Map<string, Port>>(); // slotId → (cardTemplatePortId → clonedPort)
 
+    // A user template's nested-slot overrides (`parent/child` ids) are applied where the walk
+    // reaches that path, not walked as extra top-level slots (#422).
+    const { topLevel: newTopSlots, overrides: newSlotOverrides } = splitSlotOverrides(newTemplate.slots);
     const walkSlotDefs = (slotDefs: SlotDefinition[], parentPath: string | undefined, parentLabel: string | undefined) => {
-      for (const sd of slotDefs) {
-        const fullId = parentPath ? `${parentPath}/${sd.id}` : sd.id;
+      for (const rawSd of slotDefs) {
+        const fullId = parentPath ? `${parentPath}/${rawSd.id}` : rawSd.id;
+        const sd = parentPath ? applySlotOverride(rawSd, fullId, newSlotOverrides) : rawSd;
         const fullLabel = parentLabel ? `${parentLabel} > ${sd.label}` : sd.label;
         const planned = plan.installedCards.find((c) => c.slotId === fullId && c.enabled);
         const cardTplId = planned ? planned.cardTemplateId : sd.defaultCardId;
@@ -3950,15 +4011,22 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         }
       }
     };
-    if (newTemplate.slots && newTemplate.slots.length > 0) {
-      walkSlotDefs(newTemplate.slots, undefined, undefined);
+    if (newTopSlots.length > 0) {
+      walkSlotDefs(newTopSlots, undefined, undefined);
     }
 
-    const newPorts: Port[] = [...basePorts, ...cardPorts];
+    // Drop the new template's copies of ports its installed cards just brought (templates
+    // saved by older builds kept them as chassis ports — #422); a ref to a dropped copy
+    // follows to the card port that replaced it.
+    const { kept: keptBasePorts, replacedBy: bakedReplacedBy } = dropBakedCardPorts(basePorts, cardPorts);
+    const newPorts: Port[] = [...keptBasePorts, ...cardPorts];
 
     // 3. Resolve NewPortRef → final Port.
     const resolveRef = (ref: NewPortRef): Port | undefined => {
-      if (ref.kind === "base") return baseByTemplateId.get(ref.templatePortId);
+      if (ref.kind === "base") {
+        const base = baseByTemplateId.get(ref.templatePortId);
+        return base ? bakedReplacedBy.get(base.id) ?? base : undefined;
+      }
       return cardByRef.get(ref.slotId)?.get(ref.cardTemplatePortId);
     };
 
@@ -4195,7 +4263,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
       // Process new card's sub-slots recursively
       if (cardTpl.slots && cardTpl.slots.length > 0) {
-        const nested = processTemplateSlots(cardTpl.slots, slotId, displayLabel);
+        const nested = processTemplateSlots(cardTpl.slots, state.customTemplates, slotId, displayLabel);
         childSlots = nested.installedSlots;
         newPorts = [...newPorts, ...nested.ports];
       }

@@ -36,6 +36,7 @@ import { AUX_FIELD_GROUPS, normalizeAuxRows, resolveAuxiliaryLine, trimTrailingE
 import { deriveThermalBtuh } from "../thermal";
 import { HEADER_COLOR_SWATCH_FALLBACK, headerColorAfterRevert, normalizeHeaderColor, resolveDeviceHeaderColor, type HeaderColorCapture } from "../deviceHeaderColor";
 import { buildDeviceTemplate, buildTemplatePreset, type PortDraft } from "../deviceTemplateBuild";
+import { installedSlotsToDefinitions, slotOwnedPortIds } from "../slotDefinitions";
 import { carriesPowerCapacity } from "../deviceTypeCategories";
 import { editorPortsMatch, visibleSaveActions, SAVE_ACTION_LABELS, SAVE_ACTION_TITLES, type SaveActionId } from "../deviceEditorActions";
 import { visiblePortRowControls, PORT_ROW_CONTROL_TITLES, type PortRowControlId } from "../portRowControls";
@@ -675,17 +676,27 @@ export default function DeviceEditor() {
   }, [node, editingNodeId, label, nodes, buildTemplateFromForm, addCustomTemplate, buildDeviceData, updateDevice, setCreatingNodeId, propagateTemplateToInstances, addToast, close]);
 
   const handleSubmitToCommunity = useCallback(async () => {
+    // A card installed in one of this device's slots is not part of the hardware being
+    // submitted: its ports stay out of the chassis' port list (the library card carries them).
+    const cardPortIds = slotOwnedPortIds(node?.data.slots);
     const finalPorts: Port[] = ports
-      .filter((p) => p.label.trim())
+      .filter((p) => p.label.trim() && !cardPortIds.has(p.id))
       .map((p, i) => ({
         ...p,
         id: `tpl-${i}`,
         label: p.label.trim(),
       }));
 
-    if (finalPorts.length === 0) return;
-
     const existing = node?.data;
+    const slotDefs = installedSlotsToDefinitions(existing?.slots, { keepCard: () => false });
+    // A modular frame whose only ports come from its cards is still a valid submission — its
+    // slots are the point. A device with neither has nothing to submit; say so (it used to
+    // just do nothing).
+    if (finalPorts.length === 0 && slotDefs.length === 0) {
+      addToast("Add at least one port or expansion slot before submitting this device", "info");
+      return;
+    }
+
     let dt = deviceType.trim() || "custom";
     if (dt.startsWith("custom-")) dt = "";
 
@@ -701,7 +712,11 @@ export default function DeviceEditor() {
       ...(modelNumber.trim() ? { modelNumber: modelNumber.trim() } : {}),
       ...(referenceUrl.trim() ? { referenceUrl: referenceUrl.trim() } : {}),
       ...(category.trim() ? { category: category.trim() } : {}),
-      ...(existing?.slots ? { slots: existing.slots } : {}),
+      // The API takes slot definitions ({ id, label, slotFamily }), not this device's installed
+      // slots ({ slotId, portIds, … }) — sending those failed with "slots[0].id must be a
+      // string" (#427). Only the chassis' own slots, and no default cards: the card you fitted
+      // is your configuration, not what the hardware ships with.
+      ...(slotDefs.length > 0 ? { slots: slotDefs } : {}),
       ...(existing?.slotFamily ? { slotFamily: existing.slotFamily } : {}),
       ...(hostname.trim() ? { hostname: hostname.trim() } : {}),
       ...(powerDrawW != null ? { powerDrawW } : {}),
@@ -745,7 +760,7 @@ export default function DeviceEditor() {
     } catch (e) {
       console.error("Failed to create draft:", e);
     }
-  }, [ports, label, shortName, deviceType, color, node, hostname, poeBudgetW, poeDrawW, unitCost, manufacturer, modelNumber, referenceUrl, category, powerDrawW, powerCapacityW, voltage, thermalBtuh, heightMm, widthMm, depthMm, weightKg, rackForm, isVenueProvided, auxiliaryData, searchTermsRaw]);
+  }, [ports, label, shortName, deviceType, color, node, hostname, poeBudgetW, poeDrawW, unitCost, manufacturer, modelNumber, referenceUrl, category, powerDrawW, powerCapacityW, voltage, thermalBtuh, heightMm, widthMm, depthMm, weightKg, rackForm, isVenueProvided, auxiliaryData, searchTermsRaw, addToast]);
 
   const handleSaveAsPreset = useCallback(() => {
     if (!editingNodeId || !node?.data.templateId) return;

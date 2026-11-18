@@ -1,6 +1,7 @@
 import type { AuxRow, DeviceTemplate, Port, PortCapabilities, PortNetworkConfig, SlotDefinition } from "../types";
 import { DEVICE_TYPE_TO_CATEGORY } from "../deviceTypeCategories";
 import { validateTemplate } from "./validate";
+import { sanitizeSlotId } from "../slotDefinitions";
 import { generatePortId, generateTemplateId, type ParseResult, type ParsedTemplate } from "./types";
 
 /** Parse a JSON string into one or more device templates.
@@ -113,12 +114,18 @@ function normalizeSlots(raw: unknown): SlotDefinition[] | undefined {
   return raw.map((s: unknown, i): SlotDefinition => {
     const o = obj(s);
     if (!o) return s as SlotDefinition;
+    // A "/" in a slot id means a card's sub-slot path ("parent/child"). Only a user template
+    // saved by the app writes those, marked `nestedOverride`; in any other slot it is swapped
+    // for "-" so a hand-written id can't be mistaken for one and disappear on placement (#422).
+    const nested = o.nestedOverride === true;
+    const id = str(o.id);
     return {
-      id: str(o.id) ?? `slot-${i + 1}-${Math.random().toString(36).slice(2, 6)}`,
+      id: id ? (nested ? id : sanitizeSlotId(id)) : `slot-${i + 1}-${Math.random().toString(36).slice(2, 6)}`,
       label: str(o.label) ?? `Slot ${i + 1}`,
       slotFamily: (o.slotFamily ?? "") as string,
       ...(o.defaultCardId != null ? { defaultCardId: o.defaultCardId as string } : {}),
       ...(typeof o.hideWhenEmpty === "boolean" ? { hideWhenEmpty: o.hideWhenEmpty } : {}),
+      ...(nested ? { nestedOverride: true } : {}),
     };
   });
 }

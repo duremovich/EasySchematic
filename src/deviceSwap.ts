@@ -9,6 +9,7 @@ import type {
   SlotDefinition,
 } from "./types";
 import { getCardsByFamily, getTemplateById } from "./templateApi";
+import { applySlotOverride, dropBakedCardPorts, splitSlotOverrides } from "./slotDefinitions";
 
 export type HandleSuffix = "" | "-in" | "-out" | "-rear" | "-front";
 
@@ -186,17 +187,29 @@ interface FlatSlot {
   defaultCardId?: string;
 }
 
-function flattenSlots(slots: SlotDefinition[] | undefined, parentId?: string, parentLabel?: string): FlatSlot[] {
+function flattenSlots(
+  slots: SlotDefinition[] | undefined,
+  customTemplates: DeviceTemplate[],
+  parentId?: string,
+  parentLabel?: string,
+  inheritedOverrides?: ReadonlyMap<string, SlotDefinition>,
+): FlatSlot[] {
   if (!slots) return [];
+  // A user template's nested-slot overrides (`parent/child` ids) apply where the walk reaches
+  // that path; they are not extra top-level slots (#422).
+  let defs = slots;
+  let overrides = inheritedOverrides;
+  if (!parentId) ({ topLevel: defs, overrides } = splitSlotOverrides(slots));
   const out: FlatSlot[] = [];
-  for (const s of slots) {
-    const fullId = parentId ? `${parentId}/${s.id}` : s.id;
+  for (const raw of defs) {
+    const fullId = parentId ? `${parentId}/${raw.id}` : raw.id;
+    const s = parentId ? applySlotOverride(raw, fullId, overrides) : raw;
     const fullLabel = parentLabel ? `${parentLabel} > ${s.label}` : s.label;
     out.push({ slotId: fullId, slotLabel: fullLabel, slotFamily: s.slotFamily, defaultCardId: s.defaultCardId });
     // Recurse into the default card's sub-slots (one level — matches store.ts:processTemplateSlots).
     if (s.defaultCardId) {
-      const card = getTemplateById(s.defaultCardId);
-      if (card?.slots) out.push(...flattenSlots(card.slots, fullId, fullLabel));
+      const card = getTemplateById(s.defaultCardId, customTemplates);
+      if (card?.slots) out.push(...flattenSlots(card.slots, customTemplates, fullId, fullLabel, overrides));
     }
   }
   return out;
@@ -302,8 +315,8 @@ interface AvailableSlot {
   occupiedBy: AutoInstalledCard | null; // null = empty
 }
 
-function buildSlots(newTemplate: DeviceTemplate): AvailableSlot[] {
-  return flattenSlots(newTemplate.slots).map((s) => ({ slot: s, occupiedBy: null }));
+function buildSlots(newTemplate: DeviceTemplate, customTemplates: DeviceTemplate[]): AvailableSlot[] {
+  return flattenSlots(newTemplate.slots, customTemplates).map((s) => ({ slot: s, occupiedBy: null }));
 }
 
 function carryOverCards(
@@ -422,14 +435,16 @@ function assemblePool(
   installedCards: AutoInstalledCard[],
   customTemplates: DeviceTemplate[],
 ): Port[] {
-  const pool: Port[] = hydrateBasePorts(newTemplate);
+  const cardPorts: Port[] = [];
   for (const card of installedCards) {
     if (!card.enabled) continue;
     const tpl = getTemplateById(card.cardTemplateId, customTemplates);
     if (!tpl) continue;
-    pool.push(...hydrateCardPorts(tpl, card.slotId, card.slotLabel));
+    cardPorts.push(...hydrateCardPorts(tpl, card.slotId, card.slotLabel));
   }
-  return pool;
+  // A template saved by an older build lists its installed cards' ports as its own too; the
+  // card's ports win, so the pool offers each port once (#422).
+  return [...dropBakedCardPorts(hydrateBasePorts(newTemplate), cardPorts).kept, ...cardPorts];
 }
 
 function finalizeMappings(
@@ -520,7 +535,7 @@ export function planDeviceSwap(
 ): SwapPlan {
   const entries = collectHandles(oldDevice, oldNodeId, edges);
 
-  const slots = buildSlots(newTemplate);
+  const slots = buildSlots(newTemplate, customTemplates);
 
   // Carry over installed cards from the old device.
   const carriedOver = carryOverCards(oldDevice, slots, customTemplates);

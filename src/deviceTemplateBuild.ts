@@ -24,6 +24,7 @@ import type {
 import { trimTrailingEmpty } from "./auxiliaryData";
 import { carriesPowerCapacity } from "./deviceTypeCategories";
 import { capturedHeaderColorField, type HeaderColorCapture } from "./deviceHeaderColor";
+import { installedSlotsToDefinitions, slotOwnedPortIds } from "./slotDefinitions";
 
 /** One row of the device editor's port table, before it is normalized into a `Port`. */
 export interface PortDraft {
@@ -109,9 +110,14 @@ export function buildDeviceTemplate(
   form: TemplateFormValues,
   overrides: Partial<DeviceTemplate> & Pick<DeviceTemplate, "id">,
 ): DeviceTemplate {
-  const finalPorts = finalizePorts(form.ports, "tpl");
-  const trimmedAux = trimTrailingEmpty(form.auxiliaryData);
   const existing = form.existing;
+  // Ports an installed card brought with it belong to the card, not the chassis: the card is
+  // saved as the slot's default and re-installs them on placement. Keeping them here too put
+  // every card port on a placed copy twice (#422). Same split templateSync uses.
+  const cardPortIds = slotOwnedPortIds(existing?.slots);
+  const finalPorts = finalizePorts(form.ports.filter((p) => !cardPortIds.has(p.id)), "tpl");
+  const trimmedAux = trimTrailingEmpty(form.auxiliaryData);
+  const slots = installedSlotsToDefinitions(existing?.slots, { includeNested: true });
   const searchTerms = parseSearchTerms(form.searchTermsRaw);
   return {
     deviceType: form.deviceType.trim() || "custom",
@@ -141,17 +147,11 @@ export function buildDeviceTemplate(
     ...(form.rackForm ? { rackForm: form.rackForm } : {}),
     ...(form.isVenueProvided ? { isVenueProvided: true } : {}),
     // Convert InstalledSlot[] back to the blueprint SlotDefinition[] that DeviceTemplate
-    // expects — card selections are per-placement, not part of the template spec.
-    ...(existing?.slots && existing.slots.length > 0
-      ? {
-          slots: existing.slots.map((s) => ({
-            id: s.slotId,
-            label: s.label,
-            slotFamily: s.slotFamily ?? "",
-            ...(s.cardTemplateId ? { defaultCardId: s.cardTemplateId } : {}),
-          })),
-        }
-      : {}),
+    // expects: the chassis' own slots with their installed cards as defaults, plus a
+    // `parent/child` override per nested slot recording the card it held. Placement applies
+    // those overrides where the parent card re-creates the sub-slot, so each slot is placed
+    // once with the card it was saved with (#422) — see slotDefinitions.ts.
+    ...(slots.length > 0 ? { slots } : {}),
     ...(existing?.slotFamily ? { slotFamily: existing.slotFamily as string } : {}),
     ...(trimmedAux.some((r) => r.text.trim()) ? { auxiliaryData: trimmedAux } : {}),
     ...(searchTerms.length > 0 ? { searchTerms } : {}),
