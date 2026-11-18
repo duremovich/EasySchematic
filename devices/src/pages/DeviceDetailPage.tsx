@@ -75,6 +75,7 @@ export default function DeviceDetailPage({ id, currentUser }: { id: string; curr
 
   const renderPortTable = (ports: typeof template.ports, title: string) => {
     if (ports.length === 0) return null;
+    const hasExclusive = ports.some((p) => p.exclusiveGroup);
     return (
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">{title}</h3>
@@ -86,6 +87,14 @@ export default function DeviceDetailPage({ id, currentUser }: { id: string; curr
               <th className="text-left py-2 px-2 sm:px-3 font-medium text-slate-500 dark:text-slate-400">Signal</th>
               <th className="text-left py-2 px-2 sm:px-3 font-medium text-slate-500 dark:text-slate-400">Connector</th>
               <th className="text-left py-2 px-2 sm:px-3 font-medium text-slate-500 dark:text-slate-400">Section</th>
+              {hasExclusive && (
+                <th
+                  className="text-left py-2 px-2 sm:px-3 font-medium text-slate-500 dark:text-slate-400"
+                  title="Ports sharing an exclusive group are one signal path — only one is usable at a time"
+                >
+                  Exclusive group
+                </th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -95,6 +104,7 @@ export default function DeviceDetailPage({ id, currentUser }: { id: string; curr
                 <td className="py-2 px-2 sm:px-3"><SignalBadge signalType={port.signalType} /></td>
                 <td className="py-2 px-2 sm:px-3 text-slate-600 dark:text-slate-400">{port.connectorType ? connectorLabel(port.connectorType) : "\u2014"}</td>
                 <td className="py-2 px-2 sm:px-3 text-slate-600 dark:text-slate-400">{port.section ?? "\u2014"}</td>
+                {hasExclusive && <td className="py-2 px-2 sm:px-3 text-slate-600 dark:text-slate-400">{port.exclusiveGroup ?? "\u2014"}</td>}
               </tr>
             ))}
           </tbody>

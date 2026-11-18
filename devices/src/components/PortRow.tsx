@@ -247,6 +247,16 @@ export default function PortRow({ port, index, direction, isLast, mime, isDraggi
               className="w-full sm:w-24 px-2 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
               placeholder="Section"
             />
+            <input
+              type="text"
+              value={port.exclusiveGroup ?? ""}
+              onChange={(e) => onChange({ exclusiveGroup: e.target.value.trim() ? e.target.value : undefined })}
+              onBlur={(e) => onChange({ exclusiveGroup: e.target.value.trim() || undefined })}
+              maxLength={100}
+              className="w-full sm:w-24 px-2 py-1 rounded border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              placeholder="Excl. group"
+              title="Exclusive group — give ports that share one signal path (e.g. a front input that overrides the rear one) the same name. Leave blank for independent ports."
+            />
             {NETWORK_SIGNAL_TYPES.has(port.signalType) && (
               <label className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap" title="Port has an IP address / network stack">
                 <input

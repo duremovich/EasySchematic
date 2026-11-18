@@ -241,6 +241,22 @@ export default function DeviceTemplateSchemaPage() {
   "multiConnect": true
 }`}</code></pre>
 
+      <h3><code>exclusiveGroup</code> — ports that share one signal path</h3>
+      <p>
+        Some devices have separate jacks feeding the same input, where only one can be used at a time —
+        a front-panel AUX input that overrides the matching rear input, for example. Give those ports the
+        same <code>exclusiveGroup</code> string (up to 100 characters; any name, unique within the device).
+        Ports without one stay independent, so inputs that really are used together — mixer channels that
+        sum — need nothing.
+      </p>
+      <p>
+        Connecting two or more ports of one group still works, but the app shows a warning naming the
+        device and the ports, and underlines their labels on the canvas in amber (on screen only — not in image/PDF exports or print). There is no priority
+        between the ports in a group.
+      </p>
+      <pre><code>{`{ "label": "AUX IN (Front)", "signalType": "analog-audio", "connectorType": "trs-eighth", "direction": "input", "exclusiveGroup": "in1" },
+{ "label": "IN (Rear)",      "signalType": "analog-audio", "connectorType": "rca",        "direction": "input", "exclusiveGroup": "in1" }`}</code></pre>
+
       <h2>Port direction values</h2>
       <ul>
         <li><code>input</code> — accepts signal flowing in</li>
@@ -256,7 +272,7 @@ export default function DeviceTemplateSchemaPage() {
         rows by <code>(manufacturer, model_number)</code>.
       </p>
       <p><strong>Required columns:</strong> <code>model_number</code>, <code>label</code>, <code>device_type</code>, <code>port_label</code>, <code>port_signal_type</code>, <code>port_direction</code></p>
-      <p><strong>Optional columns:</strong> <code>manufacturer</code>, <code>category</code>, <code>reference_url</code>, <code>height_mm</code>, <code>width_mm</code>, <code>depth_mm</code>, <code>weight_kg</code>, <code>power_draw_w</code>, <code>voltage</code>, <code>thermal_btuh</code>, <code>port_connector_type</code>, <code>port_section</code></p>
+      <p><strong>Optional columns:</strong> <code>manufacturer</code>, <code>category</code>, <code>reference_url</code>, <code>height_mm</code>, <code>width_mm</code>, <code>depth_mm</code>, <code>weight_kg</code>, <code>power_draw_w</code>, <code>voltage</code>, <code>thermal_btuh</code>, <code>port_connector_type</code>, <code>port_section</code>, <code>port_exclusive_group</code> (see <code>exclusiveGroup</code> above)</p>
       <pre style={{ fontSize: "11px" }}><code>{SAMPLE_CSV}</code></pre>
 
       <hr />

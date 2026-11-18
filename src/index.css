@@ -297,6 +297,16 @@ html, body, #root {
   display: none !important;
 }
 
+/* Exclusive port group conflict (#414): an on-screen design hint only. Both ports being
+   patched is often intentional (front AUX overriding a rear input), so keep it out of
+   image/PDF exports and print. */
+.exclusive-conflict {
+  text-decoration: underline wavy #f59e0b;
+}
+[data-export-capturing] .exclusive-conflict {
+  text-decoration: none !important;
+}
+
 /* Force light-mode colors during export capture so dark mode doesn't bleed
    into exported images (html-to-image captures computed styles) */
 [data-export-capturing] {
@@ -347,6 +357,11 @@ html, body, #root {
   .dark .text-gray-300 { color: #d1d5db !important; }
   .dark .border-gray-200 { border-color: #000000 !important; }
   .dark .border-gray-300 { border-color: #000000 !important; }
+
+  /* On-screen-only design hints */
+  .exclusive-conflict {
+    text-decoration: none !important;
+  }
 
   /* Hide UI chrome */
   [data-print-hide],

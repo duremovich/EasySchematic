@@ -249,6 +249,15 @@ export default function DevicesAndPortsPage() {
         "Audio", "Control". Sections appear as labeled dividers within the port columns.
       </p>
 
+      <h2>Exclusive ports</h2>
+      <p>
+        When a device has separate jacks on one signal path — a front-panel input that overrides the rear
+        one — only one of them can be in use. In the device editor, click a port{"'"}s <strong>Ex</strong> badge
+        and give those ports the same <strong>Exclusive group</strong> name. Connecting a second port of the
+        group is still allowed, but a warning names the device and both ports, and their labels get an
+        amber wavy underline (hover a label for details; the underline stays off exports and print). Leave the group blank for ports that work together.
+      </p>
+
       <h2>Expansion slots</h2>
       <p>
         Some devices have <strong>expansion slots</strong> — swappable card bays that accept different I/O cards.

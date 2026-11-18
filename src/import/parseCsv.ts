@@ -14,7 +14,7 @@ const DEVICE_FIELDS = [
  *
  * Required columns: model_number, label, device_type, port_label, port_signal_type, port_direction
  * Optional device columns: manufacturer, category, reference_url, height_mm, width_mm, depth_mm, weight_kg, power_draw_w, voltage, thermal_btuh
- * Optional port columns: port_connector_type, port_section
+ * Optional port columns: port_connector_type, port_section, port_exclusive_group
  */
 export function parseCsvImport(raw: string): ParseResult {
   const rows = parseCsvRows(raw);
@@ -78,6 +78,7 @@ export function parseCsvImport(raw: string): ParseResult {
       direction: (get(row, "port_direction") || "input") as Port["direction"],
       connectorType: (get(row, "port_connector_type") || undefined) as Port["connectorType"],
       section: get(row, "port_section") || undefined,
+      exclusiveGroup: get(row, "port_exclusive_group") || undefined,
     }));
 
     const deviceType = deviceData.device_type;

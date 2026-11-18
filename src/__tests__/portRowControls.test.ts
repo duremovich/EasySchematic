@@ -18,11 +18,12 @@ import {
 const base = { deviceType: "converter", isMulticable: false };
 
 describe("visiblePortRowControls", () => {
-  it("offers trunk, multi-connect, section, notes and flip on every port", () => {
+  it("offers trunk, multi-connect, section, exclusive group, notes and flip on every port", () => {
     expect(visiblePortRowControls(base)).toEqual([
       "trunk",
       "multi-connect",
       "section",
+      "exclusive-group",
       "notes",
       "flip",
     ]);
@@ -49,6 +50,7 @@ describe("visiblePortRowControls", () => {
       "multi-connect",
       "direct-attach",
       "section",
+      "exclusive-group",
       "notes",
       "flip",
     ]);

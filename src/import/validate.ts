@@ -7,6 +7,8 @@ const VALID_DIRECTIONS = new Set(["input", "output", "bidirectional", "passthrou
 const VALID_GENDERS = new Set(["male", "female"]);
 
 const MAX_STRING = 200;
+/** Mirrors the 100-char cap api/src/validate.ts puts on optional port strings. */
+const MAX_PORT_STRING = 100;
 /** Mirrors MAX_PORTS in api/src/validate.ts. */
 export const MAX_PORTS = 500;
 
@@ -109,6 +111,11 @@ export function validateTemplate(t: Partial<DeviceTemplate>): TemplateValidation
         if (port[field] != null && !VALID_GENDERS.has(port[field] as string)) {
           errors.push(`${prefix}.${field} must be male or female`);
         }
+      }
+      if (port.exclusiveGroup != null) {
+        if (typeof port.exclusiveGroup !== "string") errors.push(`${prefix}.exclusiveGroup must be a string`);
+        else if (!port.exclusiveGroup.trim()) errors.push(`${prefix}.exclusiveGroup must be non-empty`);
+        else if (port.exclusiveGroup.length > MAX_PORT_STRING) errors.push(`${prefix}.exclusiveGroup exceeds ${MAX_PORT_STRING} chars`);
       }
       for (const field of ["channelCount", "poeDrawW", "usbcPowerSourceW", "usbcPowerDrawW"] as const) {
         if (port[field] != null && !isNonNegative(port[field])) {

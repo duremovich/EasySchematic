@@ -4,6 +4,30 @@
  * its dropdown menu. Kept pure so the visibility rules are unit-testable.
  */
 
+import type { Port } from "./types";
+import { normalizeExclusiveGroup } from "./exclusivePorts";
+
+/** The port fields the editor's dirty check compares against a template or preset. */
+export type ComparedPortFields = Pick<Port, "label" | "signalType" | "direction" | "connectorType" | "section" | "exclusiveGroup">;
+
+/**
+ * True when the editor's port rows still match a template's / preset's ports — the basis of
+ * `dirtyVsTemplate` / `dirtyVsPreset`. An exclusive-group-only edit counts as a change, so
+ * it offers Submit to Community and Revert like any other port edit (#414).
+ */
+export function editorPortsMatch(a: readonly ComparedPortFields[], b: readonly ComparedPortFields[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((ap, i) => {
+    const bp = b[i];
+    return ap.label === bp.label &&
+      ap.signalType === bp.signalType &&
+      ap.direction === bp.direction &&
+      (ap.connectorType ?? undefined) === (bp.connectorType ?? undefined) &&
+      (ap.section ?? undefined) === (bp.section ?? undefined) &&
+      normalizeExclusiveGroup(ap.exclusiveGroup) === normalizeExclusiveGroup(bp.exclusiveGroup);
+  });
+}
+
 export type SaveActionId =
   | "save-user-template"
   | "submit-community"

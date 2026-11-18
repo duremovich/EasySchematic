@@ -199,6 +199,10 @@ export interface Port {
   directAttach?: boolean;
   /** When true, port renders on the opposite side of the device (input on right, output on left) */
   flipped?: boolean;
+  /** Ports on the same device sharing this value are mutually exclusive — physically separate
+   *  jacks on one signal path, only one usable at a time (e.g. a front-panel input that overrides
+   *  the rear one). Purely advisory: connecting two of them warns, never blocks (#414). */
+  exclusiveGroup?: string;
   notes?: string;
   /** PoE power draw in watts for this port (consumed when powered by switch) */
   poeDrawW?: number;

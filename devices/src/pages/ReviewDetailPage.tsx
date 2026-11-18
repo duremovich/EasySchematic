@@ -774,7 +774,7 @@ function getPortDiffMap(ports: Port[], comparePorts: Port[], side: "current" | "
       // Port exists in this list but not the other
       map.set(p.id, side === "proposed" ? "added" : "removed");
     } else {
-      const changed = p.label !== other.label || p.direction !== other.direction || p.signalType !== other.signalType || (p.connectorType ?? "") !== (other.connectorType ?? "") || (p.section ?? "") !== (other.section ?? "") || (p.gender ?? "") !== (other.gender ?? "");
+      const changed = p.label !== other.label || p.direction !== other.direction || p.signalType !== other.signalType || (p.connectorType ?? "") !== (other.connectorType ?? "") || (p.section ?? "") !== (other.section ?? "") || (p.gender ?? "") !== (other.gender ?? "") || (p.exclusiveGroup ?? "") !== (other.exclusiveGroup ?? "");
       map.set(p.id, changed ? "changed" : "unchanged");
     }
   }
@@ -804,6 +804,7 @@ function PortTable({ ports, comparePorts, side }: { ports: Port[]; comparePorts?
   const diffMap = comparePorts && side ? getPortDiffMap(ports, comparePorts, side) : null;
   const hasSections = ports.some((p) => p.section) || (comparePorts?.some((p) => p.section) ?? false);
   const hasGender = ports.some((p) => p.gender) || (comparePorts?.some((p) => p.gender) ?? false);
+  const hasExclusive = ports.some((p) => p.exclusiveGroup) || (comparePorts?.some((p) => p.exclusiveGroup) ?? false);
 
   return (
     <div className="overflow-x-auto">
@@ -816,6 +817,7 @@ function PortTable({ ports, comparePorts, side }: { ports: Port[]; comparePorts?
           <th className="pb-1">Connector</th>
           {hasGender && <th className="pb-1">Gender</th>}
           {hasSections && <th className="pb-1">Section</th>}
+          {hasExclusive && <th className="pb-1">Exclusive group</th>}
         </tr>
       </thead>
       <tbody>
@@ -830,6 +832,7 @@ function PortTable({ ports, comparePorts, side }: { ports: Port[]; comparePorts?
               <td className="py-1 text-slate-500">{p.connectorType ? connectorLabel(p.connectorType) : "—"}</td>
               {hasGender && <td className="py-1 text-slate-500">{p.gender ? (p.gender === "male" ? "M" : "F") : "—"}</td>}
               {hasSections && <td className="py-1 text-slate-500">{p.section ?? "—"}</td>}
+              {hasExclusive && <td className="py-1 text-slate-500">{p.exclusiveGroup ?? "—"}</td>}
             </tr>
           );
         })}

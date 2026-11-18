@@ -87,6 +87,7 @@ import { chooseNewHandleSuffix, type SwapPlan, type NewPortRef } from "./deviceS
 import { getSignalColorOverrides, applySignalColors, loadSignalColors, saveSignalColors } from "./signalColors";
 import { computeCableSchedule } from "./cableSchedule";
 import { getPanelOccupancy, isPortAvailable } from "./patchCircuits";
+import { exclusiveConflictMessage, newExclusiveConflicts } from "./exclusivePorts";
 import { autoFillSheetForRack } from "./printSheetAutoFill";
 import { allocateEdgeId, maxEdgeCounterFromIds, newLinkedConnectionId, uniquifyEdgeIds } from "./idUtils";
 
@@ -1218,6 +1219,17 @@ function applyDefaultConnectionType(edgeId: string): boolean {
   undoFailedPush();
   useSchematicStore.setState({ undoSize: undoStack.length });
   return true;
+}
+
+/**
+ * Toast a heads-up for every exclusive port group (#414) that the connections added since
+ * `edgesBefore` pushed to two or more connected ports. Advisory only — the connection stays.
+ */
+function warnNewExclusiveConflicts(edgesBefore: readonly ConnectionEdge[]): void {
+  const store = useSchematicStore.getState();
+  for (const c of newExclusiveConflicts(store.nodes, edgesBefore, store.edges)) {
+    store.addToast(exclusiveConflictMessage(c.deviceLabel, c.conflict), "info", 8000);
+  }
 }
 
 /**
@@ -2545,6 +2557,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     // conversion the right-click action uses, so drawing a connection and stubbing it
     // by hand land on byte-identical state (#353).
     if (!applyDefaultConnectionType(newEdge.id)) get().saveToLocalStorage();
+    warnNewExclusiveConflicts(state.edges);
   },
 
   addDevice: (template, position) => {
@@ -2858,6 +2871,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     }
     set({ edges: updated as ConnectionEdge[], ...(nodes === state.nodes ? {} : { nodes }) });
     get().saveToLocalStorage();
+    warnNewExclusiveConflicts(state.edges);
     return "reconnected";
   },
 
@@ -4861,6 +4875,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     // produces two connections around a device the user never placed, and stubbing
     // both would put four stub labels and a floating adapter where one link belongs.
     if (!applyDefaultConnectionType(newEdge.id)) get().saveToLocalStorage();
+    warnNewExclusiveConflicts(state.edges);
   },
 
   insertAdapterBetween: (template) => {
@@ -5199,6 +5214,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       pendingIncompatibleConnection: null,
     });
     get().saveToLocalStorage();
+    warnNewExclusiveConflicts(state.edges);
     return true;
   },
 

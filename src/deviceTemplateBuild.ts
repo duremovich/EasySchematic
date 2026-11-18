@@ -47,6 +47,7 @@ export interface PortDraft {
   usbcPowerDrawW?: number;
   linkSpeed?: string;
   flipped?: boolean;
+  exclusiveGroup?: string;
   // Passthrough-only fields
   rearConnectorType?: ConnectorType;
   rearGender?: Gender;

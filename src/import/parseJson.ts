@@ -40,7 +40,7 @@ export function parseJsonImport(raw: string): ParseResult {
 // Optional port fields carried beyond id/label/signalType/direction, grouped by how they are
 // coerced. `templatePortId` and `activeConfig` are deliberately absent: they are instance-side
 // state (template-sync link, live operating config), not something a template author sets.
-const PORT_STRING_FIELDS = ["section", "notes", "linkSpeed"] as const;
+const PORT_STRING_FIELDS = ["section", "notes", "linkSpeed", "exclusiveGroup"] as const;
 // Kept as written when they are strings, so the validator can report an unknown value.
 const PORT_ENUM_FIELDS = ["connectorType", "gender", "rearConnectorType", "frontConnectorType", "rearGender", "frontGender"] as const;
 const PORT_NUMBER_FIELDS = ["channelCount", "poeDrawW", "usbcPowerSourceW", "usbcPowerDrawW"] as const;
@@ -150,7 +150,7 @@ function normalizePort(raw: Record<string, unknown>, index: number): Partial<Por
 
   for (const f of PORT_STRING_FIELDS) {
     const v = str(raw[f]);
-    if (v !== undefined) port[f] = v;
+    if (v !== undefined) port[f] = f === "exclusiveGroup" ? v.trim() : v;
   }
   for (const f of PORT_ENUM_FIELDS) {
     if (typeof raw[f] === "string") port[f] = raw[f];

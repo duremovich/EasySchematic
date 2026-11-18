@@ -18,6 +18,7 @@ import { useSchematicStore } from "./store";
 import { getPortAbsolutePositions } from "./snapUtils";
 import { getBundledTemplates, getTemplateById, getCardsByFamily, fetchTemplates } from "./templateApi";
 import { inferRackForm, inferRackHeightU } from "./rackUtils";
+import { exclusiveConflictMessage, newExclusiveConflicts } from "./exclusivePorts";
 import {
   DEFAULT_BRIDGE_PORT,
   PROTOCOL_VERSION,
@@ -99,7 +100,13 @@ function requireDevice(nodeId: string): SchematicNode {
 }
 
 function portSummary(p: Port) {
-  return { id: p.id, label: p.label, direction: p.direction, signalType: p.signalType };
+  return {
+    id: p.id,
+    label: p.label,
+    direction: p.direction,
+    signalType: p.signalType,
+    ...(p.exclusiveGroup ? { exclusiveGroup: p.exclusiveGroup } : {}),
+  };
 }
 
 /** Compact view of a room (container) node for get_schematic. `parentId`/`position`
@@ -296,7 +303,8 @@ function connectDevicesCore(p: ConnectDevicesParams) {
         : `That connection is not valid (incompatible direction/signal, duplicate, or self-connection).`,
     );
   }
-  const before = new Set(st().edges.map((e) => e.id));
+  const edgesBefore = st().edges;
+  const before = new Set(edgesBefore.map((e) => e.id));
   st().onConnect(connection);
   const edge = st().edges.find((e) => !before.has(e.id));
   if (!edge) {
@@ -310,7 +318,11 @@ function connectDevicesCore(p: ConnectDevicesParams) {
       "Connection was not created — these ports are incompatible and need an adapter device between them.",
     );
   }
-  return { connected: true, edgeId: edge.id, sourceHandle, targetHandle };
+  // Exclusive port groups (#414) never block a connection; surface the conflict instead.
+  const warnings = newExclusiveConflicts(st().nodes, edgesBefore, st().edges).map((c) =>
+    exclusiveConflictMessage(c.deviceLabel, c.conflict),
+  );
+  return { connected: true, edgeId: edge.id, sourceHandle, targetHandle, ...(warnings.length ? { warnings } : {}) };
 }
 
 /** Install one expansion card into an empty slot. Shared by install_card and

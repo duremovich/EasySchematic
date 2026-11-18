@@ -37,8 +37,9 @@ import { deriveThermalBtuh } from "../thermal";
 import { HEADER_COLOR_SWATCH_FALLBACK, headerColorAfterRevert, normalizeHeaderColor, resolveDeviceHeaderColor, type HeaderColorCapture } from "../deviceHeaderColor";
 import { buildDeviceTemplate, buildTemplatePreset, type PortDraft } from "../deviceTemplateBuild";
 import { carriesPowerCapacity } from "../deviceTypeCategories";
-import { visibleSaveActions, SAVE_ACTION_LABELS, SAVE_ACTION_TITLES, type SaveActionId } from "../deviceEditorActions";
+import { editorPortsMatch, visibleSaveActions, SAVE_ACTION_LABELS, SAVE_ACTION_TITLES, type SaveActionId } from "../deviceEditorActions";
 import { visiblePortRowControls, PORT_ROW_CONTROL_TITLES, type PortRowControlId } from "../portRowControls";
+import { normalizeExclusiveGroup } from "../exclusivePorts";
 import { connectorGroups, connectorLabel, connectorsByLabel, defaultConnector, perRegistryVersion, signalCssColor, signalLabel, signalsByLabel } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 import { NEW_TYPE_OPTION_LABEL, NEW_TYPE_VALUE, requestNewType } from "../newTypeRequest";
@@ -323,6 +324,7 @@ export default function DeviceEditor() {
       usbcPowerDrawW: p.usbcPowerDrawW,
       linkSpeed: p.linkSpeed,
       flipped: p.flipped,
+      exclusiveGroup: p.exclusiveGroup,
       addressable: p.addressable,
       rearConnectorType: p.rearConnectorType,
       rearGender: p.rearGender,
@@ -750,6 +752,7 @@ export default function DeviceEditor() {
         usbcPowerDrawW: p.usbcPowerDrawW,
         linkSpeed: p.linkSpeed,
         flipped: p.flipped,
+        exclusiveGroup: p.exclusiveGroup,
         addressable: p.addressable,
       };
     }));
@@ -814,6 +817,7 @@ export default function DeviceEditor() {
       usbcPowerDrawW: p.usbcPowerDrawW,
       linkSpeed: p.linkSpeed,
       flipped: p.flipped,
+      exclusiveGroup: p.exclusiveGroup,
       addressable: p.addressable,
     })));
     setHiddenPorts(preset.hiddenPorts ?? []);
@@ -922,17 +926,7 @@ export default function DeviceEditor() {
     const tpl = getTemplateById(templateId, customTemplates);
     const preset = templatePresets[templateId];
 
-    const portsMatch = (a: PortDraft[], b: Port[]) => {
-      if (a.length !== b.length) return false;
-      return a.every((ap, i) => {
-        const bp = b[i];
-        return ap.label === bp.label &&
-          ap.signalType === bp.signalType &&
-          ap.direction === bp.direction &&
-          (ap.connectorType ?? undefined) === (bp.connectorType ?? undefined) &&
-          (ap.section ?? undefined) === (bp.section ?? undefined);
-      });
-    };
+    const portsMatch = editorPortsMatch;
 
     const isUserTemplate = customTemplates.some((t) => t.id === templateId);
 
@@ -2631,6 +2625,7 @@ function PortRow({
   const rowRef = useRef<HTMLDivElement>(null);
   const [showSection, setShowSection] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showExclusiveGroup, setShowExclusiveGroup] = useState(false);
 
   const handleDragStart = (e: DragEvent) => {
     e.dataTransfer.setData(MIME, port.id);
@@ -2746,6 +2741,17 @@ function PortRow({
             title={title}
           >
             {port.section || "§"}
+          </button>
+        );
+      case "exclusive-group":
+        return (
+          <button
+            key={id}
+            onClick={() => setShowExclusiveGroup(!showExclusiveGroup)}
+            className={badgeClass(!!port.exclusiveGroup, "bg-neutral-200 text-neutral-900 hover:bg-neutral-100")}
+            title={port.exclusiveGroup ? `Exclusive group: ${port.exclusiveGroup}` : title}
+          >
+            {port.exclusiveGroup ? `Ex: ${port.exclusiveGroup}` : "Ex"}
           </button>
         );
       case "notes":
@@ -2994,6 +3000,31 @@ function PortRow({
           />
           <button
             onClick={() => setShowSection(false)}
+            className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
+          >
+            Done
+          </button>
+        </div>
+      )}
+
+      {showExclusiveGroup && (
+        <div className="flex items-center gap-1.5 pl-6 pb-1">
+          <span className="text-[9px] text-[var(--color-text-muted)]">Exclusive group:</span>
+          <input
+            className="flex-1 bg-[var(--color-surface)] border border-[var(--color-border)] rounded px-1.5 py-0.5 text-[10px] outline-none focus:border-blue-500"
+            value={port.exclusiveGroup || ""}
+            onChange={(e) => onUpdate({ exclusiveGroup: e.target.value.trim() ? e.target.value : undefined })}
+            onBlur={(e) => onUpdate({ exclusiveGroup: normalizeExclusiveGroup(e.target.value) })}
+            placeholder="e.g. in1 — same name on the front and rear jack"
+            maxLength={100}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") setShowExclusiveGroup(false);
+            }}
+            autoFocus
+          />
+          <button
+            onClick={() => setShowExclusiveGroup(false)}
             className="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer"
           >
             Done

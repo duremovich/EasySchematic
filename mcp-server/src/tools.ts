@@ -37,7 +37,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "get_device",
     description:
-      "Get one device's details, including its ports (id, label, direction, signal type) and, for a modular chassis, its slots (id and slot family) — the slotId values that list_slot_cards and install_card need.",
+      "Get one device's details, including its ports (id, label, direction, signal type, and exclusiveGroup when set — ports sharing one are alternative jacks on one signal path, so connect only one of them) and, for a modular chassis, its slots (id and slot family) — the slotId values that list_slot_cards and install_card need.",
     inputSchema: {
       type: "object",
       properties: { nodeId: { type: "string", description: "The device id." } },
@@ -95,7 +95,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "connect_devices",
     description:
-      "Create a connection from one device's port to another's. For two-sided ports give the face: bidirectional ports use 'in'/'out'; passthrough ports use 'rear'/'front'. Plain ports need no face. The connection is validated before it is made.",
+      "Create a connection from one device's port to another's. For two-sided ports give the face: bidirectional ports use 'in'/'out'; passthrough ports use 'rear'/'front'. Plain ports need no face. The connection is validated before it is made. If it connects a second port of one exclusive group, it is still made and the result carries a warnings list.",
     inputSchema: {
       type: "object",
       properties: {

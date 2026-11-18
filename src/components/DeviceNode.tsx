@@ -16,6 +16,7 @@ import { useDisplayLabel } from "../labelCaseUtils";
 import { resolveDeviceLabel } from "../displayName";
 import { contrastingTextColor } from "../colorContrast";
 import { isPortConnected } from "../portVisibility";
+import { conflictingExclusivePortIds, exclusiveGroupOf } from "../exclusivePorts";
 import { signalCssColor, signalLabel } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 
@@ -30,6 +31,15 @@ function usbcPowerSuffix(port: Port): string {
   if (port.usbcPowerSourceW != null) parts.push(`delivers ${port.usbcPowerSourceW}W`);
   if (port.usbcPowerDrawW != null) parts.push(`draws ${port.usbcPowerDrawW}W`);
   return parts.length ? ` — USB-C PD: ${parts.join(", ")}` : "";
+}
+
+/** Hover-tooltip suffix naming a port's exclusive group, and flagging it when in conflict. */
+function exclusiveGroupSuffix(port: Port, inConflict: boolean): string {
+  const group = exclusiveGroupOf(port);
+  if (!group) return "";
+  return inConflict
+    ? ` — ⚠ exclusive group "${group}": another port in this group is also connected, only one can be in use`
+    : ` — exclusive group "${group}"`;
 }
 
 /** Build a list of ports interleaved with section headers where section changes. */
@@ -103,6 +113,17 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     () => new Set(connectedHandleStr ? connectedHandleStr.split(",") : []),
     [connectedHandleStr],
   );
+  // Ports sharing an exclusive group with another connected port (#414).
+  // Scoped by slot so two identical cards in one frame don't flag each other.
+  const exclusiveConflictIds = useMemo(
+    () => conflictingExclusivePortIds(data.ports, connectedHandles, data.slots),
+    [data.ports, data.slots, connectedHandles],
+  );
+  // Wavy amber underline (.exclusive-conflict in index.css) — a text decoration, so the label
+  // box and port positions don't move; suppressed during image/PDF export and print.
+  const exclusiveLabelClass = (port: Port) =>
+    exclusiveConflictIds.has(port.id) ? " exclusive-conflict" : "";
+  const exclusiveTitle = (port: Port) => exclusiveGroupSuffix(port, exclusiveConflictIds.has(port.id));
 
   // Reactive signal-type map for edges connected to this node — drives passthrough port
   // color/label when the port inherits its signal type from the connected edge. Serialized
@@ -290,9 +311,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           />
         )}
         <span
-          className="text-[10px] leading-4 truncate"
+          className={`text-[10px] leading-4 truncate${exclusiveLabelClass(port)}`}
           style={{ color: signalCssColor(port.signalType) }}
-          title={`${displayLabel(port.label)} (${signalLabel(port.signalType)})${usbcPowerSuffix(port)}`}
+          title={`${displayLabel(port.label)} (${signalLabel(port.signalType)})${usbcPowerSuffix(port)}${exclusiveTitle(port)}`}
         >
           {displayLabel(port.label)}
         </span>
@@ -341,9 +362,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           style={{ background: passColor, top: "50%" }}
         />
         <span
-          className="text-[10px] leading-4 truncate px-3 flex-1 text-center"
+          className={`text-[10px] leading-4 truncate px-3 flex-1 text-center${exclusiveLabelClass(port)}`}
           style={{ color: passColor }}
-          title={`${displayLabel(port.label)} (${passLabel}) — passthrough`}
+          title={`${displayLabel(port.label)} (${passLabel}) — passthrough${exclusiveTitle(port)}`}
         >
           ⇔ {displayLabel(port.label)}
         </span>
@@ -568,9 +589,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                           style={{ background: signalCssColor(left.signalType), top: "50%" }}
                         />
                         <span
-                          className="text-[10px] leading-4 truncate"
+                          className={`text-[10px] leading-4 truncate${exclusiveLabelClass(left)}`}
                           style={{ color: signalCssColor(left.signalType) }}
-                          title={`${displayLabel(left.label)} (${signalLabel(left.signalType)})${usbcPowerSuffix(left)}`}
+                          title={`${displayLabel(left.label)} (${signalLabel(left.signalType)})${usbcPowerSuffix(left)}${exclusiveTitle(left)}`}
                         >
                           {displayLabel(left.label)}
                         </span>
@@ -581,9 +602,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                     {right && rh && (
                       <>
                         <span
-                          className="text-[10px] leading-4 truncate"
+                          className={`text-[10px] leading-4 truncate${exclusiveLabelClass(right)}`}
                           style={{ color: signalCssColor(right.signalType) }}
-                          title={`${displayLabel(right.label)} (${signalLabel(right.signalType)})${usbcPowerSuffix(right)}`}
+                          title={`${displayLabel(right.label)} (${signalLabel(right.signalType)})${usbcPowerSuffix(right)}${exclusiveTitle(right)}`}
                         >
                           {displayLabel(right.label)}
                         </span>
@@ -690,9 +711,9 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
                   }}
                 />
                 <span
-                  className="text-[10px] leading-4 truncate"
+                  className={`text-[10px] leading-4 truncate${exclusiveLabelClass(port)}`}
                   style={{ color: signalCssColor(port.signalType) }}
-                  title={`${displayLabel(port.label)} (${signalLabel(port.signalType)}) — bidirectional${usbcPowerSuffix(port)}`}
+                  title={`${displayLabel(port.label)} (${signalLabel(port.signalType)}) — bidirectional${usbcPowerSuffix(port)}${exclusiveTitle(port)}`}
                 >
                   ↔ {displayLabel(port.label)}
                 </span>

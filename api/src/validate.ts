@@ -245,7 +245,7 @@ export function validateTemplate(body: unknown): ValidationResult {
       if (err) return { ok: false, error: err };
     }
     // Optional port string fields
-    for (const field of ["connectorType", "section", "rearConnectorType", "frontConnectorType", "normalledTo", "normalling"] as const) {
+    for (const field of ["connectorType", "section", "exclusiveGroup", "rearConnectorType", "frontConnectorType", "normalledTo", "normalling"] as const) {
       if (port[field] != null) {
         const err = checkString(port[field], `ports[${i}].${field}`, 100);
         if (err) return { ok: false, error: err };

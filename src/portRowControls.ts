@@ -12,6 +12,7 @@ export type PortRowControlId =
   | "multi-connect"
   | "direct-attach"
   | "section"
+  | "exclusive-group"
   | "notes"
   | "flip";
 
@@ -33,7 +34,7 @@ export function visiblePortRowControls(state: PortRowControlState): PortRowContr
   if (state.isMulticable) controls.push("channel-count");
   controls.push("multi-connect");
   if (state.deviceType === "adapter") controls.push("direct-attach");
-  controls.push("section", "notes", "flip");
+  controls.push("section", "exclusive-group", "notes", "flip");
   return controls;
 }
 
@@ -44,6 +45,8 @@ export const PORT_ROW_CONTROL_TITLES: Record<PortRowControlId, string> = {
     "Multi-connect — allow multiple connections on this port (1:many), e.g. one Dante flow feeding many destinations",
   "direct-attach": "Direct attach — plugs directly into device, no separate cable",
   section: "Set section group",
+  "exclusive-group":
+    "Exclusive group — ports on this device sharing a group are one signal path (e.g. a front input that overrides the rear one); connecting more than one warns",
   notes: "Add note",
   flip: "Flip port to opposite side",
 };
