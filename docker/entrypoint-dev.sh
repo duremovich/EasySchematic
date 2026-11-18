@@ -17,5 +17,8 @@ echo "[dev] Installing dependencies..."
 cd /app
 npm ci --legacy-peer-deps
 
+echo "[dev] Generating fallback data..."
+npm run generate-fallback
+
 echo "[dev] Starting Vite on :5173 ..."
 exec npx vite --host 0.0.0.0 --port 5173
