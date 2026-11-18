@@ -44,7 +44,7 @@ import { defaultStubPlacement, healStubPortAlignment, nearestStubHandleSide, rec
 import { estimateDeviceHeight, getPortAbsolutePositions, parentOffsetFromMap, settleTagsAfterMove, tagHostId } from "./snapUtils";
 import { findFreeAdapterSlot, ADAPTER_GAP, DEVICE_W_EST } from "./adapterPlacement";
 import { resolveHiddenAdapterIds } from "./adapterVisibility";
-import { findPortByHandle } from "./portHandles";
+import { findPortByHandle, strippedHandleId } from "./portHandles";
 import { textStubSideForPort, textStubBoxPosition } from "./textStub";
 import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE, DEFAULT_STUB_LABEL_SHOW_ARROW, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_SHOW_ROOM, DEFAULT_STUB_LABEL_PAGE_MODE, DEFAULT_STUB_LABEL_MODE, DEFAULT_CONNECTION_TYPE, portSide } from "./types";
 import {
@@ -328,6 +328,9 @@ export interface Toast {
 interface Clipboard {
   nodes: SchematicNode[];
   edges: ConnectionEdge[];
+  /** Meta of every bundle a copied connection belongs to, keyed by the ORIGINAL bundle id.
+   *  Its trunk override advances with each paste, like the connections' waypoints. */
+  bundles: Record<string, BundleMeta>;
   /** Height of the copied selection's bounding box, used for paste offset */
   boundsHeight: number;
 }
@@ -2904,28 +2907,89 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     // anchors are healed from bundle membership. Excluding both here keeps the clipboard
     // small and lets paste re-spawn them fresh (with re-keyed ids / the remapped bundle)
     // via reconcileWaypointNodes / reconcileBundleJunctions.
-    const selectedNodes = state.nodes.filter(
-      (n) => n.selected && n.type !== "waypoint" && n.type !== "bundle-junction",
-    );
-    if (selectedNodes.length === 0) return;
+    const isDerived = (n: SchematicNode) => n.type === "waypoint" || n.type === "bundle-junction";
+    const ids = new Set(state.nodes.filter((n) => n.selected && !isDerived(n)).map((n) => n.id));
+    // A text stub copied without its device would paste anchored to the ORIGINAL device,
+    // its leader line spanning the whole offset — leave it out, like a connection with one
+    // end outside the selection.
+    for (const n of state.nodes) {
+      if (n.type === "text-stub" && ids.has(n.id) && !ids.has((n.data as import("./types").TextStubData).anchorNodeId)) {
+        ids.delete(n.id);
+      }
+    }
+    if (ids.size === 0) return;
 
-    const selectedNodeIds = new Set(selectedNodes.map((n) => n.id));
+    // A room whose contents are all being copied comes along with them (#395). Select All
+    // never selects rooms, so without this a full-schematic paste had no rooms and its
+    // devices had nowhere to belong. Nested rooms bubble up: once a sub-room is in, its
+    // parent may now have every child in too. The selection itself is untouched, so
+    // Delete after Ctrl+A still leaves the rooms.
+    const childrenOf = new Map<string, SchematicNode[]>();
+    for (const n of state.nodes) {
+      if (!n.parentId || isDerived(n)) continue;
+      const list = childrenOf.get(n.parentId) ?? [];
+      list.push(n);
+      childrenOf.set(n.parentId, list);
+    }
+    for (let changed = true; changed; ) {
+      changed = false;
+      for (const n of state.nodes) {
+        if (n.type !== "room" || ids.has(n.id)) continue;
+        const kids = childrenOf.get(n.id);
+        if (kids?.length && kids.every((k) => ids.has(k.id))) {
+          ids.add(n.id);
+          changed = true;
+        }
+      }
+    }
+    // Store order: React Flow needs parents before children, and paste preserves it.
+    const selectedNodes = state.nodes.filter((n) => ids.has(n.id));
+
     const connectedEdges = state.edges.filter(
-      (e) => selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target),
+      (e) => ids.has(e.source) && ids.has(e.target),
     );
 
-    // Compute bounding box height of selection
+    // Compute bounding box height of selection, in ABSOLUTE canvas coordinates — a device
+    // inside a room stores a room-relative position, so mixing the two (Select All spans
+    // devices in several rooms plus loose ones) under-measured the selection and the paste
+    // landed on top of the originals, its wiring tangled into theirs (#395).
+    const nodeMap = new Map(state.nodes.map((n) => [n.id, n]));
     let minY = Infinity;
     let maxY = -Infinity;
     for (const n of selectedNodes) {
-      const h = n.measured?.height ?? 48;
-      minY = Math.min(minY, n.position.y);
-      maxY = Math.max(maxY, n.position.y + h);
+      const h = n.measured?.height ?? (n.style?.height as number | undefined) ?? (n.type === "device" ? estimateDeviceHeight(n) : 48);
+      const y = getAbsolutePosition(n.id, nodeMap).y;
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y + h);
+    }
+
+    // A node whose parent is copied too keeps its room-relative position and parentId.
+    // Every other node is stored at its ABSOLUTE position with no parent: the paste must
+    // never land under a room that isn't itself pasted (it would sit outside that room's
+    // box yet still move with it), and paste re-picks membership from where it lands.
+    const clipNodes = selectedNodes.map((n) => {
+      const c = structuredClone(n);
+      if (c.parentId && !ids.has(c.parentId)) {
+        c.position = { ...getAbsolutePosition(n.id, nodeMap) };
+        delete c.parentId;
+        delete c.extent;
+      }
+      return c;
+    });
+
+    // Bundle meta rides in the clipboard, so a later paste still has the label and trunk
+    // even if the original bundle was ungrouped meanwhile, and each paste's trunk can be
+    // advanced like the waypoints are.
+    const clipBundles: Record<string, BundleMeta> = {};
+    for (const e of connectedEdges) {
+      const b = e.data?.bundleId;
+      if (b && state.bundles[b] && !clipBundles[b]) clipBundles[b] = structuredClone(state.bundles[b]);
     }
 
     clipboard = {
-      nodes: selectedNodes.map((n) => structuredClone(n)),
+      nodes: clipNodes,
       edges: connectedEdges.map((e) => structuredClone(e)),
+      bundles: clipBundles,
       boundsHeight: maxY - minY,
     };
   },
@@ -2933,11 +2997,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   pasteClipboard: () => {
     if (!clipboard || clipboard.nodes.length === 0) return;
     const state = get();
-    pushUndo({ nodes: state.nodes, edges: state.edges });
 
     // Build old ID → new ID mapping for nodes and ports
     const nodeIdMap = new Map<string, string>();
-    const portIdMap = new Map<string, string>();
     // Stubbed connections are identified by a shared linkedConnectionId across
     // their stub-leg edges and stub-label nodes. Re-key it per pasted connection
     // so the copy is independent of the original — otherwise collapsing one stub
@@ -2963,30 +3025,80 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     };
 
     const yOffset = clipboard.boundsHeight + PASTE_GAP;
+    const shiftPoint = (p: { x: number; y: number }) => ({ x: p.x, y: p.y + yOffset });
+    // A node whose parent (room) is in the clipboard too rides along inside the pasted
+    // parent: it is reparented and keeps its relative position, because the parent already
+    // carries the offset. Everything else was stored at its absolute position with no
+    // parent (copySelected), moves by the offset, and gets its room picked from where it
+    // lands below.
+    const clipIds = new Set(clipboard.nodes.map((n) => n.id));
+    const ridesParent = (n: SchematicNode) => !!n.parentId && clipIds.has(n.parentId);
 
-    const newNodes: SchematicNode[] = clipboard.nodes.map((n) => {
-      const newId = n.type === "room" ? nextRoomId() : nextNodeId();
-      nodeIdMap.set(n.id, newId);
+    // Pass 1: new ids for every node, and fresh port ids per device. Port ids are only
+    // unique WITHIN a device, so each device gets its own old → new map, and a connection's
+    // handle is resolved against the map of the device it actually ends on.
+    const portMaps = new Map<string, Map<string, string>>();
+    const clonedPorts = new Map<string, Port[]>();
+    for (const n of clipboard.nodes) {
+      nodeIdMap.set(n.id, n.type === "room" ? nextRoomId() : nextNodeId());
+      if (n.type === "device") {
+        const oldPorts = (n.data as DeviceData).ports;
+        const newPorts = clonePorts(oldPorts);
+        portMaps.set(n.id, new Map(oldPorts.map((p, i) => [p.id, newPorts[i].id])));
+        clonedPorts.set(n.id, newPorts);
+      }
+    }
+    const remapPortId = (oldNodeId: string, portId: string): string =>
+      portMaps.get(oldNodeId)?.get(portId) ?? portId;
+    // A handle is the bare port id, or — on bidirectional and passthrough ports — the port
+    // id plus a face suffix ("-in"/"-out"/"-rear"/"-front"). Match exactly first (plenty of
+    // real port ids end in those tokens, #355), then remap the stripped port id and put the
+    // face suffix back. Without the second step every pasted connection on a switch port or
+    // a patch panel kept the ORIGINAL device's handle id — one the pasted device doesn't
+    // have — so the copy's wiring never resolved onto the copy (#395).
+    const remapHandle = (oldNodeId: string, handle: string | null | undefined) => {
+      if (!handle) return handle;
+      const map = portMaps.get(oldNodeId);
+      if (!map) return handle;
+      const exact = map.get(handle);
+      if (exact) return exact;
+      const base = strippedHandleId(handle);
+      const mapped = base === undefined ? undefined : map.get(base);
+      return mapped ? mapped + handle.slice(base!.length) : handle;
+    };
+
+    // Pass 2: build the pasted nodes.
+    const pastedNodes: SchematicNode[] = clipboard.nodes.map((n) => {
+      const newId = nodeIdMap.get(n.id)!;
+      const placement = ridesParent(n)
+        ? { position: { ...n.position }, parentId: nodeIdMap.get(n.parentId!)! }
+        : { position: shiftPoint(n.position) };
       if (n.type === "device") {
         const deviceData = n.data as DeviceData;
-        const newPorts = clonePorts(deviceData.ports);
-        deviceData.ports.forEach((oldPort: Port, i: number) => {
-          portIdMap.set(oldPort.id, newPorts[i].id);
-        });
+        const portMap = portMaps.get(n.id)!;
+        const newPorts = clonedPorts.get(n.id)!;
+        for (const p of newPorts) {
+          if (p.normalledTo) p.normalledTo = portMap.get(p.normalledTo) ?? p.normalledTo;
+        }
         const remappedHidden = deviceData.hiddenPorts?.length
           ? deviceData.hiddenPorts
-              .map((id) => portIdMap.get(id) ?? id)
+              .map((id) => portMap.get(id) ?? id)
               .filter((id) => newPorts.some((p) => p.id === id))
           : undefined;
         return {
           ...n,
           id: newId,
-          position: { x: n.position.x, y: n.position.y + yOffset },
+          ...placement,
           selected: true,
           data: {
             ...deviceData,
             ports: newPorts,
             hiddenPorts: remappedHidden && remappedHidden.length > 0 ? remappedHidden : undefined,
+            // Expansion-card bookkeeping lists the ports each card owns; on the copy they
+            // must be the copy's own ports, or a card swap/remove on it misses them.
+            ...(deviceData.slots
+              ? { slots: deviceData.slots.map((s) => ({ ...s, portIds: s.portIds.map((id) => portMap.get(id) ?? id) })) }
+              : {}),
           },
         } as DeviceNode;
       }
@@ -2995,25 +3107,42 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return {
           ...n,
           id: newId,
-          position: { x: n.position.x, y: n.position.y + yOffset },
+          ...placement,
           selected: true,
           data: { ...sd, linkedConnectionId: remapLink(sd.linkedConnectionId) },
         };
       }
+      if (n.type === "room") {
+        // The copy is a new room: it keeps the source's look and lock state, but not its
+        // link to an equipment rack — that rack belongs to the original room.
+        const { linkedRackPageId: _omitPage, linkedRackId: _omitRack, ...rd } = n.data as import("./types").RoomData;
+        return { ...n, id: newId, ...placement, selected: !rd.locked, data: rd } as SchematicNode;
+      }
+      if (n.type === "text-stub") {
+        const td = n.data as import("./types").TextStubData;
+        // A text stub copied together with its device annotates the pasted device's port.
+        const data = nodeIdMap.has(td.anchorNodeId)
+          ? { ...td, anchorNodeId: nodeIdMap.get(td.anchorNodeId)!, anchorPortId: remapPortId(td.anchorNodeId, td.anchorPortId) }
+          : td;
+        return { ...n, id: newId, ...placement, selected: true, data } as SchematicNode;
+      }
       return {
         ...n,
         id: newId,
-        position: { x: n.position.x, y: n.position.y + yOffset },
+        ...placement,
         selected: true,
-      };
+      } as SchematicNode;
     });
 
     const existingEdges = ensureUniqueEdgeIds(state.edges);
-    const newEdges: ConnectionEdge[] = [];
+    const pastedEdges: ConnectionEdge[] = [];
     for (const e of clipboard.edges) {
       let data = e.data;
       if (data?.linkedConnectionId) data = { ...data, linkedConnectionId: remapLink(data.linkedConnectionId) };
       if (data?.bundleId) data = { ...data, bundleId: remapBundle(data.bundleId) };
+      // Manual waypoints are absolute canvas points: they move with the pasted devices, or
+      // the copy's wiring is routed back up through the original's bends.
+      if (data?.manualWaypoints?.length) data = { ...data, manualWaypoints: data.manualWaypoints.map(shiftPoint) };
       // A pasted connection is a NEW physical cable — it must get its own cable ID,
       // not inherit the original's (IDs are permanent and label-printable).
       if (data?.cableId) {
@@ -3026,35 +3155,74 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         const { patchHops: _omitHops, patchSegments: _omitSegs, ...rest } = data;
         data = rest;
       }
-      newEdges.push({
+      pastedEdges.push({
         ...e,
-        id: nextEdgeId([...existingEdges, ...newEdges]),
+        id: nextEdgeId([...existingEdges, ...pastedEdges]),
         source: nodeIdMap.get(e.source) ?? e.source,
         target: nodeIdMap.get(e.target) ?? e.target,
-        sourceHandle: e.sourceHandle ? (portIdMap.get(e.sourceHandle) ?? e.sourceHandle) : e.sourceHandle,
-        targetHandle: e.targetHandle ? (portIdMap.get(e.targetHandle) ?? e.targetHandle) : e.targetHandle,
+        sourceHandle: remapHandle(e.source, e.sourceHandle),
+        targetHandle: remapHandle(e.target, e.targetHandle),
         data,
       });
     }
 
+    // A stubbed connection copied with only one of its devices arrives as one leg plus its
+    // tags — a half-link that renders "?". Drop it, the same way a plain connection with one
+    // end outside the selection isn't copied. Only the pasted set is checked: its links are
+    // re-keyed, so nothing pasted can complete (or break) an original's.
+    const { nodes: newNodes, edges: newEdges } = reconcileStubPairs(pastedNodes, pastedEdges);
+    // Nothing survived (e.g. only the tags of a stubbed connection were copied): no paste,
+    // and no empty undo step.
+    if (newNodes.length === 0) return;
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+
     // Deselect existing nodes/edges, add pasted ones as selected
-    const mergedNodes = [
+    let mergedNodes = [
       ...state.nodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
       ...newNodes,
     ];
+    // Room membership for every pasted node that didn't ride a pasted parent: the same
+    // geometric rule as a drag-stop reparent (smallest room containing its centre), so it
+    // lands in whatever room it is actually inside — a pasted one, an existing one — or none.
+    {
+      const mergedMap = new Map(mergedNodes.map((n) => [n.id, n]));
+      const updates = new Map<string, { parentId: string; position: { x: number; y: number } }>();
+      for (const n of newNodes) {
+        if (n.parentId) continue;
+        const c = nodeCenterFromAbsolute(n, n.position);
+        const room = findBestEnclosingRoom(n.id, n.type === "room", c.x, c.y, mergedNodes, mergedMap);
+        if (!room) continue;
+        const roomAbs = getAbsolutePosition(room.id, mergedMap);
+        updates.set(n.id, { parentId: room.id, position: { x: n.position.x - roomAbs.x, y: n.position.y - roomAbs.y } });
+      }
+      if (updates.size > 0) {
+        mergedNodes = sortNodesParentFirst(mergedNodes.map((n) => {
+          const u = updates.get(n.id);
+          return u ? ({ ...n, ...u } as SchematicNode) : n;
+        }));
+      }
+    }
     const mergedEdges = [
       ...existingEdges.map((e) => (e.selected ? { ...e, selected: false } : e)),
       ...newEdges,
     ];
     // Clone BundleMeta for each remapped bundle, then GC any pasted bundle that ended up
     // with <2 members (e.g. only some members were copied) — dropping both the empty
-    // bundle and the now-dangling bundleId on its lone pasted edge.
+    // bundle and the now-dangling bundleId on its lone pasted edge. A dragged trunk
+    // override is absolute too, so it moves with the copy like the waypoints do.
     let finalEdges = mergedEdges;
     let finalBundles = state.bundles;
     if (bundleIdMap.size > 0) {
       const cloned: Record<string, BundleMeta> = { ...state.bundles };
+      // Cloned from the clipboard's snapshot, not the live bundle: the label survives the
+      // original being ungrouped, and the trunk is the one advanced for THIS paste.
       for (const [oldId, newId] of bundleIdMap) {
-        cloned[newId] = { ...(state.bundles[oldId] ?? {}), id: newId };
+        const meta = clipboard.bundles[oldId];
+        cloned[newId] = {
+          ...(meta ?? {}),
+          id: newId,
+          ...(meta?.trunkWaypoints ? { trunkWaypoints: meta.trunkWaypoints.map(shiftPoint) } : {}),
+        };
       }
       const gc = gcBundles(mergedEdges, cloned);
       finalEdges = gc.edges;
@@ -3068,13 +3236,21 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       ...(finalBundles !== state.bundles ? { bundles: finalBundles } : {}),
     });
 
-    // Update clipboard positions so repeated paste keeps offsetting
+    // Update clipboard positions so repeated paste keeps offsetting — by the same rule as
+    // above: a node riding a copied parent stays put relative to it.
     clipboard = {
-      nodes: clipboard.nodes.map((n) => ({
-        ...n,
-        position: { x: n.position.x, y: n.position.y + yOffset },
-      })),
-      edges: clipboard.edges,
+      nodes: clipboard.nodes.map((n) => (ridesParent(n) ? n : { ...n, position: shiftPoint(n.position) })),
+      edges: clipboard.edges.map((e) =>
+        e.data?.manualWaypoints?.length
+          ? { ...e, data: { ...e.data, manualWaypoints: e.data.manualWaypoints.map(shiftPoint) } }
+          : e,
+      ),
+      bundles: Object.fromEntries(
+        Object.entries(clipboard.bundles).map(([id, b]) => [
+          id,
+          b.trunkWaypoints ? { ...b, trunkWaypoints: b.trunkWaypoints.map(shiftPoint) } : b,
+        ]),
+      ),
       boundsHeight: clipboard.boundsHeight,
     };
 
