@@ -295,9 +295,8 @@ const barEdisonOut1 = port("bar-edison-out-1", "Edison Out 1", "power", "output"
 const barEdisonOut2 = port("bar-edison-out-2", "Edison Out 2", "power", "output", "edison");
 
 // EU / UK power bench (#390) — Schuko native-mates Europlug (direct connect, no
-// adapter, no dialog), while UK BS 1363 needs an adapter for everything. The
-// library carries no EU/UK power adapter template yet, so UK ↔ Schuko exercises
-// the zero-match incompatible-connection dialog rather than an auto-insert.
+// adapter, no dialog), while UK BS 1363 needs an adapter for everything. The library
+// carries the EU/UK power adapters (#408), so UK ↔ Schuko auto-inserts one.
 const euStripSchukoIn = port("eustrip-schuko-in", "Schuko In", "power", "input", "schuko");
 const euStripSchukoOut1 = port("eustrip-schuko-out-1", "Schuko Out 1", "power", "output", "schuko");
 const euStripSchukoOut2 = port("eustrip-schuko-out-2", "Schuko Out 2", "power", "output", "schuko");
@@ -653,7 +652,7 @@ const rackRoom: RoomSpec = {
     [
       {
         // Schuko side of the EU/UK power bench (#390). Unwired, adjacent to its
-        // two sinks one column over, so a future adapter auto-insert has the
+        // two sinks one column over, so the adapter auto-insert has the
         // COL_GAP to land in — same shape as the Edison ↔ IEC bench.
         id: "device-22",
         label: "Euro Power Strip (Schuko)",
@@ -685,8 +684,7 @@ const rackRoom: RoomSpec = {
       },
       {
         // Shuttered BS 1363 sockets have no native mate — Schuko Out → this
-        // port must flag adapter-needed (today: the zero-match dialog, since
-        // no EU/UK adapter template exists in the library yet).
+        // port must flag adapter-needed and auto-insert the Schuko → UK adapter (#408).
         id: "device-24",
         label: "UK Media Player (BS 1363)",
         ports: [ukPlayerUkIn, ukPlayerHdmiOut],

@@ -205,6 +205,9 @@ export default function ConnectionsPage() {
         several match). For example, connecting a
         laptop's <strong>USB-A</strong> port to an <strong>RJ45</strong> port on a network switch
         automatically inserts a <strong>USB-A (M) → RJ45 (F) Adapter</strong>, wired to both devices.
+        The library also ships EU/UK power adapters (Schuko, Europlug, UK BS 1363, IEC C13), so a Schuko
+        output dragged onto a UK input inserts a <strong>Schuko (M) → UK BS 1363 (F) Adapter</strong>. The
+        Edison → Schuko and Edison → UK adapters are plug adapters only — they do not convert 120V to 230V.
       </p>
 
       <h3>Connection preview colors</h3>

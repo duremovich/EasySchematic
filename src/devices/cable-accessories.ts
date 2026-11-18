@@ -161,4 +161,84 @@ export const templates: DeviceTemplate[] = [
       trunkPort("Trunk In", "custom", "input", 0, "multipin"),
     ],
   },
+  {
+    id: "c0a80101-0324-4000-8000-000000000758",
+    deviceType: "cable-accessory",
+    label: "SDI Snake (4-ch) Break-in",
+    searchTerms: ["snake", "breakin", "break-in", "multicable", "sdi", "bnc", "video", "coax", "fanout", "4ch"],
+    ports: [
+      ...ports("Ch", "sdi", "input", 4, "bnc"),
+      trunkPort("Trunk Out", "sdi", "output", 4, "none"),
+    ],
+  },
+  {
+    id: "c0a80101-0325-4000-8000-000000000759",
+    deviceType: "cable-accessory",
+    label: "SDI Snake (4-ch) Break-out",
+    searchTerms: ["snake", "breakout", "break-out", "multicable", "sdi", "bnc", "video", "coax", "fanout", "4ch"],
+    ports: [
+      trunkPort("Trunk In", "sdi", "input", 4, "none"),
+      ...ports("Ch", "sdi", "output", 4, "bnc"),
+    ],
+  },
+  {
+    id: "c0a80101-0326-4000-8000-000000000760",
+    deviceType: "cable-accessory",
+    label: "SDI Snake (8-ch) Break-in",
+    searchTerms: ["snake", "breakin", "break-in", "multicable", "sdi", "bnc", "video", "coax", "fanout", "8ch"],
+    ports: [
+      ...ports("Ch", "sdi", "input", 8, "bnc"),
+      trunkPort("Trunk Out", "sdi", "output", 8, "none"),
+    ],
+  },
+  {
+    id: "c0a80101-0327-4000-8000-000000000761",
+    deviceType: "cable-accessory",
+    label: "SDI Snake (8-ch) Break-out",
+    searchTerms: ["snake", "breakout", "break-out", "multicable", "sdi", "bnc", "video", "coax", "fanout", "8ch"],
+    ports: [
+      trunkPort("Trunk In", "sdi", "input", 8, "none"),
+      ...ports("Ch", "sdi", "output", 8, "bnc"),
+    ],
+  },
+  {
+    id: "c0a80101-0328-4000-8000-000000000762",
+    deviceType: "cable-accessory",
+    label: "SDI Snake (12-ch) Break-in",
+    searchTerms: ["snake", "breakin", "break-in", "multicable", "sdi", "bnc", "video", "coax", "fanout", "12ch"],
+    ports: [
+      ...ports("Ch", "sdi", "input", 12, "bnc"),
+      trunkPort("Trunk Out", "sdi", "output", 12, "none"),
+    ],
+  },
+  {
+    id: "c0a80101-0329-4000-8000-000000000763",
+    deviceType: "cable-accessory",
+    label: "SDI Snake (12-ch) Break-out",
+    searchTerms: ["snake", "breakout", "break-out", "multicable", "sdi", "bnc", "video", "coax", "fanout", "12ch"],
+    ports: [
+      trunkPort("Trunk In", "sdi", "input", 12, "none"),
+      ...ports("Ch", "sdi", "output", 12, "bnc"),
+    ],
+  },
+  {
+    id: "c0a80101-032a-4000-8000-000000000764",
+    deviceType: "cable-accessory",
+    label: "SDI Snake (16-ch) Break-in",
+    searchTerms: ["snake", "breakin", "break-in", "multicable", "sdi", "bnc", "video", "coax", "fanout", "16ch"],
+    ports: [
+      ...ports("Ch", "sdi", "input", 16, "bnc"),
+      trunkPort("Trunk Out", "sdi", "output", 16, "none"),
+    ],
+  },
+  {
+    id: "c0a80101-032b-4000-8000-000000000765",
+    deviceType: "cable-accessory",
+    label: "SDI Snake (16-ch) Break-out",
+    searchTerms: ["snake", "breakout", "break-out", "multicable", "sdi", "bnc", "video", "coax", "fanout", "16ch"],
+    ports: [
+      trunkPort("Trunk In", "sdi", "input", 16, "none"),
+      ...ports("Ch", "sdi", "output", 16, "bnc"),
+    ],
+  },
 ];

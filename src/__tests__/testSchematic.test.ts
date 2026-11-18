@@ -194,12 +194,12 @@ describe("test schematic — #307 coverage", () => {
     // adapter and no dialog.
     expect(areConnectorsCompatible("europlug", "schuko")).toBe(true);
     expect(needsAdapter("europlug", "schuko")).toBe(false);
-    // UK ↔ Schuko needs an adapter, and the library carries no EU/UK power
-    // adapter template yet — the bench exercises the zero-match dialog. If this
-    // second expectation starts failing, a template was added: promote the bench
-    // to a real auto-insert test and update the fixture README.
+    // UK <-> Schuko needs an adapter, and the bundled library now carries the EU/UK power
+    // adapters (#408), so both drag directions resolve to exactly one template, which is
+    // what store.onConnect auto-inserts. euUkPowerAdapters.test.ts drives the real drop.
     expect(needsAdapter("uk-power", "schuko")).toBe(true);
-    expect(findAdaptersForConnectorBridge("uk-power", "schuko", "power", DEVICE_TEMPLATES)).toHaveLength(0);
+    expect(findAdaptersForConnectorBridge("schuko", "uk-power", "power", DEVICE_TEMPLATES)).toHaveLength(1);
+    expect(findAdaptersForConnectorBridge("uk-power", "schuko", "power", DEVICE_TEMPLATES)).toHaveLength(1);
   });
 
   it("has a patch panel with wide connector and gender combinations", () => {

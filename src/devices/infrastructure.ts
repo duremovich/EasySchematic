@@ -429,6 +429,45 @@ export const templates: DeviceTemplate[] = [
     powerDrawW: 0,
     ports: patchPanelCircuits("Port ", 96, { signalType: "analog-audio", rearConnectorType: "trs-quarter", frontConnectorType: "trs-quarter" }),
   },
+  // D-series (Neutrik D-hole format) panels: blank 19" plates punched for XLR-style D connectors.
+  // Defaults to XLR-3 (the usual fit); change the connector per port for other D-series inserts.
+  {
+    id: "c0a80101-032c-4000-8000-000000000766",
+    deviceType: "patch-panel",
+    label: "D-Series Patch Panel 16-Way",
+    searchTerms: ["patch panel", "patch bay", "16 port", "16 way", "d-series", "d series", "d-hole", "neutrik d", "xlr", "audio", "analog"],
+    powerDrawW: 0,
+    ports: patchPanelCircuits("Port ", 16, { signalType: "analog-audio", rearConnectorType: "xlr-3", frontConnectorType: "xlr-3", rearGender: "female", frontGender: "female" }),
+  },
+  {
+    id: "c0a80101-032d-4000-8000-000000000767",
+    deviceType: "patch-panel",
+    label: "D-Series Patch Panel 24-Way",
+    searchTerms: ["patch panel", "patch bay", "24 port", "24 way", "d-series", "d series", "d-hole", "neutrik d", "xlr", "audio", "analog"],
+    powerDrawW: 0,
+    ports: patchPanelCircuits("Port ", 24, { signalType: "analog-audio", rearConnectorType: "xlr-3", frontConnectorType: "xlr-3", rearGender: "female", frontGender: "female" }),
+  },
+  {
+    id: "c0a80101-032e-4000-8000-000000000768",
+    deviceType: "patch-panel",
+    label: "D-Series Patch Panel 32-Way",
+    searchTerms: ["patch panel", "patch bay", "32 port", "32 way", "d-series", "d series", "d-hole", "neutrik d", "xlr", "audio", "analog"],
+    powerDrawW: 0,
+    ports: patchPanelCircuits("Port ", 32, { signalType: "analog-audio", rearConnectorType: "xlr-3", frontConnectorType: "xlr-3", rearGender: "female", frontGender: "female" }),
+  },
+  {
+    id: "c0a80101-032f-4000-8000-000000000769",
+    deviceType: "patch-panel",
+    label: "Penn Elcom R2269-1UK-16 D-Series Panel (16-Way)",
+    manufacturer: "Penn Elcom",
+    modelNumber: "R2269-1UK-16",
+    referenceUrl: "https://www.penn-elcom.com/us/1u-rack-panels-for-16-x-d-series-connectors-with-cable-support-bar-r2269-1uk-16",
+    searchTerms: ["patch panel", "patch bay", "penn elcom", "r2269", "r2269-1uk-16", "16 port", "16 way", "d-series", "d series", "d-hole", "neutrik d", "cable support bar", "1u", "xlr", "audio", "analog"],
+    powerDrawW: 0,
+    heightMm: 44.45,
+    widthMm: 483,
+    ports: patchPanelCircuits("Port ", 16, { signalType: "analog-audio", rearConnectorType: "xlr-3", frontConnectorType: "xlr-3", rearGender: "female", frontGender: "female" }),
+  },
   // Wall Plates
   {
     id: "c0a80101-0240-4000-8000-000000000721",

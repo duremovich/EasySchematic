@@ -76,10 +76,8 @@ the fixture, a test fails rather than a test pass quietly losing coverage.
   the regression guard the auto-insert pairings depend on.
 - **EU/UK power bench (#390).** `Euro Power Strip (Schuko)` paired with
   `EU PSU (Europlug)` (native mate — must connect with no adapter and no
-  dialog) and `UK Media Player (BS 1363)` (adapter-needed — today the
-  zero-match incompatible-connection dialog, since the library has no EU/UK
-  power adapter template yet; the guard test pins that state and flags when a
-  template appears).
+  dialog) and `UK Media Player (BS 1363)` (adapter-needed — Schuko Out → UK AC In
+  auto-inserts the bundled Schuko → UK adapter, #408).
 - **Connection-drag pair (#378).** `Designer Laptop` (HDMI Out) and `Preview
   Monitor (HDMI)` (HDMI In) sit one `ROW_GAP` apart in the same `TECH TABLE`
   column, both free, so a compatible same-signal drag, ghost-line or snap scenario

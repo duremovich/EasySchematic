@@ -148,7 +148,7 @@ export default function OverviewPage() {
           <strong>Auto-shelf</strong> — small non-rack-mountable devices (DI boxes, half-width DSPs, desktop gear) drop onto a slot and auto-create a 1U shelf at natural width; oversize devices are rejected with a clear error
         </li>
         <li>
-          <strong>Face-plate editor</strong> — drag connectors to custom positions on a device&apos;s front panel with snap-to-grid, multi-select align / distribute, custom labels, and undo / redo. 59 connector types rendered at mm-accurate dimensions with three zoom levels
+          <strong>Face-plate editor</strong> — drag connectors to custom positions on a device&apos;s front panel with snap-to-grid, multi-select align / distribute, custom labels, and undo / redo. 78 connector types rendered at mm-accurate dimensions with three zoom levels
         </li>
         <li>
           <strong>Room ↔ rack linking</strong> — link a schematic room to a rack so &quot;Auto-populate&quot; can propose placements for every device in the room; rack header shows a click-to-jump link badge

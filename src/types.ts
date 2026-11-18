@@ -10,6 +10,8 @@ export type BuiltinConnectorType =
   | "usb-a" | "usb-b" | "usb-c"
   | "db7w2" | "db9" | "db15" | "db25" | "din-5" | "phoenix" | "terminal-block" | "powercon" | "edison" | "iec" | "iec-c5" | "iec-c7" | "iec-c15" | "iec-c20"
   | "schuko" | "french-power" | "europlug" | "uk-power"
+  | "cee17-16a-1p-230v" | "cee17-32a-1p-230v" | "cee17-63a-1p-230v" | "cee17-125a-1p-230v" | "cee17-16a-3p-400v" | "cee17-32a-3p-400v" | "cee17-63a-3p-400v" | "cee17-125a-3p-400v"
+  | "sc32" | "pa-com-8"
   | "speakon" | "socapex" | "multipin" | "rca" | "toslink" | "barrel"
   | "banana" | "binding-post" | "binding-post-banana" | "dvi" | "mini-xlr" | "opticalcon"
   | "l5-20" | "l6-20" | "l6-30" | "l21-30" | "cam-lok" | "powercon-true1"
@@ -1169,6 +1171,16 @@ export const CONNECTOR_LABELS: Record<BuiltinConnectorType, string> = {
   "french-power": "CEE French Power (7/5/7)",
   europlug: "CEE Europlug (7/16)",
   "uk-power": "UK Power (BS 1363)",
+  "cee17-16a-1p-230v": "CEE17 16A 1P+N+E (blue, 230V)",
+  "cee17-32a-1p-230v": "CEE17 32A 1P+N+E (blue, 230V)",
+  "cee17-63a-1p-230v": "CEE17 63A 1P+N+E (blue, 230V)",
+  "cee17-125a-1p-230v": "CEE17 125A 1P+N+E (blue, 230V)",
+  "cee17-16a-3p-400v": "CEE17 16A 3P+N+E (red, 400V)",
+  "cee17-32a-3p-400v": "CEE17 32A 3P+N+E (red, 400V)",
+  "cee17-63a-3p-400v": "CEE17 63A 3P+N+E (red, 400V)",
+  "cee17-125a-3p-400v": "CEE17 125A 3P+N+E (red, 400V)",
+  sc32: "L-Acoustics SC32",
+  "pa-com-8": "PA-COM 8-pin",
   speakon: "speakON",
   socapex: "Socapex",
   multipin: "Multi-pin",
@@ -1329,8 +1341,8 @@ export const CONNECTOR_GROUPS: Record<string, BuiltinConnectorType[]> = {
   "Network / Data": ["rj45", "ethercon", "sfp", "lc", "sc", "st", "opticalcon", "qsfp", "qsfp28", "qsfp-dd", "mpo", "rj11", "rj12"],
   "USB": ["usb-a", "usb-b", "usb-c", "usb-mini", "usb-micro"],
   "D-Sub / Serial": ["db9", "db15", "db25", "db37", "db7w2", "lemo-5pin"],
-  "Power": ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "powercon-true1", "edison", "schuko", "french-power", "europlug", "uk-power", "barrel", "l5-20", "l6-20", "l6-30", "l21-30", "cam-lok", "socapex", "pcie-6pin", "lemo-2pin", "lemo-4pin", "kycon-4pin", "d-tap", "v-mount"],
-  "Speaker": ["speakon", "banana", "binding-post", "binding-post-banana"],
+  "Power": ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "powercon", "powercon-true1", "edison", "schuko", "french-power", "europlug", "uk-power", "cee17-16a-1p-230v", "cee17-32a-1p-230v", "cee17-63a-1p-230v", "cee17-125a-1p-230v", "cee17-16a-3p-400v", "cee17-32a-3p-400v", "cee17-63a-3p-400v", "cee17-125a-3p-400v", "barrel", "l5-20", "l6-20", "l6-30", "l21-30", "cam-lok", "socapex", "pcie-6pin", "lemo-2pin", "lemo-4pin", "kycon-4pin", "d-tap", "v-mount"],
+  "Speaker": ["speakon", "sc32", "pa-com-8", "banana", "binding-post", "binding-post-banana"],
   "Terminal": ["phoenix", "terminal-block", "multipin", "solder-cup", "punch-down-110", "punch-down-66", "krone-idc"],
   "RF": ["reverse-tnc", "sma", "f-connector"],
   "Other": ["wireless", "digilink", "d-hole-insert", "none", "other"],

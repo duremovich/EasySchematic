@@ -345,6 +345,12 @@ export default function DevicesAndPortsPage() {
           <tr><td>IEC C7</td><td>IEC C7</td></tr>
           <tr><td>IEC C15</td><td>IEC C15</td></tr>
           <tr><td>IEC C20</td><td>IEC C20</td></tr>
+          <tr><td>CEE Schuko (7/3/4)</td><td>Schuko</td></tr>
+          <tr><td>CEE French Power (7/5/7)</td><td>French Power</td></tr>
+          <tr><td>CEE Europlug (7/16)</td><td>Europlug (mates into Schuko and French sockets directly)</td></tr>
+          <tr><td>UK Power (BS 1363)</td><td>UK Power (needs an adapter to anything else)</td></tr>
+          <tr><td>CEE17 16A / 32A / 63A / 125A, 1-phase (3-pin)</td><td>CEE17 (IEC 60309) — same rating mates directly; a different rating needs an adapter</td></tr>
+          <tr><td>CEE17 16A / 32A / 63A / 125A, 3-phase (5-pin)</td><td>CEE17 (IEC 60309) — same rating mates directly; a different rating needs an adapter</td></tr>
           <tr><td>L5-20</td><td>L5-20</td></tr>
           <tr><td>L6-20</td><td>L6-20</td></tr>
           <tr><td>L6-30</td><td>L6-30</td></tr>
@@ -355,6 +361,8 @@ export default function DevicesAndPortsPage() {
           <tr><td>Kycon 4-pin</td><td>Kycon 4-pin (locking DC power)</td></tr>
 
           <tr><td colSpan={2}><strong>Speaker</strong></td></tr>
+          <tr><td>L-Acoustics SC32</td><td>SC32</td></tr>
+          <tr><td>PA-COM 8-pin</td><td>PA-COM 8-pin</td></tr>
           <tr><td>Banana</td><td>Speaker Wire</td></tr>
           <tr><td>Binding Post</td><td>Speaker Wire</td></tr>
           <tr><td>Binding Post/Banana</td><td>Speaker Wire</td></tr>
@@ -462,7 +470,7 @@ export default function DevicesAndPortsPage() {
 
       <h2>Patch panels</h2>
       <p>
-        Patch panels (RJ45 panels, BNC video bays, XLR audio bays, fiber panels, TT bantam patch bays) are bidirectional
+        Patch panels (RJ45 panels, BNC video bays, XLR audio bays, fiber panels, TT bantam patch bays, D-series panels such as the Penn Elcom R2269-1UK-16) are bidirectional
         pass-throughs with ports on two physical faces. EasySchematic models them as a special device type:
       </p>
       <ul>
@@ -689,7 +697,7 @@ export default function DevicesAndPortsPage() {
         auto-layout if you go off the rails.
       </p>
       <p>
-        59 connector types are drawn at real-world millimeter dimensions from manufacturer specs,
+        78 connector types are drawn at real-world millimeter dimensions from manufacturer specs,
         with three levels of detail: dots when zoomed out, silhouettes at mid-zoom, and detailed
         icons (pin patterns, slot orientations, blade arrangements) when zoomed in close.
         Custom layouts persist with the device or template — set them once and reuse the layout

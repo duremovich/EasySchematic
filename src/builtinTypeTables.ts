@@ -218,6 +218,17 @@ export const CONNECTOR_ACCEPTS: Partial<Record<BuiltinConnectorType, ConnectorAc
   "schuko":        { native: ["europlug"], adapter: ["french-power", "iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
   "french-power":  { native: ["europlug"], adapter: ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon", "l5-20", "l6-20", "l6-30", "l21-30"] },
   "uk-power":      { adapter: ["iec", "iec-c5", "iec-c7", "iec-c15", "iec-c20", "edison", "powercon", "l5-20", "l6-20", "l6-30", "l21-30", "schuko", "french-power", "europlug"] },
+  // CEE17 (IEC 60309) is keyed by rating and phase: the same rating and phase mates natively
+  // (same id), a different rating of the same phase needs an adapter. 1-phase and 3-phase
+  // are keyed apart (different pole count and key position) so no adapter bridges them.
+  "cee17-16a-1p-230v": { adapter: ["cee17-32a-1p-230v", "cee17-63a-1p-230v", "cee17-125a-1p-230v"] },
+  "cee17-32a-1p-230v": { adapter: ["cee17-16a-1p-230v", "cee17-63a-1p-230v", "cee17-125a-1p-230v"] },
+  "cee17-63a-1p-230v": { adapter: ["cee17-16a-1p-230v", "cee17-32a-1p-230v", "cee17-125a-1p-230v"] },
+  "cee17-125a-1p-230v": { adapter: ["cee17-16a-1p-230v", "cee17-32a-1p-230v", "cee17-63a-1p-230v"] },
+  "cee17-16a-3p-400v": { adapter: ["cee17-32a-3p-400v", "cee17-63a-3p-400v", "cee17-125a-3p-400v"] },
+  "cee17-32a-3p-400v": { adapter: ["cee17-16a-3p-400v", "cee17-63a-3p-400v", "cee17-125a-3p-400v"] },
+  "cee17-63a-3p-400v": { adapter: ["cee17-16a-3p-400v", "cee17-32a-3p-400v", "cee17-125a-3p-400v"] },
+  "cee17-125a-3p-400v": { adapter: ["cee17-16a-3p-400v", "cee17-32a-3p-400v", "cee17-63a-3p-400v"] },
 };
 
 /** Maps connector type to cable label for pack lists */
@@ -266,6 +277,16 @@ export const CONNECTOR_TO_CABLE: Record<BuiltinConnectorType, string> = {
   "french-power": "French Power",
   europlug: "Europlug",
   "uk-power": "UK Power",
+  "cee17-16a-1p-230v": "CEE17 16A 1P 230V",
+  "cee17-32a-1p-230v": "CEE17 32A 1P 230V",
+  "cee17-63a-1p-230v": "CEE17 63A 1P 230V",
+  "cee17-125a-1p-230v": "CEE17 125A 1P 230V",
+  "cee17-16a-3p-400v": "CEE17 16A 3P 400V",
+  "cee17-32a-3p-400v": "CEE17 32A 3P 400V",
+  "cee17-63a-3p-400v": "CEE17 63A 3P 400V",
+  "cee17-125a-3p-400v": "CEE17 125A 3P 400V",
+  sc32: "SC32",
+  "pa-com-8": "PA-COM 8-pin",
   speakon: "speakON",
   socapex: "Socapex",
   multipin: "Multi-pin",
@@ -390,6 +411,14 @@ export const CONNECTOR_GENDER: Partial<Record<BuiltinConnectorType, ConnectorGen
   "french-power":     { input: "male",   output: "female" },
   europlug:           { input: "male",   output: "female" },
   "uk-power":         { input: "male",   output: "female" },
+  "cee17-16a-1p-230v": { input: "male",   output: "female" },
+  "cee17-32a-1p-230v": { input: "male",   output: "female" },
+  "cee17-63a-1p-230v": { input: "male",   output: "female" },
+  "cee17-125a-1p-230v": { input: "male",   output: "female" },
+  "cee17-16a-3p-400v": { input: "male",   output: "female" },
+  "cee17-32a-3p-400v": { input: "male",   output: "female" },
+  "cee17-63a-3p-400v": { input: "male",   output: "female" },
+  "cee17-125a-3p-400v": { input: "male",   output: "female" },
   "l5-20":            { input: "male",   output: "female" },
   "l6-20":            { input: "male",   output: "female" },
   "l6-30":            { input: "male",   output: "female" },
@@ -397,6 +426,8 @@ export const CONNECTOR_GENDER: Partial<Record<BuiltinConnectorType, ConnectorGen
   "cam-lok":          { input: "female", output: "male"   },
   socapex:            { input: "female", output: "female" },
   multipin:           { input: "female", output: "female" },
+  sc32:               { input: "female", output: "female" },
+  "pa-com-8":         { input: "female", output: "female" },
   banana:             { input: "female", output: "female" }, // binding posts on both sides
   "binding-post":     { input: "female", output: "female" },
   "binding-post-banana": { input: "female", output: "female" },

@@ -196,3 +196,61 @@ describe("BS 1363 UK power connector", () => {
     expect(areConnectorsCompatible("uk-power", "iec")).toBe(true);
   });
 });
+
+describe("CEE17 / IEC 60309 power connectors (#429)", () => {
+  const ratings = ["16a", "32a", "63a", "125a"] as const;
+  const phases = ["1p-230v", "3p-400v"] as const;
+  const ids = phases.flatMap((p) => ratings.map((r) => `cee17-${r}-${p}`));
+
+  it("has a label, cable name, group entry and IEC-style gender for every rating and phase", () => {
+    expect(ids).toHaveLength(8);
+    for (const id of ids) {
+      expect(CONNECTOR_LABELS[id as keyof typeof CONNECTOR_LABELS], id).toMatch(/^CEE17 \d+A (1P\+N\+E \(blue, 230V\)|3P\+N\+E \(red, 400V\))$/);
+      expect(CONNECTOR_TO_CABLE[id as keyof typeof CONNECTOR_TO_CABLE], id).toMatch(/^CEE17 \d+A [13]P \d+V$/);
+      expect(CONNECTOR_GROUPS["Power"], id).toContain(id);
+      expect(CONNECTOR_GENDER[id as keyof typeof CONNECTOR_GENDER], id).toEqual({ input: "male", output: "female" });
+      expect(CONNECTORS_WITH_GENDER_VARIATION.has(id), id).toBe(true);
+    }
+    expect(CONNECTOR_LABELS["cee17-16a-1p-230v"]).toBe("CEE17 16A 1P+N+E (blue, 230V)");
+    expect(CONNECTOR_LABELS["cee17-125a-3p-400v"]).toBe("CEE17 125A 3P+N+E (red, 400V)");
+  });
+
+  it("mates the same rating and phase with no adapter", () => {
+    for (const id of ids) {
+      expect(areConnectorsCompatible(id, id), id).toBe(true);
+      expect(needsAdapter(id, id), id).toBe(false);
+    }
+  });
+
+  it("needs an adapter between different ratings of the same phase, in both directions", () => {
+    for (const p of phases) {
+      for (const a of ratings) for (const b of ratings) {
+        if (a === b) continue;
+        expect(needsAdapter(`cee17-${a}-${p}`, `cee17-${b}-${p}`), `${a}->${b} ${p}`).toBe(true);
+        expect(areConnectorsCompatible(`cee17-${a}-${p}`, `cee17-${b}-${p}`)).toBe(true);
+      }
+    }
+  });
+
+  it("does not bridge 1-phase to 3-phase (different pole count and key position)", () => {
+    expect(areConnectorsCompatible("cee17-32a-1p-230v", "cee17-32a-3p-400v")).toBe(false);
+  });
+});
+
+describe("speaker multipin connectors (#403)", () => {
+  it("has labels, cable names, and sits in the Speaker group", () => {
+    expect(CONNECTOR_LABELS["sc32"]).toBe("L-Acoustics SC32");
+    expect(CONNECTOR_LABELS["pa-com-8"]).toBe("PA-COM 8-pin");
+    expect(CONNECTOR_TO_CABLE["sc32"]).toBe("SC32");
+    expect(CONNECTOR_TO_CABLE["pa-com-8"]).toBe("PA-COM 8-pin");
+    expect(CONNECTOR_GROUPS["Speaker"]).toContain("sc32");
+    expect(CONNECTOR_GROUPS["Speaker"]).toContain("pa-com-8");
+  });
+
+  it("follows the speakON-style gender (female chassis on both sides) with an override exposed", () => {
+    expect(CONNECTOR_GENDER["sc32"]).toEqual({ input: "female", output: "female" });
+    expect(CONNECTOR_GENDER["pa-com-8"]).toEqual({ input: "female", output: "female" });
+    expect(CONNECTORS_WITH_GENDER_VARIATION.has("sc32")).toBe(true);
+    expect(CONNECTORS_WITH_GENDER_VARIATION.has("pa-com-8")).toBe(true);
+  });
+});

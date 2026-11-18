@@ -1017,6 +1017,142 @@ export const templates: DeviceTemplate[] = [
       port("powerCON Out", "power", "output", "powercon"),
     ],
   },
+  // ── EU / UK power adapters (#408) ──────────────────────────────────
+  // Passive plug-shape adapters for the CEE 7 / BS 1363 connector types (#390). Adapter
+  // auto-insert reads this bundled library, not D1, so they must live in code.
+  {
+    id: "c0a80101-031d-4000-8000-000000000751",
+    deviceType: "adapter",
+    label: "Schuko (M) → UK BS 1363 (F) Adapter",
+    searchTerms: ["schuko", "cee 7", "uk", "bs 1363", "13a", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    ports: [
+      { ...port("Schuko In", "power", "input", "schuko"), directAttach: true },
+      port("UK Out", "power", "output", "uk-power"),
+    ],
+  },
+  {
+    id: "c0a80101-031e-4000-8000-000000000752",
+    deviceType: "adapter",
+    label: "UK BS 1363 (M) → Schuko (F) Adapter",
+    searchTerms: ["uk", "bs 1363", "13a", "schuko", "cee 7", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    ports: [
+      { ...port("UK In", "power", "input", "uk-power"), directAttach: true },
+      port("Schuko Out", "power", "output", "schuko"),
+    ],
+  },
+  {
+    id: "c0a80101-031f-4000-8000-000000000753",
+    deviceType: "adapter",
+    label: "Europlug (M) → UK BS 1363 (F) Adapter",
+    searchTerms: ["europlug", "cee 7/16", "uk", "bs 1363", "13a", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    ports: [
+      { ...port("Europlug In", "power", "input", "europlug"), directAttach: true },
+      port("UK Out", "power", "output", "uk-power"),
+    ],
+  },
+  {
+    id: "c0a80101-0320-4000-8000-000000000754",
+    deviceType: "adapter",
+    label: "Schuko (M) → IEC C13 (F) Adapter",
+    searchTerms: ["schuko", "cee 7", "iec", "c13", "kettle", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    ports: [
+      { ...port("Schuko In", "power", "input", "schuko"), directAttach: true },
+      port("IEC Out", "power", "output", "iec"),
+    ],
+  },
+  {
+    id: "c0a80101-0321-4000-8000-000000000755",
+    deviceType: "adapter",
+    label: "UK BS 1363 (M) → IEC C13 (F) Adapter",
+    searchTerms: ["uk", "bs 1363", "13a", "iec", "c13", "kettle", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    ports: [
+      { ...port("UK In", "power", "input", "uk-power"), directAttach: true },
+      port("IEC Out", "power", "output", "iec"),
+    ],
+  },
+  {
+    id: "c0a80101-0322-4000-8000-000000000756",
+    deviceType: "adapter",
+    label: "Edison (M) → Schuko (F) Plug Adapter (no voltage conversion)",
+    searchTerms: ["edison", "nema 5-15", "schuko", "cee 7", "travel", "voltage", "120v", "230v", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    // Plug adapter only: it changes the plug shape, not the voltage. Edison (M) plugs into a US
+    // socket, so this is for EU/UK gear on US mains. Running 120V-only gear from 230V mains
+    // needs a step-down transformer, which this does not provide.
+    ports: [
+      { ...port("Edison In", "power", "input", "edison"), directAttach: true },
+      port("Schuko Out", "power", "output", "schuko"),
+    ],
+  },
+  {
+    id: "c0a80101-0323-4000-8000-000000000757",
+    deviceType: "adapter",
+    label: "Edison (M) → UK BS 1363 (F) Plug Adapter (no voltage conversion)",
+    searchTerms: ["edison", "nema 5-15", "uk", "bs 1363", "13a", "travel", "voltage", "120v", "230v", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    // Plug adapter only: it changes the plug shape, not the voltage. Edison (M) plugs into a US
+    // socket, so this is for EU/UK gear on US mains. Running 120V-only gear from 230V mains
+    // needs a step-down transformer, which this does not provide.
+    ports: [
+      { ...port("Edison In", "power", "input", "edison"), directAttach: true },
+      port("UK Out", "power", "output", "uk-power"),
+    ],
+  },
+  {
+    id: "c0a80101-0330-4000-8000-000000000770",
+    deviceType: "adapter",
+    label: "Schuko (M) → Edison (F) Plug Adapter (no voltage conversion)",
+    searchTerms: ["schuko", "cee 7", "edison", "nema 5-15", "travel", "voltage", "120v", "230v", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    // Plug adapter only: it changes the plug shape, not the voltage. The (M) end plugs into the
+    // EU/UK socket, so this is for US gear on EU/UK mains. 120V-only gear still needs a step-down
+    // transformer or a 230V-rated supply.
+    ports: [
+      { ...port("Schuko In", "power", "input", "schuko"), directAttach: true },
+      port("Edison Out", "power", "output", "edison"),
+    ],
+  },
+  {
+    id: "c0a80101-0331-4000-8000-000000000771",
+    deviceType: "adapter",
+    label: "UK BS 1363 (M) → Edison (F) Plug Adapter (no voltage conversion)",
+    searchTerms: ["uk", "bs 1363", "13a", "edison", "nema 5-15", "travel", "voltage", "120v", "230v", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    // Plug adapter only: it changes the plug shape, not the voltage. The (M) end plugs into the
+    // EU/UK socket, so this is for US gear on EU/UK mains. 120V-only gear still needs a step-down
+    // transformer or a 230V-rated supply.
+    ports: [
+      { ...port("UK In", "power", "input", "uk-power"), directAttach: true },
+      port("Edison Out", "power", "output", "edison"),
+    ],
+  },
+  {
+    id: "c0a80101-0332-4000-8000-000000000772",
+    deviceType: "adapter",
+    label: "IEC C14 (M) → Schuko (F) Adapter",
+    searchTerms: ["iec", "c14", "c13", "schuko", "cee 7", "pdu", "lead", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    ports: [
+      { ...port("IEC In", "power", "input", "iec"), directAttach: true },
+      port("Schuko Out", "power", "output", "schuko"),
+    ],
+  },
+  {
+    id: "c0a80101-0333-4000-8000-000000000773",
+    deviceType: "adapter",
+    label: "IEC C14 (M) → UK BS 1363 (F) Adapter",
+    searchTerms: ["iec", "c14", "c13", "uk", "bs 1363", "13a", "pdu", "lead", "power", "adapter", "cable", "male", "female"],
+    powerDrawW: 0,
+    ports: [
+      { ...port("IEC In", "power", "input", "iec"), directAttach: true },
+      port("UK Out", "power", "output", "uk-power"),
+    ],
+  },
   // ── Barrels / Couplers ─────────────────────────────────────────────
   {
     id: "c0a80101-00dc-4000-8000-000000000220",

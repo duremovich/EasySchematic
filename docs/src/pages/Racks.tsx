@@ -199,7 +199,7 @@ export default function RacksPage() {
         Connector icons are drawn at real-world millimeter dimensions from manufacturer specs. The
         rack view picks an appropriate level of detail based on zoom: dots far out, silhouettes at
         mid-zoom, and detailed icons (with pin patterns, slot orientations, etc.) when zoomed in
-        close. EasySchematic ships with 59 connector types covering virtually every connector
+        close. EasySchematic ships with 102 connector types covering virtually every connector
         you&apos;d find on AV gear.
       </p>
 

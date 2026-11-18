@@ -354,6 +354,43 @@ function renderToslink({ color, detail, strokeWidth }: RenderProps) {
 
 const xlrOutline = (p: RenderProps) => <path d={dShapePath(19.0, 2.2)} fill="none" stroke={p.color} strokeWidth={p.strokeWidth} />;
 
+/** CEE17 / IEC 60309 face: round body, keyway notch at the top, `poles` pins on a ring
+ *  (3 = L/N/E, 5 = L1/L2/L3/N/E) with the earth contact drawn larger. */
+function renderCee17(diameter: number, poles: number, p: RenderProps) {
+  const outline = renderCircleWithNotch(diameter, diameter * 0.12, diameter * 0.06, "top", p);
+  if (p.detail < 2) return outline;
+  const ringR = diameter * 0.3;
+  const pinR = diameter * 0.045;
+  const pins: React.JSX.Element[] = [];
+  for (let i = 0; i < poles; i++) {
+    // Spread the poles around the lower arc; the last one is the (larger) earth contact.
+    const a = (Math.PI / 2) + ((i + 1) * 2 * Math.PI) / (poles + 1);
+    const isEarth = i === poles - 1;
+    pins.push(<circle key={i} cx={ringR * Math.cos(a)} cy={-ringR * Math.sin(a)} r={isEarth ? pinR * 1.3 : pinR} fill={p.color} />);
+  }
+  return <g>{outline}{pins}</g>;
+}
+
+/** Round multipin shell with a keyway at the top and `pinCount` contacts on concentric rings. */
+function renderRoundPins(diameter: number, pinCount: number, p: RenderProps) {
+  const outline = renderCircleWithNotch(diameter, diameter * 0.15, diameter * 0.07, "top", p);
+  if (p.detail < 2) return outline;
+  const pins: React.JSX.Element[] = [];
+  const outerCount = pinCount > 12 ? Math.ceil(pinCount * 0.6) : pinCount;
+  const outerR = diameter * 0.36;
+  for (let i = 0; i < outerCount; i++) {
+    const a = (i * 2 * Math.PI) / outerCount;
+    pins.push(<circle key={`o${i}`} cx={outerR * Math.cos(a)} cy={-outerR * Math.sin(a)} r={diameter * 0.022} fill={p.color} />);
+  }
+  const innerCount = pinCount - outerCount;
+  const innerR = diameter * 0.2;
+  for (let i = 0; i < innerCount; i++) {
+    const a = (i * 2 * Math.PI) / Math.max(innerCount, 1);
+    pins.push(<circle key={`i${i}`} cx={innerR * Math.cos(a)} cy={-innerR * Math.sin(a)} r={diameter * 0.022} fill={p.color} />);
+  }
+  return <g>{outline}{pins}</g>;
+}
+
 const CONNECTOR_SPECS: Partial<Record<BuiltinConnectorType, ConnectorSpec>> = {
   // ── XLR family ──
   "xlr-3": {
@@ -870,6 +907,23 @@ const CONNECTOR_SPECS: Partial<Record<BuiltinConnectorType, ConnectorSpec>> = {
     if (detail < 2) return outline;
     return (<g>{outline}<rect x={-2} y={-14} width={4} height={6} fill={color} /><rect x={-14.5} y={5} width={3} height={5.5} fill={color} /><rect x={11.5} y={5} width={3} height={5.5} fill={color} /></g>);
   }},
+
+  // ── CEE17 / IEC 60309 industrial power ──
+  // Face sizes are approximate (they vary by maker and by panel vs. cable-mount body); the
+  // pole count (3 or 5) and the keyway notch are what identify the family.
+  "cee17-16a-1p-230v": { widthMm: 52.0, heightMm: 52.0, render: (p) => renderCee17(52.0, 3, p) },
+  "cee17-16a-3p-400v": { widthMm: 52.0, heightMm: 52.0, render: (p) => renderCee17(52.0, 5, p) },
+  "cee17-32a-1p-230v": { widthMm: 60.0, heightMm: 60.0, render: (p) => renderCee17(60.0, 3, p) },
+  "cee17-32a-3p-400v": { widthMm: 60.0, heightMm: 60.0, render: (p) => renderCee17(60.0, 5, p) },
+  "cee17-63a-1p-230v": { widthMm: 84.0, heightMm: 84.0, render: (p) => renderCee17(84.0, 3, p) },
+  "cee17-63a-3p-400v": { widthMm: 84.0, heightMm: 84.0, render: (p) => renderCee17(84.0, 5, p) },
+  "cee17-125a-1p-230v": { widthMm: 100.0, heightMm: 100.0, render: (p) => renderCee17(100.0, 3, p) },
+  "cee17-125a-3p-400v": { widthMm: 100.0, heightMm: 100.0, render: (p) => renderCee17(100.0, 5, p) },
+
+  // ── Speaker multipin ──
+  // Approximate shells: SC32 is the larger multipole, PA-COM 8-pin a compact round shell.
+  "sc32": { widthMm: 38.0, heightMm: 38.0, render: (p) => renderRoundPins(38.0, 32, p) },
+  "pa-com-8": { widthMm: 24.0, heightMm: 24.0, render: (p) => renderRoundPins(24.0, 8, p) },
 
   // ── NEMA / Edison ──
   "edison": { widthMm: 33.3, heightMm: 26.2, render: ({ color, detail, strokeWidth }) => {
