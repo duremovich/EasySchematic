@@ -432,6 +432,68 @@ describe("port ids shared between devices (#395)", () => {
   });
 });
 
+describe("copying within one room doesn't duplicate the room (#395 follow-up)", () => {
+  const roomCount = () => S().nodes.filter((n) => n.type === "room").length;
+
+  it("all of one room's devices paste as devices, back into that room", () => {
+    loadFixture();
+    const kids = new Set(S().nodes.filter((n) => n.parentId === "room-3").map((n) => n.id));
+    useSchematicStore.setState({
+      nodes: S().nodes.map((n) => ({ ...n, selected: kids.has(n.id) })),
+      edges: S().edges.map((e) => ({ ...e, selected: false })),
+    });
+    const before = snap();
+    const rooms = roomCount();
+    S().copySelected();
+    S().pasteClipboard();
+    expect(roomCount()).toBe(rooms);
+    const { nodeMap, newEdges } = pairUp(before, kids);
+    // Copies whose centre is inside the room's box join it; ones that fall out the bottom
+    // land loose. (The paste offset is the whole selection's height, so with every device
+    // in the room selected, here they all fall below it.) Never a new room.
+    const room = node("room-3");
+    const ra = absPos(room, S().nodes);
+    for (const p of nodeMap.values()) {
+      const pa = absPos(p, S().nodes);
+      const cx = pa.x + (p.measured?.width ?? 144) / 2;
+      const cy = pa.y + (p.measured?.height ?? 48) / 2;
+      const inside = cx >= ra.x && cx <= ra.x + room.measured!.width! && cy >= ra.y && cy <= ra.y + room.measured!.height!;
+      expect(p.parentId, `${p.id}`).toBe(inside ? "room-3" : undefined);
+    }
+    // Their wiring still comes along, onto the copies' own ports.
+    const origEdges = before.edges.filter((e) => kids.has(e.source) && kids.has(e.target));
+    expect(newEdges.length).toBe(origEdges.length);
+    origEdges.forEach((o, i) => expectEdgeCopied(o, newEdges[i], before, nodeMap));
+  });
+
+  it("a device alone in its room pastes into that room, not a new one", () => {
+    loadFixture();
+    S().addRoom("Booth", { x: 6000, y: 0 }, { width: 600, height: 600 });
+    const booth = S().nodes.find((n) => n.type === "room" && (n.data as { label: string }).label === "Booth")!;
+    expect(S().placeDeviceInRoom("device-19", booth.id)).toBe(true);
+    useSchematicStore.setState({
+      nodes: S().nodes.map((n) => ({ ...n, selected: n.id === "device-19" })),
+      edges: S().edges.map((e) => ({ ...e, selected: false })),
+    });
+    const before = snap();
+    const rooms = roomCount();
+    S().copySelected();
+    S().pasteClipboard();
+    expect(roomCount()).toBe(rooms);
+    const { nodeMap } = pairUp(before, new Set(["device-19"]));
+    expect(nodeMap.get("device-19")!.parentId).toBe(booth.id);
+  });
+
+  it("Select All still copies the rooms", () => {
+    loadFixture();
+    const rooms = roomCount();
+    S().selectAll();
+    S().copySelected();
+    S().pasteClipboard();
+    expect(roomCount()).toBe(rooms * 2);
+  });
+});
+
 describe("partial selections (#395)", () => {
   it("a device copied from inside a room lands in whichever room it ends up inside, or none", () => {
     loadFixture();

@@ -1181,7 +1181,12 @@ function SchematicCanvas() {
               const endpoints = { sourcePort: srcPort, targetPort: tgtPort };
               if (srcPort.signalType !== tgtPort.signalType) {
                 adaptable = findAdaptersForSignalBridge(srcPort.signalType, tgtPort.signalType, allTemplates, endpoints).length > 0;
-              } else if (srcPort.connectorType && tgtPort.connectorType && srcPort.connectorType !== tgtPort.connectorType) {
+              } else if (
+                srcPort.connectorType && tgtPort.connectorType && srcPort.connectorType !== tgtPort.connectorType
+                // Same signal, both outputs or both inputs: the drop is refused on direction
+                // whatever adapter exists, so the ghost must not promise one (#439).
+                && state2.explainConnectionRefusal(connection as Connection)?.code !== "direction"
+              ) {
                 adaptable = findAdaptersForConnectorBridge(srcPort.connectorType, tgtPort.connectorType, srcPort.signalType, allTemplates, endpoints).length > 0
                   || !areConnectorsCompatible(srcPort.connectorType, tgtPort.connectorType);
               }

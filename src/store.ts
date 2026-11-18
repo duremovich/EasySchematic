@@ -43,7 +43,7 @@ import type { SignalType, ConnectorType, ScrollConfig, LineStyle, LabelCaseMode,
 import { defaultStubPlacement, healStubPortAlignment, nearestStubHandleSide, reconcileStubPairs, stubTagEndOf, STUB_H_EST, STUB_W_EST } from "./stubPlacement";
 import { estimateDeviceHeight, getPortAbsolutePositions, parentOffsetFromMap, settleTagsAfterMove, tagHostId } from "./snapUtils";
 import { stampNewDevice } from "./deviceWidth";
-import { refitDeviceWidths } from "./deviceWidthRefit";
+import { reanchorWidthChanges } from "./deviceWidthRefit";
 import { transformLabel } from "./labelCaseUtils";
 import { findFreeAdapterSlot, ADAPTER_GAP, DEVICE_W_EST } from "./adapterPlacement";
 import { adapterLegs, resolveHiddenAdapterIds, syncHiddenAdapterStyles } from "./adapterVisibility";
@@ -1249,6 +1249,48 @@ function warnNewExclusiveConflicts(edgesBefore: readonly ConnectionEdge[]): void
   const store = useSchematicStore.getState();
   for (const c of newExclusiveConflicts(store.nodes, edgesBefore, store.edges)) {
     store.addToast(exclusiveConflictMessage(c.deviceLabel, c.conflict), "info", 8000);
+  }
+}
+
+/** One stable label-case transform per mode, so "did the display change?" is a cheap
+ *  identity check inside reanchorWidthChanges. */
+const labelDisplayByMode = new Map<LabelCaseMode, (s: string) => string>();
+function labelDisplay(mode: LabelCaseMode): (s: string) => string {
+  let fn = labelDisplayByMode.get(mode);
+  if (!fn) {
+    fn = (s: string) => transformLabel(s, mode);
+    labelDisplayByMode.set(mode, fn);
+  }
+  return fn;
+}
+
+/**
+ * Keep right-side stub tags and manual waypoints attached when an action changed a
+ * fit-width device's width (#418). Every store action that can change a device's label
+ * set (ports, hidden ports, port labels, label case) calls this once, after its own
+ * updates and before saving, with the nodes it started from — so the re-anchor lands in
+ * the same undo step as the change. Unflagged devices are always 144 px and never move;
+ * when nothing moved this is a no-op.
+ *
+ * `labelCaseBefore` is only for setLabelCase, whose change is the transform itself.
+ */
+function settleFitWidthChanges(prevNodes: readonly SchematicNode[], labelCaseBefore?: LabelCaseMode): void {
+  const store = useSchematicStore.getState();
+  const r = reanchorWidthChanges(prevNodes, store.nodes, store.edges, {
+    displayBefore: labelDisplay(labelCaseBefore ?? store.labelCase),
+    displayAfter: labelDisplay(store.labelCase),
+  });
+  if (r.nodes === store.nodes && r.edges === store.edges) return;
+  useSchematicStore.setState({
+    edges: r.edges,
+    nodes: r.edges === store.edges ? r.nodes : reconcileWaypointNodes(r.nodes, r.edges),
+  });
+  const cleared = r.clearedRouteEdgeIds.length;
+  if (cleared > 0) {
+    store.addToast(
+      `Reset the manual route on ${cleared} connection${cleared > 1 ? "s" : ""} that the new device width would have folded back`,
+      "info",
+    );
   }
 }
 
@@ -3149,6 +3191,30 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     // devices had nowhere to belong. Nested rooms bubble up: once a sub-room is in, its
     // parent may now have every child in too. The selection itself is untouched, so
     // Delete after Ctrl+A still leaves the rooms.
+    //
+    // Only when the selection spans more than one room, though. A selection confined to one
+    // room — all of its devices, or the single device it holds — is the ordinary "make more
+    // of these" gesture: those copies paste as devices and land back in that room (or
+    // wherever they fall) by the enclosing-room rule, instead of spawning a duplicate room.
+    // Confinement is by top-level room, so a sub-room's devices inside one building stay
+    // a within-room duplicate too. An explicitly selected room is always copied.
+    const byId = new Map(state.nodes.map((n) => [n.id, n]));
+    const topRoomOf = (n: SchematicNode): string | null => {
+      let top: string | null = n.type === "room" ? n.id : null;
+      const seen = new Set<string>([n.id]);
+      let pid = n.parentId;
+      while (pid && !seen.has(pid)) {
+        seen.add(pid);
+        const p = byId.get(pid);
+        if (!p) break;
+        if (p.type === "room") top = p.id;
+        pid = p.parentId;
+      }
+      return top;
+    };
+    const topRooms = new Set<string | null>();
+    for (const id of ids) topRooms.add(topRoomOf(byId.get(id)!));
+    const confinedToOneRoom = topRooms.size === 1 && !topRooms.has(null);
     const childrenOf = new Map<string, SchematicNode[]>();
     for (const n of state.nodes) {
       if (!n.parentId || isDerived(n)) continue;
@@ -3156,7 +3222,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       list.push(n);
       childrenOf.set(n.parentId, list);
     }
-    for (let changed = true; changed; ) {
+    for (let changed = !confinedToOneRoom; changed; ) {
       changed = false;
       for (const n of state.nodes) {
         if (n.type !== "room" || ids.has(n.id)) continue;
@@ -3706,6 +3772,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       }
     }
 
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
   },
 
@@ -3718,33 +3785,28 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         return { ...n, data: { ...n.data, ...patch } } as DeviceNode;
       }),
     });
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
   },
 
   setDevicesFitWidth: (nodeIds, fit) => {
     const state = get();
-    // The width change moves each device's right edge; right-side stub tags and the
-    // manual waypoints nearest right-side handles move with it (deviceWidthRefit.ts).
-    const result = refitDeviceWidths(
-      state.nodes,
-      state.edges,
-      nodeIds,
-      fit,
-      (s) => transformLabel(s, state.labelCase),
-    );
-    if (result.changedIds.length === 0) return;
+    const ids = new Set(nodeIds);
+    const targets = state.nodes.some((n) =>
+      ids.has(n.id) && n.type === "device" && !!(n.data as DeviceData).fitWidth !== fit);
+    if (!targets) return;
     pushUndo({ nodes: state.nodes, edges: state.edges });
     set({
-      edges: result.edges,
-      nodes: result.edges === state.edges ? result.nodes : reconcileWaypointNodes(result.nodes, result.edges),
+      nodes: state.nodes.map((n) => {
+        if (!ids.has(n.id) || n.type !== "device") return n;
+        const rest = { ...(n.data as DeviceData) };
+        delete rest.fitWidth;
+        return { ...n, data: fit ? { ...rest, fitWidth: true } : rest } as DeviceNode;
+      }),
     });
-    const cleared = result.clearedRouteEdgeIds.length;
-    if (cleared > 0) {
-      get().addToast(
-        `Reset the manual route on ${cleared} connection${cleared > 1 ? "s" : ""} that the new width would have folded back`,
-        "info",
-      );
-    }
+    // The width change moves each device's right edge; right-side stub tags and the
+    // manual waypoints nearest right-side handles move with it, in this undo step.
+    settleFitWidthChanges(state.nodes);
     get().saveToLocalStorage();
   },
 
@@ -3783,6 +3845,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     });
 
     set({ nodes: newNodes, edges: newEdges });
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
   },
 
@@ -3836,6 +3899,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     });
 
     set({ nodes: newNodes, edges: newEdges });
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
   },
 
@@ -3870,6 +3934,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       if (fresh.length > 0) set({ pendingPortEditConflicts: [...existing, ...fresh] });
     }
 
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
     return result;
   },
@@ -3933,6 +3998,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       if (fresh.length > 0) set({ pendingPortEditConflicts: [...existing, ...fresh] });
     }
 
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
     return { updated: targetIds.size };
   },
@@ -4182,6 +4248,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     if (droppedCount > 0) toast += `, ${droppedCount} dropped`;
     if (installedCount > 0) toast += `; ${installedCount} card${installedCount !== 1 ? "s" : ""} installed`;
     get().addToast(toast, "success");
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
   },
 
@@ -4292,6 +4359,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
     const newNodes = state.nodes.map((n, i) => (i === nodeIdx ? newNode : n));
     set({ nodes: newNodes, edges: newEdges });
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
   },
 
@@ -4421,6 +4489,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     } as DeviceNode;
 
     set({ nodes: state.nodes.map((n, i) => (i === nodeIdx ? newNode : n)), edges: newEdges });
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
   },
 
@@ -4447,6 +4516,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       data: { ...rest, ports: snapshot.ports, ...(snapshot.slots ? { slots: snapshot.slots } : {}) },
     } as DeviceNode;
     set({ nodes: state.nodes.map((n, i) => (i === nodeIdx ? newNode : n)), edges: newEdges });
+    settleFitWidthChanges(state.nodes); // #418: right-side tags/waypoints follow a width change
     get().saveToLocalStorage();
   },
 
@@ -5815,7 +5885,11 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   },
 
   setLabelCase: (mode) => {
+    const state = get();
     set({ labelCase: mode });
+    // Case changes label widths, so every fit-width device may resize (#418). The label
+    // case is a preference, not an undoable edit, so the re-anchor isn't one either.
+    settleFitWidthChanges(state.nodes, state.labelCase);
     get().saveToLocalStorage();
   },
 

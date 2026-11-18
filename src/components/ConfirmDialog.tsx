@@ -34,7 +34,12 @@ export default function ConfirmDialog({
   // Mount-only: callers pass inline arrows, so re-running this would re-steal focus on
   // every render of the opener.
   useEffect(() => {
-    (initialFocus === "cancel" ? cancelRef : confirmRef).current?.focus();
+    const focus = () => (initialFocus === "cancel" ? cancelRef : confirmRef).current?.focus();
+    focus();
+    // Opened from a mousedown (a backdrop click), the browser's own default action then
+    // moves focus to the page body — take it back once that has run.
+    const t = setTimeout(focus, 0);
+    return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only, see above
 
   useEffect(() => {

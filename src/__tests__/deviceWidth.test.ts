@@ -32,7 +32,7 @@ import { portSide } from "../types";
 import type { ConnectionEdge, DeviceData, DeviceNode, DeviceTemplate, Port, SchematicFile, SchematicNode } from "../types";
 import type { ReactFlowInstance } from "@xyflow/react";
 import DxfParser from "dxf-parser";
-import { refitDeviceWidths } from "../deviceWidthRefit";
+import { reanchorWidthChanges, refitDeviceWidths } from "../deviceWidthRefit";
 import { getBundledTemplates } from "../templateApi";
 import { syntheticFixtures } from "../routingHarness/syntheticFixtures";
 import { DxfWriter } from "../dxfExport/writer";
@@ -527,5 +527,128 @@ describe("DXF export uses the same width (#418 review)", () => {
     const texts = dxfPortTexts(sq5Data());
     expect(texts).not.toContain("Analog Out 12");
     expect(texts.some((t) => t.startsWith("Analog Ou") && t.endsWith("..."))).toBe(true);
+  });
+});
+
+// F2 (deep review): a fit-width device's width follows its labels, so ANY change to its
+// label set moves its right edge — not just the Fit / Reset menu actions. Every store
+// action that can do that re-anchors the right side in the same undo step.
+describe("fit-width devices keep their right side attached through any width change (#418 F2)", () => {
+  const X = 160;
+
+  /** A placed (flagged) SQ-5 at x=160 — 176 px — with a stub tag 64 px off "Analog Out 12"
+   *  and a manual route off "Analog Out 11" whose first bend is 16 px past the edge. */
+  function flaggedScene(fit = true) {
+    const data = sq5Data(fit ? { fitWidth: true } : {});
+    const w = estimateDeviceWidth(data);
+    const out12 = data.ports.find((p) => p.label === "Analog Out 12")!;
+    const out11 = data.ports.find((p) => p.label === "Analog Out 11")!;
+    const nodes = [
+      { id: "sq5", type: "device", position: { x: X, y: 96 }, data },
+      {
+        id: "amp", type: "device", position: { x: 800, y: 96 },
+        data: { label: "Amp", deviceType: "amplifier", ports: [{ id: "amp-in", label: "In", direction: "input", signalType: "analog-audio" }] },
+      },
+      { id: "tag-r", type: "stub-label", position: { x: X + w + 64, y: 300 }, data: { side: "target", linkedConnectionId: "L1", placed: true } },
+    ] as unknown as SchematicNode[];
+    const edges = [
+      { id: "e-tag-r", source: "sq5", sourceHandle: out12.id, target: "tag-r", targetHandle: "l", data: { signalType: "analog-audio", linkedConnectionId: "L1" } },
+      {
+        id: "e-wp", source: "sq5", sourceHandle: out11.id, target: "amp", targetHandle: "amp-in",
+        data: { signalType: "analog-audio", manualWaypoints: [{ x: X + w + 16, y: 296 }, { x: X + w + 16, y: 112 }, { x: 700, y: 112 }] },
+      },
+    ] as unknown as ConnectionEdge[];
+    return { nodes, edges, w, out12 };
+  }
+
+  const tagX = () => useSchematicStore.getState().nodes.find((n) => n.id === "tag-r")!.position.x;
+  const firstWpX = () => useSchematicStore.getState().edges.find((e) => e.id === "e-wp")!.data!.manualWaypoints![0].x;
+  const storeWidth = () => estimateDeviceWidth(deviceById("sq5").data, (s) => s);
+
+  function load(fit = true) {
+    const sc = flaggedScene(fit);
+    useSchematicStore.setState({ nodes: sc.nodes, edges: sc.edges, labelCase: "as-typed" });
+    return sc;
+  }
+
+  /** What the device editor's Apply/Save sends: the whole data, one port renamed. */
+  function renameViaEditor(portId: string, label: string) {
+    const d = deviceById("sq5").data;
+    useSchematicStore.getState().updateDevice("sq5", {
+      ...d,
+      ports: d.ports.map((p) => (p.id === portId ? { ...p, label } : p)),
+    });
+  }
+
+  it("editor rename to a longer label: the tag and the first bends follow the wider edge", () => {
+    const { w, out12 } = load();
+    expect(w).toBe(176);
+    renameViaEditor(out12.id, "Analog Out 12 Main L/R Feed");
+    const w2 = storeWidth();
+    expect(w2).toBeGreaterThan(w);
+    expect(tagX()).toBe(X + w2 + 64);
+    expect(firstWpX()).toBe(X + w2 + 16);
+  });
+
+  it("…and one undo restores label, tag and route together", () => {
+    const { w, out12 } = load();
+    renameViaEditor(out12.id, "Analog Out 12 Main L/R Feed");
+    useSchematicStore.getState().undo();
+    expect(deviceById("sq5").data.ports.find((p) => p.id === out12.id)!.label).toBe("Analog Out 12");
+    expect(tagX()).toBe(X + w + 64);
+    expect(firstWpX()).toBe(X + w + 16);
+  });
+
+  it("editor rename to a shorter label: everything moves back in with the edge", () => {
+    const { w } = load();
+    const d = deviceById("sq5").data;
+    useSchematicStore.getState().updateDevice("sq5", {
+      ...d,
+      ports: d.ports.map((p) => ({ ...p, label: p.label.replace("Analog ", "") })),
+    });
+    expect(storeWidth()).toBe(144);
+    expect(tagX()).toBe(X + 144 + 64);
+    expect(firstWpX()).toBe(X + 144 + 16);
+    expect(w - 144).toBe(32);
+  });
+
+  it("hiding long-labelled ports (patchDeviceData) shrinks the box and the right side follows", () => {
+    load();
+    const d = deviceById("sq5").data;
+    const longOuts = d.ports.filter((p) => /^Analog Out 1[0-2]$/.test(p.label)).map((p) => p.id);
+    useSchematicStore.getState().patchDeviceData("sq5", { hiddenPorts: longOuts });
+    expect(storeWidth()).toBe(160);
+    expect(tagX()).toBe(X + 160 + 64);
+    expect(firstWpX()).toBe(X + 160 + 16);
+  });
+
+  it("a label-case switch re-fits every fit-width device and its right side follows; switching back restores it", () => {
+    const { w } = load();
+    useSchematicStore.getState().setLabelCase("uppercase");
+    const wUpper = estimateDeviceWidth(deviceById("sq5").data, (s) => s.toUpperCase());
+    expect(wUpper).toBeGreaterThan(w);
+    expect(tagX()).toBe(X + wUpper + 64);
+    expect(firstWpX()).toBe(X + wUpper + 16);
+    useSchematicStore.getState().setLabelCase("as-typed");
+    expect(tagX()).toBe(X + w + 64);
+    expect(firstWpX()).toBe(X + w + 16);
+  });
+
+  it("an unflagged (standard-width) device is a no-op: rename or case switch moves nothing", () => {
+    const { out12 } = load(false);
+    const before = { tag: tagX(), wp: firstWpX() };
+    renameViaEditor(out12.id, "Analog Out 12 Main L/R Feed");
+    useSchematicStore.getState().setLabelCase("uppercase");
+    expect({ tag: tagX(), wp: firstWpX() }).toEqual(before);
+    useSchematicStore.getState().setLabelCase("as-typed");
+  });
+
+  it("reanchorWidthChanges returns the same arrays when no width changed", () => {
+    const { nodes, edges } = flaggedScene();
+    const renamedDevice = nodes.map((n) => n.id !== "sq5" ? n : ({ ...n, data: { ...(n.data as DeviceData), label: "FOH Console" } }) as SchematicNode);
+    const r = reanchorWidthChanges(nodes, renamedDevice, edges);
+    expect(r.nodes).toBe(renamedDevice);
+    expect(r.edges).toBe(edges);
+    expect(r.resizedIds).toEqual([]);
   });
 });

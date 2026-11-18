@@ -216,19 +216,20 @@ function OffsetEdgeComponent({
     return s.nodes.find((n) => n.id === edge.target)?.type === "stub-label";
   });
 
-  // Read effective line style: per-connection override > per-signal-type default > solid
-  const lineStyle = useSchematicStore((s) => {
-    const edge = s.edges.find((e) => e.id === id);
-    if (edge?.data?.lineStyle) return edge.data.lineStyle as LineStyle;
-    const signalType = edge?.data?.signalType;
-    if (signalType && s.signalLineStyles?.[signalType]) return s.signalLineStyles[signalType]!;
-    return "solid" as LineStyle;
-  });
+  // Effective line style: per-connection override > per-signal-type default > solid.
+  // The connection's own fields come off the `data` prop (React Flow is handed the store's
+  // edges, so it is the same object) rather than another per-connection scan of
+  // s.edges (#437); only the per-signal default needs the store.
+  const signalTypeForStyle = data?.signalType;
+  const signalDefaultLineStyle = useSchematicStore((s) =>
+    signalTypeForStyle ? s.signalLineStyles?.[signalTypeForStyle] : undefined,
+  );
+  const lineStyle: LineStyle =
+    (data?.lineStyle as LineStyle | undefined) || signalDefaultLineStyle || "solid";
 
   // Per-connection line width override (#415); direct attach keeps its hairline.
-  const lineWidth = useSchematicStore((s) =>
-    effectiveLineWidth(s.edges.find((e) => e.id === id)?.data),
-  );
+  // Read off the `data` prop, not a store scan, for the same reason (#437).
+  const lineWidth = effectiveLineWidth(data);
 
   // Read routed waypoints (serialized for stability)
   const routeWpStr = useSchematicStore((s) => {
