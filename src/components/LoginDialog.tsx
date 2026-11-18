@@ -47,6 +47,7 @@ export default function LoginDialog({ open, onClose }: Props) {
 
   return (
     <div
+      data-editor-layer
       className="fixed inset-0 z-[9999] flex items-center justify-center"
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
       onClick={handleClose}

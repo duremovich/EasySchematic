@@ -76,6 +76,7 @@ import { connectorLabel, registerTypes, signalCssColor, signalLabel } from "./ty
 import { normalizeTypeDefs, type CustomTypeDefs, type CustomTypeKind } from "./customTypes/model";
 import { embeddedTypesFor, libraryTypesFor } from "./documentTypes";
 import { importUserTypes } from "./userTypes";
+import type { DeviceSlotSnapshot } from "./deviceEditorHistory";
 import { inferRackHeightU, inferRackForm, shelfFootprintMm, shelfInnerWidthMm } from "./rackUtils";
 import { DEVICE_TEMPLATES } from "./deviceLibrary";
 import { createDefaultLayout } from "./titleBlockLayout";
@@ -465,9 +466,16 @@ interface SchematicState {
   updateSlot: (nodeId: string, slotId: string, patch: { label?: string; slotFamily?: string; hidden?: boolean }) => void;
   /** Remove a slot, its ports, descendant slots, and any edges connected to their ports. */
   removeSlot: (nodeId: string, slotId: string) => void;
+  /** Device editor undo/redo of a slot edit (#412): put a device's slots, ports and the
+   *  connections touching it back to a captured snapshot, as one undo step. */
+  restoreDeviceSlotState: (nodeId: string, snapshot: DeviceSlotSnapshot) => void;
   setEditingNodeId: (id: string | null) => void;
   setCreatingNodeId: (id: string | null) => void;
   createAndEditDevice: (template: DeviceTemplate, position: { x: number; y: number }) => void;
+  /** Cancel/Discard on a device placed by `createAndEditDevice` that was never applied:
+   *  take it back off the schematic along with every canvas step pushed while its editor
+   *  was open (slot edits, editor undo of them), not just the last one (#413). */
+  discardProvisionalDevice: (nodeId: string) => void;
   addRoom: (label: string, position: { x: number; y: number }, size?: { width: number; height: number }) => void;
   updateRoomLabel: (nodeId: string, label: string) => void;
   updateRoom: (nodeId: string, data: import("./types").RoomData) => void;
@@ -1132,6 +1140,10 @@ const redoStack: Snapshot[] = [];
 
 /** If set, the next pushUndo call uses this instead of the passed snapshot. */
 let pendingUndoSnapshot: Snapshot | null = null;
+
+/** The undo entry `createAndEditDevice` pushed for its provisional device — the state to
+ *  return to if the device is discarded unapplied (see discardProvisionalDevice). */
+let provisionalUndoMark: { nodeId: string; entry: Snapshot } | null = null;
 
 /**
  * While set, pushUndo only counts the call instead of recording it — runAsSingleUndoStep
@@ -4308,19 +4320,79 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  restoreDeviceSlotState: (nodeId, snapshot) => {
+    const state = get();
+    const nodeIdx = state.nodes.findIndex((n) => n.id === nodeId && n.type === "device");
+    if (nodeIdx === -1) return;
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    const node = state.nodes[nodeIdx] as DeviceNode;
+
+    // Only this device's connections are swapped. Ones that survive keep their place in
+    // the list; ones the snapshot brings back (e.g. undoing a slot removal) are appended.
+    const snapIds = new Set(snapshot.edges.map((e) => e.id));
+    const currentIds = new Set(state.edges.map((e) => e.id));
+    const touches = (e: ConnectionEdge) => e.source === nodeId || e.target === nodeId;
+    const newEdges = [
+      ...state.edges.filter((e) => !touches(e) || snapIds.has(e.id)),
+      ...snapshot.edges.filter((e) => !currentIds.has(e.id)),
+    ];
+
+    const { slots: _drop, ...rest } = node.data;
+    const newNode = {
+      ...node,
+      data: { ...rest, ports: snapshot.ports, ...(snapshot.slots ? { slots: snapshot.slots } : {}) },
+    } as DeviceNode;
+    set({ nodes: state.nodes.map((n, i) => (i === nodeIdx ? newNode : n)), edges: newEdges });
+    get().saveToLocalStorage();
+  },
+
   setEditingNodeId: (id) => {
     set({ editingNodeId: id });
   },
 
   setCreatingNodeId: (id) => {
+    if (!id) provisionalUndoMark = null; // committed (or discarded) — no longer provisional
     set({ creatingNodeId: id });
   },
 
   createAndEditDevice: (template, position) => {
+    const topBefore = undoStack[undoStack.length - 1];
     get().addDevice(template, position);
     const nodes = get().nodes;
     const newNodeId = nodes[nodes.length - 1].id;
+    const topAfter = undoStack[undoStack.length - 1];
+    provisionalUndoMark = topAfter && topAfter !== topBefore ? { nodeId: newNodeId, entry: topAfter } : null;
     set({ editingNodeId: newNodeId, creatingNodeId: newNodeId });
+  },
+
+  discardProvisionalDevice: (nodeId) => {
+    // Only the device still awaiting its first Apply — never one already committed.
+    if (get().creatingNodeId !== nodeId) return;
+    const mark = provisionalUndoMark?.nodeId === nodeId ? provisionalUndoMark.entry : null;
+    provisionalUndoMark = null;
+    const idx = mark ? undoStack.lastIndexOf(mark) : -1;
+    if (idx >= 0) {
+      // Drop every step pushed since the device was placed, then undo the placement
+      // itself — the schematic is back exactly as it was (labels renumbered by the
+      // placement included) and none of those steps linger in canvas history.
+      undoStack.length = idx + 1;
+      get().undo();
+      redoStack.length = 0;
+      set({ creatingNodeId: null, undoSize: undoStack.length, redoSize: 0 });
+      return;
+    }
+    // The placement step has aged out of the history cap: remove the device directly.
+    const state = get();
+    if (!state.nodes.some((n) => n.id === nodeId)) {
+      set({ creatingNodeId: null });
+      return;
+    }
+    set({
+      nodes: renumberNodes(state.nodes.filter((n) => n.id !== nodeId)),
+      edges: state.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
+      creatingNodeId: null,
+    });
+    get().saveToLocalStorage();
   },
 
   addRoom: (label, position, size) => {

@@ -42,8 +42,28 @@ import { visiblePortRowControls, PORT_ROW_CONTROL_TITLES, type PortRowControlId 
 import { normalizeExclusiveGroup } from "../exclusivePorts";
 import { connectorGroups, connectorLabel, connectorsByLabel, defaultConnector, perRegistryVersion, signalCssColor, signalLabel, signalsByLabel } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
-import { NEW_TYPE_OPTION_LABEL, NEW_TYPE_VALUE, requestNewType } from "../newTypeRequest";
+import { NEW_TYPE_OPTION_LABEL, NEW_TYPE_VALUE, requestNewType, useTypeDialogRequest } from "../newTypeRequest";
 import DeviceTypeField from "./DeviceTypeField";
+import {
+  edgesTouching,
+  editorShortcut,
+  emptyHistory,
+  isTextEditingTarget,
+  movePortInList,
+  ownsEditorKey,
+  EDITOR_LAYER_SELECTOR,
+  recordEntry,
+  redoStep,
+  restorePortStructure,
+  restoreSlotStructure,
+  samePortStructure,
+  undoStep,
+  type DeviceSlotSnapshot,
+  type EditorHistory,
+  type EditorHistoryEntry,
+  type EditorShortcut,
+} from "../deviceEditorHistory";
+import { deviceEditorFields, isDeviceEditorDirty, type DeviceEditorFields, type DeviceEditorPorts } from "../deviceEditorDirty";
 
 /** Grouped connector dropdown order — preserves `connectorGroups()` ordering, alphabetizes within each
  *  group, and sweeps any connector missing from its groups into "Other" so a new ConnectorType
@@ -94,6 +114,7 @@ const MIME = "application/easyschematic-port";
 
 export default function DeviceEditor() {
   useTypeRegistryVersion(); // the signal / connector pickers list community types
+  const typeDialogRequest = useTypeDialogRequest(); // "+ New … type" dialog open over the editor
   const editingNodeId = useSchematicStore((s) => s.editingNodeId);
   const nodes = useSchematicStore((s) => s.nodes);
   const updateDevice = useSchematicStore((s) => s.updateDevice);
@@ -101,7 +122,7 @@ export default function DeviceEditor() {
   const edges = useSchematicStore((s) => s.edges);
   const setEditingNodeId = useSchematicStore((s) => s.setEditingNodeId);
   const setCreatingNodeId = useSchematicStore((s) => s.setCreatingNodeId);
-  const undo = useSchematicStore((s) => s.undo);
+  const discardProvisionalDevice = useSchematicStore((s) => s.discardProvisionalDevice);
   const addCustomTemplate = useSchematicStore((s) => s.addCustomTemplate);
   const updateCustomTemplate = useSchematicStore((s) => s.updateCustomTemplate);
   const propagateTemplateToInstances = useSchematicStore((s) => s.propagateTemplateToInstances);
@@ -115,8 +136,12 @@ export default function DeviceEditor() {
   const templatePresets = useSchematicStore((s) => s.templatePresets);
   const setTemplatePreset = useSchematicStore((s) => s.setTemplatePreset);
   const patchDeviceData = useSchematicStore((s) => s.patchDeviceData);
+  const restoreDeviceSlotState = useSchematicStore((s) => s.restoreDeviceSlotState);
 
   const node = nodes.find((n) => n.id === editingNodeId && n.type === "device") as DeviceNode | undefined;
+  // Set only while THIS editor is showing a device. `editingNodeId` alone is shared with
+  // the Room / Annotation editors and text-stub inline edit.
+  const deviceSessionId = node ? editingNodeId : null;
 
   // Bumped after an in-editor template sync so the metadata effect below re-reads the
   // freshly-synced node.data. The effect is keyed on editingNodeId (which doesn't change
@@ -231,6 +256,16 @@ export default function DeviceEditor() {
   // In-app stand-in for window.confirm() on the "update N other instances?" prompts (#328) —
   // native confirm() clashed with the app's design language and blocked agentic testing.
   const [pendingInstanceUpdate, setPendingInstanceUpdate] = useState<{ message: string; run: () => void } | null>(null);
+  // "Discard changes?" — shown instead of closing when the form has unsaved edits (#413).
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  // What the form loaded, for the unsaved-changes check (#413). Re-taken whenever the form
+  // re-syncs from the store (open, in-editor template sync, a card install changing ports).
+  const baselineFieldsRef = useRef<DeviceEditorFields | null>(null);
+  const baselinePortsRef = useRef<DeviceEditorPorts | null>(null);
+  // Form-local structural undo/redo (#412). A ref, not state: nothing renders from it.
+  const historyRef = useRef<EditorHistory<EditorHistoryEntry>>(emptyHistory());
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Face-plate editor
   const [showFacePlateEditor, setShowFacePlateEditor] = useState(false);
@@ -250,44 +285,50 @@ export default function DeviceEditor() {
     const tpl = node.data.templateId
       ? getTemplateById(node.data.templateId, customTemplates)
       : undefined;
-    setLabel(node.data.label);
-    setShortName(node.data.shortName ?? "");
-    setUseShortName(node.data.useShortName);
-    setWrapLabelState(node.data.wrapLabel);
-    setHostname(node.data.hostname ?? "");
-    setDeviceType(node.data.deviceType);
-    setManufacturer(node.data.manufacturer ?? "");
-    setModelNumber(node.data.modelNumber ?? "");
-    setReferenceUrl(node.data.referenceUrl ?? tpl?.referenceUrl ?? "");
-    setCategory(node.data.category ?? tpl?.category ?? "");
-    setColor(node.data.color);
-    setHeaderColor(node.data.headerColor);
+    const init = deviceEditorFields(node.data, tpl);
+    baselineFieldsRef.current = init;
+    // A different device, or the form just re-read this one from the store: earlier undo
+    // steps no longer describe what's on screen (#412).
+    historyRef.current = emptyHistory();
+    setConfirmDiscard(false);
+    setLabel(init.label);
+    setShortName(init.shortName);
+    setUseShortName(init.useShortName);
+    setWrapLabelState(init.wrapLabel);
+    setHostname(init.hostname);
+    setDeviceType(init.deviceType);
+    setManufacturer(init.manufacturer);
+    setModelNumber(init.modelNumber);
+    setReferenceUrl(init.referenceUrl);
+    setCategory(init.category);
+    setColor(init.color);
+    setHeaderColor(init.headerColor);
     setHeaderColorEdited(false);
-    setShowAllPorts(node.data.showAllPorts ?? false);
+    setShowAllPorts(init.showAllPorts);
     setPortVisOpen(false);
-    setDhcpServer(node.data.dhcpServer ? { ...node.data.dhcpServer } : undefined);
-    setPowerDrawW(node.data.powerDrawW);
-    setPowerCapacityW(node.data.powerCapacityW);
-    setVoltage(node.data.voltage);
-    setThermalBtuh(node.data.thermalBtuh);
-    setPoeBudgetW(node.data.poeBudgetW);
-    setPoeDrawW(node.data.poeDrawW);
-    setUnitCost(node.data.unitCost);
-    setSerialNumber(node.data.serialNumber ?? "");
-    setNote(node.data.note ?? "");
-    setIsSpare(node.data.isSpare ?? false);
-    setProcurementSource(node.data.procurementSource);
-    setHeightMm(node.data.heightMm);
-    setWidthMm(node.data.widthMm);
-    setDepthMm(node.data.depthMm);
-    setWeightKg(node.data.weightKg);
-    setRackForm(node.data.rackForm);
-    setIsCableAccessory(node.data.isCableAccessory ?? false);
-    setIntegratedWithCable(node.data.integratedWithCable ?? false);
-    setIsVenueProvided(node.data.isVenueProvided ?? false);
-    setAdapterVisibility(node.data.adapterVisibility ?? "default");
-    setAuxiliaryData(normalizeAuxRows(node.data.auxiliaryData));
-    setSearchTermsRaw((node.data.searchTerms ?? []).join(", "));
+    setDhcpServer(init.dhcpServer);
+    setPowerDrawW(init.powerDrawW);
+    setPowerCapacityW(init.powerCapacityW);
+    setVoltage(init.voltage);
+    setThermalBtuh(init.thermalBtuh);
+    setPoeBudgetW(init.poeBudgetW);
+    setPoeDrawW(init.poeDrawW);
+    setUnitCost(init.unitCost);
+    setSerialNumber(init.serialNumber);
+    setNote(init.note);
+    setIsSpare(init.isSpare);
+    setProcurementSource(init.procurementSource);
+    setHeightMm(init.heightMm);
+    setWidthMm(init.widthMm);
+    setDepthMm(init.depthMm);
+    setWeightKg(init.weightKg);
+    setRackForm(init.rackForm);
+    setIsCableAccessory(init.isCableAccessory);
+    setIntegratedWithCable(init.integratedWithCable);
+    setIsVenueProvided(init.isVenueProvided);
+    setAdapterVisibility(init.adapterVisibility);
+    setAuxiliaryData(init.auxiliaryData);
+    setSearchTermsRaw(init.searchTermsRaw);
   }, [editingNodeId, syncNonce]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
@@ -338,6 +379,8 @@ export default function DeviceEditor() {
       sameNode ? [...synced, ...prev.filter((p) => p.id.startsWith("draft-"))] : synced,
     );
     setHiddenPorts(node.data.hiddenPorts ?? []);
+    // The store's ports are what Apply would leave untouched; carried-over drafts are not.
+    baselinePortsRef.current = { ports: synced, hiddenPorts: node.data.hiddenPorts ?? [] };
   }, [editingNodeId, portSignature]);
   /* eslint-enable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 
@@ -360,8 +403,10 @@ export default function DeviceEditor() {
     // provisional-undo branch and revert the user's just-saved data.
     const { editingNodeId: eId, creatingNodeId: cId } = useSchematicStore.getState();
     if (eId && eId === cId) {
-      // Provisional node — user cancelled without saving, undo the addDevice
-      undo();
+      // Provisional node — user cancelled without saving: take the device back off the
+      // schematic. Not a single undo(): slot edits (and editor undo of them) push canvas
+      // steps of their own, so the placement isn't necessarily on top (#413).
+      discardProvisionalDevice(eId);
       setCreatingNodeId(null);
     }
     // Reset the port-sync session marker so REOPENING this device does a clean
@@ -371,8 +416,14 @@ export default function DeviceEditor() {
     // were already either committed (under new IDs) or discarded, so re-merging
     // them duplicates ports on every Apply→reopen cycle.
     syncedPortsNodeRef.current = null;
+    // Apply and Cancel both end the editor's undo history (#412), and the dirty baseline
+    // goes with the session so nothing can read a stale one (#413).
+    historyRef.current = emptyHistory();
+    baselineFieldsRef.current = null;
+    baselinePortsRef.current = null;
+    setConfirmDiscard(false);
     setEditingNodeId(null);
-  }, [undo, setCreatingNodeId, setEditingNodeId]);
+  }, [discardProvisionalDevice, setCreatingNodeId, setEditingNodeId]);
 
   // Build the DeviceData for the node under edit from the current form state. `overrides`
   // let the template-update flows re-point templateId / bump templateVersion on the edited
@@ -465,13 +516,13 @@ export default function DeviceEditor() {
   // and the stashed instance update is dropped without ever running. (window.confirm()
   // got this for free by blocking the page — #328.)
   const onCtrlEnter = useCallback((e: React.KeyboardEvent) => {
-    if (pendingInstanceUpdate) return;
+    if (pendingInstanceUpdate || confirmDiscard) return;
     if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
       e.preventDefault();
       e.stopPropagation();
       handleSave();
     }
-  }, [handleSave, pendingInstanceUpdate]);
+  }, [handleSave, pendingInstanceUpdate, confirmDiscard]);
 
   // What a template-family save should record as the header color. `savedHeaderColor` is
   // whatever the object being written already carried, so updating a template that owns a
@@ -730,6 +781,9 @@ export default function DeviceEditor() {
       const byLabel = existingPorts.find((dp) => !dp.templatePortId && dp.label === tp.label && !usedDeviceIds.has(dp.id));
       return byLabel?.id;
     };
+    // A revert replaces the whole form, not just ports; earlier steps would restore a
+    // half-reverted mix, so it starts a fresh history (#412).
+    historyRef.current = emptyHistory();
     setPorts(tpl.ports.map((p) => {
       const deviceId = matchDeviceId(p);
       if (deviceId) usedDeviceIds.add(deviceId);
@@ -800,6 +854,7 @@ export default function DeviceEditor() {
     const preset = templatePresets[node.data.templateId];
     if (!preset) return;
 
+    historyRef.current = emptyHistory(); // see handleRevertToTemplate (#412)
     setPorts(preset.ports.map((p) => ({
       id: p.id,
       label: p.label,
@@ -831,11 +886,20 @@ export default function DeviceEditor() {
     setHeaderColorEdited(false);
   }, [node, templatePresets, customTemplates, projectHeaderColor, appHeaderColor]);
 
+  // Structural port edits record the list from before the change on the editor's own
+  // undo stack (#412); per-field edits (updatePort) deliberately don't.
+  const recordPortsChange = () => {
+    historyRef.current = recordEntry(historyRef.current, { kind: "ports", ports });
+  };
+
   const addPort = (direction: PortDirection) => {
+    recordPortsChange();
     setPorts([...ports, newPortDraft(direction)]);
   };
 
   const removePort = (id: string) => {
+    if (!ports.some((p) => p.id === id)) return;
+    recordPortsChange();
     setPorts(ports.filter((p) => p.id !== id));
   };
 
@@ -843,6 +907,8 @@ export default function DeviceEditor() {
   // after the original. The clone gets a fresh draft id (so it saves as a new
   // port) and a uniquified name derived from the source (e.g. "Input 1" → "Input 2").
   const duplicatePort = (id: string) => {
+    if (!ports.some((p) => p.id === id)) return;
+    recordPortsChange();
     setPorts((prev) => {
       const idx = prev.findIndex((p) => p.id === id);
       if (idx === -1) return prev;
@@ -872,46 +938,138 @@ export default function DeviceEditor() {
     if (count < 1) return;
     const stamp = Date.now();
     const newPorts = buildBulkPorts({ ...spec, start: Math.floor(spec.start), count }, (i) => `draft-${stamp}-${Math.random().toString(36).slice(2, 6)}-${i}`);
+    recordPortsChange();
     setPorts([...ports, ...newPorts]);
   };
 
-  // Drag-and-drop: move a port to a new position/section
-  const movePortTo = useCallback(
-    (portId: string, targetDirection: PortDirection, targetIndex: number) => {
-      setPorts((prev) => {
-        const port = prev.find((p) => p.id === portId);
-        if (!port) return prev;
-
-        const without = prev.filter((p) => p.id !== portId);
-        const updated = { ...port, direction: targetDirection };
-
-        const sectionPorts = without.filter((p) => p.direction === targetDirection);
-        const insertAfterId = targetIndex > 0 ? sectionPorts[targetIndex - 1]?.id : null;
-
-        if (sectionPorts.length === 0 || targetIndex === 0) {
-          const firstOfSection = without.findIndex((p) => p.direction === targetDirection);
-          if (firstOfSection === -1) {
-            return [...without, updated];
-          }
-          without.splice(firstOfSection, 0, updated);
-          return [...without];
-        }
-
-        const insertAfterIdx = without.findIndex((p) => p.id === insertAfterId);
-        without.splice(insertAfterIdx + 1, 0, updated);
-        return [...without];
-      });
-    },
-    [],
-  );
-
+  // Drag-and-drop: move a port to a new position/section. A drop back where it started
+  // isn't a change and doesn't take an undo step.
   const handleDragEnd = useCallback(() => {
     if (draggedPortId && dropTarget) {
-      movePortTo(draggedPortId, dropTarget.direction, dropTarget.index);
+      const next = movePortInList(ports, draggedPortId, dropTarget.direction, dropTarget.index);
+      if (!samePortStructure(ports, next)) {
+        historyRef.current = recordEntry(historyRef.current, { kind: "ports", ports });
+        setPorts(next);
+      }
     }
     setDraggedPortId(null);
     setDropTarget(null);
-  }, [draggedPortId, dropTarget, movePortTo]);
+  }, [draggedPortId, dropTarget, ports]);
+
+  // Snapshot of the store-side state an expansion-slot edit touches. Slot edits write to
+  // the store straight away (they always have), so their undo step restores it there.
+  const captureSlotState = useCallback((): DeviceSlotSnapshot | null => {
+    if (!editingNodeId) return null;
+    const s = useSchematicStore.getState();
+    const n = s.nodes.find((x) => x.id === editingNodeId && x.type === "device") as DeviceNode | undefined;
+    if (!n) return null;
+    return { slots: n.data.slots, ports: n.data.ports, edges: edgesTouching(s.edges, editingNodeId) };
+  }, [editingNodeId]);
+
+  const recordSlotChange = useCallback(() => {
+    const snap = captureSlotState();
+    if (snap) historyRef.current = recordEntry(historyRef.current, { kind: "slots", ...snap });
+  }, [captureSlotState]);
+
+  // Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y inside the editor (#412).
+  const applyHistoryStep = (direction: "undo" | "redo") => {
+    const capture = (entry: EditorHistoryEntry): EditorHistoryEntry => {
+      if (entry.kind === "ports") return { kind: "ports", ports };
+      const snap = captureSlotState();
+      return snap ? { kind: "slots", ...snap } : entry;
+    };
+    const step = direction === "undo"
+      ? undoStep(historyRef.current, capture)
+      : redoStep(historyRef.current, capture);
+    if (!step) return;
+    historyRef.current = step.history;
+    const r = step.restore;
+    if (r.kind === "ports") {
+      setPorts(restorePortStructure(r.ports, ports));
+    } else if (editingNodeId) {
+      restoreDeviceSlotState(editingNodeId, {
+        slots: restoreSlotStructure(r.slots, captureSlotState()?.slots),
+        ports: r.ports,
+        edges: r.edges,
+      });
+    }
+  };
+
+  // Current form values, in the same shape `deviceEditorFields` loads them in (#413).
+  const currentFields = (): DeviceEditorFields => ({
+    label, shortName, useShortName, wrapLabel, hostname, deviceType, manufacturer, modelNumber,
+    referenceUrl, category, color, headerColor, showAllPorts, dhcpServer, powerDrawW,
+    powerCapacityW, voltage, thermalBtuh, poeBudgetW, poeDrawW, unitCost, serialNumber, note,
+    isSpare, procurementSource, heightMm, widthMm, depthMm, weightKg, rackForm,
+    isCableAccessory, integratedWithCable, isVenueProvided, adapterVisibility, auxiliaryData,
+    searchTermsRaw,
+  });
+
+  // Cancel, ×, Esc and a click outside all come through here: they close straight away
+  // when nothing has changed, and ask first when closing would throw edits away (#413).
+  const requestClose = () => {
+    const fields = baselineFieldsRef.current;
+    const portsBase = baselinePortsRef.current;
+    const dirty = !!fields && !!portsBase && isDeviceEditorDirty(
+      { fields, ports: portsBase },
+      { fields: currentFields(), ports: { ports, hiddenPorts } },
+    );
+    if (dirty) setConfirmDiscard(true);
+    else close();
+  };
+
+  // Editor keys: Esc, and Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, Ctrl/Cmd+Y. Listened for on the
+  // window in the capture phase — with nothing focused the key's target is <body>, which
+  // no handler inside the dialog would ever see but the canvas undo shortcut would.
+  const handleShortcut = (shortcut: EditorShortcut, e: KeyboardEvent) => {
+    const el = e.target instanceof Element ? e.target : null;
+    const editor = wrapperRef.current;
+    // The key belongs to the editor only when its nearest marked layer is the editor
+    // itself — a dialog stacked on top (discard / instance prompts, card creator, template
+    // sync, face-plate editor, the custom-type dialog, …) handles its own keys. A target in
+    // no layer (body, or the canvas device just double-clicked) is the editor's unless one
+    // of those dialogs is open. No editor rendered → nothing is ours.
+    const nestedOpen = !!typeDialogRequest || !!editor?.querySelector(EDITOR_LAYER_SELECTOR);
+    if (!ownsEditorKey({ editor, targetLayer: el?.closest(EDITOR_LAYER_SELECTOR) ?? null, nestedOpen })) return;
+    if (shortcut === "close") {
+      if (saveMenuOpen) return; // the split-button menu closes itself on Esc
+      e.preventDefault();
+      e.stopPropagation();
+      if (auxFieldMenuIdx !== null) setAuxFieldMenuIdx(null);
+      else requestClose();
+      return;
+    }
+    // Typing undo stays with the field (the canvas shortcut skips text fields too).
+    if (isTextEditingTarget(el)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    applyHistoryStep(shortcut);
+  };
+  const shortcutRef = useRef(handleShortcut);
+  useEffect(() => {
+    shortcutRef.current = handleShortcut;
+  });
+  useEffect(() => {
+    if (!deviceSessionId) return;
+    const onKey = (e: KeyboardEvent) => {
+      const shortcut = editorShortcut(e);
+      if (shortcut) shortcutRef.current(shortcut, e);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [deviceSessionId]);
+
+  // Opening by double-click leaves focus on the device on the canvas, behind the dialog.
+  // Pull it into the editor so the first Esc / Ctrl+Z lands here — but only from outside
+  // the editor, never out of a field or a dialog already open over it.
+  useEffect(() => {
+    if (!deviceSessionId) return;
+    const editor = wrapperRef.current;
+    const active = document.activeElement;
+    if (!editor || (active && editor.contains(active))) return;
+    if (active instanceof Element && active.closest(EDITOR_LAYER_SELECTOR)) return;
+    panelRef.current?.focus({ preventScroll: true });
+  }, [deviceSessionId]);
 
   // Dirty detection: compare current editor state against the effective default
   // (preset if one exists, otherwise raw template)
@@ -994,15 +1152,17 @@ export default function DeviceEditor() {
   const passthroughPorts = ports.filter((p) => p.direction === "passthrough");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" onMouseDown={(e) => { if (e.target === e.currentTarget && !saveMenuOpen) close(); }} onKeyDownCapture={onCtrlEnter}>
+    <div data-editor-layer className="fixed inset-0 z-50 flex items-center justify-center bg-black/30" ref={wrapperRef} onMouseDown={(e) => { if (e.target === e.currentTarget && !saveMenuOpen) requestClose(); }} onKeyDownCapture={onCtrlEnter}>
       <div
-        className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg shadow-2xl w-[560px] max-h-[85vh] flex flex-col"
+        ref={panelRef}
+        tabIndex={-1}
+        className="bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg shadow-2xl w-[560px] max-h-[85vh] flex flex-col outline-none"
       >
         {/* Header */}
         <div className="px-4 py-3 border-b border-[var(--color-border)] flex items-center justify-between">
           <h2 className="text-sm font-semibold text-[var(--color-text-heading)]">Device Properties</h2>
           <button
-            onClick={close}
+            onClick={requestClose}
             className="text-[var(--color-text-muted)] hover:text-[var(--color-text-heading)] text-lg leading-none cursor-pointer"
           >
             &times;
@@ -1528,6 +1688,7 @@ export default function DeviceEditor() {
                 nodeId={node.id}
                 installedSlots={node.data.slots ?? []}
                 slotDefs={slotDefs}
+                onBeforeChange={recordSlotChange}
               />
             );
           })()}
@@ -1930,7 +2091,7 @@ export default function DeviceEditor() {
           </div>
           <div className="flex-1" />
           <button
-            onClick={close}
+            onClick={requestClose}
             className="px-3 py-1.5 text-xs rounded bg-[var(--color-surface)] text-[var(--color-text)] hover:text-[var(--color-text-heading)] border border-[var(--color-border)] transition-colors cursor-pointer"
           >
             Cancel
@@ -1981,6 +2142,17 @@ export default function DeviceEditor() {
             run();
           }}
           onCancel={() => setPendingInstanceUpdate(null)}
+        />
+      )}
+      {confirmDiscard && (
+        <ConfirmDialog
+          title="Discard changes?"
+          message="This device has changes that haven't been applied. Close the editor and discard them?"
+          confirmLabel="Discard"
+          cancelLabel="Keep editing"
+          initialFocus="cancel"
+          onConfirm={close}
+          onCancel={() => setConfirmDiscard(false)}
         />
       )}
     </div>
@@ -3431,10 +3603,14 @@ function SlotEditSection({
   nodeId,
   installedSlots,
   slotDefs,
+  onBeforeChange,
 }: {
   nodeId: string;
   installedSlots: NonNullable<DeviceData["slots"]>;
   slotDefs: SlotDefinition[];
+  /** Called just before a structural slot edit (add, bulk add, remove, card swap) so the
+   *  editor can put an undo step on its own stack (#412). Not for label/family typing. */
+  onBeforeChange: () => void;
 }) {
   const swapCard = useSchematicStore((s) => s.swapCard);
   const addSlot = useSchematicStore((s) => s.addSlot);
@@ -3469,7 +3645,10 @@ function SlotEditSection({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => addSlot(nodeId, { label: `Slot ${topLevelCount + 1}`, slotFamily: "" })}
+            onClick={() => {
+              onBeforeChange();
+              addSlot(nodeId, { label: `Slot ${topLevelCount + 1}`, slotFamily: "" });
+            }}
             className="text-[10px] text-blue-600 hover:text-blue-700 cursor-pointer"
           >
             + Add Slot
@@ -3487,9 +3666,12 @@ function SlotEditSection({
         <BulkAddSlotsForm
           nodeId={nodeId}
           defaultStart={topLevelCount + 1}
-          onBulkAdd={(prefix, start, count, slotFamily) =>
-            addSlots(nodeId, buildBulkSlots(prefix, start, count, slotFamily))
-          }
+          onBulkAdd={(prefix, start, count, slotFamily) => {
+            const slots = buildBulkSlots(prefix, start, count, slotFamily);
+            if (slots.length === 0) return;
+            onBeforeChange();
+            addSlots(nodeId, slots);
+          }}
           onClose={() => setShowBulkAdd(false)}
         />
       )}
@@ -3576,6 +3758,7 @@ function SlotEditSection({
                     const warnConn = connCount > 0 ? `This slot has ${connCount} connection(s) that will be disconnected. ` : "";
                     const warnCard = slot.cardTemplateId ? "The installed card and its ports will be removed. " : "";
                     if ((warnConn || warnCard) && !confirm(`${warnConn}${warnCard}Remove slot "${slot.label}"?`)) return;
+                    onBeforeChange();
                     removeSlot(nodeId, slot.slotId);
                   }}
                   className="text-red-400 hover:text-red-500 text-xs cursor-pointer px-1 leading-none"
@@ -3593,6 +3776,7 @@ function SlotEditSection({
                 if (connCount > 0) {
                   if (!confirm(`Swapping this card will disconnect ${connCount} connection(s). Continue?`)) return;
                 }
+                onBeforeChange();
                 swapCard(nodeId, slot.slotId, newCardId);
               }}
               disabled={!isNested && !slot.slotFamily}
@@ -3629,6 +3813,7 @@ function SlotEditSection({
           familySuggestions={knownFamilies}
           onClose={() => setCreatingCardForSlot(null)}
           onCreated={(cardId, finalFamily) => {
+            onBeforeChange();
             // If the slot's family was empty or differs, update it so swapCard resolves the card correctly.
             if ((creatingSlot.slotFamily ?? "") !== finalFamily) {
               updateSlot(nodeId, creatingSlot.slotId, { slotFamily: finalFamily });

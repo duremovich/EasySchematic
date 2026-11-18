@@ -30,6 +30,7 @@ import PageBoundaryOverlay from "./components/PageBoundaryOverlay";
 import PrintViewBar from "./components/PrintViewBar";
 import DeviceLibrary from "./components/DeviceLibrary";
 import DeviceEditor from "./components/DeviceEditor";
+import { isDeviceEditorOpen } from "./deviceEditorHistory";
 import SignalColorPanel from "./components/SignalColorPanel";
 import ShowInfoPanel from "./components/ShowInfoPanel";
 import ViewOptionsPanel from "./components/ViewOptionsPanel";
@@ -2111,8 +2112,10 @@ export default function App() {
       const k = normalizeShortcutKey(e.key);
       // While the port-edit conflict dialog is open, undo/redo would swap the state
       // out from under the staged conflicts — resolve or close the dialog first (#306).
+      // Same while the device editor is open: it has its own undo for its form, and the
+      // canvas history behind it (down to the just-placed device itself) is off limits (#412).
       if ((e.ctrlKey || e.metaKey) && (k === "z" || k === "y") &&
-          useSchematicStore.getState().pendingPortEditConflicts) {
+          (useSchematicStore.getState().pendingPortEditConflicts || isDeviceEditorOpen(useSchematicStore.getState()))) {
         e.preventDefault();
         return;
       }

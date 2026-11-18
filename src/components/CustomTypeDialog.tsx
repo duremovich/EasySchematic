@@ -126,6 +126,7 @@ function CustomTypeDialog({ request }: { request: TypeDialogRequest }) {
 
   return (
     <div
+      data-editor-layer
       className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/30"
       onMouseDown={(e) => { if (e.target === e.currentTarget) closeTypeDialog(); }}
       onKeyDown={(e) => {

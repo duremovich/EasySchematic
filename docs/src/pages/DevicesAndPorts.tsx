@@ -521,6 +521,14 @@ export default function DevicesAndPortsPage() {
         <li>Save as a reusable user template, or set it as a project preset</li>
         <li>Revert to the original template defaults or the active preset</li>
         <li>Press <strong>Ctrl+Enter</strong> (or <strong>Cmd+Enter</strong> on Mac) from any field to apply changes and close the editor</li>
+        <li>Close without applying with <strong>Cancel</strong>, <strong>Esc</strong>, or a click outside the editor. If
+          you{"'"}ve changed anything, the editor asks first — <strong>Keep editing</strong> or <strong>Discard</strong> — so a
+          stray click can{"'"}t throw away your edits</li>
+        <li>Press <strong>Ctrl+Z</strong> (<strong>Cmd+Z</strong>) to undo the last port or slot change — a Bulk Add,
+          adding, duplicating, removing or dragging a port, or adding, removing or swapping a slot{"'"}s card — and{" "}
+          <strong>Ctrl+Shift+Z</strong> or <strong>Ctrl+Y</strong> to redo it. Inside a text field, Ctrl+Z undoes your
+          typing as usual. The editor{"'"}s undo history ends when you Apply or Cancel, and the canvas undo history is
+          left alone while the editor is open</li>
         <li>Set a <strong>hostname</strong> for network-addressable devices</li>
         <li>Toggle the <strong>venue-provided</strong> flag to mark devices supplied by the venue</li>
       </ul>

@@ -9,6 +9,9 @@ interface ConfirmDialogProps {
   message: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** Which button has focus when the dialog opens. "cancel" for prompts where Enter on
+   *  the default would throw work away (#413). */
+  initialFocus?: "confirm" | "cancel";
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -18,10 +21,12 @@ export default function ConfirmDialog({
   message,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
+  initialFocus = "confirm",
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   // Escape cancels, like the native confirm() this replaces. Listen on the document in
   // the capture phase: the opener's own shortcuts sit on an ANCESTOR wrapper, so a React
@@ -29,8 +34,8 @@ export default function ConfirmDialog({
   // Mount-only: callers pass inline arrows, so re-running this would re-steal focus on
   // every render of the opener.
   useEffect(() => {
-    confirmRef.current?.focus();
-  }, []);
+    (initialFocus === "cancel" ? cancelRef : confirmRef).current?.focus();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- mount-only, see above
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -44,7 +49,10 @@ export default function ConfirmDialog({
   }, [onCancel]);
 
   return (
+    // data-editor-layer: marks a dialog stacked over the device editor, so the editor's
+    // window-level Esc / Ctrl+Z handling leaves its keys alone (deviceEditorHistory.ts).
     <div
+      data-editor-layer
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
       onClick={onCancel}
     >
@@ -68,6 +76,7 @@ export default function ConfirmDialog({
 
         <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[var(--color-border)]">
           <button
+            ref={cancelRef}
             onClick={onCancel}
             className="px-3 py-1.5 text-xs rounded border border-[var(--color-border)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer text-[var(--color-text)]"
           >

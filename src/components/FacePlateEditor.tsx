@@ -524,7 +524,7 @@ export default function FacePlateEditor({ deviceData, onSave, onClose }: FacePla
   const selStroke = 0.4;
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={onClose} onWheel={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+    <div data-editor-layer className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={onClose} onWheel={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
       <div
         className="bg-white rounded-lg shadow-xl flex flex-col text-xs"
         style={{ width: "90vw", height: "90vh", maxWidth: 1400 }}
