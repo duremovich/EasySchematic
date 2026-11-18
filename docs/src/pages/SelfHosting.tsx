@@ -103,7 +103,9 @@ docker compose up -d`}</code>
         The dev profile uses <code>compose.dev.yml</code> and{" "}
         <code>docker/Dockerfile.dev</code>. On each start the container shallow-clones
         the GitHub repository into a named Docker volume, runs{" "}
-        <code>npm ci</code>, and starts Vite on port <strong>5173</strong>. The
+        <code>npm ci</code>, generates the bundled offline device library
+        (<code>npm run generate-fallback</code>), and starts Vite on port{" "}
+        <strong>5173</strong>. The
         clone persists between restarts, so later starts only fetch the latest
         commit and reinstall dependencies if the lockfile changed.
       </p>
@@ -296,7 +298,7 @@ make dev`}</code>
             <td>Yes</td>
           </tr>
           <tr>
-            <td>Bundled offline device templates (~780)</td>
+            <td>Bundled offline device templates (560+)</td>
             <td>
               Yes (bundled at build time; live community library still loads
               when the hosted API is reachable)

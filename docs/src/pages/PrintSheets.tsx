@@ -109,7 +109,7 @@ export default function PrintSheetsPage() {
         <li>Device face plates with connector icons, port labels, and section dividers</li>
         <li>Occupancy ghosts (real diagonal stripe pattern, clipped to viewport bounds)</li>
         <li>Vent-panel hatching, blank panels, drawers, cable managers</li>
-        <li>Side-view U gridlines and depth indicators</li>
+        <li>Side-view U gridlines, depth indicators, and device labels</li>
         <li>Shelf-mounted devices positioned at the correct shelf offset and rotation</li>
         <li>Half-rack devices on the correct side</li>
         <li>Multi-line device labels with proper word wrapping</li>

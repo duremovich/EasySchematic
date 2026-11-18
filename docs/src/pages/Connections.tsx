@@ -107,14 +107,19 @@ export default function ConnectionsPage() {
         exports map it onto the nearest standard lineweight. Direct-attach connections stay a thin grey line.
       </p>
       <p>
+        In a saved file the width is the connection's <code>data.strokeWidth</code> (left out at the default
+        2 px). If you hand-edited widths into a file before this setting existed — a <code>strokeWidth</code> on
+        the connection itself or in its <code>style</code> — they're picked up when the file opens, clamped to 1–8.
+      </p>
+      <p>
         On a <strong>bundle</strong>, every member runs along the same trunk, so the trunk shows as wide as its
         widest member — select the bundle's connections and set a width to make the whole bundle heavier.
       </p>
 
       <h2>Multicable connections</h2>
       <p>
-        EasySchematic supports <strong>multicable accessories</strong> — cable snakes, socapex, and similar bundled
-        cable assemblies. These use special device templates with <strong>trunk ports</strong> that carry multiple
+        EasySchematic supports <strong>multicable accessories</strong> — audio and SDI snakes, socapex, and similar
+        bundled cable assemblies. These use special device templates with <strong>trunk ports</strong> that carry multiple
         signals over a single physical cable.
       </p>
       <ul>
@@ -139,16 +144,18 @@ export default function ConnectionsPage() {
           trunk, and fan back out at the other end.
         </li>
         <li>
-          You can bundle connections with <strong>mixed signal types</strong>. The trunk draws in a
-          neutral grey with an <strong>N×</strong> badge showing how many connections it carries, while each
-          connection keeps its own signal color at the gather/fan ends.
+          You can bundle connections with <strong>mixed signal types</strong>. Each connection keeps its own
+          signal color and line style; along the trunk the members run on top of one another, so the trunk
+          shows as one line.
         </li>
         <li>
           Give the bundle a <strong>label</strong> (e.g. "Stage Snake A") in the same panel — it appears in the
           cable schedule's optional <strong>Bundle</strong> column.
         </li>
         <li>
-          <strong>Click the trunk</strong> to select all of its connections at once.
+          Select any connection in the bundle to show two small square markers where the connections gather
+          (<strong>break-in</strong>) and fan back out (<strong>break-out</strong>). Drag them to move where the
+          trunk starts and ends.
         </li>
         <li>
           <strong>Right-click</strong> a bundled connection for <strong>Select Bundle Members</strong>,
@@ -218,23 +225,29 @@ export default function ConnectionsPage() {
         several match). For example, connecting a
         laptop's <strong>USB-A</strong> port to an <strong>RJ45</strong> port on a network switch
         automatically inserts a <strong>USB-A (M) → RJ45 (F) Adapter</strong>, wired to both devices.
-        The library also ships EU/UK power adapters (Schuko, Europlug, UK BS 1363, IEC C13), so a Schuko
+        The library also ships EU/UK power adapters (Schuko, Europlug, UK BS 1363, IEC C13/C14), so a Schuko
         output dragged onto a UK input inserts a <strong>Schuko (M) → UK BS 1363 (F) Adapter</strong>. The
-        Edison → Schuko and Edison → UK adapters are plug adapters only — they do not convert 120V to 230V.
+        adapters between Edison and Schuko or UK, in either direction, are marked{" "}
+        <em>Plug Adapter (no voltage conversion)</em>: they change the plug, not the voltage.
       </p>
 
       <h3>Connection preview colors</h3>
       <p>While dragging a connection, the preview line color tells you what will happen:</p>
       <ul>
-        <li><strong style={{ color: "#22c55e" }}>Green</strong> — compatible, connection will be made directly</li>
-        <li><strong style={{ color: "#eab308" }}>Yellow</strong> — incompatible, but an adapter is available and will be inserted</li>
-        <li><strong style={{ color: "#ef4444" }}>Red</strong> — incompatible, no adapter available</li>
+        <li>
+          <strong style={{ color: "#22c55e" }}>Green</strong> — compatible. If only the connectors differ, the drop
+          still inserts an adapter (or asks which one) — see <em>Auto-insertion</em> below
+        </li>
+        <li><strong style={{ color: "#eab308" }}>Yellow</strong> — the signal types differ, but an adapter is available and will be inserted</li>
+        <li><strong style={{ color: "#ef4444" }}>Red</strong> — the connection can't be made as drawn</li>
       </ul>
       <p>
-        A red preview also says <strong>why</strong> next to the port: two outputs, a signal mismatch
-        (e.g. Analog to HDMI), a port that already has a connection, a multicable trunk meeting a single
-        port, or a patch panel jack whose connector won't mate. If you release on a port that refuses the
-        connection outright, the same reason appears as a message in the corner.
+        A red preview also says <strong>why</strong> next to the port: two outputs (or two inputs), a signal
+        mismatch with no adapter (e.g. Analog to HDMI), a port that already has a connection, a multicable
+        trunk meeting a single port, or a patch panel jack whose connector won't mate. If you release on a port
+        that refuses the connection outright, the same reason appears as a message in the bottom-right corner.
+        A signal mismatch instead opens the dialog described under <em>Auto-insertion</em>, where you can still
+        connect anyway.
       </p>
 
       <h3>Auto-insertion</h3>
@@ -312,7 +325,7 @@ export default function ConnectionsPage() {
           → <strong>Adapters</strong> section → check <strong>Hide all adapters</strong>
         </li>
         <li>
-          <strong>Hide one adapter</strong> — right-click any connection to an adapter and
+          <strong>Hide one adapter</strong> — right-click the adapter, or any connection to it, and
           select <strong>Hide Adapter</strong>
         </li>
         <li>
@@ -334,6 +347,7 @@ export default function ConnectionsPage() {
           sides stays on the canvas so you can see it
         </li>
         <li>When a hidden adapter bridges different signal types, the line renders as a <strong>color gradient</strong></li>
+        <li>Hiding works the same whether <strong>Auto-Route</strong> is on or off</li>
       </ul>
       <p>
         For finer control, double-click an adapter → <strong>Advanced</strong> →
@@ -545,7 +559,7 @@ export default function ConnectionsPage() {
       <p>
         If no adapter template exists for a connector or signal mismatch, you can still force the connection.
         The dialog offers a <strong>Connect Anyway</strong> button, or you can right-click an existing
-        connection and select <strong>Allow Incompatible Connectors</strong>. Use this sparingly — forced
+        connection and select <strong>Allow Incompatible</strong>. Use this sparingly — forced
         connections won't accurately reflect your cable needs in the pack list.
       </p>
     </>

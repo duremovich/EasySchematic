@@ -21,7 +21,7 @@ export default function OverviewPage() {
       <h2>Key features</h2>
       <ul>
         <li>
-          <strong>Devices</strong> with typed input/output ports (SDI, HDMI, NDI, Dante, AVB, DMX, MADI, and 68 signal types in total)
+          <strong>Devices</strong> with typed input/output ports (SDI, HDMI, NDI, Dante, AVB, DMX, MADI, and 74 signal types in total)
         </li>
         <li>
           <strong>Signal-type coloring</strong> — connections are color-coded by signal type, with customizable colors
@@ -42,7 +42,7 @@ export default function OverviewPage() {
           <strong>Line jump arcs</strong> — arc markers at connection crossings for visual clarity
         </li>
         <li>
-          <strong>Device library</strong> — 2,000+ real-world device templates from the community library — cameras,
+          <strong>Device library</strong> — 3,800+ real-world device templates from the community library — cameras,
           switchers, audio consoles, lighting consoles, LED processors, media servers, and more — fetched live with a
           bundled offline fallback
         </li>
@@ -136,7 +136,7 @@ export default function OverviewPage() {
           barrels, gender labels, and per-adapter show/hide controls
         </li>
         <li>
-          <strong>Connection line styles</strong> — solid, dashed, dotted, or dash-dot per connection or per signal type
+          <strong>Connection line styles &amp; widths</strong> — solid, dashed, dotted, or dash-dot per connection or per signal type, and a line width of 1–8 px per connection
         </li>
         <li>
           <strong>Subrooms</strong> — nested room containers for locations within locations
@@ -191,6 +191,12 @@ export default function OverviewPage() {
         </li>
         <li>
           <strong>Port notes</strong> — per-port notes field for documentation
+        </li>
+        <li>
+          <strong>Exclusive port groups</strong> — mark alternative jacks on one signal path (a front input that overrides the rear one) and get a warning when more than one is connected
+        </li>
+        <li>
+          <strong>Labels that fit</strong> — new devices widen to show long port labels in full
         </li>
       </ul>
     </>

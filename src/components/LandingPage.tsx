@@ -12,7 +12,7 @@ const features = [
   {
     title: "Color-Coded Signal Types",
     description:
-      "73 signal types including SDI, HDMI, NDI, Dante, AVB, AES67, MADI, DMX, Analog Audio, HDBaseT, and ST 2110 — each with a distinct color so signal paths are instantly readable. Adapters insert themselves between incompatible ports.",
+      "74 signal types including SDI, HDMI, NDI, Dante, AVB, AES67, MADI, DMX, Analog Audio, HDBaseT, and ST 2110 — each with a distinct color so signal paths are instantly readable. Adapters insert themselves between incompatible ports.",
   },
   {
     title: "Smart Routing & Room Grouping",
@@ -120,7 +120,7 @@ export default function LandingPage() {
             schedule and pack list from the same drawing. Free and browser-based.
           </p>
           <p className="text-slate-500 mb-8">
-            3,800+ device templates &middot; 73 signal types &middot;
+            3,800+ device templates &middot; 74 signal types &middot;
             Rack builder &middot; Cable schedules &middot; DXF/PDF/PNG export
           </p>
           <button

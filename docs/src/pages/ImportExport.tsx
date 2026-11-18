@@ -149,7 +149,7 @@ export default function ImportExportPage() {
 
       <h2>DXF (CAD export)</h2>
       <p>
-        <strong>Export DXF</strong> generates an AutoCAD R2000 (AC1015) DXF file with canvas-faithful visuals —
+        <strong>Export DXF</strong> generates an AutoCAD 2004 (AC1018) DXF file with canvas-faithful visuals —
         device shapes, port handles, signal-colored connections, line styles, and labels all carry over to your CAD
         tool with the geometry that was on screen. Compatible with:
       </p>
@@ -182,6 +182,14 @@ export default function ImportExportPage() {
       <h3>DXF colors</h3>
       <p>
         Each signal type maps to an AutoCAD Color Index (ACI) color that approximates the on-screen signal color.
+      </p>
+
+      <h3>DXF lineweights</h3>
+      <p>
+        Connections export at 0.25 mm. A connection given a heavier or lighter{" "}
+        <a href="/connections">line width</a> exports at the nearest standard lineweight (1 px → 0.13 mm up to
+        8 px → 1.00 mm). Turn on lineweight display in your CAD tool (<code>LWDISPLAY</code> in AutoCAD) to see
+        the difference.
       </p>
 
       <h2>PDF</h2>

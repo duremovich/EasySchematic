@@ -5,7 +5,8 @@ live** in your running EasySchematic editor. It speaks [MCP](https://modelcontex
 to the assistant over stdio, and connects to the editor over a localhost WebSocket.
 
 > Beta — supported actions: read the schematic, search the device library, add and
-> delete devices, set safe device properties, connect and disconnect devices, move a
+> delete devices, set safe device properties, connect and disconnect devices (refusals
+> say why; exclusive-port conflicts come back as `warnings`), move a
 > device, group devices into rooms, add/edit/delete text notes, fit expansion cards
 > into modular-chassis slots, and build rack elevations (create racks, mount devices).
 > Adding devices, making connections, installing cards and mounting devices in racks
@@ -85,6 +86,13 @@ Add the server to your MCP config so Claude can attach to it, e.g.:
 
 ```bash
 claude mcp add easyschematic -- node /absolute/path/to/EasySchematic/mcp-server/dist/index.js
+```
+
+If your client may start more than one instance (see *More than one instance*),
+give them all the same token when you register:
+
+```bash
+claude mcp add --env EASYSCHEMATIC_MCP_TOKEN=pick-a-long-random-string easyschematic -- node /absolute/path/to/EasySchematic/mcp-server/dist/index.js
 ```
 
 Then ask Claude things like *“search for a 4K display, add it, and connect the

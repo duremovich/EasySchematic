@@ -5,7 +5,7 @@ export default function DeviceLibraryPage() {
 
       <h2>Built-in templates</h2>
       <p>
-        The device library sidebar contains <strong>2,000+ real-world device templates</strong> drawn from the
+        The device library sidebar contains <strong>3,800+ real-world device templates</strong> drawn from the
         community device library — switchers, routers, audio consoles, mixing consoles, microphones, intercom, KVM
         extenders, lighting, LED processors, media servers, and many more. Templates are fetched live from the
         community database when you're online, with a bundled subset shipped with the app for offline use.
@@ -38,6 +38,12 @@ export default function DeviceLibraryPage() {
         <li>The template appears in a "User Templates" category in the library</li>
       </ol>
       <p>User templates persist in your browser's localStorage.</p>
+      <p>
+        A template keeps the device{"'"}s ports, settings and expansion cards: each installed card becomes its
+        slot{"'"}s default card (custom cards included), along with any modules fitted in a card{"'"}s sub-slots.
+        A face-plate layout arranged in the rack view stays with the one device and isn{"'"}t saved into the
+        template.
+      </p>
 
       <h2>Updating a template</h2>
       <p>
@@ -126,7 +132,11 @@ export default function DeviceLibraryPage() {
         <li>Each card contributes its own ports to the parent device</li>
         <li>Slots show the currently installed card name (or "Empty" if unoccupied)</li>
         <li>Swapping a card removes the old card's ports and adds the new card's ports</li>
+        <li>A slot's card list in the device editor also offers <strong>+ Create custom card...</strong> for cards the library doesn't have</li>
       </ul>
+      <p>
+        See <a href="/devices-and-ports">Devices &amp; Ports → Expansion slots</a> for sub-slots and how cards are saved into user templates.
+      </p>
 
       <h2>Community device database</h2>
       <p>
@@ -157,7 +167,9 @@ export default function DeviceLibraryPage() {
         <li><strong>Submit from the app</strong> — right-click any custom device on the canvas and choose
           "Submit to Community" to submit it directly without re-entering the details on the devices site.
           This also works for improvements to existing library devices: edit any placed device (fix a port,
-          add a missing connector) and the same action appears in the device editor's save menu once you've made changes</li>
+          add a missing connector) and the same action appears in the device editor's save menu once you've made changes.
+          For a device with expansion slots, the submission carries the chassis and its empty slots; the cards you've
+          fitted aren't part of it, since cards are library entries of their own</li>
         <li><strong>Clone from an existing device</strong> — on the devices site, the "Submit a device" form has a
           <em>Clone existing device</em> option; pick any current template and the form prefills with its ports,
           connectors, and metadata. Tweak what's different (a sibling model, a regional variant) and submit — the

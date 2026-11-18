@@ -120,7 +120,7 @@ export default function DeviceTemplateSchemaPage() {
           <tr><th>Field</th><th>On</th><th>Notes</th></tr>
         </thead>
         <tbody>
-          <tr><td><code>slots</code></td><td>chassis</td><td>Array of slots (the community library accepts up to 128). Each takes a <code>slotFamily</code>; <code>id</code> and <code>label</code> are filled in if omitted, and ids must be unique within the chassis and can't contain <code>/</code> (on import it becomes <code>-</code>). Optional <code>defaultCardId</code> (the id of a card to pre-install — a library card or one of your own) and <code>hideWhenEmpty</code>. A user template saved from a device whose card has its own sub-slots also lists those, as <code>"parent/child"</code> ids marked <code>"nestedOverride": true</code>, recording the card each held; they refine the parent card's sub-slots rather than adding slots.</td></tr>
+          <tr><td><code>slots</code></td><td>chassis</td><td>Array of slots (the community library accepts up to 128). Each takes a <code>slotFamily</code>; <code>id</code> and <code>label</code> are filled in if omitted, and ids must be unique within the chassis and can't contain <code>/</code> (on import it becomes <code>-</code>; the community library rejects it). Optional <code>defaultCardId</code> (the id of a card to pre-install — a library card or one of your own; if it can't be found when the device is placed, the slot stays empty and a message names the card) and <code>hideWhenEmpty</code>. A user template saved from a device whose card has its own sub-slots also lists those, as <code>"parent/child"</code> ids marked <code>"nestedOverride": true</code>, recording the card each held; they refine the parent card's sub-slots rather than adding slots.</td></tr>
           <tr><td><code>slotFamily</code></td><td>card</td><td>On a template with <code>deviceType: "expansion-card"</code>: the slot family the card fits.</td></tr>
         </tbody>
       </table>
@@ -245,9 +245,10 @@ export default function DeviceTemplateSchemaPage() {
       <p>
         Some devices have separate jacks feeding the same input, where only one can be used at a time —
         a front-panel AUX input that overrides the matching rear input, for example. Give those ports the
-        same <code>exclusiveGroup</code> string (up to 100 characters; any name, unique within the device).
-        Ports without one stay independent, so inputs that really are used together — mixer channels that
-        sum — need nothing.
+        same <code>exclusiveGroup</code> string (any name, up to 100 characters). A group only spans one
+        device — and on an expansion card, one installed card — so the same name elsewhere is a different
+        group. Ports without one stay independent, so inputs that really are used together — mixer channels
+        that sum — need nothing.
       </p>
       <p>
         Connecting two or more ports of one group still works, but the app shows a warning naming the

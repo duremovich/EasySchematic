@@ -222,7 +222,7 @@ export default function BulkConnectionEditPanel({ onClose }: Props) {
         )}
         {mixedSignals && (
           <p className="text-[10px] text-[var(--color-text-muted)] leading-tight mt-1.5">
-            Mixed signal types — trunk drawn neutral; each connection keeps its own color and cable.
+            Mixed signal types are fine — each connection keeps its own color and cable.
           </p>
         )}
       </section>

@@ -114,15 +114,26 @@ export default function DevicesAndPortsPage() {
           direction at a time
         </li>
       </ul>
+      <h3>Device width</h3>
       <p>
-        A newly placed device widens just enough to show every port label in full, so long names
-        like "Analog Out 12" aren't cut off. Devices in schematics saved before this keep the
-        standard width, so opening an older file never shifts your layout. To widen them, right-click
-        a device (or a selection of devices) and choose <strong>Fit Width to Labels</strong>.{" "}
-        <strong>Reset to Standard Width</strong> undoes that. Stub tags and hand-drawn routes on the
-        right side of the device move with its edge. A fitted device resizes itself whenever you
-        rename its ports, but not when you connect them. Labels too long even for the widest box
-        end in "…", and you can hover one to read it in full.
+        Devices come in two widths. The <strong>standard width</strong> is 144 px. A device set to{" "}
+        <strong>fit its labels</strong> widens just enough to show every port label in full, so long
+        names like "Analog Out 12" aren't cut off — anywhere from 144 to 320 px, in 16 px steps so its
+        ports stay on the grid. Every device you place fits its labels: from the library, quick-add,{" "}
+        <strong>Create New Device</strong>, a CSV import, the AI assistant, or an auto-inserted adapter.
+        Devices already in a schematic keep whatever width they were saved with, so opening a file
+        never shifts its layout.
+      </p>
+      <p>
+        To switch, right-click a device (or one of several selected devices) and choose{" "}
+        <strong>Fit Width to Labels</strong> or <strong>Reset to Standard Width</strong>; the menu
+        offers whichever applies, and the change is one undo step. A fitted device follows its
+        labels — renaming or hiding ports, or changing the label case, resizes it — but connecting
+        ports never does. Whenever the width changes, stub tags and hand-drawn bends on the right
+        side move with the edge (a hand-drawn route that would fold back on itself goes back to
+        auto-routing, and a message says so). Labels too long even for the widest box end in "…"; hover one to
+        read it in full. Saved files mark a fitted device with <code>"fitWidth": true</code> in its
+        data.
       </p>
 
       <h2>Signal types</h2>
@@ -131,7 +142,7 @@ export default function DevicesAndPortsPage() {
         only connect ports of the <strong>same signal type</strong>, with exceptions where the real hardware
         interoperates: an Allen &amp; Heath <strong>SLink</strong> port connects directly to <strong>dSnake</strong>,
         <strong> DX5</strong>, and <strong>GigaACE</strong> ports, since SLink auto-senses all three protocols.
-        EasySchematic includes 72 built-in signal types covering video, audio, data, power, and control:
+        EasySchematic includes 74 built-in signal types covering video, audio, data, power, and control:
       </p>
       <table>
         <thead>
@@ -248,9 +259,9 @@ export default function DevicesAndPortsPage() {
       <p>
         On a patch panel or wall plate, <strong>+ Bulk Add</strong> in <strong>Passthrough Circuits</strong>
         asks for a <strong>Rear</strong> and a <strong>Front</strong> connector instead of one, and the
-        signal starts on <em>(inherits from connection)</em>. That{"'"}s the library panels{"'"} per-face
-        layout; the library panels fix one signal, which you can do too by picking it.
-        See <em>Patch Panels &amp; the Patch Bay → Make your own patch panel</em>.
+        signal starts on <em>(inherits from connection)</em>, so each circuit takes the signal of whatever
+        is connected to it. Pick a signal instead to fix one, as most library panels do.
+        See <a href="/patch-panels">Patch Panels &amp; the Patch Bay → Make your own patch panel</a>.
       </p>
 
       <h2>Port sections</h2>
@@ -266,6 +277,11 @@ export default function DevicesAndPortsPage() {
         and give those ports the same <strong>Exclusive group</strong> name. Connecting a second port of the
         group is still allowed, but a warning names the device and both ports, and their labels get an
         amber wavy underline (hover a label for details; the underline stays off exports and print). Leave the group blank for ports that work together.
+      </p>
+      <p>
+        A group only spans one device. On a device with expansion slots, each installed card{"'"}s ports form
+        their own groups, so two identical cards — or a card and the chassis — that use the same group name
+        don{"'"}t warn about each other.
       </p>
 
       <h2>Expansion slots</h2>
@@ -287,6 +303,14 @@ export default function DevicesAndPortsPage() {
         I/O card with SFP or QSFP bays for swappable transceivers. These nested slots work the
         same way: right-click to swap modules in or out. The sub-slot{"'"}s ports are added to the
         parent device alongside the card{"'"}s own ports.
+      </p>
+      <p>
+        If the library doesn{"'"}t have your card, pick <strong>+ Create custom card...</strong> in a slot{"'"}s
+        card list in the device editor. When you <strong>Save as User Template</strong>, every installed card
+        becomes that slot{"'"}s default card — your own custom cards included — and the modules you fitted in a
+        card{"'"}s sub-slots are kept too, so each device placed from the template comes out with the same cards
+        in the same slots. If a default card can{"'"}t be found when a device is placed (a custom card you{"'"}ve
+        since deleted, say), its slot stays empty and a message names the device, slot and card.
       </p>
 
       <h2>Connector types</h2>
@@ -375,8 +399,8 @@ export default function DevicesAndPortsPage() {
           <tr><td>CEE French Power (7/5/7)</td><td>French Power</td></tr>
           <tr><td>CEE Europlug (7/16)</td><td>Europlug (mates into Schuko and French sockets directly)</td></tr>
           <tr><td>UK Power (BS 1363)</td><td>UK Power (needs an adapter to anything else)</td></tr>
-          <tr><td>CEE17 16A / 32A / 63A / 125A, 1-phase (3-pin)</td><td>CEE17 (IEC 60309) — same rating mates directly; a different rating needs an adapter</td></tr>
-          <tr><td>CEE17 16A / 32A / 63A / 125A, 3-phase (5-pin)</td><td>CEE17 (IEC 60309) — same rating mates directly; a different rating needs an adapter</td></tr>
+          <tr><td>CEE17 16A / 32A / 63A / 125A 1P+N+E (blue, 230V)</td><td>CEE17 1P 230V (IEC 60309) — the same rating mates directly; a different rating needs an adapter; 1-phase and 3-phase are incompatible</td></tr>
+          <tr><td>CEE17 16A / 32A / 63A / 125A 3P+N+E (red, 400V)</td><td>CEE17 3P 400V (IEC 60309) — the same rating mates directly; a different rating needs an adapter; 1-phase and 3-phase are incompatible</td></tr>
           <tr><td>L5-20</td><td>L5-20</td></tr>
           <tr><td>L6-20</td><td>L6-20</td></tr>
           <tr><td>L6-30</td><td>L6-30</td></tr>
@@ -500,15 +524,21 @@ export default function DevicesAndPortsPage() {
         pass-throughs with ports on two physical faces. EasySchematic models them as a special device type:
       </p>
       <ul>
-        <li>The port editor shows the two sides as <strong>Rear</strong> and <strong>Front</strong> instead of "Inputs" and "Outputs"</li>
-        <li>The device on the canvas shows <strong>Rear</strong> on the left and <strong>Front</strong> on the right with a header above each column</li>
-        <li>Rear and front ports default to the same gender — patch bays typically have female sockets on both faces, so a
+        <li>Each port is a <strong>passthrough circuit</strong> — one jack pair with a rear (field) connector and a
+            front (patch) connector, which can differ. The device editor lists them under{" "}
+            <strong>Passthrough Circuits</strong>, with a rear and a front connector on each row</li>
+        <li>On the canvas each circuit is one row, with the <strong>Rear</strong> side on the left and the{" "}
+            <strong>Front</strong> side on the right under a header for each</li>
+        <li>Rear and front default to the same gender — patch bays typically have female sockets on both faces, so a
             cable connecting two front ports correctly shows up as <code>M-M</code> (male plugs on both cable ends) in the pack list</li>
         <li>Connections work the same way as any other device — drag from one face to wherever the cable physically goes</li>
+        <li>Ports that aren{"'"}t circuits, like a power inlet on an active panel, go under{" "}
+            <strong>Other ports (power, control, network)</strong></li>
       </ul>
       <p>
-        Built-in templates cover RJ45 (12/24/32/48-port), BNC video, XLR audio, fiber LC, and TT bantam audio patch bays
-        in common port counts.
+        Built-in templates cover RJ45 (12/24/32/48-port), BNC video, XLR audio, fiber LC, TT bantam audio, and D-series
+        (16/24/32-way) patch panels in common port counts. To build one the library doesn{"'"}t have, see{" "}
+        <a href="/patch-panels">Patch Panels &amp; the Patch Bay → Make your own patch panel</a>.
       </p>
       <p>
         A dedicated <strong>Patch Panel Schedule</strong> report (Menu → Reports → Patch Panels) lists every port of every
@@ -531,14 +561,19 @@ export default function DevicesAndPortsPage() {
         <li>Save as a reusable user template, or set it as a project preset</li>
         <li>Revert to the original template defaults or the active preset</li>
         <li>Press <strong>Ctrl+Enter</strong> (or <strong>Cmd+Enter</strong> on Mac) from any field to apply changes and close the editor</li>
-        <li>Close without applying with <strong>Cancel</strong>, <strong>Esc</strong>, or a click outside the editor. If
-          you{"'"}ve changed anything, the editor asks first — <strong>Keep editing</strong> or <strong>Discard</strong> — so a
-          stray click can{"'"}t throw away your edits</li>
-        <li>Press <strong>Ctrl+Z</strong> (<strong>Cmd+Z</strong>) to undo the last port or slot change — a Bulk Add,
-          adding, duplicating, removing or dragging a port, or adding, removing or swapping a slot{"'"}s card — and{" "}
-          <strong>Ctrl+Shift+Z</strong> or <strong>Ctrl+Y</strong> to redo it. Inside a text field, Ctrl+Z undoes your
-          typing as usual. The editor{"'"}s undo history ends when you Apply or Cancel, and the canvas undo history is
-          left alone while the editor is open</li>
+        <li>Close without applying with <strong>Cancel</strong>, the <strong>×</strong>, <strong>Esc</strong>, or a click
+          outside the editor. If you{"'"}ve changed anything, the editor asks first — <strong>Discard changes?</strong> with{" "}
+          <strong>Keep editing</strong> (the default) or <strong>Discard</strong> — so a stray click or key can{"'"}t throw
+          away your edits. Changing a value and putting it back doesn{"'"}t count as a change</li>
+        <li>Slot changes (adding or removing a slot, swapping its card) take effect as you make them, so Cancel or
+          Discard doesn{"'"}t take them back — use Ctrl+Z while the editor is open. Cancelling a device you just
+          created with <strong>Create New Device</strong> removes it completely, slots and all</li>
+        <li>Press <strong>Ctrl+Z</strong> (<strong>Cmd+Z</strong>) to undo the last port or slot change — a Bulk Add;
+          adding, duplicating, removing or dragging a port; adding (or bulk-adding) or removing a slot; swapping a
+          slot{"'"}s card or creating a custom card — and <strong>Ctrl+Shift+Z</strong> or <strong>Ctrl+Y</strong> to redo
+          it. Undoing a step keeps later renames. Inside a text field, Ctrl+Z undoes your typing as usual. The
+          editor{"'"}s undo history ends when you Apply or Cancel, and the canvas undo history is left alone while the
+          editor is open</li>
         <li>Set a <strong>hostname</strong> for network-addressable devices</li>
         <li>Toggle the <strong>venue-provided</strong> flag to mark devices supplied by the venue</li>
       </ul>
@@ -731,11 +766,12 @@ export default function DevicesAndPortsPage() {
         auto-layout if you go off the rails.
       </p>
       <p>
-        78 connector types are drawn at real-world millimeter dimensions from manufacturer specs,
-        with three levels of detail: dots when zoomed out, silhouettes at mid-zoom, and detailed
-        icons (pin patterns, slot orientations, blade arrangements) when zoomed in close.
-        Custom layouts persist with the device or template — set them once and reuse the layout
-        every time the device is placed.
+        78 of the 102 built-in connector types have their own icon drawn at real-world millimeter
+        dimensions from manufacturer specs (the rest use a generic one), with three levels of detail:
+        dots when zoomed out, silhouettes at mid-zoom, and detailed icons (pin patterns, slot
+        orientations, blade arrangements) when zoomed in close.
+        A custom layout belongs to that one device and is saved with the schematic. It isn{"'"}t
+        saved into templates, so a device placed from a template starts with the automatic layout.
       </p>
 
       <h2>Auxiliary data</h2>

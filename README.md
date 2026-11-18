@@ -36,15 +36,15 @@ working offline.
 ### Canvas & connections
 
 - **Click-to-connect or drag-to-connect** — a preview line follows the cursor and
-  snaps to nearby valid ports, green for a valid target and red for an
-  incompatible signal type. Click a device body to auto-connect the first
-  compatible port.
+  snaps to nearby valid ports: green for a valid target, yellow when an adapter
+  will bridge the gap, and red with the reason when it can't connect. Click a
+  device body to auto-connect the first compatible port.
 - **Smart routing** — A\* pathfinding routes cables around devices with parallel
   nesting and line-jump arcs. Add waypoints by hand where the algorithm gets it
   wrong, or switch routing off entirely for lag-free editing on big drawings.
-- **[73 signal types](#signal-types)**, each color-coded and individually
-  restylable, with per-signal line styles and a customizable color palette saved
-  in the file.
+- **[74 signal types](#signal-types)**, each color-coded and individually
+  restylable, with per-signal line styles, per-connection line widths, and a
+  customizable color palette saved in the file.
 - **Adapters insert themselves** between incompatible ports, with gender
   awareness, direct-attach support, and barrels.
 - **Bundles** — select a group of connections and run them down one shared trunk
@@ -81,7 +81,7 @@ schematic, connections and all.
   detection, half-rack pairing, and auto-shelving for non-rack-mount gear
 - Front, rear, and side views — face plates with connectors, occupancy ghosts,
   and depth conflicts
-- **Face-plate editor** for connector positions, with 60+ connector types drawn
+- **Face-plate editor** for connector positions, with 78 connector types drawn
   at mm-accurate dimensions
 - Accessories: shelves, vent panels, blanks, drawers, cable managers, fans
 
@@ -157,7 +157,7 @@ AES50 · MADI · DMX · Art-Net · sACN · USB · Ethernet · Fiber · DisplayPo
 HDBaseT · SRT · ST 2110 · Genlock · Word Clock · Timecode · Tally · GPIO ·
 Contact Closure · RS-422 · RS-485 · Serial · Thunderbolt · MIDI · S/PDIF · ADAT ·
 Ultranet · StageConnect · SoundGrid · BLU link · Cresnet · nLight · RF · Power
-(L1/L2/L3/N/G) · Custom — [73 in
+(L1/L2/L3/N/G) · Custom — [74 in
 total](https://docs.easyschematic.live/device-template-schema), all color-coded
 and customizable.
 
@@ -265,6 +265,9 @@ keyboard and mouse.
 | `Shift` + click | Toggle item in selection |
 | `Shift` + drag | Directional toggle selection |
 | Double-click device | Open device editor |
+| `Escape` (device editor) | Close the editor, asking first if there are unapplied changes |
+| `Ctrl+Z` / `Ctrl+Shift+Z` or `Ctrl+Y` (device editor) | Undo / redo port and slot changes |
+| `Ctrl+Enter` (device editor) | Apply and close |
 | Double-click canvas | Quick-add device search |
 | Double-click room background | Quick-add device inside room |
 | Double-click rack label | Rename rack inline |

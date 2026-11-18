@@ -45,13 +45,31 @@ node dist/index.js`}</code>
 
       <p>
         Some assistants (Claude desktop, for example) start the server more than
-        once. That's fine: the first copy hosts the editor connection and the
-        others pass their requests through it, so give them all the same token by
-        setting <code>EASYSCHEMATIC_MCP_TOKEN</code> to a fixed value. If the port is
-        held by something else (a copy with a different token, or another
-        program), the assistant gets an error saying so, not{" "}
-        <em>“No EasySchematic app is connected”</em>.
+        once, and several Claude Code sessions each start their own. That's fine:
+        the first copy holds the port and hosts the editor connection, and the
+        others pass their requests through it — as long as they all use the same
+        pairing token. Without one, each copy makes up its own, so set{" "}
+        <code>EASYSCHEMATIC_MCP_TOKEN</code> to a fixed value of your choosing in the
+        assistant's MCP configuration (see step 3), and paste that value into
+        EasySchematic once.
       </p>
+      <ul>
+        <li>
+          If the copy holding the port exits, another copy takes the port over,
+          prints the token again, and the editor reconnects by itself.
+        </li>
+        <li>
+          If the port is held by something it can't pass requests through (a copy
+          with a different token, an older version of the server, or another
+          program), the assistant gets an error naming the port and the reason,
+          not <em>“No EasySchematic app is connected”</em>. That copy keeps
+          retrying in the background.
+        </li>
+        <li>
+          Each copy exits when the assistant that started it closes, so none are
+          left running behind.
+        </li>
+      </ul>
 
       <h2>2. Turn it on in EasySchematic</h2>
 
@@ -86,6 +104,15 @@ node dist/index.js`}</code>
       </pre>
 
       <p>
+        To give every copy the same pairing token (see above), pass it as an
+        environment variable when you register the server:
+      </p>
+
+      <pre>
+        <code>{`claude mcp add --env EASYSCHEMATIC_MCP_TOKEN=pick-a-long-random-string easyschematic -- node /absolute/path/to/EasySchematic/mcp-server/dist/index.js`}</code>
+      </pre>
+
+      <p>
         Then you can ask things like <em>“search for a 4K display, add it, and
         connect the laptop's HDMI output to it.”</em>
       </p>
@@ -113,7 +140,11 @@ node dist/index.js`}</code>
           <strong>Connect two devices</strong>. For two-sided ports the assistant
           specifies a face — bidirectional ports use <code>in</code>/<code>out</code>,
           passthrough ports use <code>rear</code>/<code>front</code>. Every
-          connection is validated before it is made.
+          connection is validated before it is made, and a refused one comes back
+          with the reason (two outputs, a port that's already connected, and so
+          on). A connection that puts a second port of an exclusive group in use is
+          still made, but comes back with a warning, and the device details show
+          each port's exclusive group.
         </li>
         <li>
           <strong>Move a device</strong> to a new position. The device stays in its
@@ -142,7 +173,8 @@ node dist/index.js`}</code>
         <li>
           <strong>Remove a single connection.</strong> Stubbed connections can't be
           removed this way yet — delete one of their devices, or remove them in the
-          editor.
+          editor. Removing a connection that runs through a hidden adapter removes
+          the whole run, adapter included, just as deleting it on the canvas does.
         </li>
         <li>
           <strong>Delete a device.</strong>

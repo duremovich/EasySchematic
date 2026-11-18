@@ -78,7 +78,8 @@ export default function PrintingPage() {
       </p>
       <p>
         <strong>Export Rack PDF</strong> prints one landscape sheet per rack on the paper size chosen in
-        Print View.
+        Print View: the front and rear elevations side by side, the side view below them, and a stats
+        line. Devices are labelled in all three views, using short names when the schematic is set to.
       </p>
     </>
   );

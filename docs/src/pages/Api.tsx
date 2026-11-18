@@ -47,6 +47,9 @@ export default function ApiPage() {
         <li><code>connectorType</code> — physical connector (e.g. <code>bnc</code>, <code>hdmi</code>, <code>xlr-3</code>,
           {" "}<code>rj45</code>, <code>usb-c</code>) (optional)</li>
         <li><code>section</code> — port group label (optional)</li>
+        <li><code>exclusiveGroup</code> — ports on one device sharing this value are alternative jacks on one signal
+          path, only one of which should be connected (optional) — see{" "}
+          <a href="/device-template-schema">Device Template Schema</a></li>
       </ul>
 
       <h3>GET /templates/:id</h3>

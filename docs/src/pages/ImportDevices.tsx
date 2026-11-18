@@ -203,7 +203,7 @@ export default function ImportDevicesPage() {
         <strong>Optional columns:</strong>{" "}
         <code>manufacturer</code>, <code>category</code>, <code>reference_url</code>,{" "}
         <code>height_mm</code>, <code>width_mm</code>, <code>depth_mm</code>, <code>weight_kg</code>,{" "}
-        <code>power_draw_w</code>, <code>voltage</code>, <code>port_connector_type</code>,{" "}
+        <code>power_draw_w</code>, <code>voltage</code>, <code>thermal_btuh</code>, <code>port_connector_type</code>,{" "}
         <code>port_section</code>, <code>port_exclusive_group</code>
       </p>
 

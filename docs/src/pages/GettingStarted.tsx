@@ -44,7 +44,7 @@ export default function GettingStartedPage() {
           <tr><td><strong>Connect</strong></td><td>Click an output port, then click a compatible input</td></tr>
           <tr><td><strong>Reconnect</strong></td><td>Drag from a connected port to move the connection</td></tr>
           <tr><td><strong>Disconnect</strong></td><td>Drag from a connected port and release on empty space</td></tr>
-          <tr><td><strong>Copy/Paste</strong></td><td>Ctrl+C / Ctrl+V</td></tr>
+          <tr><td><strong>Copy/Paste</strong></td><td>Ctrl+C / Ctrl+V — see <em>Copy and paste</em> below</td></tr>
           <tr><td><strong>Undo/Redo</strong></td><td>Ctrl+Z / Ctrl+Shift+Z (or Ctrl+Y)</td></tr>
           <tr><td><strong>Align</strong></td><td>Select multiple items, then use the Align menu in the menu bar</td></tr>
           <tr><td><strong>Quick-add device</strong></td><td>Double-click empty canvas or room background</td></tr>
@@ -54,6 +54,30 @@ export default function GettingStartedPage() {
           <tr><td><strong>Dark mode</strong></td><td>Sun/moon icon in the menu bar (right side)</td></tr>
         </tbody>
       </table>
+
+      <h3>Copy and paste</h3>
+      <p>
+        Ctrl+C copies the selected devices, plus every connection whose two ends are both in the selection.
+        Ctrl+V pastes the copy below the original. Pasted connections are wired to the pasted devices{"'"} own
+        ports — bidirectional ports and patch panel faces included — and keep their hand-drawn bends, line
+        style and width, and bundles. Each pasted connection gets a fresh cable ID, since it{"'"}s a new
+        physical cable.
+      </p>
+      <ul>
+        <li>
+          When the selection spans more than one room — <strong>Select All</strong>, for instance — every room
+          whose whole contents are selected comes along too, so the paste recreates the rooms with their
+          devices inside.
+        </li>
+        <li>
+          Copying devices that all sit in one room just makes more devices: they land in whichever room they
+          fall in, without duplicating the room.
+        </li>
+        <li>
+          A stubbed connection copied with only one of its two devices is left out, and a patched connection
+          pastes unpatched.
+        </li>
+      </ul>
 
       <h2>Pages</h2>
       <p>

@@ -112,7 +112,7 @@ export default function RacksPage() {
         <li>
           <strong>Side view</strong> shows a cross-section: device depth from front and rear rails,
           shelf-mounted gear at real depth, and any depth conflicts that would prevent the rack
-          door from closing.
+          door from closing. Each device is labelled with its name, here and in the PDF exports.
         </li>
       </ul>
 
@@ -199,8 +199,9 @@ export default function RacksPage() {
         Connector icons are drawn at real-world millimeter dimensions from manufacturer specs. The
         rack view picks an appropriate level of detail based on zoom: dots far out, silhouettes at
         mid-zoom, and detailed icons (with pin patterns, slot orientations, etc.) when zoomed in
-        close. EasySchematic ships with 102 connector types covering virtually every connector
-        you&apos;d find on AV gear.
+        close. EasySchematic ships with 102 built-in connector types covering virtually every
+        connector you&apos;d find on AV gear; 78 of them have their own detailed icon, and the rest
+        draw with a generic one.
       </p>
 
       <h2>Auto-shelf at a glance</h2>
