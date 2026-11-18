@@ -213,7 +213,7 @@ export async function exportPrintSheetPdf(opts: PrintSheetPdfOptions): Promise<v
       } else if (vp.kind === "rack-rear") {
         drawElevation(doc, rack, srcPage.placements, srcPage.accessories, deviceDataMap, "rear", pos.x, pos.y, size.w, size.h, false, opts.schematicDefaults);
       } else if (vp.kind === "rack-side") {
-        drawSideView(doc, rack, srcPage.placements, srcPage.accessories, deviceDataMap, pos.x, pos.y, size.w, size.h, false);
+        drawSideView(doc, rack, srcPage.placements, srcPage.accessories, deviceDataMap, pos.x, pos.y, size.w, size.h, false, opts.schematicDefaults);
       }
 
       // Chrome below viewport — mirrors PrintSheetRenderer.tsx typography exactly.

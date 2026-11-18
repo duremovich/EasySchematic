@@ -469,6 +469,7 @@ export function drawSideView(
   rectWMm: number,
   rectHMm: number,
   drawFaceLabel: boolean = true,
+  schematicDefaults: SchematicDisplayDefaults = {},
 ) {
   const is2Post = rack.rackType === "open-2post";
 
@@ -561,6 +562,19 @@ export function drawSideView(
       doc.setDrawColor(40, 40, 40);
       doc.setLineWidth(0.2);
       doc.rect(dx, dy, dDepth, dh, "FD");
+
+      // Label — mirror RackFaceSVG side view: trimmed to the device's depth span,
+      // fontSize = min(7, max(4, dh*0.5)) in SVG-px (#416).
+      const dDepthSvg = (dd.depthMm ?? shelfDepthMm(shelf, rack)) * RACK_PX_PER_MM;
+      const dhSvg = hRealMm * RACK_PX_PER_MM;
+      const resolvedShelf = resolveDeviceLabel(dd, schematicDefaults);
+      const labelTrim = Math.max(3, Math.floor(dDepthSvg / 5));
+      const lbl = resolvedShelf.text.length > labelTrim ? resolvedShelf.text.slice(0, Math.max(1, labelTrim - 1)) + "…" : resolvedShelf.text;
+      doc.setFont("Inter", "normal");
+      // No pt floor: labelTrim is budgeted for this SVG-px size, a floor overflows the bar.
+      doc.setFontSize(Math.min(7, Math.max(4, dhSvg * 0.5)) * ptPerSvg);
+      doc.setTextColor(...contrastingTextRgb(dd.headerColor ?? dd.color, [74, 144, 217]));
+      doc.text(lbl, dx + dDepth / 2, dy + dh / 2, { align: "center", baseline: "middle" });
       continue;
     }
     const heightU = inferRackHeightU(dd);
@@ -573,6 +587,25 @@ export function drawSideView(
     doc.setDrawColor(40, 40, 40);
     doc.setLineWidth(0.2);
     doc.rect(dx, dy, dDepth, dh, "FD");
+
+    // Multi-line label — same fit rules as the on-screen side view (RackFaceSVG /
+    // RackRenderer SideViewRack): chars bounded by the device's depth span, at
+    // most 3 lines when wrapping is on (#416).
+    const h_svg = heightU * SVG_PX_PER_U - 1;
+    const depth_svg = deviceDepthMm * RACK_PX_PER_MM;
+    const resolved = resolveDeviceLabel(dd, schematicDefaults);
+    const fs_svg = h_svg > 20 ? 8 : 7;
+    const maxChars = Math.max(2, Math.floor(depth_svg / (fs_svg * 0.58)));
+    const maxLines = resolved.wrap ? Math.max(1, Math.floor(h_svg / (fs_svg * 1.5))) : 1;
+    const lines = wrapLabel(resolved.text, maxChars, Math.min(maxLines, 3));
+    const lineH_svg = fs_svg * 1.35;
+    const baseY_svg = h_svg / 2 - ((lines.length - 1) * lineH_svg) / 2;
+    doc.setFont("Inter", "normal");
+    doc.setFontSize(fs_svg * ptPerSvg);
+    doc.setTextColor(...contrastingTextRgb(dd.headerColor ?? dd.color, [74, 144, 217]));
+    for (let i = 0; i < lines.length; i++) {
+      doc.text(lines[i], dx + dDepth / 2, dy + (baseY_svg + i * lineH_svg) * s, { align: "center", baseline: "middle" });
+    }
   }
 
   // Depth conflicts overlay
@@ -704,7 +737,7 @@ export async function exportRackPdf(opts: RackPdfOptions): Promise<void> {
     const sideTop = contentTopY + topRowH + 12;
     const sideX = PAGE_MARGIN_MM;
     const sideW = widthMm - 2 * PAGE_MARGIN_MM;
-    drawSideView(doc, rack, page.placements, page.accessories, deviceDataMap, sideX, sideTop, sideW, bottomRowH - 4);
+    drawSideView(doc, rack, page.placements, page.accessories, deviceDataMap, sideX, sideTop, sideW, bottomRowH - 4, true, opts.schematicDefaults);
 
     drawStatsFooter(doc, rack, page.placements, page.accessories, deviceDataMap, widthMm / 2, statsY);
   });
