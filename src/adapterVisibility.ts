@@ -23,28 +23,127 @@ export function toggleAdapterVisibility(
 }
 
 /**
+ * The two legs of an inline adapter: the connection arriving at it and the one leaving
+ * it. recomputeRoutes/computeSimpleRoutes splice exactly this pair into one connection
+ * drawn straight through when the adapter is hidden.
+ */
+export function adapterLegs(
+  adapterId: string,
+  edges: readonly ConnectionEdge[],
+): { inbound?: ConnectionEdge; outbound?: ConnectionEdge } {
+  return {
+    inbound: edges.find((e) => e.target === adapterId),
+    outbound: edges.find((e) => e.source === adapterId),
+  };
+}
+
+/**
+ * Whether an adapter can be drawn hidden at all: only an adapter with a leg on each
+ * side sits inline, so only it has a connection to draw through it. Hiding one that
+ * doesn't — an unwired adapter, or one whose other leg was deleted along with the far
+ * device — leaves an invisible device holding a port, with a dangling connection
+ * nobody can see, select or delete (#426). Such an adapter stays drawn, whatever its
+ * override or the global toggle says, so the user can see it and deal with it.
+ */
+export function canHideAdapter(adapterId: string, edges: readonly ConnectionEdge[]): boolean {
+  const { inbound, outbound } = adapterLegs(adapterId, edges);
+  return !!inbound && !!outbound;
+}
+
+/**
+ * Whether this device is an adapter the canvas draws hidden right now — the per-node
+ * form of {@link resolveHiddenAdapterIds}. Both context menus read their Show/Hide
+ * label through this, so the label always describes what is on screen (#425).
+ */
+export function isAdapterNodeHidden(
+  node: SchematicNode | undefined,
+  hideAdapters: boolean,
+  edges: readonly ConnectionEdge[],
+): boolean {
+  if (!node || node.type !== "device") return false;
+  const data = node.data as DeviceData;
+  if (data.deviceType !== "adapter") return false;
+  return isAdapterHidden(data.adapterVisibility, hideAdapters) && canHideAdapter(node.id, edges);
+}
+
+/**
  * The inline adapters the canvas is hiding right now: every adapter device whose
  * per-device override says `force-hide`, plus — when the global "hide adapters" toggle
- * is on — every adapter that has not opted out with `force-show`.
+ * is on — every adapter that has not opted out with `force-show`. Either way only an
+ * adapter that {@link canHideAdapter} — one with a leg on each side — is hidden.
  *
- * recomputeRoutes derives this to splice a hidden adapter's two connections into one
- * that draws straight through. Everything that has to read the schematic the way the
- * user sees it — the stub tag's pairing host and the device its label names (#334,
- * #348) — resolves against the same set, so one rule decides what "hidden" means.
+ * Both route builders (recomputeRoutes and, with auto-route off, computeSimpleRoutes)
+ * derive this to splice a hidden adapter's two connections into one that draws straight
+ * through. Everything that has to read the schematic the way the user sees it — the
+ * stub tag's pairing host and the device its label names (#334, #348), the context
+ * menus' Show/Hide label (#425) — resolves against the same rule.
  */
 export function resolveHiddenAdapterIds(
   nodes: readonly SchematicNode[],
   hideAdapters: boolean,
+  edges: readonly ConnectionEdge[],
 ): Set<string> {
   const hidden = new Set<string>();
   for (const n of nodes) {
-    if (n.type !== "device") continue;
-    const data = n.data as DeviceData;
-    if (data.deviceType !== "adapter") continue;
-    if (data.adapterVisibility === "force-show") continue;
-    if (data.adapterVisibility === "force-hide" || hideAdapters) hidden.add(n.id);
+    if (isAdapterNodeHidden(n, hideAdapters, edges)) hidden.add(n.id);
   }
   return hidden;
+}
+
+/**
+ * The adapter a connection's context menu acts on: the adapter device at either end of
+ * the connection, source first. A hidden adapter's spliced connection is its inbound
+ * leg, so that adapter is the leg's target and is found the same way.
+ */
+export function connectionAdapterId(
+  edge: Pick<ConnectionEdge, "source" | "target"> | undefined,
+  nodes: readonly SchematicNode[],
+): string | null {
+  if (!edge) return null;
+  const isAdapter = (id: string) => {
+    const n = nodes.find((x) => x.id === id);
+    return n?.type === "device" && (n.data as DeviceData).deviceType === "adapter";
+  };
+  if (isAdapter(edge.source)) return edge.source;
+  if (isAdapter(edge.target)) return edge.target;
+  return null;
+}
+
+/** The inline style a hidden adapter's React Flow wrapper carries (see syncHiddenAdapterStyles). */
+const HIDDEN_ADAPTER_STYLE = { width: 1, height: 1, opacity: 0, pointerEvents: "none" as const };
+
+function hasHiddenAdapterStyle(n: SchematicNode): boolean {
+  return n.style?.opacity === 0 && n.style?.pointerEvents === "none";
+}
+
+/**
+ * Bring every adapter's wrapper style in line with the resolved hidden set: a hidden
+ * adapter gets the 1px / transparent / click-through style that makes React Flow
+ * re-measure it as a speck, every other adapter has it cleared.
+ *
+ * The style used to be written only by the global toggle, and only onto adapters
+ * following it — so an adapter shown with "Show Adapter" while the toggle was on kept
+ * an opacity-0, click-through wrapper and stayed invisible, and saved files carry that
+ * stale style. Syncing against the one resolved set, wherever that set is published,
+ * keeps the wrapper honest whichever control changed (#425, #409).
+ *
+ * Returns the input array untouched when nothing needed to change.
+ */
+export function syncHiddenAdapterStyles<T extends SchematicNode>(
+  nodes: T[],
+  hiddenAdapterIds: ReadonlySet<string>,
+): T[] {
+  let changed = false;
+  const next = nodes.map((n) => {
+    if (n.type !== "device" || (n.data as DeviceData).deviceType !== "adapter") return n;
+    const hidden = hiddenAdapterIds.has(n.id);
+    if (hidden === hasHiddenAdapterStyle(n)) return n;
+    changed = true;
+    return hidden
+      ? { ...n, style: { ...n.style, ...HIDDEN_ADAPTER_STYLE } }
+      : { ...n, style: { ...n.style, width: undefined, height: undefined, opacity: undefined, pointerEvents: undefined } };
+  });
+  return changed ? next : nodes;
 }
 
 /** Where a connection lands: the device it arrives at and the port on it. */

@@ -319,7 +319,20 @@ export default function ConnectionsPage() {
           <strong>Show a hidden adapter</strong> — right-click the merged connection line where the adapter
           was and select <strong>Show Adapter</strong>
         </li>
+        <li>
+          <strong>Go back to the View Options setting</strong> — once you've shown or hidden an adapter
+          by hand, it keeps that choice whatever <strong>Hide all adapters</strong> says. Right-click it
+          (or a connection to it) and select <strong>Follow View Setting</strong> to drop the choice
+        </li>
         <li>Hidden adapters collapse into a single connection line between the real devices</li>
+        <li>
+          Deleting that line deletes the whole run — the hidden adapter and the cables on both
+          sides of it — so the ports are free to connect again
+        </li>
+        <li>
+          Only an adapter with a connection on each side can be hidden. One that isn't wired on both
+          sides stays on the canvas so you can see it
+        </li>
         <li>When a hidden adapter bridges different signal types, the line renders as a <strong>color gradient</strong></li>
       </ul>
       <p>

@@ -618,12 +618,16 @@ export const handlers: Record<CommandType, (params: Record<string, unknown>) => 
     if (!connectionId) throw new CommandError("connectionId is required.");
     const plan = planConnectionRemoval(st().edges, connectionId);
     if (!plan.ok) throw new CommandError(plan.error);
-    const { removedStubLinks } = st().deleteConnection(plan.removeId);
+    const { removedStubLinks, removedHiddenAdapters } = st().deleteConnection(plan.removeId);
     // Deleting one half of a stubbed connection takes the other half and both stub
-    // labels with it (#318) — say so, rather than reporting only the requested id back.
-    return removedStubLinks > 0
-      ? { deleted: true, connectionId, cascadedStubConnection: true }
-      : { deleted: true, connectionId };
+    // labels with it (#318), and a connection through a hidden adapter takes the adapter
+    // and its other leg (#426) — say so, rather than reporting only the requested id back.
+    return {
+      deleted: true,
+      connectionId,
+      ...(removedStubLinks > 0 ? { cascadedStubConnection: true } : {}),
+      ...(removedHiddenAdapters ? { cascadedAdapter: true } : {}),
+    };
   },
 
   add_devices: async (params) => {

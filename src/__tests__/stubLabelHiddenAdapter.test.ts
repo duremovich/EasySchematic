@@ -89,7 +89,7 @@ function seedAdaptedRun() {
 function tagParts(tagId: string) {
   const pre = useSchematicStore.getState();
   useSchematicStore.setState({
-    hiddenAdapterNodeIds: resolveHiddenAdapterIds(pre.nodes, pre.hideAdapters),
+    hiddenAdapterNodeIds: resolveHiddenAdapterIds(pre.nodes, pre.hideAdapters, pre.edges),
   });
   const s = useSchematicStore.getState();
   const tag = s.nodes.find((n) => n.id === tagId)!;
@@ -253,15 +253,15 @@ describe("a stub tag names the far device, not a hidden inline adapter (#348)", 
 describe("resolveHiddenAdapterIds is the one rule for what counts as hidden", () => {
   it("hides only adapters, and only when told to", () => {
     seedAdaptedRun();
-    const { nodes } = useSchematicStore.getState();
-    expect(resolveHiddenAdapterIds(nodes, false)).toEqual(new Set());
-    expect(resolveHiddenAdapterIds(nodes, true)).toEqual(new Set(["dev-adapter"]));
+    const { nodes, edges } = useSchematicStore.getState();
+    expect(resolveHiddenAdapterIds(nodes, false, edges)).toEqual(new Set());
+    expect(resolveHiddenAdapterIds(nodes, true, edges)).toEqual(new Set(["dev-adapter"]));
 
     setAdapterVisibility("force-hide");
-    expect(resolveHiddenAdapterIds(useSchematicStore.getState().nodes, false))
+    expect(resolveHiddenAdapterIds(useSchematicStore.getState().nodes, false, edges))
       .toEqual(new Set(["dev-adapter"]));
 
     setAdapterVisibility("force-show");
-    expect(resolveHiddenAdapterIds(useSchematicStore.getState().nodes, true)).toEqual(new Set());
+    expect(resolveHiddenAdapterIds(useSchematicStore.getState().nodes, true, edges)).toEqual(new Set());
   });
 });

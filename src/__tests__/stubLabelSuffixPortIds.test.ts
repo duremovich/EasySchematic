@@ -102,7 +102,7 @@ function seedRuns() {
 function tagParts(tagId: string) {
   const pre = useSchematicStore.getState();
   useSchematicStore.setState({
-    hiddenAdapterNodeIds: resolveHiddenAdapterIds(pre.nodes, pre.hideAdapters),
+    hiddenAdapterNodeIds: resolveHiddenAdapterIds(pre.nodes, pre.hideAdapters, pre.edges),
   });
   const s = useSchematicStore.getState();
   const tag = s.nodes.find((n) => n.id === tagId)!;

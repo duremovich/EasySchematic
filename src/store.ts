@@ -43,7 +43,7 @@ import type { SignalType, ConnectorType, ScrollConfig, LineStyle, LabelCaseMode,
 import { defaultStubPlacement, healStubPortAlignment, nearestStubHandleSide, reconcileStubPairs, stubTagEndOf, STUB_H_EST, STUB_W_EST } from "./stubPlacement";
 import { estimateDeviceHeight, getPortAbsolutePositions, parentOffsetFromMap, settleTagsAfterMove, tagHostId } from "./snapUtils";
 import { findFreeAdapterSlot, ADAPTER_GAP, DEVICE_W_EST } from "./adapterPlacement";
-import { resolveHiddenAdapterIds } from "./adapterVisibility";
+import { adapterLegs, resolveHiddenAdapterIds, syncHiddenAdapterStyles } from "./adapterVisibility";
 import { findPortByHandle, strippedHandleId } from "./portHandles";
 import { textStubSideForPort, textStubBoxPosition } from "./textStub";
 import { DEFAULT_SCROLL_CONFIG, DEFAULT_LABEL_CASE, DEFAULT_DISTANCE_SETTINGS, DEFAULT_PAN_MODE, DEFAULT_STUB_LABEL_SHOW_ARROW, DEFAULT_STUB_LABEL_SHOW_PORT, DEFAULT_STUB_LABEL_SHOW_ROOM, DEFAULT_STUB_LABEL_PAGE_MODE, DEFAULT_STUB_LABEL_MODE, DEFAULT_CONNECTION_TYPE, portSide } from "./types";
@@ -390,9 +390,11 @@ interface SchematicState {
   // Actions
   addDevice: (template: DeviceTemplate, position: { x: number; y: number }) => void;
   /** removedStubLinks counts whole stubbed connections (both halves + both labels)
-   *  cascaded away because only one half was selected — callers that need to report
-   *  the cascade (the MCP bridge) can use it; UI callers ignore it. */
-  removeSelected: () => { removedStubLinks: number };
+   *  cascaded away because only one half was selected; removedHiddenAdapters (present
+   *  only when non-zero) counts hidden inline adapters deleted with their run (#426) —
+   *  callers that need to report a cascade (the MCP bridge) can use them; UI callers
+   *  ignore them. */
+  removeSelected: () => { removedStubLinks: number; removedHiddenAdapters?: number };
   deleteNode: (nodeId: string) => void;
   deleteNodeAndChildren: (nodeId: string) => void;
   /** Reposition a single node within its current parent (one undo step). Does not
@@ -401,7 +403,7 @@ interface SchematicState {
   /** Remove a single connection by id via the standard removeSelected path (so bundle
    *  GC, junction + waypoint reconciliation all run). Used by the bridge's
    *  delete_connection tool. */
-  deleteConnection: (connectionId: string) => { removedStubLinks: number };
+  deleteConnection: (connectionId: string) => { removedStubLinks: number; removedHiddenAdapters?: number };
   /** Re-route one end of a connection onto a port the user dropped it on. Keeps the
    *  connection id — cable IDs, path handles and patch hops are all keyed by it. One
    *  undo step; a refused drop pushes none. */
@@ -1330,6 +1332,103 @@ interface RouteApplyCtx {
 }
 let pendingRouteCtx: RouteApplyCtx | null = null;
 
+/**
+ * Resolve which adapters are hidden and splice each one's two legs into a single
+ * virtual connection drawn straight through it. Shared by BOTH route builders: the A*
+ * path (recomputeRoutes) and the auto-route-off path (computeSimpleRoutes). The hidden
+ * set used to be published only by the A* result, so with auto-route off — or after a
+ * large schematic tripped the routing budget — no adapter ever hid, while both context
+ * menus already labelled it as hidden: "Show Adapter" on a drawn adapter, and "Hide
+ * Adapter" doing nothing (#425).
+ *
+ * `allEdges` decides which adapters can hide at all (a leg on each side, counted on
+ * the complete edge list); `routeEdges` is what the builder draws (the A* path filters
+ * hidden signal types out of it) and is what gets spliced.
+ *
+ * `carryPrimaryLegData` copies the inbound leg's bundle membership and hand-placed
+ * waypoints onto the spliced connection. The merged line IS the inbound leg as far as
+ * the UI is concerned — bundling, path handles and segment drags all write that leg —
+ * so the auto-route-off builder, which draws exactly what it is handed, must see them:
+ * without the bundleId a 2-member bundle loses its other member's route, and without
+ * the waypoints a hidden run frozen by "keep routes" ignores its own handles. The A*
+ * path does not opt in: what it receives is unchanged.
+ */
+function spliceHiddenAdapters(
+  nodes: SchematicNode[],
+  allEdges: ConnectionEdge[],
+  routeEdges: ConnectionEdge[],
+  hideAdapters: boolean,
+  carryPrimaryLegData = false,
+): Omit<RouteApplyCtx, "seq"> & { edges: ConnectionEdge[] } {
+  const hiddenAdapterNodeIds = resolveHiddenAdapterIds(nodes, hideAdapters, allEdges);
+  const hiddenVirtualEdgeIds = new Set<string>();
+  const virtualEdgeGradients: Record<string, { sourceColor: string; targetColor: string }> = {};
+  // Map from virtual edge ID back to the hidden partner edge ID
+  const virtualEdgeSources = new Map<string, { primaryEdgeId: string; secondaryEdgeId: string; adapterNodeId: string }>();
+  if (hiddenAdapterNodeIds.size === 0) {
+    return { hiddenAdapterNodeIds, hiddenVirtualEdgeIds, virtualEdgeGradients, virtualEdgeSources, edges: routeEdges };
+  }
+
+  // For each hidden adapter, find its edge pair and create virtual edges
+  const virtualEdges: ConnectionEdge[] = [];
+  const replacedEdgeIds = new Set<string>();
+
+  for (const adapterId of hiddenAdapterNodeIds) {
+    // Find edges connected to this adapter
+    const { inbound: inboundEdge, outbound: outboundEdge } = adapterLegs(adapterId, routeEdges);
+
+    if (inboundEdge && outboundEdge) {
+      // Create virtual edge: source of inbound → target of outbound
+      const virtualId = `virtual-${inboundEdge.id}-${outboundEdge.id}`;
+      const srcSignalType = inboundEdge.data?.signalType ?? "custom";
+      const tgtSignalType = outboundEdge.data?.signalType ?? "custom";
+
+      virtualEdges.push({
+        id: virtualId,
+        source: inboundEdge.source,
+        target: outboundEdge.target,
+        sourceHandle: inboundEdge.sourceHandle,
+        targetHandle: outboundEdge.targetHandle,
+        data: {
+          signalType: srcSignalType as SignalType,
+          ...(carryPrimaryLegData && inboundEdge.data?.bundleId ? { bundleId: inboundEdge.data.bundleId } : {}),
+          ...(carryPrimaryLegData && inboundEdge.data?.manualWaypoints?.length
+            ? { manualWaypoints: inboundEdge.data.manualWaypoints }
+            : {}),
+        },
+        style: inboundEdge.style,
+      });
+
+      replacedEdgeIds.add(inboundEdge.id);
+      replacedEdgeIds.add(outboundEdge.id);
+      hiddenVirtualEdgeIds.add(outboundEdge.id);
+
+      virtualEdgeSources.set(virtualId, {
+        primaryEdgeId: inboundEdge.id,
+        secondaryEdgeId: outboundEdge.id,
+        adapterNodeId: adapterId,
+      });
+
+      // If signal types differ, store gradient info for the primary edge
+      if (srcSignalType !== tgtSignalType) {
+        virtualEdgeGradients[inboundEdge.id] = {
+          sourceColor: signalCssColor(srcSignalType),
+          targetColor: signalCssColor(tgtSignalType),
+        };
+      }
+    }
+  }
+
+  // Replace real edge pairs with virtual edges for routing
+  return {
+    hiddenAdapterNodeIds,
+    hiddenVirtualEdgeIds,
+    virtualEdgeGradients,
+    virtualEdgeSources,
+    edges: [...routeEdges.filter((e) => !replacedEdgeIds.has(e.id)), ...virtualEdges],
+  };
+}
+
 function applyRoutingResult(r: RoutingResult): void {
   // Discard stale/superseded results — only the latest posted seq's context is live.
   if (!pendingRouteCtx || r.seq !== pendingRouteCtx.seq) return;
@@ -1370,10 +1469,12 @@ function applyRoutingResult(r: RoutingResult): void {
     hopEdgeIds.has(e.id) ? { ...e, zIndex: 1 } : { ...e, zIndex: 0 },
   );
 
+  const syncedNodes = syncHiddenAdapterStyles(state.nodes, ctx.hiddenAdapterNodeIds);
   useSchematicStore.setState({
     routedEdges: results,
     routingDebugData: r.routingDebug ?? null,
     edges: updatedEdges,
+    ...(syncedNodes !== state.nodes ? { nodes: syncedNodes } : {}),
     hiddenAdapterNodeIds: ctx.hiddenAdapterNodeIds,
     hiddenVirtualEdgeIds: ctx.hiddenVirtualEdgeIds,
     virtualEdgeGradients: ctx.virtualEdgeGradients,
@@ -2362,18 +2463,13 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
 
   setHideAdapters: (hide) => {
     const state = get();
-    // Update node styles so React Flow re-measures hidden/shown adapters
-    const updatedNodes = state.nodes.map((n) => {
-      if (n.type !== "device") return n;
-      const data = n.data as DeviceData;
-      if (data.deviceType !== "adapter") return n;
-      const visibility = data.adapterVisibility ?? "default";
-      if (visibility === "force-show" || visibility === "force-hide") return n;
-      // This adapter follows the global toggle — update its style to force RF re-measure
-      return hide
-        ? { ...n, style: { ...n.style, width: 1, height: 1, opacity: 0, pointerEvents: "none" as const } }
-        : { ...n, style: { ...n.style, width: undefined, height: undefined, opacity: undefined, pointerEvents: undefined } };
-    });
+    // Update adapter wrapper styles now so React Flow re-measures hidden/shown adapters
+    // without waiting for the next route; the route builders re-sync against the same
+    // resolved set when they publish it.
+    const updatedNodes = syncHiddenAdapterStyles(
+      state.nodes,
+      resolveHiddenAdapterIds(state.nodes, hide, state.edges),
+    );
     set({ hideAdapters: hide, nodes: updatedNodes });
     get().saveToLocalStorage();
   },
@@ -2671,6 +2767,23 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       state.edges.filter((e) => e.selected).map((e) => e.id),
     );
 
+    // A connection through a hidden adapter is drawn as ONE connection — the adapter and
+    // its far leg render as nothing. Deleting any part of that run (either leg, either
+    // stub half of a stubbed leg, or the device at either end) must take the whole run:
+    // adapter + both legs, or the far leg stays behind on an invisible adapter, still
+    // holding its port so nothing can be plugged back in (#426). Only an adapter wired
+    // exactly inline (two legs) cascades — a custom adapter with a third connection
+    // keeps it, loses just the deleted leg, and is drawn again by the both-sides rule.
+    // Cascaded adapters join the selected set below, so every reconciler (stub pairs,
+    // waypoints, bundles, hops, rack placements) treats them as deleted devices.
+    const cascadeCandidates = new Map<string, string[]>();
+    for (const id of resolveHiddenAdapterIds(state.nodes, state.hideAdapters, state.edges)) {
+      if (selectedNodeIds.has(id)) continue;
+      const legIds = state.edges.filter((e) => e.source === id || e.target === id).map((e) => e.id);
+      if (legIds.length === 2) cascadeCandidates.set(id, legIds);
+    }
+    const cascadedAdapterIds = new Set<string>();
+
     // Un-parent children of deleted rooms
     const deletedRoomIds = new Set(
       state.nodes
@@ -2694,46 +2807,65 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       return { x: n.position.x + p.x, y: n.position.y + p.y };
     }
 
-    // Also remove edges connected to deleted nodes (excluding waypoint nodes —
-    // a waypoint's source/target relationship doesn't exist; they're floating).
-    const deletedConnectingNodes = new Set(
-      [...selectedNodeIds].filter((id) => {
-        const n = nodeMap.get(id);
-        return n && n.type !== "waypoint";
-      }),
-    );
-    const survivingEdges = state.edges.filter(
-      (e) =>
-        !selectedEdgeIds.has(e.id) &&
-        !deletedConnectingNodes.has(e.source) &&
-        !deletedConnectingNodes.has(e.target),
-    );
+    // One deletion pass: drop selected edges and every edge on a deleted device, then
+    // heal stub pairs. Repeated until no hidden inline adapter has lost a leg — each
+    // cascaded adapter can strand a stub pair or the next hidden adapter in a chain.
+    const deletionPass = () => {
+      // Also remove edges connected to deleted nodes (excluding waypoint nodes —
+      // a waypoint's source/target relationship doesn't exist; they're floating).
+      const deletedConnectingNodes = new Set(
+        [...selectedNodeIds].filter((id) => {
+          const n = nodeMap.get(id);
+          return n && n.type !== "waypoint";
+        }),
+      );
+      const survivingEdges = state.edges.filter(
+        (e) =>
+          !selectedEdgeIds.has(e.id) &&
+          !deletedConnectingNodes.has(e.source) &&
+          !deletedConnectingNodes.has(e.target),
+      );
 
-    // Splice manualWaypoints entries for each selected waypoint node so their
-    // indices vanish from the canonical store. Waypoints belonging to deleted
-    // edges are dropped wholesale by reconcileWaypointNodes below.
-    const edgesAfterSplice = spliceWaypointsForRemovedNodes(survivingEdges, selectedWaypoints);
+      // Splice manualWaypoints entries for each selected waypoint node so their
+      // indices vanish from the canonical store. Waypoints belonging to deleted
+      // edges are dropped wholesale by reconcileWaypointNodes below.
+      const edgesAfterSplice = spliceWaypointsForRemovedNodes(survivingEdges, selectedWaypoints);
 
-    const remainingNodes = state.nodes
-      .filter((n) => !n.selected)
-      .map((n) => {
-        if (n.parentId && deletedRoomIds.has(n.parentId)) {
-          // Convert to absolute position — walk the full parent chain
-          return {
-            ...n,
-            parentId: undefined,
-            extent: undefined,
-            position: computeAbsolutePos(n.id),
-          };
-        }
-        return n;
-      });
+      const remainingNodes = state.nodes
+        .filter((n) => !n.selected && !cascadedAdapterIds.has(n.id))
+        .map((n) => {
+          if (n.parentId && deletedRoomIds.has(n.parentId)) {
+            // Convert to absolute position — walk the full parent chain
+            return {
+              ...n,
+              parentId: undefined,
+              extent: undefined,
+              position: computeAbsolutePos(n.id),
+            };
+          }
+          return n;
+        });
 
-    // Deleting ONE leg of a stubbed connection (or one of its two tags) leaves the other
-    // half behind rendering "?" — drop the whole link instead (#318). This runs before
-    // every other reconciler below so they all see the final node/edge lists; run last it
-    // would leave path handles, bundle membership and hops behind for the cascaded leg.
-    const stubHealed = reconcileStubPairs(remainingNodes, edgesAfterSplice);
+      // Deleting ONE leg of a stubbed connection (or one of its two tags) leaves the other
+      // half behind rendering "?" — drop the whole link instead (#318). This runs before
+      // every other reconciler below so they all see the final node/edge lists; run last it
+      // would leave path handles, bundle membership and hops behind for the cascaded leg.
+      return reconcileStubPairs(remainingNodes, edgesAfterSplice);
+    };
+
+    let stubHealed = deletionPass();
+    for (;;) {
+      const kept = new Set(stubHealed.edges.map((e) => e.id));
+      let grew = false;
+      for (const [id, legIds] of cascadeCandidates) {
+        if (cascadedAdapterIds.has(id) || legIds.every((l) => kept.has(l))) continue;
+        cascadedAdapterIds.add(id);
+        selectedNodeIds.add(id);
+        grew = true;
+      }
+      if (!grew) break;
+      stubHealed = deletionPass();
+    }
 
     // Cascade-remove text stubs (#196) whose anchor device was deleted — they carry no
     // edge, so the edge-based orphan pruning above never touches them.
@@ -2802,7 +2934,10 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       ...(nextDistances !== state.roomDistances ? { roomDistances: nextDistances } : {}),
     });
     get().saveToLocalStorage();
-    return { removedStubLinks: stubHealed.removedLinks };
+    return {
+      removedStubLinks: stubHealed.removedLinks,
+      ...(cascadedAdapterIds.size > 0 ? { removedHiddenAdapters: cascadedAdapterIds.size } : {}),
+    };
   },
 
   deleteNode: (nodeId: string) => {
@@ -7849,10 +7984,18 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     const state = get();
     const results: Record<string, RoutedEdge> = {};
 
+    // Hidden adapters splice into one connection drawn straight through, exactly as on
+    // the A* path — and the hidden set is published from here too, or nothing hides
+    // while auto-route is off (#425).
+    const splice = spliceHiddenAdapters(state.nodes, state.edges, state.edges, state.hideAdapters, true);
+
     // Bundle members route along one shared trunk (straight L-gather + trunk + L-fan, no
     // A*). Tally present members per bundle; a bundle is live only with ≥2 members.
+    // Tallied over the edges this pass actually draws (hidden adapter runs spliced), the
+    // same "present in this pass" rule edgeRouter uses — tallying the raw edge list let a
+    // spliced run's bundle-mate wait for a partner that never arrives, and go unrouted.
     const bundleCounts = new Map<string, number>();
-    for (const e of state.edges) {
+    for (const e of splice.edges) {
       const bid = e.data?.bundleId;
       if (bid) bundleCounts.set(bid, (bundleCounts.get(bid) ?? 0) + 1);
     }
@@ -7884,7 +8027,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       );
     };
 
-    for (const edge of state.edges) {
+    for (const edge of splice.edges) {
       const srcInternal = rfInstance.getInternalNode(edge.source);
       const tgtInternal = rfInstance.getInternalNode(edge.target);
       if (!srcInternal || !tgtInternal) continue;
@@ -8036,6 +8179,16 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       };
     }
 
+    // Map virtual edge routes (hidden adapters) back to their primary real edge IDs —
+    // the same remap applyRoutingResult does for the A* result.
+    for (const [virtualId, mapping] of splice.virtualEdgeSources) {
+      const route = results[virtualId];
+      if (route) {
+        results[mapping.primaryEdgeId] = { ...route, edgeId: mapping.primaryEdgeId };
+        delete results[virtualId];
+      }
+    }
+
     // Detect crossings so line hops render in manual mode too.
     const stubbedIds = new Set(state.edges.filter((e) => e.data?.stubbed).map((e) => e.id));
     const entries = Object.values(results).filter((r) => !stubbedIds.has(r.edgeId) && !r.edgeId.startsWith("bundle:"));
@@ -8080,7 +8233,14 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       }
     }
 
-    set({ routedEdges: results });
+    const syncedNodes = syncHiddenAdapterStyles(state.nodes, splice.hiddenAdapterNodeIds);
+    set({
+      routedEdges: results,
+      ...(syncedNodes !== state.nodes ? { nodes: syncedNodes } : {}),
+      hiddenAdapterNodeIds: splice.hiddenAdapterNodeIds,
+      hiddenVirtualEdgeIds: splice.hiddenVirtualEdgeIds,
+      virtualEdgeGradients: splice.virtualEdgeGradients,
+    });
   },
 
   recomputeRoutes: (rfInstance) => {
@@ -8091,66 +8251,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       : state.edges;
 
     // --- Adapter visibility: compute hidden adapters and virtual edges ---
-    const hiddenAdapterNodeIds = resolveHiddenAdapterIds(state.nodes, state.hideAdapters);
-    const hiddenVirtualEdgeIds = new Set<string>();
-    const virtualEdgeGradients: Record<string, { sourceColor: string; targetColor: string }> = {};
-    // Map from virtual edge ID back to the hidden partner edge ID
-    const virtualEdgeSources = new Map<string, { primaryEdgeId: string; secondaryEdgeId: string; adapterNodeId: string }>();
-
-    if (hiddenAdapterNodeIds.size > 0) {
-      // For each hidden adapter, find its edge pair and create virtual edges
-      const virtualEdges: ConnectionEdge[] = [];
-      const replacedEdgeIds = new Set<string>();
-
-      for (const adapterId of hiddenAdapterNodeIds) {
-        // Find edges connected to this adapter
-        const inboundEdge = visibleEdges.find((e) => e.target === adapterId);
-        const outboundEdge = visibleEdges.find((e) => e.source === adapterId);
-
-        if (inboundEdge && outboundEdge) {
-          // Create virtual edge: source of inbound → target of outbound
-          const virtualId = `virtual-${inboundEdge.id}-${outboundEdge.id}`;
-          const srcSignalType = inboundEdge.data?.signalType ?? "custom";
-          const tgtSignalType = outboundEdge.data?.signalType ?? "custom";
-
-          virtualEdges.push({
-            id: virtualId,
-            source: inboundEdge.source,
-            target: outboundEdge.target,
-            sourceHandle: inboundEdge.sourceHandle,
-            targetHandle: outboundEdge.targetHandle,
-            data: {
-              signalType: srcSignalType as SignalType,
-            },
-            style: inboundEdge.style,
-          });
-
-          replacedEdgeIds.add(inboundEdge.id);
-          replacedEdgeIds.add(outboundEdge.id);
-          hiddenVirtualEdgeIds.add(outboundEdge.id);
-
-          virtualEdgeSources.set(virtualId, {
-            primaryEdgeId: inboundEdge.id,
-            secondaryEdgeId: outboundEdge.id,
-            adapterNodeId: adapterId,
-          });
-
-          // If signal types differ, store gradient info for the primary edge
-          if (srcSignalType !== tgtSignalType) {
-            virtualEdgeGradients[inboundEdge.id] = {
-              sourceColor: signalCssColor(srcSignalType),
-              targetColor: signalCssColor(tgtSignalType),
-            };
-          }
-        }
-      }
-
-      // Replace real edge pairs with virtual edges for routing
-      visibleEdges = [
-        ...visibleEdges.filter((e) => !replacedEdgeIds.has(e.id)),
-        ...virtualEdges,
-      ];
-    }
+    const splice = spliceHiddenAdapters(state.nodes, state.edges, visibleEdges, state.hideAdapters);
+    const { hiddenAdapterNodeIds, hiddenVirtualEdgeIds, virtualEdgeGradients, virtualEdgeSources } = splice;
+    visibleEdges = splice.edges;
 
     // Exclude hidden adapters AND off-canvas devices (virtual patch panels) from
     // obstacle computation — neither is rendered, so neither should block routes.

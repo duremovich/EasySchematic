@@ -5,7 +5,7 @@ import type { DeviceData, RackElevationPage } from "../types";
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
 import { useContextMenuDismiss } from "../hooks/useContextMenuDismiss";
 import { inferRackHeightU } from "../rackUtils";
-import { isAdapterHidden, toggleAdapterVisibility } from "../adapterVisibility";
+import { canHideAdapter, isAdapterNodeHidden, toggleAdapterVisibility } from "../adapterVisibility";
 
 const closeMenu = () => useSchematicStore.setState({ deviceContextMenu: null });
 
@@ -15,6 +15,7 @@ export default function DeviceContextMenu() {
   const pages = useMemo(() => allPages.filter((p): p is RackElevationPage => p.type === "rack-elevation"), [allPages]);
   const setActivePage = useSchematicStore((s) => s.setActivePage);
   const nodes = useSchematicStore((s) => s.nodes);
+  const edges = useSchematicStore((s) => s.edges);
   const hideAdapters = useSchematicStore((s) => s.hideAdapters);
   const updateNodeInternals = useUpdateNodeInternals();
   const { ref: menuRef, pos: menuPos } = useContextMenuPosition(
@@ -68,6 +69,13 @@ export default function DeviceContextMenu() {
     useSchematicStore.setState({ deviceContextMenu: null });
   }, [menu]);
 
+  // Drop the adapter's Show/Hide override so it follows View Options again (#409).
+  const followAdapterViewSetting = useCallback(() => {
+    if (!menu) return;
+    useSchematicStore.getState().patchDeviceData(menu.nodeId, { adapterVisibility: undefined });
+    useSchematicStore.setState({ deviceContextMenu: null });
+  }, [menu]);
+
   if (!menu) return null;
 
   const { nodeId } = menu;
@@ -79,7 +87,12 @@ export default function DeviceContextMenu() {
     .find((x) => x.placement.deviceNodeId === nodeId);
 
   const isAdapter = deviceData?.deviceType === "adapter";
-  const adapterIsHidden = isAdapter && isAdapterHidden(deviceData?.adapterVisibility, hideAdapters);
+  // Same resolved rule the canvas draws by (#425). An adapter without a leg on each side
+  // can't be drawn hidden, so it offers no Hide.
+  const adapterIsHidden = isAdapterNodeHidden(node, hideAdapters, edges);
+  const canToggleAdapter = isAdapter && (adapterIsHidden || canHideAdapter(nodeId, edges));
+  const adapterHasOverride =
+    isAdapter && !!deviceData?.adapterVisibility && deviceData.adapterVisibility !== "default";
 
   return (
     <div
@@ -106,11 +119,14 @@ export default function DeviceContextMenu() {
             onClick={toggleShowOnlyConnected}
             checked={!!deviceData.showOnlyConnectedPorts}
           />
-          {isAdapter && (
+          {canToggleAdapter && (
             <MenuItem
               label={adapterIsHidden ? "Show Adapter" : "Hide Adapter"}
               onClick={toggleAdapterHidden}
             />
+          )}
+          {adapterHasOverride && (
+            <MenuItem label="Follow View Setting" onClick={followAdapterViewSetting} />
           )}
           {(placement || pages.length > 0) && (
             <div className="border-t border-gray-200 my-1" />

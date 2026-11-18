@@ -138,7 +138,7 @@ export const TOOLS: ToolDef[] = [
   {
     name: "delete_connection",
     description:
-      "Remove a single connection from the canvas by its id (the connection ids are returned by get_schematic and connect_devices). Stubbed connections cannot be removed this way yet.",
+      "Remove a single connection from the canvas by its id (the connection ids are returned by get_schematic and connect_devices). Stubbed connections cannot be removed this way yet. Removing a connection that runs through a hidden adapter also removes that adapter and its other connection; the result then includes cascadedAdapter: true.",
     inputSchema: {
       type: "object",
       properties: {
