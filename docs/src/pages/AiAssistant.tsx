@@ -43,6 +43,16 @@ node dist/index.js`}</code>
         listening on (default <code>8765</code>).
       </p>
 
+      <p>
+        Some assistants (Claude desktop, for example) start the server more than
+        once. That's fine: the first copy hosts the editor connection and the
+        others pass their requests through it, so give them all the same token by
+        setting <code>EASYSCHEMATIC_MCP_TOKEN</code> to a fixed value. If the port is
+        held by something else (a copy with a different token, or another
+        program), the assistant gets an error saying so, not{" "}
+        <em>“No EasySchematic app is connected”</em>.
+      </p>
+
       <h2>2. Turn it on in EasySchematic</h2>
 
       <ol>

@@ -32,14 +32,49 @@ const allowedOrigins = (process.env.EASYSCHEMATIC_MCP_ORIGINS || "")
   .map((s) => s.trim())
   .filter(Boolean);
 
-const bridge = new AppBridge({ port, token, allowedOrigins, log });
-bridge.start();
+function logOwnerBanner(takeover: boolean): void {
+  log("");
+  log(`WebSocket bridge listening on ws://127.0.0.1:${port}`);
+  log(`Pairing token: ${token}`);
+  if (takeover) {
+    log("This instance took over the port from one that exited. If the editor was paired with a different token,");
+    log("paste this one into EasySchematic → Preferences → AI (Beta).");
+  } else {
+    log("Paste this token into EasySchematic → Preferences → AI (Beta), then turn the toggle on.");
+  }
+  log("");
+}
 
-log("");
-log(`WebSocket bridge listening on ws://127.0.0.1:${port}`);
-log(`Pairing token: ${token}`);
-log("Paste this token into EasySchematic → Preferences → AI (Beta), then turn the toggle on.");
-log("");
+// The owner banner (with the token) is printed every time this instance becomes the
+// port owner — including a later takeover — never before the bind has succeeded.
+const bridge = new AppBridge({ port, token, allowedOrigins, log, onOwner: logOwnerBanner });
+// Not awaited here, so stdio comes up immediately; tool calls wait for it below.
+const started = bridge.start().then((mode) => {
+  if (mode === "owner") return; // banner already printed via onOwner
+  log("");
+  if (mode === "peer") {
+    log(`Port ${port} is already held by another EasySchematic MCP server instance with the same pairing token.`);
+    log("This instance relays its tool calls through that one; the editor pairs with that token as usual.");
+  } else {
+    log(`WebSocket bridge NOT listening — ${bridge.unavailableDetail}.`);
+    log("Tool calls from this instance will fail with that reason until the port frees up (retrying in the background).");
+  }
+  log("");
+});
+
+// Exit when the MCP client goes away (stdin EOF/close — e.g. Claude desktop quit
+// or crashed). Without this, a peer (open relay socket) or an unavailable instance
+// (retry timer) would live on as an orphan with no client, occupy a peer slot, and
+// could even win a later takeover of the port.
+let shuttingDown = false;
+function shutdown(): void {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  setTimeout(() => process.exit(0), 2000).unref(); // backstop if a close hangs
+  void bridge.stop().finally(() => process.exit(0));
+}
+process.stdin.once("end", shutdown);
+process.stdin.once("close", shutdown);
 
 const server = new Server(
   { name: "easyschematic", version: "0.1.0" },
@@ -57,6 +92,7 @@ server.setRequestHandler(GetPromptRequestSchema, async (req) =>
 server.setRequestHandler(CallToolRequestSchema, async (req) => {
   const { name, arguments: args } = req.params;
   try {
+    await started;
     const result = await bridge.call(name, (args ?? {}) as Record<string, unknown>);
     return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
   } catch (err) {

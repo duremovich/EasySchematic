@@ -26,3 +26,31 @@ export function isOriginAllowed(origin: string | undefined, allowed: string[]): 
     return false;
   }
 }
+
+/** True for a loopback peer address as Node reports it (IPv4 127/8, IPv6 ::1, or
+ *  an IPv4-mapped 127/8). */
+export function isLoopbackAddress(addr: string | undefined): boolean {
+  if (!addr) return false;
+  const a = addr.toLowerCase().startsWith("::ffff:") ? addr.slice(7) : addr;
+  if (a === "::1") return true;
+  return /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(a);
+}
+
+/**
+ * Route an incoming WebSocket handshake:
+ *  - "tab": a browser editor tab — it sent an allowed Origin, and must then pass
+ *    the `hello` token check. This path is unchanged by multi-instance support.
+ *  - "peer": another local EasySchematic MCP server instance. Browsers ALWAYS send
+ *    Origin on a WebSocket handshake, so a page can never arrive here; a peer
+ *    sends none, must come from loopback, and must then pass the `peer_hello`
+ *    token check before anything else (and can never bind as a tab).
+ *  - "reject": a disallowed/malformed Origin, or a no-Origin non-loopback socket.
+ */
+export function classifyHandshake(
+  origin: string | undefined,
+  remoteAddress: string | undefined,
+  allowedOrigins: string[],
+): "tab" | "peer" | "reject" {
+  if (origin === undefined) return isLoopbackAddress(remoteAddress) ? "peer" : "reject";
+  return isOriginAllowed(origin, allowedOrigins) ? "tab" : "reject";
+}
