@@ -30,6 +30,7 @@ import {
   HEADER_LABEL_ZONE_2_PX,
 } from "../auxiliaryData";
 import { resolveDeviceLabel } from "../displayName";
+import { estimateDeviceWidth } from "../deviceWidth";
 
 const ROW_H = 16;
 const PORT_AREA_PT = 6;
@@ -37,7 +38,6 @@ const PORT_AREA_PB = 7;
 const TOP_BORDER = 1;
 const HEADER_BORDER = 1;
 const BOTTOM_BORDER = 1;
-const DEFAULT_DEVICE_WIDTH = 144;
 
 export interface DeviceHandle {
   /** Handle id as referenced by edge.sourceHandle/targetHandle. */
@@ -180,7 +180,7 @@ export function computeDeviceHandles(node: {
   data: DeviceData;
   measured?: { width?: number; height?: number };
 }): DeviceHandle[] {
-  const width = node.measured?.width ?? DEFAULT_DEVICE_WIDTH;
+  const width = node.measured?.width ?? estimateDeviceWidth(node.data);
   return layoutRows(node.data, width).handles;
 }
 
@@ -193,7 +193,7 @@ export function deviceContentHeight(node: {
   data: DeviceData;
   measured?: { width?: number; height?: number };
 }): number {
-  const width = node.measured?.width ?? DEFAULT_DEVICE_WIDTH;
+  const width = node.measured?.width ?? estimateDeviceWidth(node.data);
   const { totalRows } = layoutRows(node.data, width);
   const bandH = headerBandHeight(node.data.auxiliaryData, labelZoneFor(node.data));
   const footer = auxBlockHeight(node.data.auxiliaryData);

@@ -63,6 +63,7 @@ src/__tests__/fixtures/routing/baselines/*
 !src/__tests__/fixtures/routing/baselines/bundle-fan-in.json
 !src/__tests__/fixtures/routing/baselines/bundle-mixed-signal.json
 !src/__tests__/fixtures/routing/baselines/bundle-with-traffic.json
+!src/__tests__/fixtures/routing/baselines/fit-width-console.json
 
 # Reports harness — generated snapshots (baselines/ are committed golden snapshots);
 # same public-repo rule as routing: dropped-in client exports and their goldens stay local.

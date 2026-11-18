@@ -1,11 +1,12 @@
 import type { ReactFlowInstance } from "@xyflow/react";
 import { useSchematicStore } from "../store";
-import type { ConnectionEdge, SignalType } from "../types";
+import type { ConnectionEdge, DeviceData, SignalType } from "../types";
 import type { RoutedEdge } from "../edgeRouter";
 import { buildPrintPageLookup } from "../stubLabelResolve";
 import { DxfWriter, type EntityStyle } from "./writer";
 import { pxToIn } from "./units";
 import { effectiveLineWidth, lineWidthToDxfLineweight } from "../lineWidth";
+import { estimateDeviceWidth } from "../deviceWidth";
 import {
   buildLayerDefs,
   CANONICAL_LAYERS,
@@ -47,7 +48,7 @@ export function buildDxf(rfInstance: ReactFlowInstance): string | null {
     if (!internal) continue;
     const ax = internal.internals.positionAbsolute.x;
     const ay = internal.internals.positionAbsolute.y;
-    const w = node.measured?.width ?? 144;
+    const w = node.measured?.width ?? (node.type === "device" ? estimateDeviceWidth(node.data as DeviceData) : 144);
     const h = node.measured?.height ?? 64;
     const x1 = pxToIn(ax), x2 = pxToIn(ax + w);
     const y1 = -pxToIn(ay), y2 = -pxToIn(ay + h);

@@ -255,6 +255,31 @@ function bundleWithTraffic(): Fixture {
   return makeFixture("bundle-with-traffic", nodes, edges, { b1: { id: "b1" } });
 }
 
+/**
+ * A fit-width console (#418): an SQ-5-shaped mixer flagged `fitWidth`, so its real
+ * "Analog Out 10" labels widen it from 144 to 176 px. Sources feed its inputs from the
+ * left, amps hang off its outputs on the right. Guards the widened geometry end to end:
+ * handles on the wide right edge, no endpoint running through the body, no overlap.
+ */
+function fitWidthConsole(): Fixture {
+  const ins = Array.from({ length: 6 }, (_, i) => makePort(`Analog In ${i + 11}`, "analog-audio", "input"));
+  const outs = Array.from({ length: 6 }, (_, i) => makePort(`Analog Out ${i + 7}`, "analog-audio", "output"));
+  const mixer = makeDevice({ id: "mixer", label: "A&H SQ-5", x: 320, y: 96, ports: [...ins, ...outs], fitWidth: true });
+  const nodes: SchematicNode[] = [mixer];
+  const edges: ConnectionEdge[] = [];
+  ins.forEach((p, i) => {
+    const sOut = makePort("Out", "analog-audio", "output");
+    nodes.push(makeDevice({ id: `mic${i}`, label: `Mic RX ${i + 1}`, x: 0, y: i * 64, ports: [sOut] }));
+    edges.push(makeEdge({ id: `i${i}`, source: `mic${i}`, sourceHandle: sOut.id, target: "mixer", targetHandle: p.id, signalType: "analog-audio" }));
+  });
+  outs.forEach((p, i) => {
+    const aIn = makePort("In", "analog-audio", "input");
+    nodes.push(makeDevice({ id: `amp${i}`, label: `Amp ${i + 1}`, x: 768, y: i * 64, ports: [aIn] }));
+    edges.push(makeEdge({ id: `o${i}`, source: "mixer", sourceHandle: p.id, target: `amp${i}`, targetHandle: aIn.id, signalType: "analog-audio" }));
+  });
+  return makeFixture("fit-width-console", nodes, edges);
+}
+
 export function syntheticFixtures(): Fixture[] {
   return [
     fanOutDense(),
@@ -269,6 +294,7 @@ export function syntheticFixtures(): Fixture[] {
     bundleFanIn(),
     bundleMixedSignal(),
     bundleWithTraffic(),
+    fitWidthConsole(), // keep last: makePort ids are sequential across fixtures
   ];
 }
 

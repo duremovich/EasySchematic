@@ -58,6 +58,25 @@ export default function DeviceContextMenu() {
     useSchematicStore.setState({ deviceContextMenu: null });
   }, [menu, updateNodeInternals]);
 
+  /** Devices a width action applies to: the whole selection when the right-clicked
+   *  device is part of it, otherwise just that device. */
+  const widthTargets = useCallback((): string[] => {
+    if (!menu) return [];
+    const ns = useSchematicStore.getState().nodes;
+    const clicked = ns.find((n) => n.id === menu.nodeId);
+    if (!clicked || clicked.type !== "device") return [];
+    if (!clicked.selected) return [clicked.id];
+    return ns.filter((n) => n.selected && n.type === "device").map((n) => n.id);
+  }, [menu]);
+
+  const setFitWidth = useCallback((fit: boolean) => {
+    const ids = widthTargets();
+    useSchematicStore.getState().setDevicesFitWidth(ids, fit);
+    // Right-side handles move with the box edge — re-measure so connections follow.
+    for (const id of ids) updateNodeInternals(id);
+    useSchematicStore.setState({ deviceContextMenu: null });
+  }, [widthTargets, updateNodeInternals]);
+
   const toggleAdapterHidden = useCallback(() => {
     if (!menu) return;
     const store = useSchematicStore.getState();
@@ -94,6 +113,16 @@ export default function DeviceContextMenu() {
   const adapterHasOverride =
     isAdapter && !!deviceData?.adapterVisibility && deviceData.adapterVisibility !== "default";
 
+  // Fit-width state across the devices the action would touch (#418).
+  const widthTargetData = node?.type === "device"
+    ? (node.selected
+        ? nodes.filter((n) => n.selected && n.type === "device")
+        : [node]
+      ).map((n) => n.data as DeviceData)
+    : [];
+  const anyStandardWidth = widthTargetData.some((d) => !d.fitWidth);
+  const anyFitWidth = widthTargetData.some((d) => d.fitWidth);
+
   return (
     <div
       ref={menuRef}
@@ -119,6 +148,12 @@ export default function DeviceContextMenu() {
             onClick={toggleShowOnlyConnected}
             checked={!!deviceData.showOnlyConnectedPorts}
           />
+          {anyStandardWidth && (
+            <MenuItem label="Fit Width to Labels" onClick={() => setFitWidth(true)} />
+          )}
+          {anyFitWidth && (
+            <MenuItem label="Reset to Standard Width" onClick={() => setFitWidth(false)} />
+          )}
           {canToggleAdapter && (
             <MenuItem
               label={adapterIsHidden ? "Show Adapter" : "Hide Adapter"}

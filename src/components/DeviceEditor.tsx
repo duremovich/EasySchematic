@@ -492,6 +492,8 @@ export default function DeviceEditor() {
       ...(adapterVisibility !== "default" ? { adapterVisibility } : {}),
       ...(existing?.baseLabel ? { baseLabel: existing.baseLabel } : {}),
       ...(existing?.slots ? { slots: existing.slots } : {}),
+      // Width mode isn't on the form; keep whatever the device has (#418).
+      ...(existing?.fitWidth ? { fitWidth: true } : {}),
       ...((() => {
         const trimmed = trimTrailingEmpty(auxiliaryData);
         return trimmed.some((r) => r.text.trim()) ? { auxiliaryData: trimmed } : {};

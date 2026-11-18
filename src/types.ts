@@ -291,6 +291,11 @@ export interface DeviceData {
    *  global SchematicFile.hideUnconnectedPorts view setting. Display-only: reports and
    *  routing are unaffected. */
   showOnlyConnectedPorts?: boolean;
+  /** Size the canvas box to fit its port labels instead of the standard 144 px (#418).
+   *  A live mode, not a stored width: the device re-fits whenever its labels change.
+   *  Stamped on every newly placed device; devices from files saved before it existed
+   *  stay standard width until the user opts in (device menu > Fit Width to Labels). */
+  fitWidth?: boolean;
   dhcpServer?: DhcpServerConfig;
   isCableAccessory?: boolean;
   integratedWithCable?: boolean;

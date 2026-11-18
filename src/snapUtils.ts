@@ -5,6 +5,7 @@ import { GRID_SIZE } from "./gridConstants";
 import { hopHiddenAdapters } from "./adapterVisibility";
 import { totalAuxHeight, headerBandHeight, HEADER_LABEL_ZONE_PX, HEADER_LABEL_ZONE_2_PX } from "./auxiliaryData";
 import { resolveDeviceLabel } from "./displayName";
+import { estimateDeviceWidth } from "./deviceWidth";
 import { STUB_GAP as STUB_PORT_GAP, STUB_W_EST, STUB_H_EST } from "./stubPlacement";
 
 // Must be >= half the grid size so alignment snapping works with grid-snapped positions.
@@ -80,6 +81,7 @@ export function estimateDeviceHeight(node: SchematicNode): number {
  *  placement both estimate tags at STUB_W_EST × STUB_H_EST, so match them. */
 function fallbackWidth(node: SchematicNode): number {
   if (node.type === "room") return 400;
+  if (node.type === "device") return estimateDeviceWidth(node.data as DeviceData);
   return node.type === "stub-label" || node.type === "text-stub" ? STUB_W_EST : 144;
 }
 
@@ -276,7 +278,7 @@ export function getPortAbsolutePositions(
   // port and stub on adjacent integers and produce a 1-px jog at the endpoint.
   const rawDeviceAbs = absoluteNodePos(device, nodeMap);
   const deviceAbs = { x: Math.round(rawDeviceAbs.x), y: Math.round(rawDeviceAbs.y) };
-  const deviceW = Math.round((device.measured?.width as number | undefined) ?? 144);
+  const deviceW = Math.round((device.measured?.width as number | undefined) ?? estimateDeviceWidth(dd));
   const out: PortPosition[] = [];
 
   // Mirror DeviceNode's port partitioning (without the optional visibility
@@ -1455,7 +1457,7 @@ export function speculativeReparent(
 ): SchematicNode {
   if (node.parentId) return node;
 
-  const nodeW = node.measured?.width ?? 144;
+  const nodeW = node.measured?.width ?? (node.type === "device" ? estimateDeviceWidth(node.data as DeviceData) : 144);
   const nodeH = node.measured?.height ?? estimateDeviceHeight(node);
   const centerX = node.position.x + nodeW / 2;
   const centerY = node.position.y + nodeH / 2;

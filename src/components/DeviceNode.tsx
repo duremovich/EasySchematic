@@ -19,6 +19,7 @@ import { isPortConnected } from "../portVisibility";
 import { conflictingExclusivePortIds, exclusiveGroupOf } from "../exclusivePorts";
 import { signalCssColor, signalLabel } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
+import { estimateDeviceWidth } from "../deviceWidth";
 
 type ColumnItem =
   | { type: "port"; port: Port }
@@ -282,6 +283,14 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
     [passthroughPorts],
   );
 
+  // Box width — the one width rule (#418): 144 px, unless the device is in fit-width mode,
+  // then just wide enough (grid-snapped, capped) that none of its ports' labels truncate.
+  // Sized from the device's own non-hidden ports, NOT from what's visible right now, so
+  // connecting a port under "hide unconnected" doesn't widen the box mid-session; and
+  // re-fits live when labels or label case change. snapUtils, the DXF export and the
+  // routing harness call the same function.
+  const deviceWidth = useMemo(() => estimateDeviceWidth(data, displayLabel), [data, displayLabel]);
+
   /** A thin closing line marking the end of a section that runs into unsectioned ports. */
   const renderDivider = (key: string) => (
     <div key={key} className="h-1.5 flex items-center px-2" aria-hidden>
@@ -519,7 +528,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
         relative rounded-lg border bg-white
         ${isOverlapping ? "border-red-400 shadow-lg shadow-red-400/30" : selected ? "border-blue-500 shadow-lg shadow-blue-500/20" : "border-[var(--color-border)]"}
       `}
-      style={{ width: 144 }}
+      style={{ width: deviceWidth }}
     >
       {/* Header band — merged name strip + header aux rows. Height is always a 16-multiple
            (min 32) so the first port below stays on the pathfinding grid. */}
@@ -541,7 +550,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
               {leftItems.map((item, i) =>
                 item.type === "section" ? (
                   <div key={`lsec-${i}`} className="h-4 flex items-end pl-2">
-                    <span className="text-[9px] text-[var(--color-text-muted)] truncate border-b border-[var(--color-border)]/30 w-full pb-0.5 mr-1">
+                    <span className="text-[9px] text-[var(--color-text-muted)] truncate border-b border-[var(--color-border)]/30 w-full pb-0.5 mr-1" title={displayLabel(item.name)}>
                       {displayLabel(item.name)}
                     </span>
                   </div>
@@ -556,7 +565,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
               {rightItems.map((item, i) =>
                 item.type === "section" ? (
                   <div key={`rsec-${i}`} className="h-4 flex items-end pr-2">
-                    <span className="text-[9px] text-[var(--color-text-muted)] truncate text-right border-b border-[var(--color-border)]/30 w-full pb-0.5 ml-1">
+                    <span className="text-[9px] text-[var(--color-text-muted)] truncate text-right border-b border-[var(--color-border)]/30 w-full pb-0.5 ml-1" title={displayLabel(item.name)}>
                       {displayLabel(item.name)}
                     </span>
                   </div>
@@ -659,7 +668,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
           {passthroughItems.map((item, i) =>
             item.type === "section" ? (
               <div key={`psec-${i}`} className="flex justify-center items-end h-4 mx-1">
-                <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center">
+                <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center" title={displayLabel(item.name)}>
                   {displayLabel(item.name)}
                 </span>
               </div>
@@ -677,7 +686,7 @@ function DeviceNodeComponent({ id, data, selected }: NodeProps<DeviceNodeType>) 
             if (item.type === "section") {
               return (
                 <div key={`bsec-${i}`} className="flex justify-center items-end h-4 mx-1">
-                  <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center">
+                  <span className="text-[9px] text-[var(--color-text-muted)] pb-0.5 truncate border-b border-[var(--color-border)]/30 w-full text-center" title={displayLabel(item.name)}>
                     {displayLabel(item.name)}
                   </span>
                 </div>

@@ -24,6 +24,7 @@ import {
   rowsInSlot,
 } from "../auxiliaryData";
 import { transformLabelNow } from "../labelCaseUtils";
+import { estimateDeviceWidth } from "../deviceWidth";
 import {
   DEVICE_LABEL_LINE_PX,
   resolveDeviceLabel,
@@ -199,7 +200,8 @@ export function emitDevice(
   const data = node.data as DeviceData;
   const ax = internal.internals.positionAbsolute.x;
   const ay = internal.internals.positionAbsolute.y;
-  const w = node.measured?.width ?? 144;
+  // Same width rule as the canvas (#418) when the device hasn't been measured.
+  const w = node.measured?.width ?? estimateDeviceWidth(data, transformLabelNow);
   const h = node.measured?.height ?? 64;
   const rect = toDxfRect(ax, ay, w, h);
 

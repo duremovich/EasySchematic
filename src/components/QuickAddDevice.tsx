@@ -4,6 +4,7 @@ import type { DeviceTemplate } from "../types";
 import { useSchematicStore, GRID_SIZE } from "../store";
 import { scoreTemplate } from "../templateSearch";
 import { signalLabel } from "../typeRegistry";
+import { estimateDeviceWidth, stampNewDevice } from "../deviceWidth";
 
 const MAX_RESULTS = 12;
 
@@ -162,7 +163,12 @@ export default function QuickAddDevice({
 
   const placeDevice = useCallback(
     (template: DeviceTemplate) => {
-      const w = 144;
+      // A new device is fit-width (#418) — centre on the width it will actually render at.
+      const w = estimateDeviceWidth(stampNewDevice({
+        label: template.label,
+        deviceType: template.deviceType,
+        ports: template.ports,
+      }));
       const portRows = Math.max(
         template.ports.filter((p) => p.direction === "input").length,
         template.ports.filter((p) => p.direction === "output").length,

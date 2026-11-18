@@ -114,6 +114,16 @@ export default function DevicesAndPortsPage() {
           direction at a time
         </li>
       </ul>
+      <p>
+        A newly placed device widens just enough to show every port label in full, so long names
+        like "Analog Out 12" aren't cut off. Devices in schematics saved before this keep the
+        standard width, so opening an older file never shifts your layout. To widen them, right-click
+        a device (or a selection of devices) and choose <strong>Fit Width to Labels</strong>.{" "}
+        <strong>Reset to Standard Width</strong> undoes that. Stub tags and hand-drawn routes on the
+        right side of the device move with its edge. A fitted device resizes itself whenever you
+        rename its ports, but not when you connect them. Labels too long even for the widest box
+        end in "…", and you can hover one to read it in full.
+      </p>
 
       <h2>Signal types</h2>
       <p>

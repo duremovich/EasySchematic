@@ -5,6 +5,7 @@
 
 import type { SignalType, Port, DeviceTemplate, SchematicNode, DeviceNode, ConnectionEdge } from "./types";
 import { normalizeHeaderColor } from "./deviceHeaderColor";
+import { estimateDeviceWidth, stampNewDevice, DEVICE_MIN_WIDTH_PX } from "./deviceWidth";
 import { scoreTemplate } from "./templateSearch";
 import { allSignals, defaultConnector, perRegistryVersion, signalAliases, signalCssColor, signalLabel } from "./typeRegistry";
 
@@ -411,8 +412,10 @@ function estimateHeight(ports: Port[]): number {
   return 48 + (Math.max(inputs, outputs) + bidirs) * 16;
 }
 
-const DEVICE_WIDTH = 144;
-const COLUMN_SPACING = 320; // 144px device + 176px gap (generous for routing stubs)
+/** Gap between layer columns, measured from the widest device in the column to the
+ *  next column — a standard 144px device column gives the historical 320px pitch.
+ *  Imported devices are fit-width (#418), so a column is as wide as its widest device. */
+const COLUMN_GAP = 176; // generous for routing stubs
 const VERTICAL_GAP = 32;   // 2 grid steps between devices
 const ROOM_GAP = 64;       // gap between room bands
 
@@ -421,6 +424,7 @@ function autoLayout(
   deviceNames: string[],
   deviceSizes: Map<string, number>,    // csvName → estimated height
   deviceRooms: Map<string, string>,    // csvName → room name
+  deviceWidths: Map<string, number>,   // csvName → device width (estimateDeviceWidth)
 ): Map<string, { x: number; y: number }> {
   // Build directed graph
   const outgoing = new Map<string, Set<string>>();
@@ -479,6 +483,17 @@ function autoLayout(
   // Sort within each layer alphabetically for determinism
   for (const group of layerGroups.values()) group.sort();
 
+  // Column x per layer: each column starts COLUMN_GAP past the widest device of the
+  // previous one (layer * 320 when every device is the standard 144px).
+  const maxLayer = Math.max(0, ...layerGroups.keys());
+  const layerX = new Map<number, number>();
+  let colX = 0;
+  for (let l = 0; l <= maxLayer; l++) {
+    layerX.set(l, colX);
+    const widths = (layerGroups.get(l) ?? []).map((d) => deviceWidths.get(d) ?? DEVICE_MIN_WIDTH_PX);
+    colX += Math.max(DEVICE_MIN_WIDTH_PX, ...widths) + COLUMN_GAP;
+  }
+
   // Collect unique rooms, sorted so all paths under the same top-level room are
   // consecutive. Without this, CSV row order can interleave bands from different
   // parent rooms, causing parent room nodes to span across unrelated siblings.
@@ -511,7 +526,7 @@ function autoLayout(
         );
         if (bandDevices.length === 0) continue;
 
-        const x = snap(layer * COLUMN_SPACING);
+        const x = snap(layerX.get(layer) ?? 0);
         let y = bandY;
         for (const name of bandDevices) {
           positions.set(name, { x, y: snap(y) });
@@ -528,7 +543,7 @@ function autoLayout(
   } else {
     // Simple layout: no rooms, just stack by layer with size-aware spacing
     for (const [layer, devices] of layerGroups) {
-      const x = snap(layer * COLUMN_SPACING);
+      const x = snap(layerX.get(layer) ?? 0);
       let y = 0;
       for (const name of devices) {
         positions.set(name, { x, y: snap(y) });
@@ -580,13 +595,20 @@ export function buildImportResult(
     if (!seen.has(c.destDevice)) { seen.add(c.destDevice); deviceNames.push(c.destDevice); }
   }
 
-  // Compute device sizes for layout
+  // Compute device sizes for layout. Widths follow the device the import will create —
+  // fit-width (stampNewDevice), sized from these same ports.
   const deviceSizes = new Map<string, number>();
+  const deviceWidths = new Map<string, number>();
   for (const name of deviceNames) {
     const match = deviceMatches.get(name);
     if (!match) continue;
     const ports = match.template ? match.template.ports : match.inferredPorts;
     deviceSizes.set(name, estimateHeight(ports));
+    deviceWidths.set(name, estimateDeviceWidth(stampNewDevice({
+      label: name,
+      deviceType: match.template?.deviceType ?? "converter",
+      ports,
+    })));
   }
 
   // Build room assignments
@@ -605,7 +627,7 @@ export function buildImportResult(
   for (const [device, path] of deviceRoomPath) deviceRoom.set(device, path);
 
   // Compute layout with size + room awareness
-  const positions = autoLayout(connections, deviceNames, deviceSizes, deviceRoom);
+  const positions = autoLayout(connections, deviceNames, deviceSizes, deviceRoom, deviceWidths);
 
   // Build all unique room paths including every ancestor prefix
   // e.g. "A > B > C" → ["A", "A > B", "A > B > C"]
@@ -700,7 +722,7 @@ export function buildImportResult(
       type: "device",
       position: pos,
       ...(parentId ? { parentId } : {}),
-      data: {
+      data: stampNewDevice({ // newly created devices size to their labels (#418)
         label: name,
         deviceType,
         ports,
@@ -710,7 +732,7 @@ export function buildImportResult(
         ...(match.template?.modelNumber ? { modelNumber: match.template.modelNumber } : {}),
         baseLabel: name,
         model: match.template?.modelNumber ?? name,
-      },
+      }),
     } as DeviceNode;
 
     nodes.push(node);
@@ -751,7 +773,7 @@ export function buildImportResult(
       const h = estimateHeight((child as DeviceNode).data.ports);
       minX = Math.min(minX, child.position.x);
       minY = Math.min(minY, child.position.y);
-      maxX = Math.max(maxX, child.position.x + DEVICE_WIDTH);
+      maxX = Math.max(maxX, child.position.x + estimateDeviceWidth((child as DeviceNode).data));
       maxY = Math.max(maxY, child.position.y + h);
     }
 

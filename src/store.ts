@@ -42,6 +42,9 @@ import type { ReactFlowInstance } from "@xyflow/react";
 import type { SignalType, ConnectorType, ScrollConfig, LineStyle, LabelCaseMode, DistanceSettings, PanMode, StubLabelPageMode, DefaultConnectionType, ProjectStatus } from "./types";
 import { defaultStubPlacement, healStubPortAlignment, nearestStubHandleSide, reconcileStubPairs, stubTagEndOf, STUB_H_EST, STUB_W_EST } from "./stubPlacement";
 import { estimateDeviceHeight, getPortAbsolutePositions, parentOffsetFromMap, settleTagsAfterMove, tagHostId } from "./snapUtils";
+import { stampNewDevice } from "./deviceWidth";
+import { refitDeviceWidths } from "./deviceWidthRefit";
+import { transformLabel } from "./labelCaseUtils";
 import { findFreeAdapterSlot, ADAPTER_GAP, DEVICE_W_EST } from "./adapterPlacement";
 import { adapterLegs, resolveHiddenAdapterIds, syncHiddenAdapterStyles } from "./adapterVisibility";
 import { findPortByHandle, strippedHandleId } from "./portHandles";
@@ -431,6 +434,8 @@ interface SchematicState {
   updateDevice: (nodeId: string, data: DeviceData) => void;
   /** Merge a partial into device data — no renumbering, no port revalidation (for spreadsheet edits). */
   patchDeviceData: (nodeId: string, patch: Partial<DeviceData>) => void;
+  /** Turn fit-width-to-labels mode on/off for several devices in one undo step (#418). */
+  setDevicesFitWidth: (nodeIds: string[], fit: boolean) => void;
   /** Merge two paired ports into a single passthrough port and re-anchor their edges atomically. */
   convertPortsToPassthrough: (nodeId: string, inputPortId: string, outputPortId: string, newPort: import("./types").Port) => void;
   /** Merge every input/output port pair on a device into passthrough ports in one atomic undo step. */
@@ -2721,7 +2726,9 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       id: nextNodeId(),
       type: "device",
       position,
-      data: {
+      // stampNewDevice: new placements size themselves to their labels (#418); files
+      // saved before the flag existed load without it and keep the standard width.
+      data: stampNewDevice({
         label: template.label,
         deviceType: template.deviceType,
         ports,
@@ -2763,7 +2770,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...(template.auxiliaryData?.length
           ? { auxiliaryData: template.auxiliaryData.map((r) => ({ ...r })) }
           : { auxiliaryData: [{ text: "{{deviceType}}", position: "header" as const }] }),
-      },
+      }),
     };
     set({ nodes: renumberNodes([...get().nodes, newNode]) });
     get().saveToLocalStorage();
@@ -3657,6 +3664,33 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
     get().saveToLocalStorage();
   },
 
+  setDevicesFitWidth: (nodeIds, fit) => {
+    const state = get();
+    // The width change moves each device's right edge; right-side stub tags and the
+    // manual waypoints nearest right-side handles move with it (deviceWidthRefit.ts).
+    const result = refitDeviceWidths(
+      state.nodes,
+      state.edges,
+      nodeIds,
+      fit,
+      (s) => transformLabel(s, state.labelCase),
+    );
+    if (result.changedIds.length === 0) return;
+    pushUndo({ nodes: state.nodes, edges: state.edges });
+    set({
+      edges: result.edges,
+      nodes: result.edges === state.edges ? result.nodes : reconcileWaypointNodes(result.nodes, result.edges),
+    });
+    const cleared = result.clearedRouteEdgeIds.length;
+    if (cleared > 0) {
+      get().addToast(
+        `Reset the manual route on ${cleared} connection${cleared > 1 ? "s" : ""} that the new width would have folded back`,
+        "info",
+      );
+    }
+    get().saveToLocalStorage();
+  },
+
   convertPortsToPassthrough: (nodeId, inputPortId, outputPortId, newPort) => {
     const state = get();
     pushUndo({ nodes: state.nodes, edges: state.edges });
@@ -3996,6 +4030,8 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       ...(oldData.hostname ? { hostname: oldData.hostname } : (newTemplate.hostname ? { hostname: newTemplate.hostname } : {})),
       ...(oldData.useShortName !== undefined ? { useShortName: oldData.useShortName } : {}),
       ...(oldData.wrapLabel !== undefined ? { wrapLabel: oldData.wrapLabel } : {}),
+      // Width mode belongs to the instance, not the model: a swap neither opts in nor out (#418).
+      ...(oldData.fitWidth ? { fitWidth: true } : {}),
       ...(swappedHeaderColor ? { headerColor: swappedHeaderColor } : {}),
     };
 
@@ -5183,7 +5219,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
       type: "device",
       position: { x: idealX, y: idealY },
       ...(adapterParentId ? { parentId: adapterParentId } : {}),
-      data: {
+      data: stampNewDevice({ // a new device like any other (#418)
         label: template.label,
         deviceType: template.deviceType,
         ports: adapterPorts,
@@ -5199,7 +5235,7 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
         ...(template.referenceUrl ? { referenceUrl: template.referenceUrl } : {}),
         ...(template.category ? { category: template.category } : {}),
         ...(hiddenPorts && hiddenPorts.length > 0 ? { hiddenPorts } : {}),
-      },
+      }),
     };
 
     // Move the adapter off the midpoint if devices are already sitting there. Every
