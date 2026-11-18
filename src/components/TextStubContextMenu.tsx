@@ -1,6 +1,9 @@
-import { useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { useSchematicStore } from "../store";
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
+import { useContextMenuDismiss } from "../hooks/useContextMenuDismiss";
+
+const closeMenu = () => useSchematicStore.setState({ textStubContextMenu: null });
 
 /** Right-click menu for text-stub nodes (#196): edit the note text or delete the stub. */
 export default function TextStubContextMenu() {
@@ -10,24 +13,8 @@ export default function TextStubContextMenu() {
     menu?.screenY ?? 0,
   );
 
-  useEffect(() => {
-    if (!menu) return;
-    const close = () => useSchematicStore.setState({ textStubContextMenu: null });
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const timer = setTimeout(() => {
-      document.addEventListener("click", close);
-      document.addEventListener("contextmenu", close);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("click", close);
-      document.removeEventListener("contextmenu", close);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menu]);
+  // One menu at a time; a press or right-click outside it, or Escape, closes it (#411).
+  useContextMenuDismiss(!!menu, closeMenu);
 
   const editText = useCallback(() => {
     if (!menu) return;
@@ -46,6 +33,7 @@ export default function TextStubContextMenu() {
   return (
     <div
       ref={menuRef}
+      data-context-menu=""
       className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[160px]"
       style={{
         left: menuPos.x,

@@ -210,6 +210,11 @@ html, body, #root {
   stroke-width: 3;
   filter: drop-shadow(0 0 3px currentColor);
 }
+/* Every leg of a stubbed connection glows while any leg or tag of it is hovered (#405) */
+.react-flow__edge-path.stub-link-hover {
+  stroke-width: 3;
+  filter: drop-shadow(0 0 3px currentColor);
+}
 
 /* Edge updater anchors — SVG circles rendered by React Flow internally.
    These handle ALL reconnection interaction natively (cursor, click, drag).

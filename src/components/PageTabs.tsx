@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useSchematicStore } from "../store";
+import { useContextMenuDismiss } from "../hooks/useContextMenuDismiss";
 
 interface ContextMenuState {
   pageId: string;
@@ -29,21 +30,10 @@ export default function PageTabs() {
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close context menu on outside click or Escape
-  useEffect(() => {
-    if (!contextMenu) return;
-    const close = () => setContextMenu(null);
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
-    const timer = setTimeout(() => {
-      document.addEventListener("mousedown", close);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("mousedown", close);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [contextMenu]);
+  // One menu at a time, shared with the canvas menus; a press outside it or Escape
+  // closes it (#411).
+  const closeMenu = useCallback(() => setContextMenu(null), []);
+  useContextMenuDismiss(!!contextMenu, closeMenu);
 
   const startRename = useCallback((pageId: string, currentLabel: string) => {
     setContextMenu(null);
@@ -197,6 +187,7 @@ export default function PageTabs() {
       {contextMenu && menuPage && (
         <div
           ref={menuRef}
+          data-context-menu=""
           className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[140px] text-xs"
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onMouseDown={(e) => e.stopPropagation()}

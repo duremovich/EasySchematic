@@ -1,10 +1,13 @@
-import { useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { useUpdateNodeInternals } from "@xyflow/react";
 import { useSchematicStore } from "../store";
 import type { DeviceData, Port } from "../types";
 import { portSide } from "../types";
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
+import { useContextMenuDismiss } from "../hooks/useContextMenuDismiss";
 import { resolvePortGender } from "../connectorTypes";
+
+const closeMenu = () => useSchematicStore.setState({ portContextMenu: null });
 
 export default function PortContextMenu() {
   const menu = useSchematicStore((s) => s.portContextMenu);
@@ -14,25 +17,8 @@ export default function PortContextMenu() {
     menu?.screenY ?? 0,
   );
 
-  // Close on click anywhere or Escape
-  useEffect(() => {
-    if (!menu) return;
-    const close = () => useSchematicStore.setState({ portContextMenu: null });
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const timer = setTimeout(() => {
-      document.addEventListener("click", close);
-      document.addEventListener("contextmenu", close);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("click", close);
-      document.removeEventListener("contextmenu", close);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menu]);
+  // One menu at a time; a press or right-click outside it, or Escape, closes it (#411).
+  useContextMenuDismiss(!!menu, closeMenu);
 
   const flipPort = useCallback(() => {
     if (!menu) return;
@@ -201,6 +187,7 @@ export default function PortContextMenu() {
   return (
     <div
       ref={menuRef}
+      data-context-menu=""
       className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[160px]"
       style={{
         left: menuPos.x,

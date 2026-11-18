@@ -14,6 +14,7 @@ import { showPathEditHint, soleSelectedCableId } from "../pathEditHint";
 import { isBuiltinSignal, isKnownSignal, signalCssColor } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
 import { DEFAULT_LINE_WIDTH, effectiveLineWidth } from "../lineWidth";
+import { enterStubLink, leaveStubLink, useStubHover } from "../stubHover";
 
 function OffsetEdgeComponent({
   id,
@@ -25,6 +26,7 @@ function OffsetEdgeComponent({
   markerEnd,
   selected,
   interactionWidth,
+  data,
 }: EdgeProps<ConnectionEdge>) {
   // A community or user signal's stroke is a literal hex frozen when the connection was
   // drawn. Re-resolve it through the registry, so a type that registered later (or was
@@ -47,11 +49,18 @@ function OffsetEdgeComponent({
   // Tooltip state — tracks which updater circle the mouse is over
   const [tooltipType, setTooltipType] = useState<"source" | "target" | null>(null);
 
+  // A leg of a stubbed connection (#405): hovering it lights the whole stub — its partner
+  // leg and both tags — the way hovering a cable lights the whole cable.
+  // Read off the edge's own props, not another per-connection scan of the store (#437).
+  const stubLinkId = data?.linkedConnectionId ?? null;
+  const stubLinkHovered = useStubHover((s) => stubLinkId !== null && s.linkId === stubLinkId);
+
   useEffect(() => {
     const el = document.querySelector(`.react-flow__edge[data-id="${id}"]`);
     if (!el) return;
-    const onEnter = () => setIsHovered(true);
-    const onLeave = () => { setIsHovered(false); setTooltipType(null); };
+    const owner = `edge:${id}`;
+    const onEnter = () => { setIsHovered(true); enterStubLink(stubLinkId, owner); };
+    const onLeave = () => { setIsHovered(false); setTooltipType(null); leaveStubLink(owner); };
     el.addEventListener("mouseenter", onEnter);
     el.addEventListener("mouseleave", onLeave);
 
@@ -73,8 +82,11 @@ function OffsetEdgeComponent({
       tgtUpdater?.removeEventListener('mouseenter', onEnterTgt);
       srcUpdater?.removeEventListener('mouseleave', onLeaveUpdater);
       tgtUpdater?.removeEventListener('mouseleave', onLeaveUpdater);
+      // A leg deleted (or re-keyed) under the pointer never gets its mouseleave, so let
+      // go of the stub hover here or the stub stays lit (#405).
+      leaveStubLink(owner);
     };
-  }, [id]);
+  }, [id, stubLinkId]);
 
   // Read pre-computed route from store (serialized to string to avoid re-render loops)
   const routeStr = useSchematicStore((s) => {
@@ -761,6 +773,7 @@ function OffsetEdgeComponent({
         labelX={lx}
         labelY={ly}
         style={edgeStyle}
+        className={stubLinkHovered ? "stub-link-hover" : undefined}
         markerEnd={markerEnd}
         // A widened line (#415) keeps a hit target at least its own width plus a margin;
         // at the default width the user's hitbox preference applies exactly as before.

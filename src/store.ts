@@ -72,7 +72,7 @@ import { reconcileWaypointNodes, syncEdgesFromWaypointNodes, spliceWaypointsForR
 import { orthogonalize, extractSegments, segmentsCross, type RoutedEdge, type CrossingPoint } from "./edgeRouter";
 import { simplifyWaypoints, waypointsToSvgPath, waypointsToSvgPathWithHops } from "./pathfinding";
 import { areConnectorsCompatible, needsAdapter, findAdaptersForConnectorBridge, findAdaptersForSignalBridge, resolveSignalBridgePorts, resolveConnectorBridgePorts, NETWORK_SIGNAL_TYPES, BARE_WIRE_CONNECTORS, areSignalsCompatibleViaConnector, areSignalPairsCompatible, effectiveSignalType } from "./connectorTypes";
-import { registerTypes, signalCssColor } from "./typeRegistry";
+import { connectorLabel, registerTypes, signalCssColor, signalLabel } from "./typeRegistry";
 import { normalizeTypeDefs, type CustomTypeDefs, type CustomTypeKind } from "./customTypes/model";
 import { embeddedTypesFor, libraryTypesFor } from "./documentTypes";
 import { importUserTypes } from "./userTypes";
@@ -410,6 +410,13 @@ interface SchematicState {
   pasteClipboard: () => void;
   alignSelectedNodes: (op: AlignOperation) => void;
   isValidConnection: (connection: Connection) => boolean;
+  /** Why isValidConnection refuses this connection, or null when it doesn't (#439). */
+  explainConnectionRefusal: (connection: Connection) => ConnectionRefusal | null;
+  /** onConnect for a release the user aimed at a port. When the store refuses it
+   *  outright (no connection, no adapter, no dialog), a toast says why (#439).
+   *  `rerouting` words it for a re-route drag, which goes on to act on the original
+   *  connection itself, so the toast must not read as "nothing changed". */
+  connectOrExplain: (connection: Connection, opts?: { rerouting?: boolean }) => void;
   updateDeviceLabel: (nodeId: string, label: string) => void;
   batchUpdateDeviceLabels: (changes: { nodeId: string; label: string }[]) => void;
   updateDeviceShortName: (nodeId: string, shortName: string) => void;
@@ -1636,33 +1643,34 @@ function getPortFromHandle(
  * direction. Both legs drop out of the edge list first — they ARE this cable, so they
  * must not count against the handle-occupancy guards.
  */
-function validateStubLegConnection(
+function stubLegRefusal(
   nodes: SchematicNode[],
   edges: ConnectionEdge[],
   connection: Connection,
   tagId: string,
   excludeEdgeId: string | null,
-): boolean {
+): ConnectionRefusal | null {
+  const broken = refuse("stub-link-broken", "This stubbed connection's link is broken, so it can't be re-routed.");
   const tag = nodes.find((n) => n.id === tagId);
-  if (!tag || tag.type !== "stub-label") return false;
+  if (!tag || tag.type !== "stub-label") return broken;
   const linkId = (tag.data as import("./types").StubLabelData).linkedConnectionId;
-  if (!linkId) return false;
+  if (!linkId) return broken;
 
   // The partner leg carries the far device. Without it the link is already half-dead
   // (reconcileStubPairs is about to drop it) and there is nothing to re-route onto.
   const partner = edges.find(
     (e) => e.data?.linkedConnectionId === linkId && e.source !== tagId && e.target !== tagId,
   );
-  if (!partner) return false;
+  if (!partner) return broken;
   const partnerTagId = stubTagEndOf(partner, nodes);
-  if (!partnerTagId) return false;
+  if (!partnerTagId) return broken;
 
   // A leg runs device → tag on the source side and tag → device on the target side, so
   // each leg's orientation names which half of the logical cable it is. The two must
   // disagree; if they don't, the pair is malformed.
   const draggedIsSourceSide = connection.target === tagId;
   const partnerIsSourceSide = partner.target === partnerTagId;
-  if (draggedIsSourceSide === partnerIsSourceSide) return false;
+  if (draggedIsSourceSide === partnerIsSourceSide) return broken;
 
   const dropped = draggedIsSourceSide
     ? { node: connection.source, handle: connection.sourceHandle ?? null }
@@ -1677,22 +1685,76 @@ function validateStubLegConnection(
 
   const ownLegIds = new Set(edges.filter((e) => e.data?.linkedConnectionId === linkId).map((e) => e.id));
   if (excludeEdgeId) ownLegIds.add(excludeEdgeId);
-  return validateConnection(nodes, edges.filter((e) => !ownLegIds.has(e.id)), straightThrough, null);
+  return connectionRefusal(nodes, edges.filter((e) => !ownLegIds.has(e.id)), straightThrough, null);
 }
 
-/** Connect-time validity rules, shared by the store's isValidConnection and port-edit
- *  revalidation (#306). `excludeEdgeId` is left out of the duplicate-handle checks. */
-function validateConnection(
+/** Which connect-time rule refused a connection (#439). */
+export type ConnectionRefusalCode =
+  | "not-a-port"
+  | "stub-link-broken"
+  | "same-device"
+  | "connector"
+  | "signal"
+  | "direction"
+  | "multicable"
+  | "occupied";
+
+/** A refused connection: the rule that fired, and a short sentence in AV terms saying
+ *  why. It is what the ghost preview and the drop toast show the user (#439). */
+export interface ConnectionRefusal {
+  code: ConnectionRefusalCode;
+  message: string;
+}
+
+function refuse(code: ConnectionRefusalCode, message: string): ConnectionRefusal {
+  return { code, message };
+}
+
+/** `"In 1" on Mixer` — how a refusal names a port. */
+function portOnDevice(nodes: SchematicNode[], nodeId: string, port: Port): string {
+  const node = nodes.find((n) => n.id === nodeId);
+  const device = (node?.data as DeviceData | undefined)?.label;
+  return device ? `"${port.label}" on ${device}` : `"${port.label}"`;
+}
+
+function signalMismatch(a: SignalType, b: SignalType): ConnectionRefusal {
+  return refuse("signal", `Signal mismatch: ${signalLabel(a)} can't connect to ${signalLabel(b)}.`);
+}
+
+function directionRefusal(source: Port, target: Port): ConnectionRefusal {
+  // Each end of the gesture keeps the role it started with, so a drag from an output
+  // onto another output arrives here as output → output.
+  const both = (d: Port["direction"]) => source.direction === d && target.direction === d;
+  if (both("output")) return refuse("direction", "Both ports are outputs. Connect an output to an input.");
+  if (both("input")) return refuse("direction", "Both ports are inputs. Connect an output to an input.");
+  return refuse("direction", "Wrong direction. Connect an output to an input.");
+}
+
+function occupiedRefusal(nodes: SchematicNode[], nodeId: string, port: Port): ConnectionRefusal {
+  return refuse(
+    "occupied",
+    `${portOnDevice(nodes, nodeId, port)} already has a connection. To allow more, turn on Multi-connect ("M") for that port in the device editor.`,
+  );
+}
+
+/** Connect-time rules, shared by the store's isValidConnection, its refusal explanation
+ *  (#439), and port-edit revalidation (#306): null when the connection is allowed,
+ *  otherwise the first rule that refused it. `excludeEdgeId` is left out of the
+ *  duplicate-handle checks.
+ *
+ *  A connector mismatch between two ordinary ports is NOT a refusal — onConnect takes
+ *  those into the adapter flow. Only a pass-through port's face is refused here. */
+export function connectionRefusal(
   nodes: SchematicNode[],
   edges: ConnectionEdge[],
   connection: Connection,
   excludeEdgeId: string | null,
-): boolean {
+): ConnectionRefusal | null {
   // Exactly one end on a stub tag means a stub leg is being re-routed — judged against
   // the far device instead, since a tag is not a port. (Tag handles are not connectable,
   // so this is only ever reached from a reconnect drag, never a fresh one.)
   const tagId = stubTagEndOf(connection, nodes);
-  if (tagId) return validateStubLegConnection(nodes, edges, connection, tagId, excludeEdgeId);
+  if (tagId) return stubLegRefusal(nodes, edges, connection, tagId, excludeEdgeId);
 
   const sourcePort = getPortFromHandle(
     nodes,
@@ -1705,7 +1767,7 @@ function validateConnection(
     connection.targetHandle,
   );
 
-  if (!sourcePort || !targetPort) return false;
+  if (!sourcePort || !targetPort) return refuse("not-a-port", "Connections run between two ports.");
 
   // ── Passthrough port handling ────────────────────────────────────────
   const srcIsPassthrough = sourcePort.direction === "passthrough";
@@ -1726,7 +1788,9 @@ function validateConnection(
       const srcNode = nodes.find((n) => n.id === connection.source);
       const isFrontToFront = srcSide === "front" && tgtSide === "front";
       const isPatchPanel = (srcNode as DeviceNode | undefined)?.data?.deviceType === "patch-panel";
-      if (!isFrontToFront || !isPatchPanel) return false;
+      if (!isFrontToFront || !isPatchPanel) {
+        return refuse("same-device", "A device can't connect to itself. Only a patch panel's front jacks patch to each other.");
+      }
     }
 
     // Resolve the effective connector type for each side
@@ -1738,7 +1802,16 @@ function validateConnection(
       : targetPort.connectorType;
 
     // Connector compatibility (bare-wire always passes)
-    if (!areConnectorsCompatible(srcConnector ?? sourcePort.connectorType, tgtConnector ?? targetPort.connectorType)) return false;
+    const srcFace = srcConnector ?? sourcePort.connectorType;
+    const tgtFace = tgtConnector ?? targetPort.connectorType;
+    if (!areConnectorsCompatible(srcFace, tgtFace)) {
+      // areConnectorsCompatible passes when either is missing, so both are set here.
+      // Pass-through ports are judged here and never reach onConnect's adapter flow.
+      return refuse(
+        "connector",
+        `Connector mismatch: ${connectorLabel(srcFace!)} won't mate with ${connectorLabel(tgtFace!)}, and a pass-through port can't take an adapter.`,
+      );
+    }
 
     // Signal-type check: if either port inherits its signal from edges we can't know it
     // at connection time, so we accept anything. Otherwise use effectiveSignalType.
@@ -1751,7 +1824,7 @@ function validateConnection(
       const bareBypass = BARE_WIRE_CONNECTORS.has(srcConnector ?? "none" as never) ||
         BARE_WIRE_CONNECTORS.has(tgtConnector ?? "none" as never);
       const pairBypass = areSignalPairsCompatible(srcSignal, tgtSignal);
-      if (!netBypass && !bareBypass && !pairBypass) return false;
+      if (!netBypass && !bareBypass && !pairBypass) return signalMismatch(srcSignal, tgtSignal);
     }
 
     // Duplicate-handle guard (same as non-passthrough below)
@@ -1759,16 +1832,16 @@ function validateConnection(
       const dup = edges.some(
         (e) => e.id !== excludeEdgeId && e.source === connection.source && e.sourceHandle === connection.sourceHandle,
       );
-      if (dup) return false;
+      if (dup) return occupiedRefusal(nodes, connection.source, sourcePort);
     }
     if (!targetPort.multiConnect) {
       const dup = edges.some(
         (e) => e.id !== excludeEdgeId && e.target === connection.target && e.targetHandle === connection.targetHandle,
       );
-      if (dup) return false;
+      if (dup) return occupiedRefusal(nodes, connection.target, targetPort);
     }
 
-    return true;
+    return null;
   }
   // ── End passthrough handling ─────────────────────────────────────────
 
@@ -1785,14 +1858,37 @@ function validateConnection(
   if (!networkBypass && !bareWireBypass) {
     const canSource = sourcePort.direction === "output" || sourcePort.direction === "bidirectional";
     const canTarget = targetPort.direction === "input" || targetPort.direction === "bidirectional";
-    if (!canSource || !canTarget) return false;
+    if (!canSource || !canTarget) {
+      // onConnect takes a signal mismatch between any two ordinary ports but a pair of
+      // inputs into the adapter dialog, which talks about the signals — so the reason
+      // has to name the signals too, or the ghost and the drop disagree.
+      const bothInputs = sourcePort.direction === "input" && targetPort.direction === "input";
+      if (
+        !bothInputs &&
+        sourcePort.signalType !== targetPort.signalType &&
+        !areSignalPairsCompatible(sourcePort.signalType, targetPort.signalType)
+      ) {
+        return signalMismatch(sourcePort.signalType, targetPort.signalType);
+      }
+      return directionRefusal(sourcePort, targetPort);
+    }
   }
-  if (sourcePort.signalType !== targetPort.signalType && !networkBypass && !bareWireBypass && !signalBypass) return false;
+  if (sourcePort.signalType !== targetPort.signalType && !networkBypass && !bareWireBypass && !signalBypass) {
+    return signalMismatch(sourcePort.signalType, targetPort.signalType);
+  }
 
   // Multicable ports can only connect to other multicable ports
   const srcIsMulticable = sourcePort.isMulticable ?? false;
   const tgtIsMulticable = targetPort.isMulticable ?? false;
-  if (srcIsMulticable !== tgtIsMulticable) return false;
+  if (srcIsMulticable !== tgtIsMulticable) {
+    const trunk = srcIsMulticable
+      ? portOnDevice(nodes, connection.source, sourcePort)
+      : portOnDevice(nodes, connection.target, targetPort);
+    const single = srcIsMulticable
+      ? portOnDevice(nodes, connection.target, targetPort)
+      : portOnDevice(nodes, connection.source, sourcePort);
+    return refuse("multicable", `${trunk} is a multicable trunk and ${single} isn't. Trunks only connect to other trunks.`);
+  }
 
   // Don't allow multiple connections to the same handle, unless the port is multi-connect
   if (!targetPort.multiConnect) {
@@ -1802,7 +1898,7 @@ function validateConnection(
         e.target === connection.target &&
         e.targetHandle === connection.targetHandle,
     );
-    if (duplicateTarget) return false;
+    if (duplicateTarget) return occupiedRefusal(nodes, connection.target, targetPort);
   }
 
   if (!sourcePort.multiConnect) {
@@ -1812,7 +1908,7 @@ function validateConnection(
         e.source === connection.source &&
         e.sourceHandle === connection.sourceHandle,
     );
-    if (duplicateSource) return false;
+    if (duplicateSource) return occupiedRefusal(nodes, connection.source, sourcePort);
   }
 
   // For bidirectional ports, block the opposite side if one side is already connected
@@ -1826,7 +1922,9 @@ function validateConnection(
         (e.source === connection.source && e.sourceHandle === otherHandle) ||
         (e.target === connection.source && e.targetHandle === otherHandle),
     );
-    if (otherConnected) return false;
+    if (otherConnected) {
+      return refuse("occupied", `${portOnDevice(nodes, connection.source, sourcePort)} is already connected on its other side.`);
+    }
   }
   if (targetPort.direction === "bidirectional" && connection.targetHandle) {
     const baseId = connection.targetHandle.replace(/-(in|out|rear|front)$/, "");
@@ -1838,10 +1936,22 @@ function validateConnection(
         (e.source === connection.target && e.sourceHandle === otherHandle) ||
         (e.target === connection.target && e.targetHandle === otherHandle),
     );
-    if (otherConnected) return false;
+    if (otherConnected) {
+      return refuse("occupied", `${portOnDevice(nodes, connection.target, targetPort)} is already connected on its other side.`);
+    }
   }
 
-  return true;
+  return null;
+}
+
+/** Connect-time validity: true when connectionRefusal finds nothing to refuse. */
+function validateConnection(
+  nodes: SchematicNode[],
+  edges: ConnectionEdge[],
+  connection: Connection,
+  excludeEdgeId: string | null,
+): boolean {
+  return connectionRefusal(nodes, edges, connection, excludeEdgeId) === null;
 }
 
 /** Which face of a passthrough port a handle addresses ("p1-front" → "front"). */
@@ -3020,6 +3130,25 @@ export const useSchematicStore = create<SchematicState>((set, get) => ({
   isValidConnection: (connection) => {
     const state = get();
     return validateConnection(state.nodes, state.edges, connection, _reconnectingEdgeId);
+  },
+
+  explainConnectionRefusal: (connection) => {
+    const state = get();
+    return connectionRefusal(state.nodes, state.edges, connection, _reconnectingEdgeId);
+  },
+
+  connectOrExplain: (connection, opts) => {
+    const before = get();
+    const refusal = before.explainConnectionRefusal(connection);
+    before.onConnect(connection);
+    if (!refusal) return;
+    // onConnect still acts on some refusals: a signal mismatch auto-inserts an adapter
+    // or opens the adapter dialog. Only a drop that changed nothing needs explaining.
+    const after = get();
+    const dialogOpened = !!after.pendingIncompatibleConnection &&
+      after.pendingIncompatibleConnection !== before.pendingIncompatibleConnection;
+    if (dialogOpened || after.edges !== before.edges) return;
+    after.addToast(opts?.rerouting ? `Can't re-route to that port. ${refusal.message}` : refusal.message, "error");
   },
 
   updateDeviceLabel: (nodeId, label) => {

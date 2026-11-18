@@ -230,6 +230,12 @@ export default function ConnectionsPage() {
         <li><strong style={{ color: "#eab308" }}>Yellow</strong> — incompatible, but an adapter is available and will be inserted</li>
         <li><strong style={{ color: "#ef4444" }}>Red</strong> — incompatible, no adapter available</li>
       </ul>
+      <p>
+        A red preview also says <strong>why</strong> next to the port: two outputs, a signal mismatch
+        (e.g. Analog to HDMI), a port that already has a connection, a multicable trunk meeting a single
+        port, or a patch panel jack whose connector won't mate. If you release on a port that refuses the
+        connection outright, the same reason appears as a message in the corner.
+      </p>
 
       <h3>Auto-insertion</h3>
       <p>When you complete an incompatible connection:</p>
@@ -428,6 +434,7 @@ export default function ConnectionsPage() {
       <ul>
         <li>Stub lines follow <strong>orthogonal routing</strong> with curved corners, matching normal connections</li>
         <li>Right-click a stub to <strong>Add Handle</strong> for intermediate waypoints, just like normal connections</li>
+        <li>Hovering either stub line or either stub label <strong>highlights the whole stubbed connection</strong>, the way hovering a cable highlights it end to end</li>
         <li>Stubbed connections are excluded from <strong>line jump</strong> detection — they won't cause arc markers on other connections</li>
         <li>Stubbed connections don't generate <strong>page-break crossing labels</strong></li>
       </ul>

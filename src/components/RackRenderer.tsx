@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState, type WheelEvent, type MouseEvent } from "react";
 import { useSchematicStore } from "../store";
+import { useContextMenuDismiss } from "../hooks/useContextMenuDismiss";
 import type { RackData, RackDevicePlacement, RackAccessory, RackDepthConflict, DeviceData, RackElevationPage } from "../types";
 import { resolveDeviceLabel, type SchematicDisplayDefaults } from "../displayName";
 import { contrastingTextColor, CONTRAST_BLACK } from "../colorContrast";
@@ -982,6 +983,7 @@ function AccessoryMenu({
   const [depthMm, setDepthMm] = useState<number | undefined>(menu.accessory.shelfDepthMm);
   return (
     <div
+      data-context-menu=""
       className="fixed z-50 bg-white rounded-lg shadow-xl border border-neutral-200 py-1 text-xs min-w-[200px]"
       style={{ left: menu.screenX, top: menu.screenY }}
       onMouseDown={(e) => e.stopPropagation()}
@@ -1199,6 +1201,7 @@ function SlotMenu({
 
   return (
     <div
+      data-context-menu=""
       className="fixed z-50 text-xs"
       style={{ left: menu.screenX, top: menu.screenY }}
       onMouseDown={(e) => e.stopPropagation()}
@@ -1332,6 +1335,19 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
   const [shelfOccupantMenu, setShelfOccupantMenu] = useState<{
     screenX: number; screenY: number; placement: RackDevicePlacement; deviceData: DeviceData;
   } | null>(null);
+  // The four rack-view menus share the app-wide one-menu-at-a-time owner: opening any
+  // of them closes the rest (and any canvas or page-tab menu), and a press outside or
+  // Escape closes it (#411).
+  const closeRackMenus = useCallback(() => {
+    setRackContextMenu(null);
+    setSlotContextMenu(null);
+    setAccessoryContextMenu(null);
+    setShelfOccupantMenu(null);
+  }, []);
+  useContextMenuDismiss(
+    !!(rackContextMenu || slotContextMenu || accessoryContextMenu || shelfOccupantMenu),
+    closeRackMenus,
+  );
   // Face-plate editor
   const [facePlateTarget, setFacePlateTarget] = useState<{
     nodeId: string; deviceData: DeviceData;
@@ -2166,6 +2182,7 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
       {/* Device context menu */}
       {rackContextMenu && (
         <div
+          data-context-menu=""
           className="fixed z-50 bg-white rounded-lg shadow-xl border border-neutral-200 py-1 text-xs min-w-[160px]"
           style={{ left: rackContextMenu.screenX, top: rackContextMenu.screenY }}
           onMouseDown={(e) => e.stopPropagation()}
@@ -2296,6 +2313,7 @@ export default function RackRenderer({ page }: { page: RackElevationPage }) {
       {/* Shelf-occupant context menu — rotate / remove from shelf / edit device */}
       {shelfOccupantMenu && (
         <div
+          data-context-menu=""
           className="fixed z-50 bg-white rounded-lg shadow-xl border border-neutral-200 py-1 text-xs min-w-[180px]"
           style={{ left: shelfOccupantMenu.screenX, top: shelfOccupantMenu.screenY }}
           onMouseDown={(e) => e.stopPropagation()}

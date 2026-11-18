@@ -6,6 +6,7 @@ import { LINE_STYLE_LABELS, LINE_STYLE_DASHARRAY, type DeviceData, type LineStyl
 import { isAdapterHidden, toggleAdapterVisibility as nextAdapterVisibility } from "../adapterVisibility";
 import { selectedConnectionEdges, stubbedLinkIdsOf } from "../stubSelection";
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
+import { useContextMenuDismiss } from "../hooks/useContextMenuDismiss";
 import MenuSubmenu from "./MenuSubmenu";
 import { DEFAULT_LINE_WIDTH, LINE_WIDTHS, effectiveLineWidth, lineWidthPatchValue } from "../lineWidth";
 
@@ -41,29 +42,14 @@ function projectOntoSegments(
   return { x: bestX, y: bestY, segIdx: bestSeg };
 }
 
+const closeMenu = () => useSchematicStore.setState({ edgeContextMenu: null });
+
 export default function EdgeContextMenu() {
   const menu = useSchematicStore((s) => s.edgeContextMenu);
   const { setCenter, getZoom, getInternalNode } = useReactFlow();
 
-  // Close on click anywhere or Escape
-  useEffect(() => {
-    if (!menu) return;
-    const close = () => useSchematicStore.setState({ edgeContextMenu: null });
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const timer = setTimeout(() => {
-      document.addEventListener("click", close);
-      document.addEventListener("contextmenu", close);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("click", close);
-      document.removeEventListener("contextmenu", close);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menu]);
+  // One menu at a time; a press or right-click outside it, or Escape, closes it (#411).
+  useContextMenuDismiss(!!menu, closeMenu);
 
   const addHandle = useCallback(() => {
     if (!menu) return;
@@ -547,6 +533,7 @@ export default function EdgeContextMenu() {
     return (
       <div
         ref={menuRef}
+        data-context-menu=""
         className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg p-2 min-w-[200px]"
         style={{
           left: menuPos.x,
@@ -604,6 +591,7 @@ export default function EdgeContextMenu() {
   return (
     <div
       ref={menuRef}
+      data-context-menu=""
       className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[160px]"
       style={{
         left: menuPos.x,

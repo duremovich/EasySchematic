@@ -10,6 +10,7 @@ import { buildPrintPageLookup, resolveStubLabelPartsForMode } from "../stubLabel
 import { useDisplayLabel } from "../labelCaseUtils";
 import { signalCssColor } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
+import { enterStubLink, leaveStubLink, useStubHover } from "../stubHover";
 
 /** Find the connecting edge: source-side stub is the TARGET of an edge from a device;
  *  target-side stub is the SOURCE of an edge to a device. */
@@ -214,6 +215,13 @@ function StubLabelNodeComponent({ id, data, selected }: NodeProps<StubLabelNodeT
   // Source-side stubs receive an incoming line (they're the TARGET of the edge);
   // target-side stubs originate the line (they're the SOURCE).
   const handleType = data.side === "source" ? "target" : "source";
+  // The tag is the visible face of a stubbed connection, so hovering it lights the whole
+  // connection — both legs and both tags — and a hovered leg lights the tags (#405).
+  const linkId = data.linkedConnectionId;
+  const linkHovered = useStubHover((s) => !!linkId && s.linkId === linkId);
+  const hoverOwner = `tag:${id}`;
+  // A tag deleted under the pointer never gets its mouseleave; let go of the hover here.
+  useEffect(() => () => leaveStubLink(hoverOwner), [hoverOwner]);
 
   return (
     <>
@@ -222,6 +230,8 @@ function StubLabelNodeComponent({ id, data, selected }: NodeProps<StubLabelNodeT
       <Handle type={handleType} position={Position.Bottom} id="b" isConnectable={false} style={{ opacity: 0, width: 6, height: 6 }} />
       <Handle type={handleType} position={Position.Left} id="l" isConnectable={false} style={{ opacity: 0, width: 6, height: 6 }} />
       <div
+        onMouseEnter={() => enterStubLink(linkId, hoverOwner)}
+        onMouseLeave={() => leaveStubLink(hoverOwner)}
         style={{
           // Pin to STUB_H_EST so the box's geometric center (where handles sit
           // via top:50%) actually lands at position.y + STUB_H_EST/2. Without
@@ -241,6 +251,7 @@ function StubLabelNodeComponent({ id, data, selected }: NodeProps<StubLabelNodeT
           padding: "0 4px",
           borderRadius: 2,
           border: `1px solid ${selected ? "#1a73e8" : color}`,
+          boxShadow: linkHovered ? `0 0 4px ${color}` : undefined,
           backgroundColor: "white",
           color: "#374151",
         }}

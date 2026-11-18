@@ -289,8 +289,11 @@ function connectDevicesCore(p: ConnectDevicesParams) {
     targetHandle,
   };
   if (!st().isValidConnection(connection)) {
+    const why = st().explainConnectionRefusal(connection)?.message;
     throw new CommandError(
-      `That connection is not valid (incompatible direction/signal, duplicate, or self-connection).`,
+      why
+        ? `That connection is not valid: ${why}`
+        : `That connection is not valid (incompatible direction/signal, duplicate, or self-connection).`,
     );
   }
   const before = new Set(st().edges.map((e) => e.id));

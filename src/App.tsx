@@ -557,6 +557,8 @@ function SchematicCanvas() {
   const [connectPreview, setConnectPreview] = useState<{
     fromX: number; fromY: number; toX: number; toY: number; fromSource: boolean;
     snapped: boolean; valid: boolean; adaptable: boolean;
+    /** Why the snapped port refuses the connection — shown beside a red ghost (#439). */
+    reason?: string;
   } | null>(null);
 
   // Quick-add device dialog state
@@ -1186,7 +1188,12 @@ function SchematicCanvas() {
           }
         }
 
-        return { x: best.x, y: best.y, valid, adaptable };
+        // A red ghost says why (#439). Yellow means an adapter will bridge it, so
+        // there is nothing to explain there.
+        const reason = !valid && !adaptable
+          ? state2.explainConnectionRefusal(connection as Connection)?.message
+          : undefined;
+        return { x: best.x, y: best.y, valid, adaptable, reason };
       };
 
       const onMove = (e: MouseEvent) => {
@@ -1199,6 +1206,7 @@ function SchematicCanvas() {
           snapped: !!snap,
           valid: snap ? snap.valid : true,
           adaptable: snap ? snap.adaptable : false,
+          reason: snap?.reason,
         });
       };
       window.addEventListener("mousemove", onMove);
@@ -1278,7 +1286,7 @@ function SchematicCanvas() {
       (t) => useSchematicStore.getState().isValidConnection(connectionFor(t)),
     );
     if (!target) return;
-    useSchematicStore.getState().onConnect(connectionFor(target));
+    useSchematicStore.getState().connectOrExplain(connectionFor(target), { rerouting: reconnectDragRef.current });
   }, [connectableHandles, connectionBetween, pointerConnectContext]);
 
   /** Click-to-connect landing on a device's body rather than on one of its ports: wire
@@ -1303,7 +1311,14 @@ function SchematicCanvas() {
       for (const h of handles) {
         if (!h.id) continue;
         state.onConnect(connectionBetween(from, { nodeId, handleId: h.id }));
-        if (useSchematicStore.getState().pendingIncompatibleConnection) break;
+        if (useSchematicStore.getState().pendingIncompatibleConnection) return;
+      }
+      // Nothing on the device took it and no adapter was offered: say so rather than
+      // let the click end in silence (#439).
+      const after = useSchematicStore.getState();
+      if (after.edges === state.edges) {
+        const label = (after.nodes.find((n) => n.id === nodeId)?.data as DeviceData | undefined)?.label;
+        after.addToast(`No free port on ${label ?? "that device"} accepts this connection.`, "error");
       }
     },
     [connectionBetween, rfInstance],
@@ -1348,7 +1363,7 @@ function SchematicCanvas() {
         clickedDeviceId,
       );
       if (decision.kind === "port") {
-        useSchematicStore.getState().onConnect(connectionFor(decision.target));
+        useSchematicStore.getState().connectOrExplain(connectionFor(decision.target));
       } else if (decision.kind === "device") {
         connectToDeviceBody(from, decision.nodeId);
       }
@@ -1865,7 +1880,7 @@ function SchematicCanvas() {
       <ResizeSnapGuides dragGuides={snapGuides} />
       {printView && <PageBoundaryOverlay />}
       {connectPreview && (() => {
-        const { fromX, fromY, toX, toY, fromSource, snapped, valid, adaptable } = connectPreview;
+        const { fromX, fromY, toX, toY, fromSource, snapped, valid, adaptable, reason } = connectPreview;
         const dx = Math.abs(toX - fromX);
         const ctrl = Math.max(dx * 0.5, 50);
         const c1x = fromSource ? fromX + ctrl : fromX - ctrl;
@@ -1884,6 +1899,27 @@ function SchematicCanvas() {
                 <circle cx={toX} cy={toY} r={4 / zoom} fill={color} opacity={0.6} />
               )}
             </svg>
+            {snapped && !valid && reason && (
+              <div
+                role="status"
+                style={{
+                  position: "absolute",
+                  left: toX * zoom + vx + 12,
+                  top: toY * zoom + vy + 12,
+                  maxWidth: 280,
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                  color: "var(--color-text)",
+                  background: "var(--color-surface)",
+                  border: "1px solid rgba(220, 38, 38, 0.5)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                }}
+              >
+                {reason}
+              </div>
+            )}
           </div>
         );
       })()}

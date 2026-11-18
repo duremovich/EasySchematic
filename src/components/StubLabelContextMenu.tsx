@@ -1,8 +1,11 @@
-import { useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import { useSchematicStore } from "../store";
 import type { StubLabelData, StubLabelPageMode } from "../types";
 import { selectedConnectionEdges, stubbedLinkIdsOf } from "../stubSelection";
 import { useContextMenuPosition } from "../hooks/useContextMenuPosition";
+import { useContextMenuDismiss } from "../hooks/useContextMenuDismiss";
+
+const closeMenu = () => useSchematicStore.setState({ stubLabelContextMenu: null });
 
 /** Right-click menu for stub-label nodes — what the tag prints, per-stub overrides for
  *  the four label fields, plus a "show full connection" collapse action. Each cycle item
@@ -14,24 +17,8 @@ export default function StubLabelContextMenu() {
     menu?.screenY ?? 0,
   );
 
-  useEffect(() => {
-    if (!menu) return;
-    const close = () => useSchematicStore.setState({ stubLabelContextMenu: null });
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const timer = setTimeout(() => {
-      document.addEventListener("click", close);
-      document.addEventListener("contextmenu", close);
-      document.addEventListener("keydown", onKey);
-    }, 0);
-    return () => {
-      clearTimeout(timer);
-      document.removeEventListener("click", close);
-      document.removeEventListener("contextmenu", close);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [menu]);
+  // One menu at a time; a press or right-click outside it, or Escape, closes it (#411).
+  useContextMenuDismiss(!!menu, closeMenu);
 
   const cycleBool = useCallback(
     (field: "showArrow" | "showPort" | "showRoom") => {
@@ -126,6 +113,7 @@ export default function StubLabelContextMenu() {
   return (
     <div
       ref={menuRef}
+      data-context-menu=""
       className="fixed z-50 bg-white border border-gray-300 rounded shadow-lg py-1 min-w-[200px]"
       style={{
         left: menuPos.x,
