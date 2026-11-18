@@ -14,6 +14,13 @@ const VIEWPORT_MARGIN = 8;
 // Slack (px) used to bridge the hair-line seam between the trigger and the
 // flyout, and to forgive imprecise pointer positions right on an edge.
 const HOVER_TOLERANCE = 6;
+// A sibling submenu's trigger must be rested on this long before it takes over
+// from the one that is open. Without it, the diagonal traverse from a trigger
+// into its flyout grazes the next trigger row and opens that submenu on top.
+const SIBLING_OPEN_INTENT_MS = 200;
+
+/** The one submenu currently open, so opening another closes it (only one flyout at a time). */
+let activeSubmenu: { close: () => void } | null = null;
 
 /** Hover-to-open submenu used inside context menus. The submenu panel renders
  *  as its own fixed-position div (not nested visually inside the parent), and
@@ -32,6 +39,8 @@ export default function MenuSubmenu({ label, children, minWidth = 160 }: Props) 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const submenuRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intentTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selfHandle = useRef({ close: () => {} });
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ x: number; y: number; maxHeight?: number; ready: boolean }>({
     x: 0,
@@ -54,8 +63,18 @@ export default function MenuSubmenu({ label, children, minWidth = 160 }: Props) 
     }, HOVER_CLOSE_GRACE_MS);
   };
 
+  const cancelIntent = () => {
+    if (intentTimer.current) {
+      clearTimeout(intentTimer.current);
+      intentTimer.current = null;
+    }
+  };
+
   const openNow = () => {
     cancelClose();
+    cancelIntent();
+    if (activeSubmenu && activeSubmenu !== selfHandle.current) activeSubmenu.close();
+    activeSubmenu = selfHandle.current;
     // Reset ready only when opening from closed so the panel hides until the
     // layout effect re-measures (prevents a flash at the previous position).
     // Re-entering the trigger while already open must NOT hide it — a hidden
@@ -63,6 +82,36 @@ export default function MenuSubmenu({ label, children, minWidth = 160 }: Props) 
     if (!open) setPos((p) => ({ ...p, ready: false }));
     setOpen(true);
   };
+
+  // Entering the trigger opens at once, unless a sibling submenu is open: then the
+  // pointer has to rest here briefly, so merely passing over this row doesn't steal it.
+  const onTriggerEnter = () => {
+    if (!activeSubmenu || activeSubmenu === selfHandle.current) {
+      openNow();
+      return;
+    }
+    cancelIntent();
+    intentTimer.current = setTimeout(() => {
+      intentTimer.current = null;
+      openNow();
+    }, SIBLING_OPEN_INTENT_MS);
+  };
+
+  useEffect(() => {
+    const handle = selfHandle.current;
+    handle.close = () => {
+      cancelClose();
+      setOpen(false);
+    };
+    return () => {
+      cancelIntent();
+      if (activeSubmenu === handle) activeSubmenu = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!open && activeSubmenu === selfHandle.current) activeSubmenu = null;
+  }, [open]);
 
   // Keep-open region = trigger rect ∪ flyout rect ∪ the horizontal corridor at
   // the trigger's row that spans across to the flyout (bridges any seam/gap,
@@ -140,7 +189,8 @@ export default function MenuSubmenu({ label, children, minWidth = 160 }: Props) 
         ref={triggerRef}
         type="button"
         className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer flex items-center justify-between gap-2"
-        onMouseEnter={openNow}
+        onMouseEnter={onTriggerEnter}
+        onMouseLeave={cancelIntent}
         onClick={(e) => e.stopPropagation()}
       >
         <span>{label}</span>
