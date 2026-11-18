@@ -12,10 +12,12 @@ import type {
   Port,
   PatchHop,
   ConnectorType,
+  DeviceTemplate,
 } from "./types";
 import { resolvePort, resolvePortLabel, getRoomLabel } from "./packList";
 import { transformLabelNow } from "./labelCaseUtils";
 import { areConnectorsCompatible } from "./connectorTypes";
+import { connectorLabel } from "./typeRegistry";
 
 export interface PatchPointInfo {
   kind: "device" | "panel";
@@ -257,6 +259,23 @@ export function getPanelOccupancy(
   return occ;
 }
 
+/** Templates the Patch Bay's "+ Add panel" picker offers: anything typed as a patch
+ *  panel — the user's own (saved from the device editor, #424) first, then the library —
+ *  deduped by id (label when there's no id). */
+export function patchPanelPickerTemplates(
+  customTemplates: DeviceTemplate[],
+  libraryTemplates: DeviceTemplate[],
+): DeviceTemplate[] {
+  const seen = new Set<string>();
+  return [...customTemplates, ...libraryTemplates].filter((t) => {
+    if (t.deviceType !== "patch-panel") return false;
+    const key = t.id ?? t.label;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export function isPortAvailable(
   occ: Map<string, Map<string, PortOccupant>>,
   panelNodeId: string,
@@ -361,5 +380,48 @@ export function resolvePortDisplay(
     signalType: firstEdge?.data?.signalType as string | undefined,
     rear,
     front,
+  };
+}
+
+/** Characters of a port label that fit over one jack on the Patch Bay face (84px pitch,
+ *  10.5px monospace). Longer labels are cut with an ellipsis; the tooltip has the rest. */
+export const PATCH_BAY_PORT_LABEL_CHARS = 12;
+
+export interface PatchBayPortText {
+  /** Physical position on the panel, "01", "02", … */
+  position: string;
+  /** The port's own label (DMX1, XLR3, LAN2), display-cased; "" when the port has none. */
+  label: string;
+  /** `label` cut to fit over the jack. */
+  shortLabel: string;
+  /** Connector printed inside the jack — the front (patch) face. */
+  connector: string;
+  /** Hover text: position, full label, and both faces' connectors. */
+  tooltip: string;
+}
+
+/** What the Patch Bay face prints for one jack. Identical XLR / DMX ports are told apart
+ *  by their label, with the connector kept as secondary text inside the jack (#433). */
+export function patchBayPortText(
+  port: Port,
+  index: number,
+  display: (s: string) => string = (s) => s,
+): PatchBayPortText {
+  const position = String(index + 1).padStart(2, "0");
+  const label = port.label ? display(port.label) : "";
+  const shortLabel = label.length > PATCH_BAY_PORT_LABEL_CHARS
+    ? label.slice(0, PATCH_BAY_PORT_LABEL_CHARS - 1) + "…"
+    : label;
+  const rear = port.rearConnectorType ?? port.connectorType;
+  const front = port.frontConnectorType ?? port.connectorType;
+  const faces = rear || front
+    ? `Rear: ${rear ? connectorLabel(rear) : "—"} · Front: ${front ? connectorLabel(front) : "—"}`
+    : "";
+  return {
+    position,
+    label,
+    shortLabel,
+    connector: front ? connectorLabel(front) : "",
+    tooltip: [label ? `${position} · ${label}` : position, faces].filter(Boolean).join("\n"),
   };
 }

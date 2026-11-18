@@ -1232,45 +1232,54 @@ export default function DeviceEditor() {
             setOpen={setPortVisOpen}
           />
 
-          <PortSection
-            title={deviceType === "patch-panel" ? "Rear" : "Inputs"}
-            direction="input"
-            deviceType={deviceType}
-            ports={inputs}
-            onAdd={() => addPort("input")}
-            onBulkAdd={bulkAddPorts}
-            bulkRoom={Math.max(0, MAX_PORTS - ports.length)}
-            onRemove={removePort}
-            onDuplicate={duplicatePort}
-            onUpdate={updatePort}
-            draggedPortId={draggedPortId}
-            setDraggedPortId={setDraggedPortId}
-            dropTarget={dropTarget}
-            setDropTarget={setDropTarget}
-            onDragEnd={handleDragEnd}
-            hiddenPorts={hiddenPorts}
-            setHiddenPorts={setHiddenPorts}
-          />
+          {/* A patch panel's circuits are passthrough ports (one rear + front jack pair each).
+              The separate Rear/Front lists are the legacy paired-port model the Patch Bay
+              can't patch through, so on a panel they only show here when it already has such
+              ports — otherwise they're the obvious-looking wrong place to start (#424). An
+              empty one collapses to the "Other ports" row under Passthrough Circuits. */}
+          {(deviceType !== "patch-panel" || inputs.length > 0) && (
+            <PortSection
+              title={deviceType === "patch-panel" ? "Rear" : "Inputs"}
+              direction="input"
+              deviceType={deviceType}
+              ports={inputs}
+              onAdd={() => addPort("input")}
+              onBulkAdd={bulkAddPorts}
+              bulkRoom={Math.max(0, MAX_PORTS - ports.length)}
+              onRemove={removePort}
+              onDuplicate={duplicatePort}
+              onUpdate={updatePort}
+              draggedPortId={draggedPortId}
+              setDraggedPortId={setDraggedPortId}
+              dropTarget={dropTarget}
+              setDropTarget={setDropTarget}
+              onDragEnd={handleDragEnd}
+              hiddenPorts={hiddenPorts}
+              setHiddenPorts={setHiddenPorts}
+            />
+          )}
 
-          <PortSection
-            title={deviceType === "patch-panel" ? "Front" : "Outputs"}
-            direction="output"
-            deviceType={deviceType}
-            ports={outputs}
-            onAdd={() => addPort("output")}
-            onBulkAdd={bulkAddPorts}
-            bulkRoom={Math.max(0, MAX_PORTS - ports.length)}
-            onRemove={removePort}
-            onDuplicate={duplicatePort}
-            onUpdate={updatePort}
-            draggedPortId={draggedPortId}
-            setDraggedPortId={setDraggedPortId}
-            dropTarget={dropTarget}
-            setDropTarget={setDropTarget}
-            onDragEnd={handleDragEnd}
-            hiddenPorts={hiddenPorts}
-            setHiddenPorts={setHiddenPorts}
-          />
+          {(deviceType !== "patch-panel" || outputs.length > 0) && (
+            <PortSection
+              title={deviceType === "patch-panel" ? "Front" : "Outputs"}
+              direction="output"
+              deviceType={deviceType}
+              ports={outputs}
+              onAdd={() => addPort("output")}
+              onBulkAdd={bulkAddPorts}
+              bulkRoom={Math.max(0, MAX_PORTS - ports.length)}
+              onRemove={removePort}
+              onDuplicate={duplicatePort}
+              onUpdate={updatePort}
+              draggedPortId={draggedPortId}
+              setDraggedPortId={setDraggedPortId}
+              dropTarget={dropTarget}
+              setDropTarget={setDropTarget}
+              onDragEnd={handleDragEnd}
+              hiddenPorts={hiddenPorts}
+              setHiddenPorts={setHiddenPorts}
+            />
+          )}
 
           {(deviceType !== "patch-panel" || bidir.length > 0) && (
             <PortSection
@@ -1300,6 +1309,9 @@ export default function DeviceEditor() {
               direction="passthrough"
               deviceType={deviceType}
               ports={passthroughPorts}
+              hint={deviceType === "patch-panel"
+                ? "Each circuit is one jack pair: a rear (field) connector and a front (patch) connector. Use + Bulk Add to build the whole panel, then Save as User Template to offer it in the Patch Bay's + Add panel list."
+                : undefined}
               onAdd={() => addPort("passthrough")}
               onBulkAdd={bulkAddPorts}
               bulkRoom={Math.max(0, MAX_PORTS - ports.length)}
@@ -1314,6 +1326,38 @@ export default function DeviceEditor() {
               hiddenPorts={hiddenPorts}
               setHiddenPorts={setHiddenPorts}
             />
+          )}
+
+          {/* Patch panel with an empty Rear and/or Front list: keep those reachable for the
+              ports that aren't circuits (IEC inlet, control / network port) and for extending a
+              legacy paired panel — collapsed, and below the circuits so those stay the first
+              step (#424). Adding one opens the regular section above. */}
+          {deviceType === "patch-panel" && (inputs.length === 0 || outputs.length === 0) && (
+            <div className="flex items-center justify-between" data-testid="patch-panel-other-ports">
+              <span className="text-[10px] uppercase tracking-wider text-[var(--color-text-muted)]">
+                Other ports (power, control, network)
+              </span>
+              <div className="flex items-center gap-2">
+                {inputs.length === 0 && (
+                  <button
+                    onClick={() => addPort("input")}
+                    className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+                    title="Add an input port (listed under Rear)"
+                  >
+                    + Input
+                  </button>
+                )}
+                {outputs.length === 0 && (
+                  <button
+                    onClick={() => addPort("output")}
+                    className="text-[10px] text-blue-600 hover:text-blue-500 cursor-pointer"
+                    title="Add an output port (listed under Front)"
+                  >
+                    + Output
+                  </button>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Hostname */}
@@ -1962,30 +2006,79 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function BulkAddForm({
   direction,
+  deviceType,
   onBulkAdd,
   bulkRoom,
   onClose,
 }: {
   direction: PortDirection;
+  /** Picks the passthrough defaults: wall plates terminate on solder cups at the rear. */
+  deviceType: string;
   onBulkAdd: (spec: BulkPortSpec) => void;
   bulkRoom: number;
   onClose: () => void;
 }) {
   useTypeRegistryVersion(); // the signal / connector pickers list community types
-  const [prefix, setPrefix] = useState("Input");
+  // Passthrough circuits (patch panels, wall plates) get the library panels' per-face
+  // shape — a rear and a front connector — with the signal inheriting from the connection
+  // unless one is picked (#424). Wall plates default the rear to solder cups, as the
+  // library's wall plates (wallPlatePorts) do.
+  const passthrough = direction === "passthrough";
+  const [prefix, setPrefix] = useState(passthrough ? "Port" : "Input");
   const [start, setStart] = useState(1);
   const [end, setEnd] = useState(8);
   const [signalType, setSignalType] = useState<SignalType>("sdi");
-  const [connectorType, setConnectorType] = useState<ConnectorType>(defaultConnector("sdi"));
+  const [inheritsSignal, setInheritsSignal] = useState(passthrough);
+  const [connectorType, setConnectorType] = useState<ConnectorType>(
+    passthrough ? (deviceType === "wall-plate" ? "solder-cup" : "rj45") : defaultConnector("sdi"),
+  );
+  const [frontConnectorType, setFrontConnectorType] = useState<ConnectorType>(passthrough ? "rj45" : defaultConnector("sdi"));
   const [spaceBeforeNumber, setSpaceBeforeNumber] = useState(true);
   const [section, setSection] = useState("");
 
   const handleSubmit = () => {
     const count = end - start + 1;
     if (count < 1 || !prefix.trim() || bulkRoom < 1) return;
-    onBulkAdd({ direction, prefix: prefix.trim(), start, count, signalType, connectorType, section: section.trim() || undefined, spaceBeforeNumber });
+    onBulkAdd({
+      direction, prefix: prefix.trim(), start, count, signalType, connectorType, section: section.trim() || undefined, spaceBeforeNumber,
+      ...(passthrough ? { inheritsSignal, rearConnectorType: connectorType, frontConnectorType } : {}),
+    });
     onClose();
   };
+
+  // `connectorType` doubles as the rear face for passthrough; the front follows it until
+  // the user picks a different front connector.
+  const pickRear = (next: ConnectorType) => {
+    if (frontConnectorType === connectorType) setFrontConnectorType(next);
+    setConnectorType(next);
+  };
+
+  const connectorSelect = (
+    value: ConnectorType,
+    onPick: (c: ConnectorType) => void,
+    title: string,
+  ) => (
+    <select
+      className="bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] rounded px-1 py-1 text-xs outline-none focus:border-blue-500 cursor-pointer max-w-[140px]"
+      value={value}
+      title={title}
+      onChange={(e) => {
+        if (e.target.value === NEW_TYPE_VALUE) requestNewType("connector", onPick);
+        else onPick(e.target.value as ConnectorType);
+      }}
+    >
+      {connectorGroupEntries().map(([groupName, types]) => (
+        <optgroup key={groupName} label={groupName}>
+          {types.map((c) => (
+            <option key={c} value={c}>
+              {connectorLabel(c)}{!(passthrough && inheritsSignal) && c === defaultConnector(signalType) ? " (default)" : ""}
+            </option>
+          ))}
+        </optgroup>
+      ))}
+      <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.connector}</option>
+    </select>
+  );
 
   return (
     <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded p-2 space-y-2 mb-2">
@@ -2022,43 +2115,40 @@ function BulkAddForm({
         </div>
         <select
           className="bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] rounded px-1 py-1 text-xs outline-none focus:border-blue-500 cursor-pointer"
-          value={signalType}
+          value={passthrough && inheritsSignal ? "" : signalType}
           title="Signal type"
           onChange={(e) => {
+            if (passthrough && e.target.value === "") {
+              setInheritsSignal(true);
+              return;
+            }
             const pick = (next: SignalType) => {
               setSignalType(next);
-              setConnectorType(defaultConnector(next));
+              setInheritsSignal(false);
+              // A wall plate's rear stays on its field termination; only the jack follows.
+              if (!(passthrough && deviceType === "wall-plate")) setConnectorType(defaultConnector(next));
+              if (passthrough) setFrontConnectorType(defaultConnector(next));
             };
             if (e.target.value === NEW_TYPE_VALUE) requestNewType("signal", pick);
             else pick(e.target.value as SignalType);
           }}
         >
+          {passthrough && <option value="">(inherits from connection)</option>}
           {signalsByLabel().map((t) => (
             <option key={t} value={t}>{signalLabel(t)}</option>
           ))}
           <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.signal}</option>
         </select>
-        <select
-          className="bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)] rounded px-1 py-1 text-xs outline-none focus:border-blue-500 cursor-pointer max-w-[140px]"
-          value={connectorType}
-          title="Connector type"
-          onChange={(e) => {
-            if (e.target.value === NEW_TYPE_VALUE) requestNewType("connector", setConnectorType);
-            else setConnectorType(e.target.value as ConnectorType);
-          }}
-        >
-          {connectorGroupEntries().map(([groupName, types]) => (
-            <optgroup key={groupName} label={groupName}>
-              {types.map((c) => (
-                <option key={c} value={c}>
-                  {connectorLabel(c)}{c === defaultConnector(signalType) ? " (default)" : ""}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-          <option value={NEW_TYPE_VALUE}>{NEW_TYPE_OPTION_LABEL.connector}</option>
-        </select>
+        {!passthrough && connectorSelect(connectorType, setConnectorType, "Connector type")}
       </div>
+      {passthrough && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] text-[var(--color-text-muted)]">Rear</span>
+          {connectorSelect(connectorType, pickRear, "Rear connector type")}
+          <span className="text-[10px] text-[var(--color-text-muted)]">Front</span>
+          {connectorSelect(frontConnectorType, setFrontConnectorType, "Front connector type")}
+        </div>
+      )}
       <label className="flex items-center gap-1.5 text-[10px] text-[var(--color-text-muted)] cursor-pointer">
         <input
           type="checkbox"
@@ -2337,11 +2427,14 @@ function PortSection({
   onDragEnd,
   hiddenPorts,
   setHiddenPorts,
+  hint,
 }: {
   title: string;
   direction: PortDirection;
   deviceType: string;
   ports: PortDraft[];
+  /** One-line guidance under the section header. */
+  hint?: string;
   onAdd: () => void;
   onBulkAdd: (spec: BulkPortSpec) => void;
   bulkRoom: number;
@@ -2423,9 +2516,14 @@ function PortSection({
         </div>
       </div>
 
+      {hint && (
+        <div className="text-[10px] text-[var(--color-text-muted)] px-1 pb-1.5">{hint}</div>
+      )}
+
       {showBulkAdd && (
         <BulkAddForm
           direction={direction}
+          deviceType={deviceType}
           onBulkAdd={onBulkAdd}
           bulkRoom={bulkRoom}
           onClose={() => setShowBulkAdd(false)}

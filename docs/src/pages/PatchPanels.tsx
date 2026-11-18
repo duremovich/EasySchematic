@@ -28,6 +28,44 @@ export default function PatchPanelsPage() {
         possible while the panel has no drawn connections.
       </p>
 
+      <h2>Make your own patch panel</h2>
+      <p>
+        If the library doesn{"'"}t have your panel — say the venue{"'"}s own tie-line panels — build it
+        once and it{"'"}s offered in <strong>+ Add panel</strong> from then on:
+      </p>
+      <ol>
+        <li>
+          In the device library sidebar click <strong>Create New Device</strong> →
+          <strong> Start Blank</strong>.
+        </li>
+        <li>
+          Name it, and set <strong>Device Type</strong> to <strong>Patch Panel</strong> (under
+          Infrastructure).
+        </li>
+        <li>
+          In <strong>Passthrough Circuits</strong>, click <strong>+ Bulk Add</strong>. Enter a prefix
+          (<code>DMX</code>, <code>XLR</code>, <code>LAN</code>…) and the range, pick the
+          <strong> Rear</strong> and <strong>Front</strong> connectors, and leave the signal on
+          <em> (inherits from connection)</em> unless the panel only ever carries one signal. Each
+          circuit is one jack pair — a rear (field) connector and a front (patch) connector — and its
+          label is what the Patch Bay prints over the jack.
+        </li>
+        <li>
+          Click <strong>Save as User Template</strong>. The panel now appears in the Patch Bay{"'"}s
+          <strong> + Add panel</strong> list and in your device library. Then click
+          <strong> Apply</strong>: the panel you just built is placed on the schematic. If you don{"'"}t
+          want it in the drawing, hover it in the Patch Bay sidebar and choose
+          <strong> Make virtual</strong>.
+        </li>
+      </ol>
+      <p>
+        Individual circuits can still be fine-tuned afterwards — a different connector or gender on
+        one face, or a fixed signal — in the circuit{"'"}s row in the editor. Ports that aren{"'"}t
+        circuits, like a power inlet or a control port on an active panel, go under
+        <strong> Other ports (power, control, network)</strong> below the circuits. Cloning an existing library
+        panel from <strong>Create New Device</strong> works too, if one is close to what you need.
+      </p>
+
       <h2>Patching a connection</h2>
       <p>
         Two ways to route a connection through a panel port:
@@ -64,7 +102,10 @@ export default function PatchPanelsPage() {
 
       <h2>Reading the panel view</h2>
       <p>
-        Each panel renders as a front face with one jack per port. Under every occupied port two
+        Each panel renders as a front face with one jack per port. Above each jack is its position
+        number and the port{"'"}s own label (<code>DMX1</code>, <code>XLR3</code>…), so identical
+        connectors can be told apart; the connector type is printed inside the jack. Long labels are
+        shortened — hover a jack for the full label and both faces{"'"} connectors. Under every occupied port two
         chips show the circuit: <strong>◀</strong> the cable arriving at the rear (field) side and
         <strong> ▶</strong> the cable leaving the front (patch) side, each with its cable ID and
         far-end device. Hovering any chip, jack, or sidebar cable row highlights the whole circuit

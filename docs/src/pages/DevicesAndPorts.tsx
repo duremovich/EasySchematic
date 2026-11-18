@@ -235,6 +235,13 @@ export default function DevicesAndPortsPage() {
         editing each Ethernet port afterwards. Untick <strong>Space before number</strong> to name ports
         "Port1" instead of "Port 1". The preview line shows the names before you add them.
       </p>
+      <p>
+        On a patch panel or wall plate, <strong>+ Bulk Add</strong> in <strong>Passthrough Circuits</strong>
+        asks for a <strong>Rear</strong> and a <strong>Front</strong> connector instead of one, and the
+        signal starts on <em>(inherits from connection)</em>. That{"'"}s the library panels{"'"} per-face
+        layout; the library panels fix one signal, which you can do too by picking it.
+        See <em>Patch Panels &amp; the Patch Bay → Make your own patch panel</em>.
+      </p>
 
       <h2>Port sections</h2>
       <p>

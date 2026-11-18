@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ConnectionEdge, DeviceData, DeviceTemplate } from "../types";
 import { useSchematicStore } from "../store";
 import { getBundledTemplates, fetchTemplates } from "../templateApi";
-import { getPanelOccupancy, segmentsForEdge } from "../patchCircuits";
+import { getPanelOccupancy, patchPanelPickerTemplates, segmentsForEdge } from "../patchCircuits";
 import { scoreTemplate } from "../templateSearch";
 import { signalCssColor } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
@@ -54,17 +54,10 @@ export default function PatchPanelSidebar() {
 
   const occupancy = useMemo(() => getPanelOccupancy(nodes, edges), [nodes, edges]);
 
-  const panelTemplates = useMemo(() => {
-    const all = [...customTemplates, ...(apiTemplates ?? getBundledTemplates())];
-    const seen = new Set<string>();
-    return all.filter((t) => {
-      if (t.deviceType !== "patch-panel") return false;
-      const key = t.id ?? t.label;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [customTemplates, apiTemplates]);
+  const panelTemplates = useMemo(
+    () => patchPanelPickerTemplates(customTemplates, apiTemplates ?? getBundledTemplates()),
+    [customTemplates, apiTemplates],
+  );
 
   const pickerResults = useMemo(() => {
     if (!pickerQuery.trim()) return panelTemplates.slice(0, 20);
@@ -151,6 +144,10 @@ export default function PatchPanelSidebar() {
           </div>
           <div className="text-[10px] text-neutral-400 mt-1">
             Panels added here are “virtual” — in reports and racks, but never on the schematic.
+          </div>
+          <div className="text-[10px] text-neutral-400 mt-1">
+            Need your own? <b>Create New Device</b> → set Device Type to Patch Panel →
+            <b> + Bulk Add</b> passthrough circuits → <b>Save as User Template</b>. It shows up here.
           </div>
         </div>
       )}

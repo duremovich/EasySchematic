@@ -6,17 +6,21 @@ import {
   resolvePortDisplay,
   checkHopConnectors,
   devicePoint,
+  patchBayPortText,
   type PortDisplay,
   type PortFaceDisplay,
 } from "../patchCircuits";
 import { exportPatchPanelStripsPdf } from "../patchPanelPdf";
 import { connectorLabel, signalCssColor } from "../typeRegistry";
 import { useTypeRegistryVersion } from "../hooks/useTypeRegistryVersion";
+import { useDisplayLabel } from "../labelCaseUtils";
 
-// Face geometry (px) — tuned to fit two-line port cards under each jack.
+// Face geometry (px) — tuned to fit two-line port cards under each jack. Above each jack:
+// its position number, then the port's own label (#433).
 const PITCH = 84;
 const EAR = 42;
-const FACE_H = 124;
+const FACE_H = 136;
+const JACK_CY = 70;
 
 /** One designation-strip line. 16 chars is what fits in the 72px box at 7.5px mono. */
 const clampStrip = (s: string | undefined) => {
@@ -38,6 +42,7 @@ export default function PatchPanelRenderer() {
   const addEdgePatchHop = useSchematicStore((s) => s.addEdgePatchHop);
   const setPatchSegmentOverride = useSchematicStore((s) => s.setPatchSegmentOverride);
   const addToast = useSchematicStore((s) => s.addToast);
+  const displayLabel = useDisplayLabel();
 
   // Inline label-override editing: which chip is being edited.
   const [editing, setEditing] = useState<{ edgeId: string; segIndex: number; value: string } | null>(null);
@@ -240,6 +245,8 @@ export default function PatchPanelRenderer() {
           }
 
           const displays = displaysByPanel.get(panel.id) ?? [];
+          // Once per jack: the face and the card under it share the caption / tooltip.
+          const texts = visiblePorts.map((port, i) => patchBayPortText(port, i, displayLabel));
 
           return (
             <div key={panel.id} id={`ppblk-${panel.id}`} className="mb-9">
@@ -267,12 +274,11 @@ export default function PatchPanelRenderer() {
                   </text>
                   {visiblePorts.map((port, i) => {
                     const cx = EAR + PITCH * i + PITCH / 2;
-                    const cy = FACE_H / 2 - 4;
+                    const cy = JACK_CY;
                     const display = displays[i];
                     const open = !display;
                     const traced = display && patchTracedEdgeId === display.edgeId;
-                    const conn = port.frontConnectorType ?? port.connectorType;
-                    const connLabel = conn ? connectorLabel(conn) : "";
+                    const text = texts[i];
                     return (
                       <g
                         key={port.id}
@@ -281,9 +287,15 @@ export default function PatchPanelRenderer() {
                         onMouseEnter={() => { if (display) setPatchTracedEdge(display.edgeId); }}
                         onMouseLeave={() => { if (display) setPatchTracedEdge(null); }}
                       >
-                        <text x={cx} y={cy - 34} textAnchor="middle" fill="#b9bcc4" fontSize={11} fontWeight={600} fontFamily="ui-monospace, monospace">
-                          {String(i + 1).padStart(2, "0")}
+                        <title>{text.tooltip}</title>
+                        <text x={cx} y={cy - 43} textAnchor="middle" fill="#8b8f98" fontSize={9} fontWeight={600} fontFamily="ui-monospace, monospace">
+                          {text.position}
                         </text>
+                        {text.shortLabel && (
+                          <text x={cx} y={cy - 29} textAnchor="middle" fill="#e5e7eb" fontSize={10.5} fontWeight={700} fontFamily="ui-monospace, monospace">
+                            {text.shortLabel}
+                          </text>
+                        )}
                         <circle
                           cx={cx} cy={cy} r={21}
                           fill="#1a1c20"
@@ -291,7 +303,7 @@ export default function PatchPanelRenderer() {
                           strokeWidth={traced || (assigning && open) ? 3 : 2}
                         />
                         <text x={cx} y={cy + 3.5} textAnchor="middle" fill="#9ca3af" fontSize={9} fontWeight={600}>
-                          {connLabel}
+                          {text.connector}
                         </text>
                         {display && (
                           <>
@@ -327,11 +339,15 @@ export default function PatchPanelRenderer() {
                           <button
                             className="border border-dashed border-blue-400 text-blue-600 rounded py-3 text-[10px] hover:bg-blue-50 animate-pulse"
                             onClick={() => tryAssign(panel.id, port.id)}
+                            title={texts[i].tooltip}
                           >
                             ＋ patch here
                           </button>
                         ) : (
-                          <div className="border border-dashed border-neutral-300 rounded py-3 text-center text-neutral-400 text-[10px]">
+                          <div
+                            className="border border-dashed border-neutral-300 rounded py-3 text-center text-neutral-400 text-[10px]"
+                            title={texts[i].tooltip}
+                          >
                             spare
                           </div>
                         )}
